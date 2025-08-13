@@ -825,6 +825,648 @@ def atoms2rdkit_2d(atoms:ase.Atoms, covalent_radius_percent:float=108.)->np.ndar
         print(f"RDKit Error: {e}")
         return atoms.get_positions()[:,:2]
 
+
+
+def overlay_viewer(
+    atoms_list: List[Atoms],
+    option: str = "aa",
+    option_param: Optional[List] = None,
+    rotation_mode: str = 'orbit',
+    style: str = 'lambert',
+    bg_color: str = '#2D3748',
+    atom_scale: float = 0.45,
+    bond_thickness: float = 0.1,
+    bond_cutoff_scale: float = 1.2,
+    opacity: float = 0.7,
+    width: int = 800,
+    height: int = 600,
+    write_html: Optional[str] = None,
+) -> HTML:
+    """
+    Jupyter Notebook에서 여러 ASE Atoms 객체를 겹쳐서 3D로 시각화합니다.
+    PNG 저장 기능이 추가되어 고화질 투명 배경으로 저장할 수 있습니다.
+    """
+    # 1. 분자 구조 정렬 (superimpose_atoms 함수가 필요합니다)
+    aligned_structures = superimpose_atoms(atoms_list, option=option, option_param=option_param)
+
+    # 2. 정렬된 데이터를 JSON으로 직렬화
+    overlay_data = []
+    for i, atoms in enumerate(aligned_structures):
+        structure_data = {
+            "name": atoms.info.get('name', f'Structure {i+1}'),
+            "symbols": atoms.get_chemical_symbols(),
+            "positions": atoms.get_positions().tolist(),
+        }
+        overlay_data.append(structure_data)
+
+    json_data = json.dumps(overlay_data)
+    cpk_colors_json = json.dumps(atomic_symbols2hex)
+    cpk_radii_json = json.dumps(covalent_radii)
+
+    # 3. 각 분자의 초기 상태 설정
+    initial_mol_colors = [0x1f77b4, 0xff7f0e, 0x2ca02c, 0xd62728, 0x9467bd, 0x8c564b, 0xe377c2, 0x7f7f7f, 0xbcbd22, 0x17becf]
+    initial_molecule_states = [
+        {"visible": True, "opacity": opacity, "color": f"#{initial_mol_colors[i % len(initial_mol_colors)]:06x}"}
+        for i in range(len(overlay_data))
+    ]
+    molecule_states_json = json.dumps(initial_molecule_states)
+
+    # 4. HTML 템플릿 생성
+    html_template = f"""
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ASE Overlay Viewer</title>
+        <style>
+            body {{ margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow: hidden;}}
+            .viewer-container {{ position: relative; width: {width}px; height: {height}px; display: flex; background-color: #2D3748; border-radius: 8px; overflow: hidden; border: 1px solid #4A5568; }}
+            .sidebar {{ width: 260px; padding: 20px; background-color: #1A202C; color: #E2E8F0; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; transition: width 0.3s ease, padding 0.3s ease; flex-shrink: 0; }}
+            .sidebar.collapsed {{ width: 0; padding: 0 0; overflow: hidden; }}
+            .sidebar h2 {{ font-size: 18px; margin: 0; padding-bottom: 10px; border-bottom: 1px solid #4A5568; color: #A0AEC0; }}
+            #toggle-sidebar-btn {{ position: absolute; top: 15px; left: 15px; z-index: 100; background: rgba(45, 55, 72, 0.9); color: #E2E8F0; border: 1px solid #4A5568; border-radius: 6px; width: 36px; height: 36px; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3px; transition: all 0.3s ease; backdrop-filter: blur(5px); user-select: none; }}
+            #toggle-sidebar-btn:hover {{ background: rgba(45, 55, 72, 1); border-color: #718096; }}
+            .hamburger-line {{ width: 18px; height: 2px; background-color: #E2E8F0; border-radius: 1px; transition: all 0.3s ease; }}
+            #toggle-sidebar-btn.open .hamburger-line:nth-child(1) {{ transform: rotate(45deg) translate(4px, 4px); }}
+            #toggle-sidebar-btn.open .hamburger-line:nth-child(2) {{ opacity: 0; }}
+            #toggle-sidebar-btn.open .hamburger-line:nth-child(3) {{ transform: rotate(-45deg) translate(4px, -4px); }}
+
+            /* PNG 저장 버튼 스타일 */
+            #save-png-btn {{
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                z-index: 100;
+                background-color: rgba(74, 85, 104, 0.7);
+                color: #E2E8F0; /* 흰색보다 약간 부드러운 글자색 */
+                border: 1px solid rgba(255, 255, 255, 0.1); /* 은은한 테두리 추가 */
+                border-radius: 8px;
+                padding: 10px 16px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(5px);
+                user-select: none;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            }}
+            #save-png-btn:hover {{
+                background-color: rgba(99, 110, 130, 0.85);
+                border-color: rgba(255, 255, 255, 0.2);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+            }}
+            #save-png-btn:active {{
+                transform: translateY(0);
+                box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+            }}
+            #save-png-btn.saving {{
+                background: linear-gradient(135deg, #6B7280, #9CA3AF);
+                cursor: not-allowed;
+                transform: none;
+            }}
+            .save-icon {{
+                width: 16px;
+                height: 16px;
+                fill: currentColor;
+            }}
+
+            .control-group, details {{ display: flex; flex-direction: column; gap: 12px; }}
+            select, input[type="color"] {{ background-color: #2D3748; color: #E2E8F0; border: 1px solid #4A5568; border-radius: 4px; padding: 4px; width: 100%; box-sizing: border-box; }}
+            input[type="color"] {{ padding: 2px; height: 28px; }}
+            .molecule-control {{ padding: 12px; background-color: #2D3748; border-radius: 6px; border: 1px solid #4A5568; display: flex; flex-direction: column; gap: 10px; }}
+            .molecule-header {{ display: flex; align-items: center; gap: 10px; }}
+            .molecule-visibility-toggle {{ display: flex; flex: 1; align-items: center; cursor: pointer; user-select: none; }}
+            .color-swatch-wrapper {{ position: relative; }}
+            .color-swatch {{ width: 20px; height: 20px; border-radius: 4px; flex-shrink: 0; border: 1px solid #4A5568; }}
+            .color-picker-input {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }}
+            .molecule-name {{ flex: 1; font-weight: 500; font-size: 14px; margin-left: 10px; }}
+            .toggle-switch {{ width: 44px; height: 24px; background-color: #4A5568; border-radius: 12px; position: relative; transition: background-color 0.3s ease; cursor: pointer; flex-shrink: 0; }}
+            .toggle-switch::before {{ content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: transform 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
+            .toggle-switch.active {{ background-color: #4299E1; }}
+            .toggle-switch.active::before {{ transform: translateX(20px); }}
+            .opacity-control {{ display: flex; align-items: center; gap: 8px; font-size: 12px; }}
+            .opacity-control input[type="range"] {{ flex: 1; height: 4px; }}
+            .opacity-value {{ min-width: 35px; text-align: right; color: #A0AEC0; }}
+            .slider-group {{ display: flex; flex-direction: column; gap: 4px;}}
+            .slider-label, .slider-value, summary {{ font-size: 12px; color: #A0AEC0; }}
+            #canvas-container {{ flex: 1; min-width: 0; height: 100%; cursor: grab; background-color: {bg_color}; }}
+            details {{ color: #E2E8F0; }}
+            summary {{ cursor: pointer; font-size: 1rem; font-weight: bold; padding: 5px 0; list-style-position: inside; }}
+            .details-content {{ padding-top: 10px; display: flex; flex-direction: column; gap: 12px; }}
+        </style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    </head>
+    <body>
+        <div class="viewer-container">
+            <div id="toggle-sidebar-btn" class="open">
+                <div class="hamburger-line"></div><div class="hamburger-line"></div><div class="hamburger-line"></div>
+            </div>
+
+            <!-- PNG 저장 버튼 -->
+            <button id="save-png-btn">
+                <i class="fa fa-download"></i>
+                <span>Save as PNG</span>
+            </button>
+
+            <div class="sidebar" id="sidebar">
+                <h2 align="right">Overlay Viewer</h2>
+                <details class="control-group" open>
+                    <summary>Molecules</summary>
+                    <div id="molecules-section" class="details-content"></div>
+                </details>
+                <details class="control-group" open>
+                    <summary>Global Settings</summary>
+                    <div class="details-content">
+                        <div class="control-group">
+                            <label for="colorby-select" class="slider-label">Color By</label>
+                            <select id="colorby-select">
+                                <option value="molecule">Molecule</option>
+                                <option value="atom">Atoms (CPK)</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="rotation-mode-select" class="slider-label">Rotation Mode</label>
+                            <select id="rotation-mode-select">
+                                <option value="orbit" {'selected' if rotation_mode == 'orbit' else ''}>Orbit</option>
+                                <option value="trackball" {'selected' if rotation_mode == 'trackball' else ''}>Trackball</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="style-select" class="slider-label">Style</label>
+                            <select id="style-select">
+                                <option value="lambert" {'selected' if style == 'lambert' else ''}>Standard</option>
+                                <option value="phong" {'selected' if style == 'phong' else ''}>Glossy</option>
+                                <option value="standard" {'selected' if style == 'standard' else ''}>Metallic</option>
+                                <option value="2d" {'selected' if style == '2d' else ''}>2D Structure</option>
+                                <option value="toon" {'selected' if style == 'toon' else ''}>Toon</option>
+                                <option value="neon" {'selected' if style == 'neon' else ''}>Neon</option>
+                            </select>
+                        </div>
+                         <div class="slider-group"><label for="bg-color-picker" class="slider-label">Background Color</label><input type="color" id="bg-color-picker" value="{bg_color}"></div>
+                        <div class="slider-group"><label for="atom-scale-slider" class="slider-label">Atom Size</label><input type="range" id="atom-scale-slider" min="0.1" max="2.0" step="0.05" value="{atom_scale}"><span id="atom-scale-label" class="slider-value">Scale: {atom_scale:.2f}</span></div>
+                        <div class="slider-group"><label for="bond-thickness-slider" class="slider-label">Bond Thickness</label><input type="range" id="bond-thickness-slider" min="0.02" max="0.5" step="0.01" value="{bond_thickness}"><span id="bond-thickness-label" class="slider-value">Value: {bond_thickness:.2f}</span></div>
+                        <div class="slider-group"><label for="bond-cutoff-slider" class="slider-label">Bond Cutoff Scale</label><input type="range" id="bond-cutoff-slider" min="0.8" max="1.5" step="0.01" value="{bond_cutoff_scale}"><span id="bond-cutoff-label" class="slider-value">Scale: {bond_cutoff_scale:.2f}</span></div>
+                    </div>
+                </details>
+            </div>
+            <div id="canvas-container"></div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
+
+        <script>
+            const overlayData = {json_data};
+            const initialMoleculeStates = {molecule_states_json};
+            const cpkColors = {cpk_colors_json};
+            const cpkRadii = {cpk_radii_json};
+
+            let scene, camera, renderer, controls;
+            let moleculeGroups = [];
+            let moleculeStates = JSON.parse(JSON.stringify(initialMoleculeStates));
+            let currentAtomScale = {atom_scale};
+            let currentBondThickness = {bond_thickness};
+            let currentBondCutoffFactor = {bond_cutoff_scale};
+            let currentStyle = '{style}';
+            let currentColorBy = 'molecule';
+
+            function init() {{
+                const container = document.getElementById('canvas-container');
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color("{bg_color}");
+                camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+                camera.position.z = 25;
+                renderer = new THREE.WebGLRenderer({{ antialias: true, preserveDrawingBuffer: true }});
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                container.appendChild(renderer.domElement);
+
+                const ambientLight = new THREE.AmbientLight(0xcccccc, 0.8);
+                scene.add(ambientLight);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+                directionalLight.position.set(5, 10, 7.5);
+                scene.add(directionalLight);
+
+                setupControls('{rotation_mode}');
+                setupUI();
+                drawMolecules();
+                window.addEventListener('resize', onWindowResize);
+                animate();
+            }}
+
+            function setupControls(mode) {{
+                if (controls) controls.dispose();
+                const container = document.getElementById('canvas-container');
+                if (mode === 'trackball') {{
+                    controls = new THREE.TrackballControls(camera, container);
+                    controls.rotateSpeed = 5.0;
+                }} else {{ // 'orbit'
+                    controls = new THREE.OrbitControls(camera, container);
+                    controls.enableDamping = true;
+                }}
+            }}
+
+            function setupUI() {{
+                const sidebar = document.getElementById('sidebar');
+                const toggleBtn = document.getElementById('toggle-sidebar-btn');
+                const moleculesSection = document.getElementById('molecules-section');
+                const savePngBtn = document.getElementById('save-png-btn');
+
+                toggleBtn.addEventListener('click', () => {{
+                    sidebar.classList.toggle('collapsed');
+                    toggleBtn.classList.toggle('open');
+                    setTimeout(onWindowResize, 300);
+                }});
+
+                // PNG 저장 버튼 이벤트
+                savePngBtn.addEventListener('click', () => {{
+                    if (!savePngBtn.classList.contains('saving')) {{
+                        saveToPNG();
+                    }}
+                }});
+
+                document.getElementById('colorby-select').addEventListener('change', (e) => {{
+                    currentColorBy = e.target.value;
+                    drawMolecules();
+                }});
+
+                document.getElementById('rotation-mode-select').addEventListener('change', (e) => setupControls(e.target.value));
+                document.getElementById('style-select').addEventListener('change', (e) => {{ currentStyle = e.target.value; drawMolecules(); }});
+                document.getElementById('bg-color-picker').addEventListener('input', (e) => {{
+                    scene.background.set(e.target.value);
+                    document.getElementById('canvas-container').style.backgroundColor = e.target.value;
+                }});
+                document.getElementById('atom-scale-slider').addEventListener('input', (e) => {{
+                    currentAtomScale = parseFloat(e.target.value);
+                    document.getElementById('atom-scale-label').textContent = `Scale: ${{currentAtomScale.toFixed(2)}}`;
+                    drawMolecules();
+                }});
+                document.getElementById('bond-thickness-slider').addEventListener('input', (e) => {{
+                    currentBondThickness = parseFloat(e.target.value);
+                    document.getElementById('bond-thickness-label').textContent = `Value: ${{currentBondThickness.toFixed(2)}}`;
+                    drawMolecules();
+                }});
+                document.getElementById('bond-cutoff-slider').addEventListener('input', (e) => {{
+                    currentBondCutoffFactor = parseFloat(e.target.value);
+                    document.getElementById('bond-cutoff-label').textContent = `Scale: ${{currentBondCutoffFactor.toFixed(2)}}`;
+                    drawMolecules();
+                }});
+
+                overlayData.forEach((mol, i) => {{
+                    const state = moleculeStates[i];
+                    const moleculeDiv = document.createElement('div');
+                    moleculeDiv.className = 'molecule-control';
+                    moleculeDiv.id = `molecule-control-${{i}}`;
+
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'molecule-header';
+
+                    const swatchWrapper = document.createElement('div');
+                    swatchWrapper.className = 'color-swatch-wrapper';
+                    const swatch = document.createElement('div');
+                    swatch.className = 'color-swatch';
+                    swatch.style.backgroundColor = state.color;
+                    const colorPicker = document.createElement('input');
+                    colorPicker.className = 'color-picker-input';
+                    colorPicker.type = 'color';
+                    colorPicker.value = state.color;
+                    colorPicker.addEventListener('input', (e) => updateMoleculeColor(i, e.target.value));
+                    swatchWrapper.append(swatch, colorPicker);
+
+                    const visibilityToggle = document.createElement('div');
+                    visibilityToggle.className = 'molecule-visibility-toggle';
+                    visibilityToggle.onclick = () => toggleMolecule(i);
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'molecule-name';
+                    nameSpan.textContent = mol.name;
+
+                    const toggleSwitch = document.createElement('div');
+                    toggleSwitch.className = `toggle-switch ${{state.visible ? 'active' : ''}}`;
+                    toggleSwitch.dataset.moleculeIndex = i;
+
+                    visibilityToggle.append(nameSpan, toggleSwitch);
+                    headerDiv.append(swatchWrapper, visibilityToggle);
+
+                    const opacityDiv = document.createElement('div');
+                    opacityDiv.className = 'opacity-control';
+                    opacityDiv.innerHTML = `
+                        <span>Opacity:</span>
+                        <input type="range" min="0.0" max="1.0" step="0.05" value="${{state.opacity}}">
+                        <span class="opacity-value" id="opacity-value-${{i}}">${{state.opacity.toFixed(2)}}</span>`;
+                    opacityDiv.querySelector('input').addEventListener('input', (e) => updateMoleculeOpacity(i, parseFloat(e.target.value)));
+
+                    moleculeDiv.append(headerDiv, opacityDiv);
+                    moleculesSection.appendChild(moleculeDiv);
+                }});
+            }}
+
+            function toggleMolecule(index) {{
+                moleculeStates[index].visible = !moleculeStates[index].visible;
+                document.querySelector(`[data-molecule-index="${{index}}"]`).classList.toggle('active', moleculeStates[index].visible);
+                if (moleculeGroups[index]) moleculeGroups[index].visible = moleculeStates[index].visible;
+            }}
+
+            function updateMoleculeOpacity(index, opacity) {{
+                moleculeStates[index].opacity = opacity;
+                document.getElementById(`opacity-value-${{index}}`).textContent = opacity.toFixed(2);
+                if (moleculeGroups[index]) {{
+                    moleculeGroups[index].traverse(child => {{
+                        if (child.material) {{
+                            child.material.opacity = opacity;
+                            child.material.needsUpdate = true;
+                        }}
+                    }});
+                }}
+            }}
+
+            function updateMoleculeColor(index, color) {{
+                moleculeStates[index].color = color;
+                const swatch = document.querySelector(`#molecule-control-${{index}} .color-swatch`);
+                if (swatch) swatch.style.backgroundColor = color;
+                if (currentColorBy === 'molecule') {{
+                    drawMolecules();
+                }}
+            }}
+
+            // PNG 저장 함수
+            function saveToPNG() {{
+                const savePngBtn = document.getElementById('save-png-btn');
+                const originalText = savePngBtn.querySelector('span').textContent;
+
+                // 버튼 상태 변경
+                savePngBtn.classList.add('saving');
+                savePngBtn.querySelector('span').textContent = 'Saving...';
+
+                try {{
+                    // 고화질 렌더링을 위한 임시 캔버스 생성
+                    const container = document.getElementById('canvas-container');
+                    const originalWidth = container.clientWidth;
+                    const originalHeight = container.clientHeight;
+
+                    // 고화질을 위해 해상도 증가 (2x 또는 3x)
+                    const scaleFactor = 3;
+                    const renderWidth = originalWidth * scaleFactor;
+                    const renderHeight = originalHeight * scaleFactor;
+
+                    // 임시 렌더러 생성
+                    const tempRenderer = new THREE.WebGLRenderer({{
+                        antialias: true,
+                        preserveDrawingBuffer: true,
+                        alpha: true // 투명 배경을 위해 alpha 채널 활성화
+                    }});
+                    tempRenderer.setSize(renderWidth, renderHeight);
+                    tempRenderer.setPixelRatio(1); // 픽셀 비율을 1로 고정하여 정확한 크기 제어
+
+                    // 투명 배경 설정
+                    const originalBackground = scene.background;
+                    scene.background = null; // 투명 배경
+                    tempRenderer.setClearColor(0x000000, 0); // 완전 투명
+
+                    // 카메라 종횡비 조정
+                    const tempCamera = camera.clone();
+                    tempCamera.aspect = renderWidth / renderHeight;
+                    tempCamera.updateProjectionMatrix();
+
+                    // 고화질 렌더링
+                    tempRenderer.render(scene, tempCamera);
+
+                    // 캔버스에서 PNG 데이터 추출
+                    const canvas = tempRenderer.domElement;
+                    const dataURL = canvas.toDataURL('image/png');
+
+                    // 파일 다운로드 링크 생성
+                    const link = document.createElement('a');
+                    link.download = `molecule_overlay.png`;
+                    link.href = dataURL;
+
+                    // 다운로드 실행
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    // 배경 복원
+                    scene.background = originalBackground;
+
+                    // 임시 렌더러 정리
+                    tempRenderer.dispose();
+
+                    console.log('PNG saved successfully with transparent background at', renderWidth, 'x', renderHeight, 'resolution');
+
+                }} catch (error) {{
+                    console.error('Error saving PNG:', error);
+                    alert('PNG 저장 중 오류가 발생했습니다: ' + error.message);
+                }} finally {{
+                    // 버튼 상태 복원
+                    setTimeout(() => {{
+                        savePngBtn.classList.remove('saving');
+                        savePngBtn.querySelector('span').textContent = originalText;
+                    }}, 1000);
+                }}
+            }}
+
+            function create2DAtomSpriteTexture(symbol) {{
+                const canvas = document.createElement('canvas');
+                canvas.width = 128; canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'black';
+                ctx.beginPath(); ctx.arc(64, 64, 60, 0, 2 * Math.PI); ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); ctx.arc(64, 64, 56, 0, 2 * Math.PI); ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.font = 'bold 60px Arial';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(symbol, 64, 64);
+                return new THREE.CanvasTexture(canvas);
+            }}
+
+            function clearScene() {{
+                moleculeGroups.forEach(group => {{
+                    group.traverse(child => {{
+                        if (child.geometry) child.geometry.dispose();
+                        if (child.material) {{
+                            if(child.material.map) child.material.map.dispose();
+                            child.material.dispose();
+                        }}
+                    }});
+                    scene.remove(group);
+                }});
+                moleculeGroups = [];
+            }}
+
+
+            function drawMolecules() {{
+                clearScene();
+                overlayData.forEach((molData, i) => {{
+                    const molGroup = new THREE.Group();
+                    const state = moleculeStates[i];
+                    const positions = molData.positions.map(p => new THREE.Vector3(...p));
+                    const symbols = molData.symbols;
+
+                    if (currentStyle === '2d') {{
+                        positions.forEach((pos, atomIdx) => {{
+                            const radius = cpkRadii[symbols[atomIdx]] || cpkRadii['default'];
+                            const scaledRadius = radius * currentAtomScale * 1.5;
+                            const material = new THREE.SpriteMaterial({{
+                                map: create2DAtomSpriteTexture(symbols[atomIdx]),
+                                transparent: true,
+                                opacity: state.opacity,
+                                depthTest: false
+                            }});
+                            const sprite = new THREE.Sprite(material);
+                            sprite.position.copy(pos);
+                            sprite.scale.set(scaledRadius, scaledRadius, 1);
+                            sprite.renderOrder = 2; // Atom is rendered on top
+                            molGroup.add(sprite);
+                        }});
+
+                        const bondMaterial = new THREE.MeshBasicMaterial({{ color: 0x666666, transparent: true, opacity: state.opacity }});
+                        for (let j = 0; j < positions.length; j++) {{
+                            for (let k = j + 1; k < positions.length; k++) {{
+                                const r_j = cpkRadii[symbols[j]] || cpkRadii['default'];
+                                const r_k = cpkRadii[symbols[k]] || cpkRadii['default'];
+                                const cutoff = (r_j + r_k) * currentBondCutoffFactor;
+                                const distance = positions[j].distanceTo(positions[k]);
+
+                                if (distance < cutoff) {{
+                                    const path = new THREE.Line3(positions[j], positions[k]);
+                                    const bondGeometry = new THREE.CylinderGeometry(currentBondThickness, currentBondThickness, distance, 8);
+                                    const bondMesh = new THREE.Mesh(bondGeometry, bondMaterial.clone());
+                                    bondMesh.position.lerpVectors(positions[j], positions[k], 0.5);
+                                    bondMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), path.delta(new THREE.Vector3()).normalize());
+                                    bondMesh.renderOrder = 1; // Bond is rendered below atom
+                                    molGroup.add(bondMesh);
+                                }}
+                            }}
+                        }}
+                    }}
+                    else {{
+                        positions.forEach((pos, atomIdx) => {{
+                            const symbol = symbols[atomIdx];
+                            const radius = cpkRadii[symbol] || cpkRadii['default'];
+                            const scaledRadius = radius * currentAtomScale;
+
+                            const atomColor = (currentColorBy === 'atom')
+                                ? new THREE.Color(cpkColors[symbol] || cpkColors['default'])
+                                : new THREE.Color(state.color);
+
+                            const materialProps = {{ color: atomColor, transparent: true, opacity: state.opacity }};
+                            let atomMaterial;
+
+                            if (currentStyle === 'phong') atomMaterial = new THREE.MeshPhongMaterial({{...materialProps, shininess: 100 }});
+                            else if (currentStyle === 'standard') atomMaterial = new THREE.MeshStandardMaterial({{...materialProps, metalness: 0.3, roughness: 0.4 }});
+                            else if (currentStyle === 'toon') atomMaterial = new THREE.MeshToonMaterial(materialProps);
+                            else if (currentStyle === 'neon') atomMaterial = new THREE.MeshBasicMaterial({{ color: atomColor.clone().multiplyScalar(1.5), transparent: true, opacity: state.opacity }});
+                            else atomMaterial = new THREE.MeshLambertMaterial(materialProps);
+
+                            const geometry = new THREE.SphereGeometry(scaledRadius, 20, 20);
+                            const sphere = new THREE.Mesh(geometry, atomMaterial);
+                            sphere.position.copy(pos);
+
+                            if (currentStyle === 'toon') {{
+                                // 더 큰 반지름으로 외곽선 생성
+                                const outlineGeometry = new THREE.SphereGeometry(scaledRadius * 1.1, 20, 20);
+                                const outlineMaterial = new THREE.MeshBasicMaterial({{
+                                    color: 0x000000,
+                                    transparent: true,
+                                    opacity: state.opacity,
+                                    side: THREE.BackSide
+                                }});
+                                const outline = new THREE.Mesh(outlineGeometry, outlineMaterial);
+                                outline.position.copy(pos);
+                                molGroup.add(outline);
+                            }}
+                            molGroup.add(sphere);
+                        }});
+
+                        for (let j = 0; j < positions.length; j++) {{
+                            for (let k = j + 1; k < positions.length; k++) {{
+                                const r_j = cpkRadii[symbols[j]] || cpkRadii['default'];
+                                const r_k = cpkRadii[symbols[k]] || cpkRadii['default'];
+                                const cutoff = (r_j + r_k) * currentBondCutoffFactor;
+                                const distance = positions[j].distanceTo(positions[k]);
+
+                                if (distance < cutoff) {{
+                                    const startPos = positions[j];
+                                    const endPos = positions[k];
+
+                                    if (currentStyle === 'toon') {{
+                                        const bondMaterial = new THREE.MeshToonMaterial({{ color: 0x000000, transparent: true, opacity: state.opacity }});
+                                        const bondGeometry = new THREE.CylinderGeometry(currentBondThickness, currentBondThickness, distance, 8);
+                                        const bondMesh = new THREE.Mesh(bondGeometry, bondMaterial);
+                                        bondMesh.position.lerpVectors(startPos, endPos, 0.5);
+                                        bondMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Line3(startPos, endPos).delta(new THREE.Vector3()).normalize());
+                                        molGroup.add(bondMesh);
+                                    }} else if (currentStyle === 'neon') {{
+                                        const bondMaterial = new THREE.MeshBasicMaterial({{ color: 0xffffff, transparent: true, opacity: state.opacity }});
+                                        const path = new THREE.LineCurve3(startPos, endPos);
+                                        const bondGeometry = new THREE.TubeGeometry(path, 1, currentBondThickness, 8, false);
+                                        molGroup.add(new THREE.Mesh(bondGeometry, bondMaterial));
+                                    }} else {{
+                                        const midPoint = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5);
+                                        const getColor = (symbol) => (currentColorBy === 'atom')
+                                            ? new THREE.Color(cpkColors[symbol] || cpkColors['default'])
+                                            : new THREE.Color(state.color);
+                                        const getMaterial = (color) => {{
+                                            const materialProps = {{ color: color, transparent: true, opacity: state.opacity }};
+                                            if (currentStyle === 'phong') return new THREE.MeshPhongMaterial({{ ...materialProps, shininess: 100 }});
+                                            if (currentStyle === 'standard') return new THREE.MeshStandardMaterial({{ ...materialProps, metalness: 0.3, roughness: 0.4 }});
+                                            return new THREE.MeshLambertMaterial(materialProps);
+                                        }};
+                                        const bondGeo = new THREE.CylinderGeometry(currentBondThickness, currentBondThickness, distance / 2, 8);
+                                        const bondMesh1 = new THREE.Mesh(bondGeo, getMaterial(getColor(symbols[j])));
+                                        bondMesh1.position.lerpVectors(startPos, midPoint, 0.5);
+                                        bondMesh1.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Line3(startPos, midPoint).delta(new THREE.Vector3()).normalize());
+                                        molGroup.add(bondMesh1);
+                                        const bondMesh2 = new THREE.Mesh(bondGeo.clone(), getMaterial(getColor(symbols[k])));
+                                        bondMesh2.position.lerpVectors(midPoint, endPos, 0.5);
+                                        bondMesh2.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Line3(midPoint, endPos).delta(new THREE.Vector3()).normalize());
+                                        molGroup.add(bondMesh2);
+                                    }}
+                                }}
+                            }}
+                        }}
+                    }}
+                    molGroup.visible = state.visible;
+                    moleculeGroups.push(molGroup);
+                    scene.add(molGroup);
+                }});
+            }}
+
+            function onWindowResize() {{
+                const container = document.getElementById('canvas-container');
+                if (container.clientWidth > 0 && container.clientHeight > 0) {{
+                    camera.aspect = container.clientWidth / container.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(container.clientWidth, container.clientHeight);
+                }}
+            }}
+
+            function animate() {{
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }}
+
+            init();
+        </script>
+    </body>
+    </html>
+    """
+    if write_html:
+        assert isinstance(write_html, str), "write_html must be a string"
+        with open(write_html, 'w', encoding='utf-8') as f:
+            f.write(html_template)
+
+    return HTML(html_template)
+
+
 def fragment_selector(
     atoms: ase.Atoms,
     covalent_radius_percent: float = 120.,
