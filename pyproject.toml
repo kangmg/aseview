@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aseview"
+version = "0.0.1"
+authors = [
+  { name="Mingi KANG", email="kangmg@korea.ac.kr" },
+]
+description = "A package for 3D visualization of ASE Atoms objects in Jupyter Notebook."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "ase",
+    "numpy",
+    "scipy",
+    "ipython",
+    "rdkit",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/kangmg/aseview"
