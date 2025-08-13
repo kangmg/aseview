@@ -71,8 +71,8 @@ def viewer(
     write_html: Optional[str] = None,
     ) -> HTML:
     """
-    Visualizes ASE Atoms objects or TrajectoryReader in 3D within a Jupyter Notebook.
-    (Full version including GIF saving functionality)
+    Jupyter Notebook에서 ASE Atoms 객체 또는 TrajectoryReader를 3D로 시각화합니다.
+    (GIF 저장 기능이 포함된 완전한 버전)
     """
     if isinstance(atoms_or_traj, Atoms):
         frames = [atoms_or_traj]
@@ -119,7 +119,7 @@ def viewer(
 
     html_template = f"""
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="ko">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -271,7 +271,7 @@ def viewer(
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/2.9.4/Chart.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 
         <script>
@@ -777,6 +777,7 @@ def viewer(
             f.write(html_template)
 
     return HTML(html_template)
+
 
 
 def get_adjacency_matrix(atoms:ase.Atoms, covalent_radius_percent:float=108.)->np.ndarray:
