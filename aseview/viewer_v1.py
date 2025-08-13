@@ -1467,6 +1467,102 @@ def overlay_viewer(
     return HTML(html_template)
 
 
+
+def kabsch(P, Q):
+    """Kabsch 알고리즘을 사용하여 두 점 집합 P와 Q를 정렬하는 최적의 회전 행렬을 계산합니다."""
+    # 중심을 0으로 맞춥니다.
+    P_centered = P - np.mean(P, axis=0)
+    Q_centered = Q - np.mean(Q, axis=0)
+
+    C = np.dot(np.transpose(P_centered), Q_centered)
+    V, S, W = np.linalg.svd(C)
+    d = (np.linalg.det(V) * np.linalg.det(W)) < 0.0
+    if d:
+        S[-1] = -S[-1]
+        V[:, -1] = -V[:, -1]
+    U = np.dot(V, W)
+    return U
+
+
+def superimpose_atoms(atoms_list: List[Atoms], option: str = 'aa', option_param: Optional[List] = None) -> List[Atoms]:
+    """
+    Kabsch 알고리즘을 사용하여 여러 Atoms 객체를 정렬합니다.
+
+    Args:
+        atoms_list (List[Atoms]): 정렬할 Atoms 객체의 리스트.
+        option (str): 정렬 옵션. ['aa', 'sa', 'a'] 중 선택.
+            - 'aa': 모든 원자를 사용하여 정렬합니다. (모든 분자의 원자 순서가 같다고 가정)
+            - 'sa': 모든 분자에 공통적인 원자 인덱스를 사용하여 정렬합니다.
+            - 'a': 각 분자마다 특정 원자 인덱스를 사용하여 정렬합니다.
+        option_param (Optional[List]): 정렬 옵션에 따른 파라미터.
+            - for 'aa': None.
+            - for 'sa': 공통으로 사용할 원자 인덱스 리스트. e.g., [0, 1, 2]
+            - for 'a': 각 분자별로 사용할 원자 인덱스의 리스트. e.g., [[0, 1, 2], [3, 4, 5]]
+
+    Returns:
+        List[Atoms]: 정렬된 Atoms 객체의 리스트.
+    """
+    if not atoms_list:
+        return []
+
+    aligned_atoms_list = [atoms.copy() for atoms in atoms_list]
+    ref_atoms = aligned_atoms_list[0]
+
+    # 옵션에 따라 정렬에 사용할 원자 인덱스를 결정합니다.
+    if option == 'aa':
+        n_atoms_ref = len(ref_atoms)
+        for i, atoms in enumerate(aligned_atoms_list[1:], 1):
+            if len(atoms) != n_atoms_ref:
+                raise ValueError(f"Option 'aa' requires all molecules to have the same number of atoms. Molecule 0 has {n_atoms_ref}, but molecule {i} has {len(atoms)}.")
+
+        indices_ref = np.arange(n_atoms_ref)
+        indices_mov_list = [indices_ref] * len(aligned_atoms_list)
+
+    elif option == 'sa':
+        if not option_param or not isinstance(option_param, list):
+            raise ValueError("Option 'sa' requires a list of atom indices in `option_param`.")
+        indices_ref = np.array(option_param)
+        indices_mov_list = [indices_ref] * len(aligned_atoms_list)
+
+    elif option == 'a':
+        if not option_param or not isinstance(option_param, list) or not all(isinstance(i, list) for i in option_param):
+            raise ValueError("Option 'a' requires a list of lists for `option_param`.")
+        if len(option_param) != len(atoms_list):
+            raise ValueError("Length of `option_param` must match the number of molecules for option 'a'.")
+        if not all(len(l) == len(option_param[0]) for l in option_param):
+            raise ValueError("All index lists in `option_param` must have the same length for option 'a'.")
+
+        indices_ref = np.array(option_param[0])
+        indices_mov_list = [np.array(p) for p in option_param]
+
+    else:
+        raise ValueError(f"Unsupported option: {option}. Supported options are 'aa', 'sa', 'a'.")
+
+    # 기준 분자의 정렬 대상 원자들의 중심을 계산하고 분자 전체를 이동시킵니다.
+    ref_coords_subset = ref_atoms.get_positions()[indices_ref]
+    ref_centroid = np.mean(ref_coords_subset, axis=0)
+    ref_atoms.positions -= ref_centroid
+
+    # 나머지 분자들을 기준 분자에 정렬합니다.
+    for i in range(1, len(aligned_atoms_list)):
+        mov_atoms = aligned_atoms_list[i]
+        indices_mov = indices_mov_list[i]
+
+        # 정렬에 사용할 좌표를 추출하고 중심을 계산합니다.
+        mov_coords_subset = mov_atoms.get_positions()[indices_mov]
+        mov_centroid = np.mean(mov_coords_subset, axis=0)
+
+        # 분자 전체를 중심에 맞춥니다.
+        mov_atoms.positions -= mov_centroid
+
+        # 회전 행렬을 계산하고 분자 전체에 적용합니다.
+        rotation_matrix = kabsch(mov_atoms.get_positions()[indices_mov], ref_atoms.get_positions()[indices_ref])
+        mov_atoms.positions = np.dot(mov_atoms.positions, rotation_matrix)
+
+    return aligned_atoms_list
+
+
+
 def fragment_selector(
     atoms: ase.Atoms,
     covalent_radius_percent: float = 120.,
