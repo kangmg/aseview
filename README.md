@@ -3,6 +3,8 @@
 > [!WARNING]
 > This version (`aseview`) is an alpha release, and detailed instructions will be revised in future updates.
 > A new version (v2) is currently under development.
+>
+> **Known Issue**: Due to a CDN (Content Delivery Network) issue with Java, `aseview` may not function correctly in some environments (e.g., vs-code cursor etc.), excluding Google Colab. This issue will be addressed in a future update.
 
 `aseview` is a Python package for visualizing atomic structures.
 
