@@ -406,10 +406,10 @@
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Bond Threshold Scale</span>
-                                <span class="slider-value" id="bond-threshold-value">1.0</span>
+                                <span class="slider-value" id="bond-threshold-value">1.7</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.5" max="3" step="0.1" value="1.0" class="slider" id="bond-threshold">
+                                <input type="range" min="0.5" max="3" step="0.1" value="1.7" class="slider" id="bond-threshold">
                             </div>
                         </div>
 
@@ -426,10 +426,10 @@
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Atom Size</span>
-                                <span class="slider-value" id="atom-size-value">0.5×</span>
+                                <span class="slider-value" id="atom-size-value">0.4×</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.1" max="2" step="0.1" value="0.5" class="slider" id="atom-size">
+                                <input type="range" min="0.1" max="2" step="0.1" value="0.4" class="slider" id="atom-size">
                             </div>
                         </div>
 
@@ -518,9 +518,9 @@
 
                         <div class="control-group">
                             <div class="control-label">
-                                <span>Shadow</span>
+                                <span>Shading</span>
                                 <label class="switch">
-                                    <input type="checkbox" id="show-shadow">
+                                    <input type="checkbox" id="show-shading">
                                     <span class="slider-switch"></span>
                                 </label>
                             </div>
@@ -730,7 +730,7 @@ let settings = {
     style: 'cartoon',
     showCell: true,
     showBond: true,
-    showShadow: false,
+    showShading: false,
     showEnergyPlot: false,
     showForces: false,
     viewMode: 'Perspective',
@@ -785,9 +785,80 @@ let animationState = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+    syncUIWithSettings();
     setupEventListeners();
     initRenderer();
 });
+
+// Sync UI elements with settings on page load
+function syncUIWithSettings() {
+    // Bond Threshold
+    const bondThresholdSlider = document.getElementById('bond-threshold');
+    const bondThresholdValue = document.getElementById('bond-threshold-value');
+    if (bondThresholdSlider && bondThresholdValue) {
+        bondThresholdSlider.value = settings.bondThreshold;
+        bondThresholdValue.textContent = settings.bondThreshold;
+    }
+    
+    // Bond Thickness
+    const bondThicknessSlider = document.getElementById('bond-thickness');
+    const bondThicknessValue = document.getElementById('bond-thickness-value');
+    if (bondThicknessSlider && bondThicknessValue) {
+        bondThicknessSlider.value = settings.bondThickness;
+        bondThicknessValue.textContent = settings.bondThickness.toFixed(2);
+    }
+    
+    // Atom Size
+    const atomSizeSlider = document.getElementById('atom-size');
+    const atomSizeValue = document.getElementById('atom-size-value');
+    if (atomSizeSlider && atomSizeValue) {
+        atomSizeSlider.value = settings.atomSize;
+        atomSizeValue.textContent = settings.atomSize.toFixed(1) + '×';
+    }
+    
+    // Animation Speed
+    const animSpeedSlider = document.getElementById('animation-speed');
+    const animSpeedValue = document.getElementById('animation-speed-value');
+    if (animSpeedSlider && animSpeedValue) {
+        animSpeedSlider.value = settings.animationSpeed;
+        animSpeedValue.textContent = settings.animationSpeed;
+    }
+    
+    // Force Scale
+    const forceScaleSlider = document.getElementById('force-scale');
+    const forceScaleValue = document.getElementById('force-scale-value');
+    if (forceScaleSlider && forceScaleValue) {
+        forceScaleSlider.value = settings.forceScale;
+        forceScaleValue.textContent = settings.forceScale.toFixed(1) + '×';
+    }
+    
+    // Background Color
+    const bgColorInput = document.getElementById('background-color');
+    const bgColorValue = document.getElementById('background-color-value');
+    if (bgColorInput && bgColorValue) {
+        bgColorInput.value = settings.backgroundColor;
+        bgColorValue.textContent = settings.backgroundColor;
+    }
+    
+    // Style
+    const styleSelect = document.getElementById('style');
+    if (styleSelect) {
+        styleSelect.value = settings.style;
+    }
+    
+    // Checkboxes
+    const showCellCheckbox = document.getElementById('show-cell');
+    if (showCellCheckbox) showCellCheckbox.checked = settings.showCell;
+    
+    const showBondCheckbox = document.getElementById('show-bond');
+    if (showBondCheckbox) showBondCheckbox.checked = settings.showBond;
+    
+    const showShadingCheckbox = document.getElementById('show-shading');
+    if (showShadingCheckbox) showShadingCheckbox.checked = settings.showShading;
+    
+    const showForcesCheckbox = document.getElementById('show-forces');
+    if (showForcesCheckbox) showForcesCheckbox.checked = settings.showForces;
+}
 
 function initRenderer() {
     const viewer = document.getElementById('viewer');
@@ -809,10 +880,6 @@ function initRenderer() {
     renderer.setPixelRatio(window.devicePixelRatio || 1);
     renderer.setSize(Math.max(viewer.clientWidth, 1), Math.max(viewer.clientHeight, 1));
     
-    // Enable shadow mapping
-    renderer.shadowMap.enabled = false;  // Will be enabled when showShadow is true
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    
     // Enable better rendering for special effects like neon
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -829,11 +896,13 @@ function initRenderer() {
     setupCamera();
     setupControls();
 
-    // Only ambient light - no directional light to avoid line artifacts
-    scene.add(new THREE.AmbientLight(0xffffff, 1.0));  // Full ambient lighting
+    // Lighting setup - matching old version
+    directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 10, 10);
+    scene.add(directionalLight);
     
-    // Keep directionalLight variable for shadow feature (will be added when shadow is enabled)
-    directionalLight = null;
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    scene.add(ambientLight);
 
     window.addEventListener('resize', handleResize);
     handleResize();
@@ -925,7 +994,21 @@ function animate() {
     if (controls && typeof controls.update === 'function') {
         controls.update();
     }
-    // Directional light stays fixed at top-right position (10, 10, 10)
+    // Light behavior depends on shading setting
+    if (directionalLight && camera) {
+        if (settings.showShading) {
+            // Light position relative to camera for consistent shading direction
+            // Light stays in camera space, so shading direction is fixed from viewer's perspective
+            const offset = new THREE.Vector3(5, 8, 5);
+            const lightPos = camera.position.clone().add(
+                offset.applyQuaternion(camera.quaternion)
+            );
+            directionalLight.position.copy(lightPos);
+        } else {
+            // Light follows camera for flat lighting (no shading)
+            directionalLight.position.copy(camera.position);
+        }
+    }
     if (renderer && scene && camera) {
         renderer.render(scene, camera);
     }
@@ -1043,13 +1126,6 @@ function renderMolecule() {
                     );
                     if (bond) {
                         bond.renderOrder = 1;
-                        // Enable shadow casting and receiving for bonds
-                        bond.traverse((child) => {
-                            if (child.isMesh) {
-                                child.castShadow = settings.showShadow;
-                                child.receiveShadow = settings.showShadow;
-                            }
-                        });
                         moleculeGroup.add(bond);
                         bondCount++;
                         
@@ -1077,13 +1153,6 @@ function renderMolecule() {
         }
         if (atom) {
             atom.renderOrder = 0;
-            // Enable shadow casting and receiving
-            atom.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = settings.showShadow;
-                    child.receiveShadow = settings.showShadow;
-                }
-            });
             moleculeGroup.add(atom);
         }
     }
@@ -1147,40 +1216,10 @@ function updateBackgroundColor() {
     renderer.setClearColor(color, 1);
 }
 
-function updateShadow() {
-    if (!renderer) return;
-    
-    if (settings.showShadow) {
-        // Enable shadows and add directional light
-        renderer.shadowMap.enabled = true;
-        
-        if (!directionalLight) {
-            directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-            directionalLight.position.set(50, 50, 50);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            directionalLight.shadow.camera.near = 0.5;
-            directionalLight.shadow.camera.far = 500;
-            directionalLight.shadow.camera.left = -50;
-            directionalLight.shadow.camera.right = 50;
-            directionalLight.shadow.camera.top = 50;
-            directionalLight.shadow.camera.bottom = -50;
-            directionalLight.shadow.bias = -0.0001;
-            scene.add(directionalLight);
-        } else {
-            directionalLight.castShadow = true;
-        }
-    } else {
-        // Disable shadows and remove directional light
-        renderer.shadowMap.enabled = false;
-        
-        if (directionalLight) {
-            scene.remove(directionalLight);
-            directionalLight = null;
-        }
-    }
-    
+function updateShading() {
+    // This function controls shading (lighting), not cast shadows
+    // When enabled: light offset from camera creates visible shading on spheres
+    // When disabled: light follows camera for flat appearance
     renderMolecule();
 }
 
@@ -1515,9 +1554,9 @@ function setupEventListeners() {
         renderMolecule();
     });
 
-    safeAddListener('show-shadow', 'change', function() {
-        settings.showShadow = this.checked;
-        updateShadow();
+    safeAddListener('show-shading', 'change', function() {
+        settings.showShading = this.checked;
+        updateShading();
     });
 
     safeAddListener('show-energy-plot', 'change', function() {

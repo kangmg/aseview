@@ -122,24 +122,13 @@ function createAtomStyle2D(pos, symbol, atomScale) {
 function createAtomStyleCartoon(pos, symbol, atomScale) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    
-    // Create simple 2-step gradient map for clean toon shading
-    const colors = new Uint8Array(2);
-    colors[0] = 0;      // Dark
-    colors[1] = 255;    // Light
-    const gradientMap = new THREE.DataTexture(colors, 2, 1, THREE.LuminanceFormat);
-    gradientMap.minFilter = THREE.NearestFilter;
-    gradientMap.magFilter = THREE.NearestFilter;
-    gradientMap.needsUpdate = true;
-    
-    const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);  // Increased from 32 to 64
+    const geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
     const toonMaterial = new THREE.MeshToonMaterial({
-        color: new THREE.Color(info.color),
-        gradientMap: gradientMap
+        color: new THREE.Color(info.color)
     });
     const sphere = new THREE.Mesh(geometry, toonMaterial);
 
-    const outlineGeometry = new THREE.SphereGeometry(scaledRadius * 1.05, 64, 64);  // Increased from 32 to 64
+    const outlineGeometry = new THREE.SphereGeometry(scaledRadius * 1.05, 32, 32);
     const outlineMaterial = new THREE.MeshBasicMaterial({
         color: 0x000000,
         side: THREE.BackSide
@@ -214,7 +203,7 @@ function createAtomStyleNeon(pos, symbol, atomScale) {
 function createAtomStyleGlossy(pos, symbol, atomScale) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);
+    const geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
     const material = getStandardMaterial(info.color, 'glossy');
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
@@ -224,7 +213,7 @@ function createAtomStyleGlossy(pos, symbol, atomScale) {
 function createAtomStyleMetallic(pos, symbol, atomScale) {
     const info = atomInfo[symbol] || info['default'];
     const scaledRadius = info.radius * atomScale;
-    const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);
+    const geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
     const material = getStandardMaterial(info.color, 'metallic');
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
@@ -234,7 +223,7 @@ function createAtomStyleMetallic(pos, symbol, atomScale) {
 function createAtomStyleDefault(pos, symbol, atomScale) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);
+    const geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
     const material = getStandardMaterial(info.color, 'default');
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
@@ -246,74 +235,20 @@ function createAtomStyleRowan(pos, symbol, atomScale) {
     const scaledRadius = info.radius * atomScale;
     const group = new THREE.Group();
 
-    // Use higher resolution to avoid banding artifacts
-    const geometry = new THREE.SphereGeometry(scaledRadius, 128, 128);
+    const geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
     const material = new THREE.MeshLambertMaterial({
         color: new THREE.Color(info.color),
-        flatShading: false
     });
     const sphere = new THREE.Mesh(geometry, material);
     group.add(sphere);
 
-    const outlineGeometry = new THREE.SphereGeometry(scaledRadius * 1.05, 64, 64);
+    const outlineGeometry = new THREE.SphereGeometry(scaledRadius * 1.05, 32, 32);
     const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
     const outline = new THREE.Mesh(outlineGeometry, outlineMaterial);
     group.add(outline);
 
     group.position.copy(pos);
     return group;
-}
-
-function createAtomStyleBubble(pos, symbol, atomScale) {
-    const info = atomInfo[symbol] || atomInfo['default'];
-    const scaledRadius = info.radius * atomScale;
-    
-    // Create canvas with radial gradient for bubble effect
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const context = canvas.getContext('2d');
-    
-    const centerX = 256;
-    const centerY = 256;
-    const radius = 240;
-    
-    // Create radial gradient for bubble effect
-    const gradient = context.createRadialGradient(
-        centerX - radius * 0.3, centerY - radius * 0.3, 0,  // Highlight position
-        centerX, centerY, radius
-    );
-    
-    const atomColor = new THREE.Color(info.color);
-    const colorStyle = atomColor.getStyle();
-    
-    // Bubble gradient: bright highlight -> main color -> darker edge
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');  // Bright highlight
-    gradient.addColorStop(0.3, `${colorStyle.slice(0, -1)}, 0.7)`);  // Main color
-    gradient.addColorStop(0.7, `${colorStyle.slice(0, -1)}, 0.5)`);  // Slightly darker
-    gradient.addColorStop(1.0, `${colorStyle.slice(0, -1)}, 0.3)`);  // Transparent edge
-    
-    context.fillStyle = gradient;
-    context.beginPath();
-    context.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-    context.fill();
-    
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.needsUpdate = true;
-    
-    const spriteMaterial = new THREE.SpriteMaterial({
-        map: texture,
-        transparent: true,
-        opacity: 0.8,
-        depthTest: true,
-        depthWrite: false
-    });
-    
-    const sprite = new THREE.Sprite(spriteMaterial);
-    sprite.position.copy(pos);
-    sprite.scale.set(scaledRadius * 2.5, scaledRadius * 2.5, 1);
-    
-    return sprite;
 }
 
 function createAtomStyleGrey(pos, symbol, atomScale, color) {
@@ -403,19 +338,8 @@ function createBondStyleCartoon(p1, p2, sym1, sym2, bondThickness, atomScale) {
     const { startPos, endPos, dir } = bondPoints;
     const distance = startPos.distanceTo(endPos);
 
-    // Create gradient map for toon shading
-    const colors = new Uint8Array(3);
-    for (let c = 0; c <= 2; c++) {
-        colors[c] = (c / 2) * 256;
-    }
-    const gradientMap = new THREE.DataTexture(colors, colors.length, 1, THREE.LuminanceFormat);
-    gradientMap.needsUpdate = true;
-
     const geometry = new THREE.CylinderGeometry(bondThickness, bondThickness, distance, 8);
-    const material = new THREE.MeshToonMaterial({ 
-        color: 0x000000,
-        gradientMap: gradientMap
-    });
+    const material = new THREE.MeshToonMaterial({ color: 0x000000 });
     const bond = new THREE.Mesh(geometry, material);
     bond.position.lerpVectors(startPos, endPos, 0.5);
     bond.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
@@ -531,44 +455,6 @@ function createBondStyleRowan(p1, p2, sym1, sym2, bondThickness, atomScale) {
     return bond;
 }
 
-function createBondStyleBubble(p1, p2, sym1, sym2, bondThickness, atomScale) {
-    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, 'default');
-    if (!bondPoints) return null;
-    const { startPos, endPos } = bondPoints;
-
-    const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
-    const color1 = (atomInfo[sym1] || atomInfo.default).color;
-    const color2 = (atomInfo[sym2] || atomInfo.default).color;
-
-    const bondGroup = new THREE.Group();
-    
-    // Create semi-transparent tubes with gradient-like appearance
-    const bond1 = createHalfBondBubble(startPos, midPoint, color1, bondThickness);
-    const bond2 = createHalfBondBubble(midPoint, endPos, color2, bondThickness);
-    
-    if (bond1) bondGroup.add(bond1);
-    if (bond2) bondGroup.add(bond2);
-    
-    return bondGroup;
-}
-
-function createHalfBondBubble(start, end, color, bondThickness) {
-    if (start.distanceTo(end) <= 0) return null;
-    
-    const path = new THREE.LineCurve3(start, end);
-    const geometry = new THREE.TubeGeometry(path, 2, bondThickness, 12, false);
-    const material = new THREE.MeshPhongMaterial({ 
-        color: color,
-        transparent: true,
-        opacity: 0.4,  // More transparent for lighter appearance
-        shininess: 80,
-        specular: 0xffffff
-    });
-    const bond = new THREE.Mesh(geometry, material);
-    
-    return bond;
-}
-
 function createBondStyleGrey(p1, p2, sym1, sym2, bondThickness, atomScale, colorMap) {
     // 원자 정보 가져오기
     const info1 = atomInfo[sym1] || atomInfo['default'];
@@ -608,20 +494,9 @@ function createBondStyleGrey(p1, p2, sym1, sym2, bondThickness, atomScale, color
 function createHalfBondGrey(start, end, color, bondThickness) {
     if (start.distanceTo(end) <= 0) return null;
     
-    // Create gradient map for toon shading
-    const colors = new Uint8Array(3);
-    for (let c = 0; c <= 2; c++) {
-        colors[c] = (c / 2) * 256;
-    }
-    const gradientMap = new THREE.DataTexture(colors, colors.length, 1, THREE.LuminanceFormat);
-    gradientMap.needsUpdate = true;
-    
     const path = new THREE.LineCurve3(start, end);
     const geometry = new THREE.TubeGeometry(path, 1, bondThickness, 8, false);
-    const material = new THREE.MeshToonMaterial({ 
-        color: color,
-        gradientMap: gradientMap
-    });
+    const material = new THREE.MeshToonMaterial({ color: color });
     const bond = new THREE.Mesh(geometry, material);
     
     return bond;
