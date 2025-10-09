@@ -1,0 +1,3 @@
+include README.md
+include data.json
+recursive-include aseview/static *.html *.css *.js
