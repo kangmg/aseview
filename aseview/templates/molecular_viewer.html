@@ -406,10 +406,10 @@
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Bond Threshold Scale</span>
-                                <span class="slider-value" id="bond-threshold-value">1.7</span>
+                                <span class="slider-value" id="bond-threshold-value">1.0</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.5" max="3" step="0.1" value="1.7" class="slider" id="bond-threshold">
+                                <input type="range" min="0.5" max="3" step="0.1" value="1.0" class="slider" id="bond-threshold">
                             </div>
                         </div>
 
@@ -721,7 +721,7 @@ let cards = {
 let periodicities = [];
 
 let settings = {
-    bondThreshold: 1.7,
+    bondThreshold: 1.0,
     bondThickness: 0.1,
     atomSize: 0.4,
     animationSpeed: 30,
@@ -785,79 +785,67 @@ let animationState = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    syncUIWithSettings();
+    initSettingsFromUI();
     setupEventListeners();
     initRenderer();
 });
 
-// Sync UI elements with settings on page load
-function syncUIWithSettings() {
-    // Bond Threshold
+// Initialize settings from UI values on page load
+function initSettingsFromUI() {
     const bondThresholdSlider = document.getElementById('bond-threshold');
-    const bondThresholdValue = document.getElementById('bond-threshold-value');
-    if (bondThresholdSlider && bondThresholdValue) {
-        bondThresholdSlider.value = settings.bondThreshold;
-        bondThresholdValue.textContent = settings.bondThreshold;
+    if (bondThresholdSlider) {
+        settings.bondThreshold = parseFloat(bondThresholdSlider.value);
     }
     
-    // Bond Thickness
     const bondThicknessSlider = document.getElementById('bond-thickness');
-    const bondThicknessValue = document.getElementById('bond-thickness-value');
-    if (bondThicknessSlider && bondThicknessValue) {
-        bondThicknessSlider.value = settings.bondThickness;
-        bondThicknessValue.textContent = settings.bondThickness.toFixed(2);
+    if (bondThicknessSlider) {
+        settings.bondThickness = parseFloat(bondThicknessSlider.value);
     }
     
-    // Atom Size
     const atomSizeSlider = document.getElementById('atom-size');
-    const atomSizeValue = document.getElementById('atom-size-value');
-    if (atomSizeSlider && atomSizeValue) {
-        atomSizeSlider.value = settings.atomSize;
-        atomSizeValue.textContent = settings.atomSize.toFixed(1) + '×';
+    if (atomSizeSlider) {
+        settings.atomSize = parseFloat(atomSizeSlider.value);
     }
     
-    // Animation Speed
     const animSpeedSlider = document.getElementById('animation-speed');
-    const animSpeedValue = document.getElementById('animation-speed-value');
-    if (animSpeedSlider && animSpeedValue) {
-        animSpeedSlider.value = settings.animationSpeed;
-        animSpeedValue.textContent = settings.animationSpeed;
+    if (animSpeedSlider) {
+        settings.animationSpeed = parseInt(animSpeedSlider.value, 10);
     }
     
-    // Force Scale
     const forceScaleSlider = document.getElementById('force-scale');
-    const forceScaleValue = document.getElementById('force-scale-value');
-    if (forceScaleSlider && forceScaleValue) {
-        forceScaleSlider.value = settings.forceScale;
-        forceScaleValue.textContent = settings.forceScale.toFixed(1) + '×';
+    if (forceScaleSlider) {
+        settings.forceScale = parseFloat(forceScaleSlider.value);
     }
     
-    // Background Color
     const bgColorInput = document.getElementById('background-color');
-    const bgColorValue = document.getElementById('background-color-value');
-    if (bgColorInput && bgColorValue) {
-        bgColorInput.value = settings.backgroundColor;
-        bgColorValue.textContent = settings.backgroundColor;
+    if (bgColorInput) {
+        settings.backgroundColor = bgColorInput.value;
     }
     
-    // Style
     const styleSelect = document.getElementById('style');
     if (styleSelect) {
-        styleSelect.value = settings.style;
+        settings.style = styleSelect.value;
     }
     
-    // Checkboxes
     const showCellCheckbox = document.getElementById('show-cell');
-    if (showCellCheckbox) showCellCheckbox.checked = settings.showCell;
+    if (showCellCheckbox) {
+        settings.showCell = showCellCheckbox.checked;
+    }
     
     const showBondCheckbox = document.getElementById('show-bond');
-    if (showBondCheckbox) showBondCheckbox.checked = settings.showBond;
+    if (showBondCheckbox) {
+        settings.showBond = showBondCheckbox.checked;
+    }
     
     const showShadingCheckbox = document.getElementById('show-shading');
-    if (showShadingCheckbox) showShadingCheckbox.checked = settings.showShading;
+    if (showShadingCheckbox) {
+        settings.showShading = showShadingCheckbox.checked;
+    }
     
     const showForcesCheckbox = document.getElementById('show-forces');
-    if (showForcesCheckbox) showForcesCheckbox.checked = settings.showForces;
+    if (showForcesCheckbox) {
+        settings.showForces = showForcesCheckbox.checked;
+    }
 }
 
 function initRenderer() {

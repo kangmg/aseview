@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -224,11 +225,11 @@
             border-radius: 50%;
         }
 
-        input:checked + .slider-switch {
+        input:checked+.slider-switch {
             background-color: var(--accent-color);
         }
 
-        input:checked + .slider-switch:before {
+        input:checked+.slider-switch:before {
             transform: translateX(20px);
         }
 
@@ -365,10 +366,17 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
+
         /* Help text */
         .help-text {
             position: absolute;
@@ -387,6 +395,7 @@
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
     <script src="/static/js/styles.js"></script>
 </head>
+
 <body>
     <div class="app">
         <!-- Sidebar -->
@@ -397,8 +406,10 @@
                     <div class="card-header" onclick="toggleCard('advanced')">
                         <h3>
                             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                             Advanced Settings
                         </h3>
@@ -410,10 +421,11 @@
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Bond Threshold Scale</span>
-                                <span class="slider-value" id="bond-threshold-value">1.7</span>
+                                <span class="slider-value" id="bond-threshold-value">1.0</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.5" max="3" step="0.1" value="1.7" class="slider" id="bond-threshold">
+                                <input type="range" min="0.5" max="3" step="0.1" value="1.0" class="slider"
+                                    id="bond-threshold">
                             </div>
                         </div>
 
@@ -423,7 +435,8 @@
                                 <span class="slider-value" id="bond-thickness-value">0.10</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.05" max="0.17" step="0.01" value="0.1" class="slider" id="bond-thickness">
+                                <input type="range" min="0.05" max="0.17" step="0.01" value="0.1" class="slider"
+                                    id="bond-thickness">
                             </div>
                         </div>
 
@@ -433,7 +446,8 @@
                                 <span class="slider-value" id="atom-size-value">0.4×</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.2" max="2" step="0.1" value="0.4" class="slider" id="atom-size">
+                                <input type="range" min="0.2" max="2" step="0.1" value="0.4" class="slider"
+                                    id="atom-size">
                             </div>
                         </div>
 
@@ -481,7 +495,8 @@
                     <div class="card-header" onclick="toggleCard('display')">
                         <h3>
                             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
                             Display Settings
                         </h3>
@@ -527,14 +542,17 @@
                             <div class="button-group">
                                 <button class="btn" id="orthographic-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
                                     </svg>
                                     Orthographic
                                 </button>
                                 <button class="btn active" id="perspective-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 22V12h6v10" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 22V12h6v10" />
                                     </svg>
                                     Perspective
                                 </button>
@@ -548,7 +566,8 @@
                     <div class="card-header" onclick="toggleCard('interaction')">
                         <h3>
                             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
                             </svg>
                             Interaction Settings
                         </h3>
@@ -564,14 +583,17 @@
                             <div class="button-group">
                                 <button class="btn active" id="trackball-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
                                     </svg>
                                     TrackBall
                                 </button>
                                 <button class="btn" id="orbit-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 22V12h6v10" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 22V12h6v10" />
                                     </svg>
                                     Orbit
                                 </button>
@@ -585,7 +607,8 @@
                     <div class="card-header" onclick="toggleCard('molecules')">
                         <h3>
                             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                             </svg>
                             Molecules
                         </h3>
@@ -597,7 +620,8 @@
                         <div class="molecule-item">
                             <div class="molecule-header">
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <input type="color" value="#3b82f6" class="color-input" style="width: 24px; height: 24px;" id="molecule-1-color">
+                                    <input type="color" value="#3b82f6" class="color-input"
+                                        style="width: 24px; height: 24px;" id="molecule-1-color">
                                     <span class="molecule-name">Protein A</span>
                                 </div>
                                 <label class="switch">
@@ -611,7 +635,8 @@
                                     <span class="slider-value" id="molecule-1-opacity-value">80%</span>
                                 </div>
                                 <div class="slider-container">
-                                    <input type="range" min="0" max="1" step="0.1" value="0.8" class="slider" id="molecule-1-opacity">
+                                    <input type="range" min="0" max="1" step="0.1" value="0.8" class="slider"
+                                        id="molecule-1-opacity">
                                 </div>
                             </div>
                         </div>
@@ -619,7 +644,8 @@
                         <div class="molecule-item">
                             <div class="molecule-header">
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <input type="color" value="#ef4444" class="color-input" style="width: 24px; height: 24px;" id="molecule-2-color">
+                                    <input type="color" value="#ef4444" class="color-input"
+                                        style="width: 24px; height: 24px;" id="molecule-2-color">
                                     <span class="molecule-name">Ligand B</span>
                                 </div>
                                 <label class="switch">
@@ -633,7 +659,8 @@
                                     <span class="slider-value" id="molecule-2-opacity-value">90%</span>
                                 </div>
                                 <div class="slider-container">
-                                    <input type="range" min="0" max="1" step="0.1" value="0.9" class="slider" id="molecule-2-opacity">
+                                    <input type="range" min="0" max="1" step="0.1" value="0.9" class="slider"
+                                        id="molecule-2-opacity">
                                 </div>
                             </div>
                         </div>
@@ -641,7 +668,8 @@
                         <div class="molecule-item">
                             <div class="molecule-header">
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <input type="color" value="#06b6d4" class="color-input" style="width: 24px; height: 24px;" id="molecule-3-color">
+                                    <input type="color" value="#06b6d4" class="color-input"
+                                        style="width: 24px; height: 24px;" id="molecule-3-color">
                                     <span class="molecule-name">Water</span>
                                 </div>
                                 <label class="switch">
@@ -655,7 +683,8 @@
                                     <span class="slider-value" id="molecule-3-opacity-value">50%</span>
                                 </div>
                                 <div class="slider-container">
-                                    <input type="range" min="0" max="1" step="0.1" value="0.5" class="slider" id="molecule-3-opacity">
+                                    <input type="range" min="0" max="1" step="0.1" value="0.5" class="slider"
+                                        id="molecule-3-opacity">
                                 </div>
                             </div>
                         </div>
@@ -675,7 +704,8 @@
             <div class="toolbar">
                 <button class="toolbar-btn" id="download-btn">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                 </button>
             </div>
@@ -690,709 +720,695 @@
     </div>
 
     <script>
-        
-// Global variables
-let molecularData = [];
-let sidebarOpen = true;
-let cards = {
-    advanced: true,
-    display: true,
-    interaction: true,
-    molecules: true
-};
 
-let periodicities = [];
+        // Global variables
+        let molecularData = [];
+        let sidebarOpen = true;
+        let cards = {
+            advanced: true,
+            display: true,
+            interaction: true,
+            molecules: true
+        };
 
-// Molecule display settings (color, opacity, visibility for each molecule)
-let moleculeSettings = [];
+        let periodicities = [];
 
-let settings = {
-    bondThreshold: 1.7,
-    bondThickness: 0.1,
-    atomSize: 0.4,
-    animationSpeed: 30,
-    forceScale: 0.5,
-    backgroundColor: '#1f2937',
-    style: 'cartoon',
-    showCell: true,
-    showBond: true,
-    showShading: false,
-    showEnergyPlot: false,
-    showForces: false,
-    viewMode: 'Perspective',
-    rotationMode: 'TrackBall'
-};
+        // Molecule display settings (color, opacity, visibility for each molecule)
+        let moleculeSettings = [];
 
-// Check if styles.js is loaded
-if (typeof atomInfo === 'undefined') {
-    console.error('styles.js not loaded! atomInfo is undefined');
-}
-if (typeof createAtomStyleDefault === 'undefined') {
-    console.error('styles.js not loaded! createAtomStyleDefault is undefined');
-}
+        let settings = {
+            bondThreshold: 1.0,
+            bondThickness: 0.1,
+            atomSize: 0.4,
+            animationSpeed: 30,
+            forceScale: 0.5,
+            backgroundColor: '#1f2937',
+            style: 'cartoon',
+            showCell: true,
+            showBond: true,
+            showShading: false,
+            showEnergyPlot: false,
+            showForces: false,
+            viewMode: 'Perspective',
+            rotationMode: 'TrackBall'
+        };
 
-const atomFactories = {
-    'default': (pos, symbol, atomScale) => createAtomStyleDefault(pos, symbol, atomScale),
-    '2d': (pos, symbol, atomScale) => createAtomStyle2D(pos, symbol, atomScale),
-    'cartoon': (pos, symbol, atomScale) => createAtomStyleCartoon(pos, symbol, atomScale),
-    'neon': (pos, symbol, atomScale) => createAtomStyleNeon(pos, symbol, atomScale),
-    'glossy': (pos, symbol, atomScale) => createAtomStyleGlossy(pos, symbol, atomScale),
-    'metallic': (pos, symbol, atomScale) => createAtomStyleMetallic(pos, symbol, atomScale),
-    'rowan': (pos, symbol, atomScale) => createAtomStyleRowan(pos, symbol, atomScale),
-    'bubble': (pos, symbol, atomScale) => createAtomStyleBubble(pos, symbol, atomScale),
-    'grey': (pos, symbol, atomScale, helpers) => createAtomStyleGrey(pos, symbol, atomScale, helpers.greyColorMap[symbol] ?? 0x808080)
-};
-
-const bondFactories = {
-    'default': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'default'),
-    '2d': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyle2D(p1, p2, sym1, sym2, bondRadius, atomScale),
-    'cartoon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleCartoon(p1, p2, sym1, sym2, bondRadius, atomScale),
-    'neon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale),
-    'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy'),
-    'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic'),
-    'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale),
-    'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale),
-    'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap)
-};
-
-let scene = null;
-let camera = null;
-let renderer = null;
-let controls = null;
-let moleculeGroup = null;
-let directionalLight = null;
-let cameraNeedsFit = true;
-
-// Animation state
-let animationState = {
-    isPlaying: false,
-    currentFrame: 0,
-    animationInterval: null
-};
-
-document.addEventListener('DOMContentLoaded', function() {
-    syncUIWithSettings();
-    setupEventListeners();
-    initRenderer();
-});
-
-// Sync UI elements with settings on page load
-function syncUIWithSettings() {
-    // Bond Threshold
-    const bondThresholdSlider = document.getElementById('bond-threshold');
-    const bondThresholdValue = document.getElementById('bond-threshold-value');
-    if (bondThresholdSlider && bondThresholdValue) {
-        bondThresholdSlider.value = settings.bondThreshold;
-        bondThresholdValue.textContent = settings.bondThreshold;
-    }
-    
-    // Bond Thickness
-    const bondThicknessSlider = document.getElementById('bond-thickness');
-    const bondThicknessValue = document.getElementById('bond-thickness-value');
-    if (bondThicknessSlider && bondThicknessValue) {
-        bondThicknessSlider.value = settings.bondThickness;
-        bondThicknessValue.textContent = settings.bondThickness.toFixed(2);
-    }
-    
-    // Atom Size
-    const atomSizeSlider = document.getElementById('atom-size');
-    const atomSizeValue = document.getElementById('atom-size-value');
-    if (atomSizeSlider && atomSizeValue) {
-        atomSizeSlider.value = settings.atomSize;
-        atomSizeValue.textContent = settings.atomSize.toFixed(1) + '×';
-    }
-    
-    // Background Color
-    const bgColorInput = document.getElementById('background-color');
-    const bgColorValue = document.getElementById('background-color-value');
-    if (bgColorInput && bgColorValue) {
-        bgColorInput.value = settings.backgroundColor;
-        bgColorValue.textContent = settings.backgroundColor;
-    }
-    
-    // Style
-    const styleSelect = document.getElementById('style');
-    if (styleSelect) {
-        styleSelect.value = settings.style;
-    }
-    
-    // Color By
-    const colorBySelect = document.getElementById('color-by');
-    if (colorBySelect) {
-        colorBySelect.value = 'Atom';  // Default value
-    }
-    
-    // Checkboxes
-    const showCellCheckbox = document.getElementById('show-cell');
-    if (showCellCheckbox) showCellCheckbox.checked = settings.showCell;
-    
-    const showBondCheckbox = document.getElementById('show-bond');
-    if (showBondCheckbox) showBondCheckbox.checked = settings.showBond;
-    
-    const showShadingCheckbox = document.getElementById('show-shading');
-    if (showShadingCheckbox) showShadingCheckbox.checked = settings.showShading;
-}
-
-function initRenderer() {
-    const viewer = document.getElementById('viewer');
-    if (!viewer) return;
-
-    const placeholderCanvas = document.getElementById('molecule-canvas');
-    const helpText = document.getElementById('help-text');
-    if (placeholderCanvas && placeholderCanvas.parentElement === viewer) {
-        placeholderCanvas.remove();
-    }
-
-    renderer = new THREE.WebGLRenderer({ 
-        antialias: true, 
-        alpha: true,
-        preserveDrawingBuffer: true  // Required for canvas capture (PNG export)
-    });
-    renderer.domElement.id = 'molecule-canvas';
-    renderer.sortObjects = true;
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
-    renderer.setSize(Math.max(viewer.clientWidth, 1), Math.max(viewer.clientHeight, 1));
-    
-    // Enable better rendering for special effects like neon
-    renderer.outputEncoding = THREE.sRGBEncoding;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
-    if (helpText && helpText.parentElement === viewer) {
-        viewer.insertBefore(renderer.domElement, helpText);
-    } else {
-        viewer.appendChild(renderer.domElement);
-    }
-
-    scene = new THREE.Scene();
-    updateBackgroundColor();
-
-    setupCamera();
-    setupControls();
-
-    // Lighting setup - matching old version
-    directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(10, 10, 10);
-    scene.add(directionalLight);
-    
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-    scene.add(ambientLight);
-
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    animate();
-}
-
-function setupCamera() {
-    const viewer = document.getElementById('viewer');
-    if (!viewer) return;
-
-    const width = Math.max(viewer.clientWidth, 1);
-    const height = Math.max(viewer.clientHeight, 1);
-    const aspect = width / height;
-
-    let newCamera;
-    if (settings.viewMode === 'Orthographic') {
-        const frustumSize = 20;
-        newCamera = new THREE.OrthographicCamera(
-            (frustumSize * aspect) / -2,
-            (frustumSize * aspect) / 2,
-            frustumSize / 2,
-            frustumSize / -2,
-            -1000,
-            1000
-        );
-    } else {
-        newCamera = new THREE.PerspectiveCamera(55, aspect, 0.1, 2000);
-    }
-
-    if (camera) {
-        newCamera.position.copy(camera.position);
-        newCamera.zoom = camera.zoom;
-        newCamera.updateProjectionMatrix();
-    } else {
-        newCamera.position.set(0, 0, 10);
-    }
-
-    camera = newCamera;
-}
-
-function setupControls() {
-    if (!renderer || !camera) return;
-
-    const target = controls ? controls.target.clone() : new THREE.Vector3();
-    if (controls) {
-        controls.dispose();
-    }
-
-    if (settings.rotationMode === 'Orbit') {
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-    } else {
-        controls = new THREE.TrackballControls(camera, renderer.domElement);
-        controls.rotateSpeed = 5.0;
-        controls.zoomSpeed = 1.2;
-        controls.panSpeed = 0.8;
-    }
-
-    controls.target.copy(target);
-    controls.update();
-}
-
-function handleResize() {
-    if (!renderer || !camera) return;
-    const viewer = document.getElementById('viewer');
-    if (!viewer) return;
-    const width = Math.max(viewer.clientWidth, 1);
-    const height = Math.max(viewer.clientHeight, 1);
-    renderer.setSize(width, height);
-
-    if (camera.isPerspectiveCamera) {
-        camera.aspect = width / height;
-    } else {
-        const frustumSize = 20;
-        const aspect = width / height;
-        camera.left = (frustumSize * aspect) / -2;
-        camera.right = (frustumSize * aspect) / 2;
-        camera.top = frustumSize / 2;
-        camera.bottom = frustumSize / -2;
-    }
-
-    camera.updateProjectionMatrix();
-    if (controls && typeof controls.handleResize === 'function') {
-        controls.handleResize();
-    }
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-    if (controls && typeof controls.update === 'function') {
-        controls.update();
-    }
-    // Light behavior depends on shading setting
-    if (directionalLight && camera) {
-        if (settings.showShading) {
-            // Light position relative to camera for consistent shading direction
-            // Light stays in camera space, so shading direction is fixed from viewer's perspective
-            const offset = new THREE.Vector3(5, 8, 5);
-            const lightPos = camera.position.clone().add(
-                offset.applyQuaternion(camera.quaternion)
-            );
-            directionalLight.position.copy(lightPos);
-        } else {
-            // Light follows camera for flat lighting (no shading)
-            directionalLight.position.copy(camera.position);
+        // Check if styles.js is loaded
+        if (typeof atomInfo === 'undefined') {
+            console.error('styles.js not loaded! atomInfo is undefined');
         }
-    }
-    if (renderer && scene && camera) {
-        renderer.render(scene, camera);
-    }
-}
+        if (typeof createAtomStyleDefault === 'undefined') {
+            console.error('styles.js not loaded! createAtomStyleDefault is undefined');
+        }
 
-// Overlay Viewer - renderMolecule function
-// This renders all molecules simultaneously with different colors and opacity
+        const atomFactories = {
+            'default': (pos, symbol, atomScale) => createAtomStyleDefault(pos, symbol, atomScale),
+            '2d': (pos, symbol, atomScale) => createAtomStyle2D(pos, symbol, atomScale),
+            'cartoon': (pos, symbol, atomScale) => createAtomStyleCartoon(pos, symbol, atomScale),
+            'neon': (pos, symbol, atomScale) => createAtomStyleNeon(pos, symbol, atomScale),
+            'glossy': (pos, symbol, atomScale) => createAtomStyleGlossy(pos, symbol, atomScale),
+            'metallic': (pos, symbol, atomScale) => createAtomStyleMetallic(pos, symbol, atomScale),
+            'rowan': (pos, symbol, atomScale) => createAtomStyleRowan(pos, symbol, atomScale),
+            'bubble': (pos, symbol, atomScale) => createAtomStyleBubble(pos, symbol, atomScale),
+            'grey': (pos, symbol, atomScale, helpers) => createAtomStyleGrey(pos, symbol, atomScale, helpers.greyColorMap[symbol] ?? 0x808080)
+        };
 
-function renderMolecule() {
-    if (!scene || !camera || !renderer) return;
-    if (!molecularData || molecularData.length === 0) return;
+        const bondFactories = {
+            'default': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'default'),
+            '2d': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyle2D(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'cartoon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleCartoon(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'neon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy'),
+            'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic'),
+            'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap)
+        };
 
-    if (moleculeGroup) {
-        scene.remove(moleculeGroup);
-        disposeObject3D(moleculeGroup);
-    }
+        let scene = null;
+        let camera = null;
+        let renderer = null;
+        let controls = null;
+        let moleculeGroup = null;
+        let directionalLight = null;
+        let cameraNeedsFit = true;
 
-    moleculeGroup = new THREE.Group();
-    
-    const styleName = (settings.style || 'cartoon').toLowerCase();
-    const atomScale = Math.max(settings.atomSize, 0.05);
-    const bondRadius = Math.max(settings.bondThickness, 0.005);
-    const bondCutoff = settings.bondThreshold;
-    const colorBy = settings.colorBy || 'Atom';
-    
-    const atomFactory = atomFactories[styleName] || atomFactories['default'];
-    const bondFactory = bondFactories[styleName] || bondFactories['default'];
-    
-    // Render each molecule
-    molecularData.forEach((molecule, molIndex) => {
-        if (!molecule || !molecule.positions || !molecule.symbols) return;
-        
-        // Get molecule settings (color, opacity, visibility)
-        const molSettings = moleculeSettings[molIndex] || {};
-        if (molSettings.visible === false) return;  // Skip if hidden
-        
-        const moleculeColor = molSettings.color || 0x3b82f6;  // Default blue
-        const opacity = molSettings.opacity !== undefined ? molSettings.opacity : 0.8;
-        
-        const positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
-        const symbols = molecule.symbols;
-        
-        // Create molecule group
-        const molGroup = new THREE.Group();
-        molGroup.userData.moleculeIndex = molIndex;
-        
-        // Grey color map for grey style
-        const uniqueSymbols = [...new Set(symbols)];
-        const greyColorMap = {};
-        if (uniqueSymbols.length > 0) {
-            uniqueSymbols.forEach((sym, idx) => {
-                const lightness = (idx + 1) / (uniqueSymbols.length + 1);
-                greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
+        // Animation state
+        let animationState = {
+            isPlaying: false,
+            currentFrame: 0,
+            animationInterval: null
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initSettingsFromUI();
+            setupEventListeners();
+            initRenderer();
+        });
+
+        // Initialize settings from UI values on page load
+        function initSettingsFromUI() {
+            const bondThresholdSlider = document.getElementById('bond-threshold');
+            if (bondThresholdSlider) {
+                settings.bondThreshold = parseFloat(bondThresholdSlider.value);
+            }
+
+            const bondThicknessSlider = document.getElementById('bond-thickness');
+            if (bondThicknessSlider) {
+                settings.bondThickness = parseFloat(bondThicknessSlider.value);
+            }
+
+            const atomSizeSlider = document.getElementById('atom-size');
+            if (atomSizeSlider) {
+                settings.atomSize = parseFloat(atomSizeSlider.value);
+            }
+
+            const bgColorInput = document.getElementById('background-color');
+            if (bgColorInput) {
+                settings.backgroundColor = bgColorInput.value;
+            }
+
+            const styleSelect = document.getElementById('style');
+            if (styleSelect) {
+                settings.style = styleSelect.value;
+            }
+
+            const showCellCheckbox = document.getElementById('show-cell');
+            if (showCellCheckbox) {
+                settings.showCell = showCellCheckbox.checked;
+            }
+
+            const showBondCheckbox = document.getElementById('show-bond');
+            if (showBondCheckbox) {
+                settings.showBond = showBondCheckbox.checked;
+            }
+
+            const showShadingCheckbox = document.getElementById('show-shading');
+            if (showShadingCheckbox) {
+                settings.showShading = showShadingCheckbox.checked;
+            }
+        }
+
+        function initRenderer() {
+            const viewer = document.getElementById('viewer');
+            if (!viewer) return;
+
+            const placeholderCanvas = document.getElementById('molecule-canvas');
+            const helpText = document.getElementById('help-text');
+            if (placeholderCanvas && placeholderCanvas.parentElement === viewer) {
+                placeholderCanvas.remove();
+            }
+
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true,
+                preserveDrawingBuffer: true  // Required for canvas capture (PNG export)
             });
+            renderer.domElement.id = 'molecule-canvas';
+            renderer.sortObjects = true;
+            renderer.setPixelRatio(window.devicePixelRatio || 1);
+            renderer.setSize(Math.max(viewer.clientWidth, 1), Math.max(viewer.clientHeight, 1));
+
+            // Enable better rendering for special effects like neon
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            if (helpText && helpText.parentElement === viewer) {
+                viewer.insertBefore(renderer.domElement, helpText);
+            } else {
+                viewer.appendChild(renderer.domElement);
+            }
+
+            scene = new THREE.Scene();
+            updateBackgroundColor();
+
+            setupCamera();
+            setupControls();
+
+            // Lighting setup - matching old version
+            directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 10);
+            scene.add(directionalLight);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+            scene.add(ambientLight);
+
+            window.addEventListener('resize', handleResize);
+            handleResize();
+            animate();
         }
-        const helpers = { greyColorMap };
-        
-        // Render bonds
-        if (settings.showBond) {
-            for (let i = 0; i < positions.length; i++) {
-                for (let j = i + 1; j < positions.length; j++) {
-                    const dist = positions[i].distanceTo(positions[j]);
-                    if (dist <= bondCutoff) {
-                        // Always use style system for bonds
-                        let bondMesh = bondFactory(
-                            positions[i], 
-                            positions[j], 
-                            symbols[i], 
-                            symbols[j], 
-                            bondRadius, 
-                            atomScale,
-                            helpers
-                        );
-                        
-                        if (bondMesh) {
-                            // Rowan and Cartoon styles: bonds are always black
-                            const blackBondStyles = ['rowan', 'cartoon'];
-                            const isBlackBondStyle = blackBondStyles.includes(styleName);
-                            
-                            // Color by Molecule: Override bond color (except for black bond styles)
-                            if (colorBy === 'Molecule' && !isBlackBondStyle) {
-                                bondMesh.traverse((child) => {
-                                    if (child.isMesh && child.material) {
-                                        child.material.color.setHex(moleculeColor);
+
+        function setupCamera() {
+            const viewer = document.getElementById('viewer');
+            if (!viewer) return;
+
+            const width = Math.max(viewer.clientWidth, 1);
+            const height = Math.max(viewer.clientHeight, 1);
+            const aspect = width / height;
+
+            let newCamera;
+            if (settings.viewMode === 'Orthographic') {
+                const frustumSize = 20;
+                newCamera = new THREE.OrthographicCamera(
+                    (frustumSize * aspect) / -2,
+                    (frustumSize * aspect) / 2,
+                    frustumSize / 2,
+                    frustumSize / -2,
+                    -1000,
+                    1000
+                );
+            } else {
+                newCamera = new THREE.PerspectiveCamera(55, aspect, 0.1, 2000);
+            }
+
+            if (camera) {
+                newCamera.position.copy(camera.position);
+                newCamera.zoom = camera.zoom;
+                newCamera.updateProjectionMatrix();
+            } else {
+                newCamera.position.set(0, 0, 10);
+            }
+
+            camera = newCamera;
+        }
+
+        function setupControls() {
+            if (!renderer || !camera) return;
+
+            const target = controls ? controls.target.clone() : new THREE.Vector3();
+            if (controls) {
+                controls.dispose();
+            }
+
+            if (settings.rotationMode === 'Orbit') {
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+            } else {
+                controls = new THREE.TrackballControls(camera, renderer.domElement);
+                controls.rotateSpeed = 5.0;
+                controls.zoomSpeed = 1.2;
+                controls.panSpeed = 0.8;
+            }
+
+            controls.target.copy(target);
+            controls.update();
+        }
+
+        function handleResize() {
+            if (!renderer || !camera) return;
+            const viewer = document.getElementById('viewer');
+            if (!viewer) return;
+            const width = Math.max(viewer.clientWidth, 1);
+            const height = Math.max(viewer.clientHeight, 1);
+            renderer.setSize(width, height);
+
+            if (camera.isPerspectiveCamera) {
+                camera.aspect = width / height;
+            } else {
+                const frustumSize = 20;
+                const aspect = width / height;
+                camera.left = (frustumSize * aspect) / -2;
+                camera.right = (frustumSize * aspect) / 2;
+                camera.top = frustumSize / 2;
+                camera.bottom = frustumSize / -2;
+            }
+
+            camera.updateProjectionMatrix();
+            if (controls && typeof controls.handleResize === 'function') {
+                controls.handleResize();
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls && typeof controls.update === 'function') {
+                controls.update();
+            }
+            // Light behavior depends on shading setting
+            if (directionalLight && camera) {
+                if (settings.showShading) {
+                    // Light position relative to camera for consistent shading direction
+                    // Light stays in camera space, so shading direction is fixed from viewer's perspective
+                    const offset = new THREE.Vector3(5, 8, 5);
+                    const lightPos = camera.position.clone().add(
+                        offset.applyQuaternion(camera.quaternion)
+                    );
+                    directionalLight.position.copy(lightPos);
+                } else {
+                    // Light follows camera for flat lighting (no shading)
+                    directionalLight.position.copy(camera.position);
+                }
+            }
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+
+        // Overlay Viewer - renderMolecule function
+        // This renders all molecules simultaneously with different colors and opacity
+
+        function renderMolecule() {
+            if (!scene || !camera || !renderer) return;
+            if (!molecularData || molecularData.length === 0) return;
+
+            if (moleculeGroup) {
+                scene.remove(moleculeGroup);
+                disposeObject3D(moleculeGroup);
+            }
+
+            moleculeGroup = new THREE.Group();
+
+            const styleName = (settings.style || 'cartoon').toLowerCase();
+            const atomScale = Math.max(settings.atomSize, 0.05);
+            const bondRadius = Math.max(settings.bondThickness, 0.005);
+            const bondCutoff = settings.bondThreshold;
+            const colorBy = settings.colorBy || 'Atom';
+
+            const atomFactory = atomFactories[styleName] || atomFactories['default'];
+            const bondFactory = bondFactories[styleName] || bondFactories['default'];
+
+            // Render each molecule
+            molecularData.forEach((molecule, molIndex) => {
+                if (!molecule || !molecule.positions || !molecule.symbols) return;
+
+                // Get molecule settings (color, opacity, visibility)
+                const molSettings = moleculeSettings[molIndex] || {};
+                if (molSettings.visible === false) return;  // Skip if hidden
+
+                const moleculeColor = molSettings.color || 0x3b82f6;  // Default blue
+                const opacity = molSettings.opacity !== undefined ? molSettings.opacity : 0.8;
+
+                const positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
+                const symbols = molecule.symbols;
+
+                // Create molecule group
+                const molGroup = new THREE.Group();
+                molGroup.userData.moleculeIndex = molIndex;
+
+                // Grey color map for grey style
+                const uniqueSymbols = [...new Set(symbols)];
+                const greyColorMap = {};
+                if (uniqueSymbols.length > 0) {
+                    uniqueSymbols.forEach((sym, idx) => {
+                        const lightness = (idx + 1) / (uniqueSymbols.length + 1);
+                        greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
+                    });
+                }
+                const helpers = { greyColorMap };
+
+                // Render bonds
+                if (settings.showBond) {
+                    for (let i = 0; i < positions.length; i++) {
+                        for (let j = i + 1; j < positions.length; j++) {
+                            const dist = positions[i].distanceTo(positions[j]);
+                            if (dist <= bondCutoff) {
+                                // Always use style system for bonds
+                                let bondMesh = bondFactory(
+                                    positions[i],
+                                    positions[j],
+                                    symbols[i],
+                                    symbols[j],
+                                    bondRadius,
+                                    atomScale,
+                                    helpers
+                                );
+
+                                if (bondMesh) {
+                                    // Rowan and Cartoon styles: bonds are always black
+                                    const blackBondStyles = ['rowan', 'cartoon'];
+                                    const isBlackBondStyle = blackBondStyles.includes(styleName);
+
+                                    // Color by Molecule: Override bond color (except for black bond styles)
+                                    if (colorBy === 'Molecule' && !isBlackBondStyle) {
+                                        bondMesh.traverse((child) => {
+                                            if (child.isMesh && child.material) {
+                                                child.material.color.setHex(moleculeColor);
+                                            }
+                                        });
                                     }
-                                });
-                            }
-                            
-                            // Apply opacity
-                            if (opacity < 1.0) {
-                                bondMesh.traverse((child) => {
-                                    if (child.isMesh && child.material) {
-                                        child.material.transparent = true;
-                                        child.material.opacity = opacity;
+
+                                    // Apply opacity
+                                    if (opacity < 1.0) {
+                                        bondMesh.traverse((child) => {
+                                            if (child.isMesh && child.material) {
+                                                child.material.transparent = true;
+                                                child.material.opacity = opacity;
+                                            }
+                                        });
                                     }
-                                });
+
+                                    molGroup.add(bondMesh);
+                                }
                             }
-                            
-                            molGroup.add(bondMesh);
                         }
                     }
                 }
-            }
-        }
-        
-        // Render atoms
-        for (let i = 0; i < positions.length; i++) {
-            // Always use style system for atoms
-            let atomMesh = atomFactory(positions[i], symbols[i], atomScale, helpers);
-            
-            if (!atomMesh) {
-                atomMesh = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
-            }
-            
-            if (atomMesh) {
-                // Color by Molecule: Override atom color
-                if (colorBy === 'Molecule') {
-                    atomMesh.traverse((child) => {
-                        if (child.isMesh && child.material) {
-                            child.material.color.setHex(moleculeColor);
+
+                // Render atoms
+                for (let i = 0; i < positions.length; i++) {
+                    // Always use style system for atoms
+                    let atomMesh = atomFactory(positions[i], symbols[i], atomScale, helpers);
+
+                    if (!atomMesh) {
+                        atomMesh = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
+                    }
+
+                    if (atomMesh) {
+                        // Color by Molecule: Override atom color
+                        if (colorBy === 'Molecule') {
+                            atomMesh.traverse((child) => {
+                                if (child.isMesh && child.material) {
+                                    child.material.color.setHex(moleculeColor);
+                                }
+                            });
                         }
-                    });
-                }
-                
-                // Apply opacity
-                if (opacity < 1.0) {
-                    atomMesh.traverse((child) => {
-                        if (child.isMesh && child.material) {
-                            child.material.transparent = true;
-                            child.material.opacity = opacity;
+
+                        // Apply opacity
+                        if (opacity < 1.0) {
+                            atomMesh.traverse((child) => {
+                                if (child.isMesh && child.material) {
+                                    child.material.transparent = true;
+                                    child.material.opacity = opacity;
+                                }
+                            });
                         }
-                    });
+
+                        molGroup.add(atomMesh);
+                    }
                 }
-                
-                molGroup.add(atomMesh);
+
+                moleculeGroup.add(molGroup);
+            });
+
+            scene.add(moleculeGroup);
+
+            if (cameraNeedsFit) {
+                fitCameraToMolecule(moleculeGroup);
             }
         }
-        
-        moleculeGroup.add(molGroup);
-    });
-    
-    scene.add(moleculeGroup);
-    
-    if (cameraNeedsFit) {
-        fitCameraToMolecule(moleculeGroup);
-    }
-}
 
-function disposeObject3D(obj) {
-    if (!obj) return;
-    
-    obj.traverse((child) => {
-        if (child.geometry) {
-            child.geometry.dispose();
+        function disposeObject3D(obj) {
+            if (!obj) return;
+
+            obj.traverse((child) => {
+                if (child.geometry) {
+                    child.geometry.dispose();
+                }
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(mat => mat.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
+            });
         }
-        if (child.material) {
-            if (Array.isArray(child.material)) {
-                child.material.forEach(mat => mat.dispose());
-            } else {
-                child.material.dispose();
+
+        function fitCameraToMolecule(group) {
+            if (!group || !camera || !controls) return;
+
+            const box = new THREE.Box3().setFromObject(group);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov ? camera.fov * (Math.PI / 180) : 1;
+            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+            cameraZ *= 2.5;
+
+            camera.position.set(center.x + cameraZ * 0.5, center.y + cameraZ * 0.5, center.z + cameraZ);
+            camera.near = cameraZ / 100;
+            camera.far = cameraZ * 100;
+
+            if (camera.isOrthographicCamera) {
+                camera.left = -maxDim;
+                camera.right = maxDim;
+                camera.top = maxDim;
+                camera.bottom = -maxDim;
+            }
+
+            controls.target.copy(center);
+            controls.update();
+            camera.lookAt(center);
+            camera.updateProjectionMatrix();
+            cameraNeedsFit = false;
+        }
+
+        function updateBackgroundColor() {
+            if (!scene || !renderer) return;
+            const color = new THREE.Color(settings.backgroundColor || '#111827');
+            scene.background = color;
+            renderer.setClearColor(color, 1);
+        }
+
+        function updateShading() {
+            // This function controls shading (lighting), not cast shadows
+            // When enabled: light offset from camera creates visible shading on spheres
+            // When disabled: light follows camera for flat appearance
+
+            renderMolecule();
+        }
+
+        function updateFrameDisplay() {
+            const frameSlider = document.getElementById('frame-slider');
+            const frameValue = document.getElementById('frame-value');
+
+            if (frameSlider && molecularData) {
+                const totalFrames = molecularData.length;
+                frameSlider.max = totalFrames;
+                frameSlider.value = animationState.currentFrame + 1;  // 1-indexed for display
+
+                if (frameValue) {
+                    frameValue.textContent = `${animationState.currentFrame + 1} / ${totalFrames}`;
+                }
             }
         }
-    });
-}
 
-function fitCameraToMolecule(group) {
-    if (!group || !camera || !controls) return;
+        function toggleAnimation() {
+            if (!molecularData || molecularData.length <= 1) {
+                console.log('No animation frames available');
+                return;
+            }
 
-    const box = new THREE.Box3().setFromObject(group);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const fov = camera.fov ? camera.fov * (Math.PI / 180) : 1;
-    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-    cameraZ *= 2.5;
+            const playBtn = document.getElementById('play-btn');
 
-    camera.position.set(center.x + cameraZ * 0.5, center.y + cameraZ * 0.5, center.z + cameraZ);
-    camera.near = cameraZ / 100;
-    camera.far = cameraZ * 100;
+            if (animationState.isPlaying) {
+                // Pause
+                animationState.isPlaying = false;
+                if (animationState.animationInterval) {
+                    clearInterval(animationState.animationInterval);
+                    animationState.animationInterval = null;
+                }
 
-    if (camera.isOrthographicCamera) {
-        camera.left = -maxDim;
-        camera.right = maxDim;
-        camera.top = maxDim;
-        camera.bottom = -maxDim;
-    }
-
-    controls.target.copy(center);
-    controls.update();
-    camera.lookAt(center);
-    camera.updateProjectionMatrix();
-    cameraNeedsFit = false;
-}
-
-function updateBackgroundColor() {
-    if (!scene || !renderer) return;
-    const color = new THREE.Color(settings.backgroundColor || '#111827');
-    scene.background = color;
-    renderer.setClearColor(color, 1);
-}
-
-function updateShading() {
-    // This function controls shading (lighting), not cast shadows
-    // When enabled: light offset from camera creates visible shading on spheres
-    // When disabled: light follows camera for flat appearance
-    
-    renderMolecule();
-}
-
-function updateFrameDisplay() {
-    const frameSlider = document.getElementById('frame-slider');
-    const frameValue = document.getElementById('frame-value');
-    
-    if (frameSlider && molecularData) {
-        const totalFrames = molecularData.length;
-        frameSlider.max = totalFrames;
-        frameSlider.value = animationState.currentFrame + 1;  // 1-indexed for display
-        
-        if (frameValue) {
-            frameValue.textContent = `${animationState.currentFrame + 1} / ${totalFrames}`;
-        }
-    }
-}
-
-function toggleAnimation() {
-    if (!molecularData || molecularData.length <= 1) {
-        console.log('No animation frames available');
-        return;
-    }
-    
-    const playBtn = document.getElementById('play-btn');
-    
-    if (animationState.isPlaying) {
-        // Pause
-        animationState.isPlaying = false;
-        if (animationState.animationInterval) {
-            clearInterval(animationState.animationInterval);
-            animationState.animationInterval = null;
-        }
-        
-        // Update button icon to play
-        if (playBtn) {
-            playBtn.innerHTML = `
+                // Update button icon to play
+                if (playBtn) {
+                    playBtn.innerHTML = `
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             `;
-        }
-    } else {
-        // Play
-        animationState.isPlaying = true;
-        const fps = settings.animationSpeed || 30;
-        const interval = 1000 / fps;
-        
-        animationState.animationInterval = setInterval(() => {
-            animationState.currentFrame = (animationState.currentFrame + 1) % molecularData.length;
-            updateFrameDisplay();
-            renderMolecule();
-        }, interval);
-        
-        // Update button icon to pause
-        if (playBtn) {
-            playBtn.innerHTML = `
+                }
+            } else {
+                // Play
+                animationState.isPlaying = true;
+                const fps = settings.animationSpeed || 30;
+                const interval = 1000 / fps;
+
+                animationState.animationInterval = setInterval(() => {
+                    animationState.currentFrame = (animationState.currentFrame + 1) % molecularData.length;
+                    updateFrameDisplay();
+                    renderMolecule();
+                }, interval);
+
+                // Update button icon to pause
+                if (playBtn) {
+                    playBtn.innerHTML = `
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             `;
+                }
+            }
         }
-    }
-}
 
-function getCurrentFrameAsXYZ() {
-    if (!molecularData || molecularData.length === 0) {
-        return '';
-    }
-    
-    const frameIndex = animationState.currentFrame % molecularData.length;
-    const molecule = molecularData[frameIndex];
-    
-    if (!molecule || !molecule.positions || !molecule.symbols) {
-        return '';
-    }
-    
-    const numAtoms = molecule.symbols.length;
-    let xyzString = `${numAtoms}\n`;
-    
-    // Comment line (can include energy, frame number, etc.)
-    xyzString += `Frame ${frameIndex + 1}`;
-    if (molecule.energy !== undefined) {
-        xyzString += ` Energy: ${molecule.energy}`;
-    }
-    xyzString += '\n';
-    
-    // Atom lines: symbol x y z
-    for (let i = 0; i < numAtoms; i++) {
-        const symbol = molecule.symbols[i];
-        const pos = molecule.positions[i];
-        xyzString += `${symbol}  ${pos[0].toFixed(6)}  ${pos[1].toFixed(6)}  ${pos[2].toFixed(6)}\n`;
-    }
-    
-    return xyzString;
-}
+        function getCurrentFrameAsXYZ() {
+            if (!molecularData || molecularData.length === 0) {
+                return '';
+            }
 
-function copyCurrentFrameToClipboard() {
-    const xyzString = getCurrentFrameAsXYZ();
-    
-    if (!xyzString) {
-        alert('No molecular data to copy');
-        return;
-    }
-    
-    // Try to copy to clipboard
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(xyzString).then(() => {
-            // Show success feedback
-            const copyBtn = document.getElementById('copy-btn');
-            if (copyBtn) {
-                const originalHTML = copyBtn.innerHTML;
-                copyBtn.innerHTML = `
+            const frameIndex = animationState.currentFrame % molecularData.length;
+            const molecule = molecularData[frameIndex];
+
+            if (!molecule || !molecule.positions || !molecule.symbols) {
+                return '';
+            }
+
+            const numAtoms = molecule.symbols.length;
+            let xyzString = `${numAtoms}\n`;
+
+            // Comment line (can include energy, frame number, etc.)
+            xyzString += `Frame ${frameIndex + 1}`;
+            if (molecule.energy !== undefined) {
+                xyzString += ` Energy: ${molecule.energy}`;
+            }
+            xyzString += '\n';
+
+            // Atom lines: symbol x y z
+            for (let i = 0; i < numAtoms; i++) {
+                const symbol = molecule.symbols[i];
+                const pos = molecule.positions[i];
+                xyzString += `${symbol}  ${pos[0].toFixed(6)}  ${pos[1].toFixed(6)}  ${pos[2].toFixed(6)}\n`;
+            }
+
+            return xyzString;
+        }
+
+        function copyCurrentFrameToClipboard() {
+            const xyzString = getCurrentFrameAsXYZ();
+
+            if (!xyzString) {
+                alert('No molecular data to copy');
+                return;
+            }
+
+            // Try to copy to clipboard
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(xyzString).then(() => {
+                    // Show success feedback
+                    const copyBtn = document.getElementById('copy-btn');
+                    if (copyBtn) {
+                        const originalHTML = copyBtn.innerHTML;
+                        copyBtn.innerHTML = `
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                 `;
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalHTML;
-                }, 1000);
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalHTML;
+                        }, 1000);
+                    }
+                    console.log('Copied XYZ to clipboard');
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    alert('Failed to copy to clipboard');
+                });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = xyzString;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('Copied to clipboard!');
+                } catch (err) {
+                    alert('Failed to copy to clipboard');
+                }
+                document.body.removeChild(textArea);
             }
-            console.log('Copied XYZ to clipboard');
-        }).catch(err => {
-            console.error('Failed to copy:', err);
-            alert('Failed to copy to clipboard');
-        });
-    } else {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = xyzString;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            alert('Copied to clipboard!');
-        } catch (err) {
-            alert('Failed to copy to clipboard');
         }
-        document.body.removeChild(textArea);
-    }
-}
 
-function setMolecularData(data) {
-    molecularData = Array.isArray(data) ? data : [data];
-    cameraNeedsFit = true;
-    
-    // Initialize molecule settings with default colors
-    const defaultColors = [
-        '#3b82f6', // Blue
-        '#ef4444', // Red
-        '#06b6d4', // Cyan
-        '#10b981', // Green
-        '#f59e0b', // Amber
-        '#8b5cf6', // Purple
-        '#ec4899', // Pink
-        '#14b8a6', // Teal
-    ];
-    
-    moleculeSettings = molecularData.map((mol, index) => ({
-        color: parseInt(defaultColors[index % defaultColors.length].replace('#', '0x')),
-        opacity: index < 2 ? 0.8 : 0.5,  // First two molecules more opaque
-        visible: index < 3  // First three visible by default
-    }));
-    
-    // Update molecule UI
-    updateMoleculeUI();
-    
-    // Reset animation state
-    animationState.currentFrame = 0;
-    animationState.isPlaying = false;
-    if (animationState.animationInterval) {
-        clearInterval(animationState.animationInterval);
-        animationState.animationInterval = null;
-    }
-    
-    // Update frame display
-    updateFrameDisplay();
-    
-    // Show/hide animation controls based on number of frames
-    const animationCard = document.querySelector('.card:has(#play-btn)');
-    if (animationCard) {
-        animationCard.style.display = molecularData.length > 1 ? 'block' : 'none';
-    }
-    
-    renderMolecule();
-}
+        function setMolecularData(data) {
+            molecularData = Array.isArray(data) ? data : [data];
+            cameraNeedsFit = true;
 
-function updateMoleculeUI() {
-    const moleculesContent = document.getElementById('molecules-content');
-    if (!moleculesContent) return;
-    
-    moleculesContent.innerHTML = '';
-    
-    molecularData.forEach((mol, index) => {
-        const molSettings = moleculeSettings[index];
-        const colorHex = '#' + molSettings.color.toString(16).padStart(6, '0');
-        const opacityPercent = Math.round(molSettings.opacity * 100);
-        const moleculeName = mol.name || `Molecule ${index + 1}`;
-        
-        const moleculeItem = document.createElement('div');
-        moleculeItem.className = 'molecule-item';
-        moleculeItem.innerHTML = `
+            // Initialize molecule settings with default colors
+            const defaultColors = [
+                '#3b82f6', // Blue
+                '#ef4444', // Red
+                '#06b6d4', // Cyan
+                '#10b981', // Green
+                '#f59e0b', // Amber
+                '#8b5cf6', // Purple
+                '#ec4899', // Pink
+                '#14b8a6', // Teal
+            ];
+
+            moleculeSettings = molecularData.map((mol, index) => ({
+                color: parseInt(defaultColors[index % defaultColors.length].replace('#', '0x')),
+                opacity: index < 2 ? 0.8 : 0.5,  // First two molecules more opaque
+                visible: index < 3  // First three visible by default
+            }));
+
+            // Update molecule UI
+            updateMoleculeUI();
+
+            // Reset animation state
+            animationState.currentFrame = 0;
+            animationState.isPlaying = false;
+            if (animationState.animationInterval) {
+                clearInterval(animationState.animationInterval);
+                animationState.animationInterval = null;
+            }
+
+            // Update frame display
+            updateFrameDisplay();
+
+            // Show/hide animation controls based on number of frames
+            const animationCard = document.querySelector('.card:has(#play-btn)');
+            if (animationCard) {
+                animationCard.style.display = molecularData.length > 1 ? 'block' : 'none';
+            }
+
+            renderMolecule();
+        }
+
+        function updateMoleculeUI() {
+            const moleculesContent = document.getElementById('molecules-content');
+            if (!moleculesContent) return;
+
+            moleculesContent.innerHTML = '';
+
+            molecularData.forEach((mol, index) => {
+                const molSettings = moleculeSettings[index];
+                const colorHex = '#' + molSettings.color.toString(16).padStart(6, '0');
+                const opacityPercent = Math.round(molSettings.opacity * 100);
+                const moleculeName = mol.name || `Molecule ${index + 1}`;
+
+                const moleculeItem = document.createElement('div');
+                moleculeItem.className = 'molecule-item';
+                moleculeItem.innerHTML = `
             <div class="molecule-header">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <input type="color" value="${colorHex}" class="color-input" style="width: 24px; height: 24px;" 
@@ -1416,66 +1432,66 @@ function updateMoleculeUI() {
                 </div>
             </div>
         `;
-        
-        moleculesContent.appendChild(moleculeItem);
-        
-        // Add event listeners
-        const colorInput = document.getElementById(`molecule-${index}-color`);
-        const visibleInput = document.getElementById(`molecule-${index}-visible`);
-        const opacityInput = document.getElementById(`molecule-${index}-opacity`);
-        
-        if (colorInput) {
-            colorInput.addEventListener('input', function() {
-                const molIndex = parseInt(this.dataset.molIndex);
-                moleculeSettings[molIndex].color = parseInt(this.value.replace('#', '0x'));
-                renderMolecule();
+
+                moleculesContent.appendChild(moleculeItem);
+
+                // Add event listeners
+                const colorInput = document.getElementById(`molecule-${index}-color`);
+                const visibleInput = document.getElementById(`molecule-${index}-visible`);
+                const opacityInput = document.getElementById(`molecule-${index}-opacity`);
+
+                if (colorInput) {
+                    colorInput.addEventListener('input', function () {
+                        const molIndex = parseInt(this.dataset.molIndex);
+                        moleculeSettings[molIndex].color = parseInt(this.value.replace('#', '0x'));
+                        renderMolecule();
+                    });
+                }
+
+                if (visibleInput) {
+                    visibleInput.addEventListener('change', function () {
+                        const molIndex = parseInt(this.dataset.molIndex);
+                        moleculeSettings[molIndex].visible = this.checked;
+                        renderMolecule();
+                    });
+                }
+
+                if (opacityInput) {
+                    opacityInput.addEventListener('input', function () {
+                        const molIndex = parseInt(this.dataset.molIndex);
+                        const opacity = parseFloat(this.value);
+                        moleculeSettings[molIndex].opacity = opacity;
+                        const valueEl = document.getElementById(`molecule-${molIndex}-opacity-value`);
+                        if (valueEl) valueEl.textContent = Math.round(opacity * 100) + '%';
+                        renderMolecule();
+                    });
+                }
             });
         }
-        
-        if (visibleInput) {
-            visibleInput.addEventListener('change', function() {
-                const molIndex = parseInt(this.dataset.molIndex);
-                moleculeSettings[molIndex].visible = this.checked;
-                renderMolecule();
-            });
+
+        function addPeriodicity() {
+            const select = document.getElementById('periodicity-select');
+            const value = select.value;
+            if (!periodicities.includes(value)) {
+                periodicities.push(value);
+                renderPeriodicities();
+                renderMolecule();  // Re-render with new periodicity
+            }
         }
-        
-        if (opacityInput) {
-            opacityInput.addEventListener('input', function() {
-                const molIndex = parseInt(this.dataset.molIndex);
-                const opacity = parseFloat(this.value);
-                moleculeSettings[molIndex].opacity = opacity;
-                const valueEl = document.getElementById(`molecule-${molIndex}-opacity-value`);
-                if (valueEl) valueEl.textContent = Math.round(opacity * 100) + '%';
-                renderMolecule();
-            });
+
+        function removePeriodicity(value) {
+            periodicities = periodicities.filter(p => p !== value);
+            renderPeriodicities();
+            renderMolecule();  // Re-render without periodicity
         }
-    });
-}
 
-function addPeriodicity() {
-    const select = document.getElementById('periodicity-select');
-    const value = select.value;
-    if (!periodicities.includes(value)) {
-        periodicities.push(value);
-        renderPeriodicities();
-        renderMolecule();  // Re-render with new periodicity
-    }
-}
-
-function removePeriodicity(value) {
-    periodicities = periodicities.filter(p => p !== value);
-    renderPeriodicities();
-    renderMolecule();  // Re-render without periodicity
-}
-
-function renderPeriodicities() {
-    const container = document.getElementById('periodicities-list');
-    container.innerHTML = '';
-    periodicities.forEach(periodicity => {
-        const item = document.createElement('div');
-        item.className = 'periodicity-item';
-        item.innerHTML = `
+        function renderPeriodicities() {
+            const container = document.getElementById('periodicities-list');
+            container.innerHTML = '';
+            periodicities.forEach(periodicity => {
+                const item = document.createElement('div');
+                item.className = 'periodicity-item';
+                item.innerHTML = `
             <span class="periodicity-value">${periodicity}</span>
             <button class="btn" onclick="removePeriodicity('${periodicity}')" style="padding: 0.25rem; min-width: 30px;">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -1483,275 +1499,276 @@ function renderPeriodicities() {
                 </svg>
             </button>
         `;
-        container.appendChild(item);
-    });
-}
-
-/**
- * Apply periodic boundary conditions to create replicated atoms
- * @param {Array} positions - Original atom positions
- * @param {Array} symbols - Original atom symbols
- * @param {Array} cell - Unit cell vectors
- * @param {Array} periodicities - List of periodicity directions (e.g., ['+x', '±y'])
- * @returns {Object} Extended positions and symbols
- */
-function applyPeriodicBoundaries(positions, symbols, cell, periodicities) {
-    if (!cell || periodicities.length === 0) {
-        return { positions, symbols };
-    }
-    
-    const cellVectors = cell.map(c => new THREE.Vector3(...c));
-    const extendedPositions = [...positions];
-    const extendedSymbols = [...symbols];
-    
-    periodicities.forEach(periodicity => {
-        const currentCount = extendedPositions.length;
-        
-        // Parse periodicity string (e.g., '+x', '±y', '-z')
-        const direction = periodicity.slice(-1).toLowerCase();  // 'x', 'y', or 'z'
-        const sign = periodicity.slice(0, -1);  // '+', '-', or '±'
-        
-        const axisIndex = { 'x': 0, 'y': 1, 'z': 2 }[direction];
-        const cellVector = cellVectors[axisIndex];
-        
-        // Determine which directions to replicate
-        const directions = [];
-        if (sign === '+' || sign === '±') directions.push(1);
-        if (sign === '-' || sign === '±') directions.push(-1);
-        
-        // Replicate atoms in specified directions
-        directions.forEach(dir => {
-            for (let i = 0; i < currentCount; i++) {
-                const newPos = extendedPositions[i].clone().add(cellVector.clone().multiplyScalar(dir));
-                extendedPositions.push(newPos);
-                extendedSymbols.push(extendedSymbols[i]);
-            }
-        });
-    });
-    
-    return { positions: extendedPositions, symbols: extendedSymbols };
-}
-
-function setupEventListeners() {
-    // Helper function to safely add event listener
-    function safeAddListener(id, event, handler) {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener(event, handler);
-        }
-    }
-
-    safeAddListener('sidebar-toggle', 'click', toggleSidebar);
-
-    safeAddListener('bond-threshold', 'input', function() {
-        const valueEl = document.getElementById('bond-threshold-value');
-        if (valueEl) valueEl.textContent = this.value;
-        settings.bondThreshold = parseFloat(this.value);
-        renderMolecule();
-    });
-
-    safeAddListener('bond-thickness', 'input', function() {
-        const valueEl = document.getElementById('bond-thickness-value');
-        if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
-        settings.bondThickness = parseFloat(this.value);
-        renderMolecule();
-    });
-
-    safeAddListener('atom-size', 'input', function() {
-        const valueEl = document.getElementById('atom-size-value');
-        if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + '×';
-        settings.atomSize = parseFloat(this.value);
-        renderMolecule();
-    });
-
-    safeAddListener('animation-speed', 'input', function() {
-        const valueEl = document.getElementById('animation-speed-value');
-        if (valueEl) valueEl.textContent = this.value;
-        settings.animationSpeed = parseInt(this.value, 10);
-        
-        // If animation is playing, restart with new speed
-        if (animationState.isPlaying) {
-            toggleAnimation();  // Pause
-            toggleAnimation();  // Play with new speed
-        }
-    });
-
-    safeAddListener('force-scale', 'input', function() {
-        const valueEl = document.getElementById('force-scale-value');
-        if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + '×';
-        settings.forceScale = parseFloat(this.value);
-        if (settings.showForces) {
-            renderMolecule();
-        }
-    });
-
-    safeAddListener('frame-slider', 'input', function() {
-        const frameNum = parseInt(this.value, 10);
-        animationState.currentFrame = frameNum - 1;  // 0-indexed
-        updateFrameDisplay();
-        renderMolecule();
-    });
-
-    safeAddListener('background-color', 'input', function() {
-        const valueEl = document.getElementById('background-color-value');
-        if (valueEl) valueEl.textContent = this.value;
-        const viewerContainer = document.querySelector('.viewer-container');
-        if (viewerContainer) {
-            viewerContainer.style.background = `linear-gradient(135deg, ${this.value}, ${darkenColorHex(this.value, 20)})`;
-        }
-        settings.backgroundColor = this.value;
-        updateBackgroundColor();
-    });
-
-    safeAddListener('style', 'change', function() {
-        settings.style = this.value;
-        renderMolecule();
-    });
-
-    safeAddListener('color-by', 'change', function() {
-        settings.colorBy = this.value;
-        renderMolecule();
-    });
-
-    safeAddListener('show-cell', 'change', function() {
-        settings.showCell = this.checked;
-        renderMolecule();
-    });
-
-    safeAddListener('show-bond', 'change', function() {
-        settings.showBond = this.checked;
-        renderMolecule();
-    });
-
-    safeAddListener('show-shading', 'change', function() {
-        settings.showShading = this.checked;
-        updateShading();
-    });
-
-    safeAddListener('show-energy-plot', 'change', function() {
-        settings.showEnergyPlot = this.checked;
-    });
-
-    safeAddListener('show-forces', 'change', function() {
-        settings.showForces = this.checked;
-        renderMolecule();
-    });
-
-    if (document.getElementById('orthographic-btn') && document.getElementById('perspective-btn')) {
-        setupButtonGroup('view-mode', ['orthographic-btn', 'perspective-btn']);
-    }
-    if (document.getElementById('trackball-btn') && document.getElementById('orbit-btn')) {
-        setupButtonGroup('rotation-mode', ['trackball-btn', 'orbit-btn']);
-    }
-
-    safeAddListener('add-periodicity-btn', 'click', addPeriodicity);
-    safeAddListener('play-btn', 'click', toggleAnimation);
-    safeAddListener('copy-btn', 'click', copyCurrentFrameToClipboard);
-    safeAddListener('video-btn', 'click', function() {
-        alert('GIF export not available in Overlay Viewer');
-    });
-    safeAddListener('download-btn', 'click', saveAsPNG);
-}
-
-function saveAsPNG() {
-    if (!renderer || !scene || !camera) {
-        alert('Renderer not ready');
-        return;
-    }
-    
-    // Store original background
-    const originalBackground = scene.background;
-    
-    // Set transparent background
-    scene.background = null;
-    renderer.setClearColor(0x000000, 0); // Transparent
-    
-    // Render one frame
-    renderer.render(scene, camera);
-    
-    // Get canvas data as PNG
-    renderer.domElement.toBlob(function(blob) {
-        // Restore original background
-        scene.background = originalBackground;
-        updateBackgroundColor();
-        
-        // Download the image
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'overlay_molecules.png';
-        link.click();
-        URL.revokeObjectURL(url);
-    }, 'image/png');
-}
-
-function setupButtonGroup(groupName, buttonIds) {
-    buttonIds.forEach(id => {
-        const button = document.getElementById(id);
-        button.addEventListener('click', function() {
-            buttonIds.forEach(btnId => {
-                document.getElementById(btnId).classList.remove('active');
+                container.appendChild(item);
             });
-            this.classList.add('active');
+        }
 
-            if (groupName === 'rotation-mode') {
-                settings.rotationMode = (id === 'trackball-btn') ? 'TrackBall' : 'Orbit';
-                setupControls();
-            } else if (groupName === 'view-mode') {
-                settings.viewMode = (id === 'orthographic-btn') ? 'Orthographic' : 'Perspective';
-                setupCamera();
-                setupControls();
-                cameraNeedsFit = true;
-                renderMolecule();
+        /**
+         * Apply periodic boundary conditions to create replicated atoms
+         * @param {Array} positions - Original atom positions
+         * @param {Array} symbols - Original atom symbols
+         * @param {Array} cell - Unit cell vectors
+         * @param {Array} periodicities - List of periodicity directions (e.g., ['+x', '±y'])
+         * @returns {Object} Extended positions and symbols
+         */
+        function applyPeriodicBoundaries(positions, symbols, cell, periodicities) {
+            if (!cell || periodicities.length === 0) {
+                return { positions, symbols };
             }
-        });
-    });
-}
 
-function toggleSidebar() {
-    sidebarOpen = !sidebarOpen;
-    const sidebar = document.getElementById('sidebar');
-    if (sidebarOpen) {
-        sidebar.style.width = '320px';
-        sidebar.classList.remove('collapsed');
-    } else {
-        sidebar.style.width = '0';
-        sidebar.classList.add('collapsed');
-    }
+            const cellVectors = cell.map(c => new THREE.Vector3(...c));
+            const extendedPositions = [...positions];
+            const extendedSymbols = [...symbols];
 
-    setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
-    }, 350);
-}
+            periodicities.forEach(periodicity => {
+                const currentCount = extendedPositions.length;
 
-function toggleCard(cardId) {
-    cards[cardId] = !cards[cardId];
-    const content = document.getElementById(cardId + '-content');
-    const arrow = document.getElementById(cardId + '-arrow');
+                // Parse periodicity string (e.g., '+x', '±y', '-z')
+                const direction = periodicity.slice(-1).toLowerCase();  // 'x', 'y', or 'z'
+                const sign = periodicity.slice(0, -1);  // '+', '-', or '±'
 
-    if (cards[cardId]) {
-        content.classList.remove('collapsed');
-        arrow.style.transform = 'rotate(0deg)';
-    } else {
-        content.classList.add('collapsed');
-        arrow.style.transform = 'rotate(-90deg)';
-    }
-}
+                const axisIndex = { 'x': 0, 'y': 1, 'z': 2 }[direction];
+                const cellVector = cellVectors[axisIndex];
 
-function darkenColorHex(color, percent) {
-    let R = parseInt(color.substring(1, 3), 16);
-    let G = parseInt(color.substring(3, 5), 16);
-    let B = parseInt(color.substring(5, 7), 16);
+                // Determine which directions to replicate
+                const directions = [];
+                if (sign === '+' || sign === '±') directions.push(1);
+                if (sign === '-' || sign === '±') directions.push(-1);
 
-    R = Math.floor(R * (100 - percent) / 100);
-    G = Math.floor(G * (100 - percent) / 100);
-    B = Math.floor(B * (100 - percent) / 100);
+                // Replicate atoms in specified directions
+                directions.forEach(dir => {
+                    for (let i = 0; i < currentCount; i++) {
+                        const newPos = extendedPositions[i].clone().add(cellVector.clone().multiplyScalar(dir));
+                        extendedPositions.push(newPos);
+                        extendedSymbols.push(extendedSymbols[i]);
+                    }
+                });
+            });
 
-    return `#${R.toString(16).padStart(2, '0')}${G.toString(16).padStart(2, '0')}${B.toString(16).padStart(2, '0')}`;
-}
+            return { positions: extendedPositions, symbols: extendedSymbols };
+        }
 
-window.setMolecularData = setMolecularData;
-window.removePeriodicity = removePeriodicity;
-</script>
+        function setupEventListeners() {
+            // Helper function to safely add event listener
+            function safeAddListener(id, event, handler) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener(event, handler);
+                }
+            }
+
+            safeAddListener('sidebar-toggle', 'click', toggleSidebar);
+
+            safeAddListener('bond-threshold', 'input', function () {
+                const valueEl = document.getElementById('bond-threshold-value');
+                if (valueEl) valueEl.textContent = this.value;
+                settings.bondThreshold = parseFloat(this.value);
+                renderMolecule();
+            });
+
+            safeAddListener('bond-thickness', 'input', function () {
+                const valueEl = document.getElementById('bond-thickness-value');
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
+                settings.bondThickness = parseFloat(this.value);
+                renderMolecule();
+            });
+
+            safeAddListener('atom-size', 'input', function () {
+                const valueEl = document.getElementById('atom-size-value');
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + '×';
+                settings.atomSize = parseFloat(this.value);
+                renderMolecule();
+            });
+
+            safeAddListener('animation-speed', 'input', function () {
+                const valueEl = document.getElementById('animation-speed-value');
+                if (valueEl) valueEl.textContent = this.value;
+                settings.animationSpeed = parseInt(this.value, 10);
+
+                // If animation is playing, restart with new speed
+                if (animationState.isPlaying) {
+                    toggleAnimation();  // Pause
+                    toggleAnimation();  // Play with new speed
+                }
+            });
+
+            safeAddListener('force-scale', 'input', function () {
+                const valueEl = document.getElementById('force-scale-value');
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + '×';
+                settings.forceScale = parseFloat(this.value);
+                if (settings.showForces) {
+                    renderMolecule();
+                }
+            });
+
+            safeAddListener('frame-slider', 'input', function () {
+                const frameNum = parseInt(this.value, 10);
+                animationState.currentFrame = frameNum - 1;  // 0-indexed
+                updateFrameDisplay();
+                renderMolecule();
+            });
+
+            safeAddListener('background-color', 'input', function () {
+                const valueEl = document.getElementById('background-color-value');
+                if (valueEl) valueEl.textContent = this.value;
+                const viewerContainer = document.querySelector('.viewer-container');
+                if (viewerContainer) {
+                    viewerContainer.style.background = `linear-gradient(135deg, ${this.value}, ${darkenColorHex(this.value, 20)})`;
+                }
+                settings.backgroundColor = this.value;
+                updateBackgroundColor();
+            });
+
+            safeAddListener('style', 'change', function () {
+                settings.style = this.value;
+                renderMolecule();
+            });
+
+            safeAddListener('color-by', 'change', function () {
+                settings.colorBy = this.value;
+                renderMolecule();
+            });
+
+            safeAddListener('show-cell', 'change', function () {
+                settings.showCell = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-bond', 'change', function () {
+                settings.showBond = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-shading', 'change', function () {
+                settings.showShading = this.checked;
+                updateShading();
+            });
+
+            safeAddListener('show-energy-plot', 'change', function () {
+                settings.showEnergyPlot = this.checked;
+            });
+
+            safeAddListener('show-forces', 'change', function () {
+                settings.showForces = this.checked;
+                renderMolecule();
+            });
+
+            if (document.getElementById('orthographic-btn') && document.getElementById('perspective-btn')) {
+                setupButtonGroup('view-mode', ['orthographic-btn', 'perspective-btn']);
+            }
+            if (document.getElementById('trackball-btn') && document.getElementById('orbit-btn')) {
+                setupButtonGroup('rotation-mode', ['trackball-btn', 'orbit-btn']);
+            }
+
+            safeAddListener('add-periodicity-btn', 'click', addPeriodicity);
+            safeAddListener('play-btn', 'click', toggleAnimation);
+            safeAddListener('copy-btn', 'click', copyCurrentFrameToClipboard);
+            safeAddListener('video-btn', 'click', function () {
+                alert('GIF export not available in Overlay Viewer');
+            });
+            safeAddListener('download-btn', 'click', saveAsPNG);
+        }
+
+        function saveAsPNG() {
+            if (!renderer || !scene || !camera) {
+                alert('Renderer not ready');
+                return;
+            }
+
+            // Store original background
+            const originalBackground = scene.background;
+
+            // Set transparent background
+            scene.background = null;
+            renderer.setClearColor(0x000000, 0); // Transparent
+
+            // Render one frame
+            renderer.render(scene, camera);
+
+            // Get canvas data as PNG
+            renderer.domElement.toBlob(function (blob) {
+                // Restore original background
+                scene.background = originalBackground;
+                updateBackgroundColor();
+
+                // Download the image
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'overlay_molecules.png';
+                link.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+
+        function setupButtonGroup(groupName, buttonIds) {
+            buttonIds.forEach(id => {
+                const button = document.getElementById(id);
+                button.addEventListener('click', function () {
+                    buttonIds.forEach(btnId => {
+                        document.getElementById(btnId).classList.remove('active');
+                    });
+                    this.classList.add('active');
+
+                    if (groupName === 'rotation-mode') {
+                        settings.rotationMode = (id === 'trackball-btn') ? 'TrackBall' : 'Orbit';
+                        setupControls();
+                    } else if (groupName === 'view-mode') {
+                        settings.viewMode = (id === 'orthographic-btn') ? 'Orthographic' : 'Perspective';
+                        setupCamera();
+                        setupControls();
+                        cameraNeedsFit = true;
+                        renderMolecule();
+                    }
+                });
+            });
+        }
+
+        function toggleSidebar() {
+            sidebarOpen = !sidebarOpen;
+            const sidebar = document.getElementById('sidebar');
+            if (sidebarOpen) {
+                sidebar.style.width = '320px';
+                sidebar.classList.remove('collapsed');
+            } else {
+                sidebar.style.width = '0';
+                sidebar.classList.add('collapsed');
+            }
+
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 350);
+        }
+
+        function toggleCard(cardId) {
+            cards[cardId] = !cards[cardId];
+            const content = document.getElementById(cardId + '-content');
+            const arrow = document.getElementById(cardId + '-arrow');
+
+            if (cards[cardId]) {
+                content.classList.remove('collapsed');
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                content.classList.add('collapsed');
+                arrow.style.transform = 'rotate(-90deg)';
+            }
+        }
+
+        function darkenColorHex(color, percent) {
+            let R = parseInt(color.substring(1, 3), 16);
+            let G = parseInt(color.substring(3, 5), 16);
+            let B = parseInt(color.substring(5, 7), 16);
+
+            R = Math.floor(R * (100 - percent) / 100);
+            G = Math.floor(G * (100 - percent) / 100);
+            B = Math.floor(B * (100 - percent) / 100);
+
+            return `#${R.toString(16).padStart(2, '0')}${G.toString(16).padStart(2, '0')}${B.toString(16).padStart(2, '0')}`;
+        }
+
+        window.setMolecularData = setMolecularData;
+        window.removePeriodicity = removePeriodicity;
+    </script>
 </body>
+
 </html>

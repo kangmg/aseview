@@ -311,7 +311,8 @@ function createAtomStyleBubble(pos, symbol, atomScale) {
     
     const sprite = new THREE.Sprite(spriteMaterial);
     sprite.position.copy(pos);
-    sprite.scale.set(scaledRadius * 2.5, scaledRadius * 2.5, 1);
+    // Match size with other styles (2x radius)
+    sprite.scale.set(scaledRadius * 2, scaledRadius * 2, 1);
     
     return sprite;
 }
@@ -330,15 +331,21 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const centerY = 128;
     const circleRadius = 120;
     
-    // 원형 배경 그리기 (구체 역할)
+    // 검은 테두리 그리기
     context.beginPath();
     context.arc(centerX, centerY, circleRadius, 0, 2 * Math.PI, false);
+    context.fillStyle = 'black';
+    context.fill();
+    
+    // 원형 배경 그리기 (구체 역할) - 테두리보다 약간 작게
+    context.beginPath();
+    context.arc(centerX, centerY, circleRadius - 3, 0, 2 * Math.PI, false);
     context.fillStyle = `#${color.toString(16).padStart(6, '0')}`; // color를 hex로 변환
     context.fill();
     
     // 약간 더 밝은 색으로 하이라이트 효과
     context.beginPath();
-    context.arc(centerX, centerY, circleRadius - 4, 0, 2 * Math.PI, false);
+    context.arc(centerX, centerY, circleRadius - 7, 0, 2 * Math.PI, false);
     const lighterColor = new THREE.Color(color).multiplyScalar(1.1);
     context.fillStyle = `#${lighterColor.getHexString()}`;
     context.fill();
@@ -608,21 +615,21 @@ function createBondStyleGrey(p1, p2, sym1, sym2, bondThickness, atomScale, color
 function createHalfBondGrey(start, end, color, bondThickness) {
     if (start.distanceTo(end) <= 0) return null;
     
-    // Create gradient map for toon shading
-    const colors = new Uint8Array(3);
-    for (let c = 0; c <= 2; c++) {
-        colors[c] = (c / 2) * 256;
-    }
-    const gradientMap = new THREE.DataTexture(colors, colors.length, 1, THREE.LuminanceFormat);
-    gradientMap.needsUpdate = true;
+    const distance = start.distanceTo(end);
+    const direction = new THREE.Vector3().subVectors(end, start).normalize();
     
-    const path = new THREE.LineCurve3(start, end);
-    const geometry = new THREE.TubeGeometry(path, 1, bondThickness, 8, false);
-    const material = new THREE.MeshToonMaterial({ 
+    // Use CylinderGeometry for cleaner appearance
+    const geometry = new THREE.CylinderGeometry(bondThickness, bondThickness, distance, 16, 1);
+    const material = new THREE.MeshBasicMaterial({ 
         color: color,
-        gradientMap: gradientMap
+        depthWrite: true,
+        depthTest: true
     });
     const bond = new THREE.Mesh(geometry, material);
+    
+    // Position and orient the cylinder
+    bond.position.copy(start).add(end).multiplyScalar(0.5);
+    bond.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
     
     return bond;
 }
