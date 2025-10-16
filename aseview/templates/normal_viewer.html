@@ -1033,7 +1033,14 @@ function renderMolecule() {
         for (let i = 0; i < positions.length; i++) {
             for (let j = i + 1; j < positions.length; j++) {
                 const dist = positions[i].distanceTo(positions[j]);
-                if (dist <= bondCutoff) {
+                
+                // Calculate bond cutoff based on covalent radii of both atoms
+                const info1 = atomInfo[symbols[i]] || atomInfo['default'];
+                const info2 = atomInfo[symbols[j]] || atomInfo['default'];
+                const covalentRadiusSum = info1.radius + info2.radius;
+                const adjustedCutoff = covalentRadiusSum * bondCutoff;
+                
+                if (dist <= adjustedCutoff) {
                     const bond = bondFactory(
                         positions[i],
                         positions[j],
