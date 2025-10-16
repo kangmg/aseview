@@ -463,6 +463,16 @@
                             </div>
                         </div>
 
+                        <div class="control-group" id="cell-color-group" style="display: none;">
+                            <div class="control-label">
+                                <span>Cell Color</span>
+                            </div>
+                            <div class="color-picker">
+                                <input type="color" value="#808080" class="color-input" id="cell-color">
+                                <span class="color-value" id="cell-color-value">#808080</span>
+                            </div>
+                        </div>
+
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Style</span>
@@ -720,6 +730,10 @@ let cards = {
 
 let periodicities = [];
 
+// File naming for downloads
+let downloadBaseName = 'molecule';  // Can be set via setDownloadName()
+let downloadCounters = { png: 0, gif: 0 };  // Track download counts
+
 let settings = {
     bondThreshold: 1.0,
     bondThickness: 0.1,
@@ -727,6 +741,7 @@ let settings = {
     animationSpeed: 30,
     forceScale: 0.5,
     backgroundColor: '#1f2937',
+    cellColor: '#808080',
     style: 'cartoon',
     showCell: true,
     showBond: true,
@@ -820,6 +835,11 @@ function initSettingsFromUI() {
     const bgColorInput = document.getElementById('background-color');
     if (bgColorInput) {
         settings.backgroundColor = bgColorInput.value;
+    }
+    
+    const cellColorInput = document.getElementById('cell-color');
+    if (cellColorInput) {
+        settings.cellColor = cellColorInput.value;
     }
     
     const styleSelect = document.getElementById('style');
@@ -1091,7 +1111,8 @@ function renderMolecule() {
             cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
         ];
         const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-        const cellMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });  // Red color
+        const cellColor = new THREE.Color(settings.cellColor);
+        const cellMaterial = new THREE.LineBasicMaterial({ color: cellColor });
         const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
         cellMesh.renderOrder = 2;
         moleculeGroup.add(cellMesh);
@@ -1374,7 +1395,20 @@ function setMolecularData(data) {
         animationCard.style.display = molecularData.length > 1 ? 'block' : 'none';
     }
     
+    // Show/hide cell color control based on whether any molecule has a cell
+    const hasCell = molecularData.some(mol => mol && mol.cell);
+    const cellColorGroup = document.getElementById('cell-color-group');
+    if (cellColorGroup) {
+        cellColorGroup.style.display = hasCell ? 'block' : 'none';
+    }
+    
     renderMolecule();
+}
+
+function setDownloadName(name) {
+    downloadBaseName = name;
+    downloadCounters = { png: 0, gif: 0 };  // Reset counters
+    console.log('Download base name set to:', name);
 }
 
 function addPeriodicity() {
@@ -1527,6 +1561,13 @@ function setupEventListeners() {
         updateBackgroundColor();
     });
 
+    safeAddListener('cell-color', 'input', function() {
+        const valueEl = document.getElementById('cell-color-value');
+        if (valueEl) valueEl.textContent = this.value;
+        settings.cellColor = this.value;
+        renderMolecule();
+    });
+
     safeAddListener('style', 'change', function() {
         settings.style = this.value;
         renderMolecule();
@@ -1592,13 +1633,60 @@ function saveAsPNG() {
         scene.background = originalBackground;
         updateBackgroundColor();
         
-        // Download the image
+        // Generate filename with counter to avoid overwriting
+        let filename;
+        if (downloadCounters.png === 0) {
+            filename = `${downloadBaseName}.png`;
+        } else {
+            filename = `${downloadBaseName}_${downloadCounters.png}.png`;
+        }
+        downloadCounters.png++;
+        
+        // Try multiple download methods for better compatibility
         const url = URL.createObjectURL(blob);
+        
+        // Method 1: Try standard download attribute
         const link = document.createElement('a');
         link.href = url;
-        link.download = `molecule_frame_${animationState.currentFrame + 1}.png`;
-        link.click();
-        URL.revokeObjectURL(url);
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        
+        try {
+            link.click();
+            console.log('PNG download initiated:', filename);
+        } catch (e) {
+            console.log('Standard download failed, trying alternative:', e);
+            // Method 2: Try opening in new window (for Jupyter)
+            try {
+                const win = window.open(url, '_blank');
+                if (!win) {
+                    // Method 3: Try data URL
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        const dataUrl = reader.result;
+                        const newLink = document.createElement('a');
+                        newLink.href = dataUrl;
+                        newLink.download = filename;
+                        document.body.appendChild(newLink);
+                        newLink.click();
+                        document.body.removeChild(newLink);
+                    };
+                    reader.readAsDataURL(blob);
+                }
+            } catch (e2) {
+                console.error('All download methods failed:', e2);
+                alert('Download failed. Please try saving the HTML file and opening it directly in a browser.');
+            }
+        }
+        
+        // Cleanup
+        setTimeout(() => {
+            if (link.parentNode) {
+                document.body.removeChild(link);
+            }
+            URL.revokeObjectURL(url);
+        }, 1000);
     }, 'image/png');
 }
 
@@ -1673,13 +1761,43 @@ function saveAsGIF() {
             if (!obj.error) {
                 console.log('GIF created successfully');
                 
-                // Download the GIF
+                // Generate filename with counter to avoid overwriting
+                let filename;
+                if (downloadCounters.gif === 0) {
+                    filename = `${downloadBaseName}.gif`;
+                } else {
+                    filename = `${downloadBaseName}_${downloadCounters.gif}.gif`;
+                }
+                downloadCounters.gif++;
+                
+                // Try multiple download methods for better compatibility
                 const link = document.createElement('a');
                 link.href = obj.image;
-                link.download = 'molecule_animation.gif';
+                link.download = filename;
+                link.style.display = 'none';
                 document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                
+                try {
+                    link.click();
+                } catch (e) {
+                    // Try opening in new window (for Jupyter)
+                    try {
+                        const win = window.open(obj.image, '_blank');
+                        if (!win) {
+                            alert('Download blocked. Please allow popups or save the HTML file and open it directly in a browser.');
+                        }
+                    } catch (e2) {
+                        console.error('All download methods failed:', e2);
+                        alert('Download failed. Please try saving the HTML file and opening it directly in a browser.');
+                    }
+                }
+                
+                // Cleanup
+                setTimeout(() => {
+                    if (link.parentNode) {
+                        document.body.removeChild(link);
+                    }
+                }, 1000);
                 
                 // Restore button
                 if (videoBtn) {

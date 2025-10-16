@@ -99,8 +99,9 @@ class BaseViewer:
 class MolecularViewer(BaseViewer):
     """Molecular viewer with advanced settings and controls."""
     
-    def __init__(self, data: Union[Atoms, Dict[str, Any], str], **kwargs):
+    def __init__(self, data: Union[Atoms, Dict[str, Any], str], name: str = "molecule", **kwargs):
         super().__init__(data)
+        self.name = name  # Base name for downloads
         self.settings = {
             "bondThreshold": 1.5,
             "bondThickness": 0.2,
@@ -128,6 +129,23 @@ class MolecularViewer(BaseViewer):
             template_path = pkg_resources.resource_filename('aseview', 'templates/molecular_viewer.html')
             with open(template_path, 'r') as f:
                 html = f.read()
+            
+            # Inject download name and molecular data
+            script = f"""
+<script>
+    document.addEventListener('DOMContentLoaded', function() {{
+        if (typeof setDownloadName === 'function') {{
+            setDownloadName('{self.name}');
+        }}
+        if (typeof setMolecularData === 'function') {{
+            setMolecularData({js_data});
+        }}
+    }});
+</script>
+</body>
+"""
+            html = html.replace('</body>', script)
+            return html
         except FileNotFoundError:
             # Fallback to inline HTML generation
             html = f"""
