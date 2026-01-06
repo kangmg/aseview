@@ -6,7 +6,6 @@ Usage:
     aseview2 trajectory.xyz -i 0:10
     aseview2 structure.cif -p 8888
 """
-import argparse
 import http.server
 import socketserver
 import threading
@@ -14,6 +13,21 @@ import webbrowser
 import sys
 import os
 import signal
+from typing import Optional, List
+
+import typer
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
+from rich import print as rprint
+
+app = typer.Typer(
+    name="aseview2",
+    help="Molecular structure viewer for ASE-supported file formats",
+    add_completion=False,
+    rich_markup_mode="rich",
+)
+console = Console()
 
 
 def kill_port(port: int) -> bool:
@@ -23,7 +37,6 @@ def kill_port(port: int) -> bool:
     Returns True if a process was killed, False otherwise.
     """
     import socket
-    import struct
 
     # Check if port is in use first
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -35,7 +48,6 @@ def kill_port(port: int) -> bool:
         pass  # Port is in use
 
     # Find PID using the port by parsing /proc/net/tcp
-    port_hex = f"{port:04X}"
     pids_to_kill = set()
 
     try:
@@ -80,18 +92,18 @@ def kill_port(port: int) -> bool:
         for pid in pids_to_kill:
             try:
                 os.kill(pid, signal.SIGKILL)
-                print(f"  Killed process {pid} on port {port}")
+                console.print(f"  [yellow]Killed process {pid} on port {port}[/yellow]")
             except (OSError, PermissionError) as e:
-                print(f"  Failed to kill process {pid}: {e}")
+                console.print(f"  [red]Failed to kill process {pid}: {e}[/red]")
 
         return len(pids_to_kill) > 0
 
     except Exception as e:
-        print(f"  Error finding process: {e}")
+        console.print(f"  [red]Error finding process: {e}[/red]")
         return False
 
 
-def parse_index(index_str: str):
+def parse_index(index_str: Optional[str]):
     """
     Parse ASE-style index string.
 
@@ -139,11 +151,6 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
 def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -> None:
     """
     Serve HTML content via a simple HTTP server.
-
-    Args:
-        html_content: HTML string to serve
-        port: Port number to bind to
-        open_browser: Whether to open browser automatically
     """
     import tempfile
 
@@ -167,14 +174,30 @@ def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -
         except OSError:
             port += 1
             if attempt == max_attempts - 1:
-                print(f"Error: Could not find available port (tried {original_port}-{port})")
+                console.print(f"[red]Error: Could not find available port (tried {original_port}-{port})[/red]")
                 sys.exit(1)
 
     url = f"http://localhost:{port}"
 
-    print(f"\n  aseview2 server running at: {url}")
-    print(f"  (for SSH: ssh -L {port}:localhost:{port} ...)")
-    print(f"\n  Press Ctrl+C to stop\n")
+    # Print beautiful banner
+    console.print()
+
+    link_text = Text()
+    link_text.append("➜ ", style="green bold")
+    link_text.append("Open in browser: ", style="white")
+    link_text.append(url, style="cyan bold underline link " + url)
+
+    panel = Panel(
+        link_text,
+        title="[bold green]aseview2 server running[/bold green]",
+        subtitle="[dim]Press Ctrl+C to stop[/dim]",
+        border_style="green",
+        padding=(1, 2),
+    )
+    console.print(panel)
+
+    console.print(f"  [dim]SSH forwarding: ssh -L {port}:localhost:{port} ...[/dim]")
+    console.print()
 
     # Open browser if requested and not in SSH session
     if open_browser and not os.environ.get('SSH_CONNECTION'):
@@ -186,7 +209,7 @@ def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -
     except KeyboardInterrupt:
         pass
     finally:
-        print("\n  Shutting down...")
+        console.print("\n  [yellow]Shutting down...[/yellow]")
         httpd.server_close()
         # Cleanup temp files
         try:
@@ -196,100 +219,64 @@ def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -
             pass
 
 
-def main():
-    """Main CLI entry point."""
-    parser = argparse.ArgumentParser(
-        prog="aseview2",
-        description="Molecular structure viewer for ASE-supported file formats",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  aseview2 molecule.xyz              # View single structure
-  aseview2 trajectory.xyz -i :       # View all frames as animation
-  aseview2 trajectory.xyz -i 0:10    # View frames 0-9
-  aseview2 trajectory.xyz -i -1      # View last frame
-  aseview2 structure.cif -p 9000     # Use custom port
-  aseview2 file1.xyz file2.xyz       # Overlay multiple structures
-  aseview2 molecule.xyz -k           # Kill existing server, then start
+@app.command()
+def main(
+    files: List[str] = typer.Argument(
+        ...,
+        help="Input file(s) in any ASE-supported format (xyz, cif, pdb, etc.)",
+    ),
+    index: Optional[str] = typer.Option(
+        None, "-i", "--index",
+        help="Index or slice for trajectory (e.g., 0, -1, :, 0:10, ::2)",
+    ),
+    format: Optional[str] = typer.Option(
+        None, "-f", "--format",
+        help="File format (auto-detected if not specified)",
+    ),
+    port: int = typer.Option(
+        8080, "-p", "--port",
+        help="Port for HTTP server",
+    ),
+    no_browser: bool = typer.Option(
+        False, "--no-browser",
+        help="Don't open browser automatically",
+    ),
+    output: Optional[str] = typer.Option(
+        None, "-o", "--output",
+        help="Save HTML to file instead of serving",
+    ),
+    viewer: Optional[str] = typer.Option(
+        None, "-v", "--viewer",
+        help="Viewer type: molecular, normal, overlay (auto-selected)",
+    ),
+    style: str = typer.Option(
+        "cartoon", "--style",
+        help="Visual style: default, cartoon, neon, glossy, metallic, rowan, grey",
+    ),
+    kill: bool = typer.Option(
+        False, "-k", "--kill",
+        help="Kill existing process on the port before starting",
+    ),
+):
+    """
+    Molecular structure viewer for ASE-supported file formats.
 
-SSH port forwarding:
-  On remote server: aseview2 molecule.xyz -p 8080
-  On local machine: ssh -L 8080:localhost:8080 user@remote
-  Then open http://localhost:8080 in your browser
-        """
-    )
+    \b
+    Examples:
+      aseview2 molecule.xyz              # View single structure
+      aseview2 trajectory.xyz -i :       # View all frames
+      aseview2 trajectory.xyz -i 0:10    # View frames 0-9
+      aseview2 molecule.xyz -k           # Kill existing server, then start
 
-    parser.add_argument(
-        "files",
-        nargs="+",
-        help="Input file(s) in any ASE-supported format (xyz, cif, pdb, etc.)"
-    )
-
-    parser.add_argument(
-        "-i", "--index",
-        type=str,
-        default=None,
-        metavar="INDEX",
-        help="Index or slice for trajectory (e.g., 0, -1, :, 0:10, ::2)"
-    )
-
-    parser.add_argument(
-        "-f", "--format",
-        type=str,
-        default=None,
-        metavar="FORMAT",
-        help="File format (auto-detected if not specified)"
-    )
-
-    parser.add_argument(
-        "-p", "--port",
-        type=int,
-        default=8080,
-        metavar="PORT",
-        help="Port for HTTP server (default: 8080)"
-    )
-
-    parser.add_argument(
-        "--no-browser",
-        action="store_true",
-        help="Don't open browser automatically"
-    )
-
-    parser.add_argument(
-        "-o", "--output",
-        type=str,
-        default=None,
-        metavar="FILE",
-        help="Save HTML to file instead of serving"
-    )
-
-    parser.add_argument(
-        "-v", "--viewer",
-        type=str,
-        choices=["molecular", "normal", "overlay"],
-        default=None,
-        help="Viewer type (auto-selected based on input)"
-    )
-
-    parser.add_argument(
-        "--style",
-        type=str,
-        choices=["default", "cartoon", "neon", "glossy", "metallic", "rowan", "grey"],
-        default="cartoon",
-        help="Visual style (default: cartoon)"
-    )
-
-    parser.add_argument(
-        "-k", "--kill",
-        action="store_true",
-        help="Kill existing process on the port before starting"
-    )
-
-    args = parser.parse_args()
-
+    \b
+    SSH port forwarding:
+      Server:  aseview2 molecule.xyz -p 8080
+      Local:   ssh -L 8080:localhost:8080 user@remote
+      Browser: http://localhost:8080
+    """
     # Kill existing process on port if requested
-    if args.kill:
-        if kill_port(args.port):
+    if kill:
+        if kill_port(port):
             import time
             time.sleep(0.5)  # Wait for port to be released
 
@@ -297,67 +284,80 @@ SSH port forwarding:
     try:
         from ase.io import read
     except ImportError:
-        print("Error: ASE is required. Install with: pip install ase")
-        sys.exit(1)
+        console.print("[red]Error: ASE is required. Install with: pip install ase[/red]")
+        raise typer.Exit(1)
 
     # Import viewer classes
     from .wrapper import MolecularViewer, NormalViewer, OverlayViewer
 
     # Parse index
-    index = parse_index(args.index)
+    idx = parse_index(index)
 
     # Read structures
     all_atoms = []
-    for filepath in args.files:
+    for filepath in files:
         if not os.path.exists(filepath):
-            print(f"Error: File not found: {filepath}")
-            sys.exit(1)
+            console.print(f"[red]Error: File not found: {filepath}[/red]")
+            raise typer.Exit(1)
 
         try:
-            atoms = read(filepath, index=index, format=args.format)
+            atoms = read(filepath, index=idx, format=format)
             if isinstance(atoms, list):
                 all_atoms.extend(atoms)
             else:
                 all_atoms.append(atoms)
         except Exception as e:
-            print(f"Error reading {filepath}: {e}")
-            sys.exit(1)
+            console.print(f"[red]Error reading {filepath}: {e}[/red]")
+            raise typer.Exit(1)
 
     if not all_atoms:
-        print("Error: No structures loaded")
-        sys.exit(1)
+        console.print("[red]Error: No structures loaded[/red]")
+        raise typer.Exit(1)
+
+    # Show loading info
+    n_atoms = len(all_atoms[0]) if all_atoms else 0
+    n_frames = len(all_atoms)
+    console.print(f"  [green]✓[/green] Loaded [bold]{n_frames}[/bold] frame(s), [bold]{n_atoms}[/bold] atoms")
 
     # Determine viewer type
-    viewer_type = args.viewer
+    viewer_type = viewer
     if viewer_type is None:
-        if len(args.files) > 1:
+        if len(files) > 1:
             viewer_type = "overlay"
         elif len(all_atoms) > 1:
-            viewer_type = "molecular"  # Use molecular viewer for trajectories
+            viewer_type = "molecular"
         else:
             viewer_type = "molecular"
 
     # Create viewer
-    viewer_kwargs = {"style": args.style}
+    viewer_kwargs = {"style": style}
 
     if viewer_type == "molecular":
-        viewer = MolecularViewer(all_atoms, **viewer_kwargs)
+        viewer_obj = MolecularViewer(all_atoms, **viewer_kwargs)
     elif viewer_type == "normal":
-        viewer = NormalViewer(all_atoms, **viewer_kwargs)
+        viewer_obj = NormalViewer(all_atoms, **viewer_kwargs)
     elif viewer_type == "overlay":
-        viewer = OverlayViewer(all_atoms, **viewer_kwargs)
+        viewer_obj = OverlayViewer(all_atoms, **viewer_kwargs)
+    else:
+        console.print(f"[red]Error: Unknown viewer type: {viewer_type}[/red]")
+        raise typer.Exit(1)
 
     # Get HTML content
-    html_content = viewer.get_html()
+    html_content = viewer_obj.get_html()
 
     # Output
-    if args.output:
-        with open(args.output, 'w', encoding='utf-8') as f:
+    if output:
+        with open(output, 'w', encoding='utf-8') as f:
             f.write(html_content)
-        print(f"Saved to {args.output}")
+        console.print(f"  [green]✓[/green] Saved to [bold]{output}[/bold]")
     else:
-        serve_html(html_content, port=args.port, open_browser=not args.no_browser)
+        serve_html(html_content, port=port, open_browser=not no_browser)
+
+
+def cli():
+    """Entry point for the CLI."""
+    app()
 
 
 if __name__ == "__main__":
-    main()
+    cli()
