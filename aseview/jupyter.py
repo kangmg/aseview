@@ -1,108 +1,123 @@
 import ipywidgets as widgets
 from IPython.display import display, HTML
 import json
-from typing import Union, Dict, Any
+import base64
+from typing import Union, Dict, Any, List
 from ase import Atoms
 from .wrapper import BaseViewer, MolecularData
 
 
 class JupyterViewer(widgets.VBox):
     """Jupyter widget wrapper for molecular viewers."""
-    
-    def __init__(self, viewer: BaseViewer):
+
+    def __init__(self, viewer: BaseViewer, height: int = 600):
         """
         Initialize the Jupyter widget.
-        
+
         Args:
             viewer: A BaseViewer instance (MolecularViewer, NormalViewer, or OverlayViewer)
+            height: Height of the viewer in pixels
         """
         self.viewer = viewer
-        
-        # Create the main HTML output widget
-        self.html_output = widgets.HTML(
-            value=self.viewer.get_html(),
-            placeholder='Molecular Viewer',
-            description='',
+        self._height = height
+
+        # Create the main HTML output widget with iframe
+        html_content = self.viewer.get_html()
+
+        # Escape HTML for srcdoc attribute to handle large molecules
+        escaped_html = (html_content
+            .replace('&', '&amp;')
+            .replace('"', '&quot;')
+            .replace('<', '&lt;')
+            .replace('>', '&gt;')
         )
-        
+
+        iframe_html = f'''
+<div style="width: 100%; height: {height}px; position: relative;">
+    <iframe
+        srcdoc="{escaped_html}"
+        width="100%"
+        height="100%"
+        style="border: 1px solid #ddd; border-radius: 4px; display: block;"
+        sandbox="allow-scripts allow-same-origin"
+        scrolling="no">
+    </iframe>
+</div>
+'''
+        self.html_output = widgets.HTML(value=iframe_html)
+
         # Create control widgets
-        self.sidebar_toggle = widgets.ToggleButton(
-            value=True,
-            description='Toggle Sidebar',
-            disabled=False,
-            button_style='info',
-            tooltip='Toggle sidebar visibility',
-        )
-        
         self.save_button = widgets.Button(
             description='Save HTML',
             disabled=False,
             button_style='success',
             tooltip='Save as HTML file',
+            icon='download'
         )
-        
+
         self.filename_input = widgets.Text(
             value='molecule_viewer.html',
             placeholder='Filename',
             description='Filename:',
-            disabled=False
+            disabled=False,
+            layout=widgets.Layout(width='250px')
         )
-        
+
         # Set up event handlers
-        self.sidebar_toggle.observe(self._on_sidebar_toggle, names='value')
         self.save_button.on_click(self._on_save_click)
-        
+
         # Create controls box
-        controls = widgets.HBox([self.sidebar_toggle, self.filename_input, self.save_button])
-        
+        controls = widgets.HBox([self.filename_input, self.save_button])
+
         # Initialize the parent VBox
         super().__init__(children=[controls, self.html_output])
-        
-        # Display the widget
-        display(self)
-    
-    def _on_sidebar_toggle(self, change):
-        """Handle sidebar toggle button click."""
-        # In a full implementation, this would send a message to the JavaScript
-        # to toggle the sidebar. For now, we'll just update the HTML.
-        pass
-    
+
     def _on_save_click(self, button):
         """Handle save button click."""
         filename = self.filename_input.value
         html_content = self.viewer.get_html()
-        
-        # In a Jupyter notebook, we can't directly save files to the filesystem
-        # for security reasons. Instead, we'll show how to save it.
+
+        # Use base64 to safely encode the HTML content
+        html_b64 = base64.b64encode(html_content.encode('utf-8')).decode('ascii')
+
+        # Create download link using data URI
         js_code = f"""
-        var element = document.createElement('a');
-        element.setAttribute('href', 'data:text/html;charset=utf-8,' + encodeURIComponent(`{html_content}`));
-        element.setAttribute('download', '{filename}');
-        element.style.display = 'none';
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
+        (function() {{
+            var link = document.createElement('a');
+            link.href = 'data:text/html;base64,{html_b64}';
+            link.download = '{filename}';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }})();
         """
-        
+
         display(HTML(f'<script>{js_code}</script>'))
-        print(f"Saving {filename}...")
+        print(f"Downloading {filename}...")
 
 
-def view_molecule(data: Union[Atoms, Dict[str, Any], str], viewer_type: str = "molecular", **kwargs):
+def view_molecule(
+    data: Union[Atoms, Dict[str, Any], str, List],
+    viewer_type: str = "molecular",
+    height: int = 600,
+    **kwargs
+):
     """
     Create and display a molecular viewer in Jupyter.
-    
+
     Args:
-        data: ASE Atoms object, dictionary with molecular data, or path to JSON file
+        data: ASE Atoms object, dictionary with molecular data, path to JSON file,
+              or list of any of these
         viewer_type: Type of viewer ("molecular", "normal", or "overlay")
+        height: Height of the viewer in pixels
         **kwargs: Additional settings for the viewer
-        
+
     Returns:
         JupyterViewer widget
     """
     # Import here to avoid circular imports
     from .wrapper import MolecularViewer, NormalViewer, OverlayViewer
-    
+
     # Create the appropriate viewer
     if viewer_type == "molecular":
         viewer = MolecularViewer(data, **kwargs)
@@ -112,6 +127,6 @@ def view_molecule(data: Union[Atoms, Dict[str, Any], str], viewer_type: str = "m
         viewer = OverlayViewer(data, **kwargs)
     else:
         raise ValueError(f"Unknown viewer type: {viewer_type}")
-    
+
     # Create and return the Jupyter widget
-    return JupyterViewer(viewer)
+    return JupyterViewer(viewer, height=height)
