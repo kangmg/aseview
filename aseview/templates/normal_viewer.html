@@ -698,11 +698,6 @@
                 <div class="viewer" id="viewer">
                     <canvas id="molecule-canvas"></canvas>
                     <div class="help-text" id="help-text">Drag to rotate • Scroll to zoom</div>
-                    <div class="animation-controls">
-                        <button class="anim-btn" id="anim-play">▶</button>
-                        <button class="anim-btn" id="anim-pause">⏸</button>
-                        <button class="anim-btn" id="anim-stop">⏹</button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -720,6 +715,10 @@ let cards = {
 };
 
 let periodicities = [];
+
+// File naming for downloads
+let downloadBaseName = 'vibration';
+let downloadCounters = { png: 0, gif: 0 };
 
 let settings = {
     bondThreshold: 1.7,
@@ -1554,12 +1553,157 @@ function setupEventListeners() {
     safeAddListener('add-periodicity-btn', 'click', addPeriodicity);
     safeAddListener('play-btn', 'click', toggleAnimation);
     safeAddListener('copy-btn', 'click', copyCurrentFrameToClipboard);
-    safeAddListener('video-btn', 'click', function() {
-        alert('Save as GIF');
-    });
-    safeAddListener('download-btn', 'click', function() {
-        alert('Save as PNG');
-    });
+    safeAddListener('video-btn', 'click', saveAsGIF);
+    safeAddListener('download-btn', 'click', saveAsPNG);
+}
+
+function saveAsPNG() {
+    if (!renderer || !scene || !camera) {
+        alert('Renderer not ready');
+        return;
+    }
+
+    // Store original background
+    const originalBackground = scene.background;
+
+    // Set transparent background
+    scene.background = null;
+    renderer.setClearColor(0x000000, 0);
+
+    // Render one frame
+    renderer.render(scene, camera);
+
+    // Get canvas data as PNG
+    renderer.domElement.toBlob(function(blob) {
+        // Restore original background
+        scene.background = originalBackground;
+        updateBackgroundColor();
+
+        // Generate filename
+        let filename;
+        if (downloadCounters.png === 0) {
+            filename = `${downloadBaseName}.png`;
+        } else {
+            filename = `${downloadBaseName}_${downloadCounters.png}.png`;
+        }
+        downloadCounters.png++;
+
+        // Download
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+
+        try {
+            link.click();
+            console.log('PNG download initiated:', filename);
+        } catch (e) {
+            console.error('Download failed:', e);
+            window.open(url, '_blank');
+        }
+
+        setTimeout(() => {
+            if (link.parentNode) document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 1000);
+    }, 'image/png');
+}
+
+function saveAsGIF() {
+    if (!vibrationData.modeVectors || vibrationData.modeVectors.length === 0) {
+        alert('No vibration data available for GIF');
+        return;
+    }
+
+    if (!renderer || !scene || !camera) {
+        alert('Renderer not ready');
+        return;
+    }
+
+    if (typeof gifshot === 'undefined') {
+        alert('GIF library not loaded');
+        return;
+    }
+
+    const videoBtn = document.getElementById('video-btn');
+    const originalHTML = videoBtn ? videoBtn.innerHTML : '';
+
+    try {
+        const nFrames = vibrationData.nFrames;
+        const fps = settings.animationSpeed || 30;
+        const interval = 1 / fps;
+
+        if (videoBtn) {
+            videoBtn.innerHTML = '<span style="font-size: 10px;">...</span>';
+            videoBtn.disabled = true;
+        }
+
+        // Store current phase
+        const originalPhase = vibrationData.phase;
+
+        // Capture all frames
+        const images = [];
+        for (let i = 0; i < nFrames; i++) {
+            vibrationData.phase = (i / nFrames) * 2 * Math.PI;
+            renderVibrationFrame();
+            renderer.render(scene, camera);
+
+            const dataURL = renderer.domElement.toDataURL('image/png');
+            images.push(dataURL);
+        }
+
+        // Restore original phase
+        vibrationData.phase = originalPhase;
+        renderVibrationFrame();
+
+        // Create GIF
+        gifshot.createGIF({
+            images: images,
+            gifWidth: renderer.domElement.clientWidth,
+            gifHeight: renderer.domElement.clientHeight,
+            interval: interval,
+            numFrames: images.length,
+            frameDuration: 1,
+            sampleInterval: 10,
+            numWorkers: 2
+        }, function(obj) {
+            if (!obj.error) {
+                let filename;
+                if (downloadCounters.gif === 0) {
+                    filename = `${downloadBaseName}.gif`;
+                } else {
+                    filename = `${downloadBaseName}_${downloadCounters.gif}.gif`;
+                }
+                downloadCounters.gif++;
+
+                const link = document.createElement('a');
+                link.href = obj.image;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                console.log('GIF saved:', filename);
+            } else {
+                console.error('GIF creation error:', obj.error);
+                alert('Failed to create GIF');
+            }
+
+            if (videoBtn) {
+                videoBtn.innerHTML = originalHTML;
+                videoBtn.disabled = false;
+            }
+        });
+    } catch (e) {
+        console.error('GIF creation error:', e);
+        alert('Failed to create GIF: ' + e.message);
+        if (videoBtn) {
+            videoBtn.innerHTML = originalHTML;
+            videoBtn.disabled = false;
+        }
+    }
 }
 
 function setupButtonGroup(groupName, buttonIds) {
