@@ -94,21 +94,27 @@ class BaseViewer:
         """Display the viewer in a Jupyter notebook."""
         try:
             from IPython.display import display, HTML
-            import base64
-            
+
             html = self._generate_html()
-            
-            # Use base64 data URI for better Jupyter compatibility
-            html_bytes = html.encode('utf-8')
-            html_b64 = base64.b64encode(html_bytes).decode('ascii')
-            
-            # Create iframe with data URI
+
+            # Escape HTML for srcdoc attribute (handles quotes and special chars)
+            # This avoids data: URI size limits that cause failures with large molecules
+            escaped_html = (html
+                .replace('&', '&amp;')
+                .replace('"', '&quot;')
+                .replace('<', '&lt;')
+                .replace('>', '&gt;')
+            )
+
+            # Use srcdoc instead of data: URI to avoid size limits
+            # srcdoc supports much larger content than data: URIs
+            width_style = width if isinstance(width, str) else f'{width}px'
             iframe_html = f'''
-<div style="width: {width if isinstance(width, str) else str(width) + 'px'}; height: {height}px; position: relative;">
-    <iframe 
-        src="data:text/html;base64,{html_b64}" 
-        width="100%" 
-        height="100%" 
+<div style="width: {width_style}; height: {height}px; position: relative;">
+    <iframe
+        srcdoc="{escaped_html}"
+        width="100%"
+        height="100%"
         style="border: 1px solid #ddd; border-radius: 4px; display: block;"
         sandbox="allow-scripts allow-same-origin"
         scrolling="no">
@@ -246,39 +252,41 @@ class MolecularViewer(BaseViewer):
         script = f"""
 <script>
     (function() {{
+        var MAX_RETRIES = 100;  // 5 seconds max (100 * 50ms)
+        var retryCount = 0;
+
         function initData() {{
             console.log('Initializing molecular data...');
-            
-            // Apply settings from Python
+
+            // Apply settings from Python (ensure settings exists)
+            if (typeof settings === 'undefined') {{
+                window.settings = {{}};
+            }}
             const pythonSettings = {settings_json};
             Object.assign(settings, pythonSettings);
-            console.log('Applied settings:', settings);
-            
-            // Wait for renderer to be initialized
+
+            // Wait for renderer to be initialized with timeout
             function trySetData() {{
+                retryCount++;
                 if (typeof renderer !== 'undefined' && renderer !== null) {{
-                    console.log('Renderer ready, setting data');
                     if (typeof setMolecularData === 'function') {{
-                        console.log('setMolecularData found, calling with data');
                         setMolecularData({js_data});
                     }} else {{
                         console.error('setMolecularData function not found!');
                     }}
-                }} else {{
-                    console.log('Renderer not ready, waiting...');
+                }} else if (retryCount < MAX_RETRIES) {{
                     setTimeout(trySetData, 50);
+                }} else {{
+                    console.error('Renderer initialization timeout after ' + (MAX_RETRIES * 50) + 'ms');
                 }}
             }}
-            
+
             trySetData();
         }}
-        
-        // Try immediate execution (for iframes where DOM is already ready)
+
         if (document.readyState === 'loading') {{
-            console.log('DOM still loading, waiting for DOMContentLoaded');
             document.addEventListener('DOMContentLoaded', initData);
         }} else {{
-            console.log('DOM already ready, initializing immediately');
             initData();
         }}
     }})();
@@ -402,32 +410,30 @@ class NormalViewer(BaseViewer):
         script = f"""
 <script>
     (function() {{
+        var MAX_RETRIES = 100;
+        var retryCount = 0;
+
         function initData() {{
-            console.log('Initializing normal mode data...');
-            
-            // Apply settings from Python
+            if (typeof settings === 'undefined') {{
+                window.settings = {{}};
+            }}
             const pythonSettings = {settings_json};
             Object.assign(settings, pythonSettings);
-            console.log('Applied settings:', settings);
-            
-            // Wait for renderer to be initialized
+
             function trySetData() {{
+                retryCount++;
                 if (typeof renderer !== 'undefined' && renderer !== null) {{
-                    console.log('Renderer ready, setting data');
                     if (typeof setMolecularData === 'function') {{
                         setMolecularData({js_data});
-                    }} else {{
-                        console.error('setMolecularData function not found!');
                     }}
-                }} else {{
-                    console.log('Renderer not ready, waiting...');
+                }} else if (retryCount < MAX_RETRIES) {{
                     setTimeout(trySetData, 50);
                 }}
             }}
-            
+
             trySetData();
         }}
-        
+
         if (document.readyState === 'loading') {{
             document.addEventListener('DOMContentLoaded', initData);
         }} else {{
@@ -438,7 +444,7 @@ class NormalViewer(BaseViewer):
 </body>
 """
         return html.replace('</body>', script)
-    
+
     def _generate_simple_html(self, title: str) -> str:
         """Generate a simple HTML fallback."""
         return f"""
@@ -448,7 +454,7 @@ class NormalViewer(BaseViewer):
     <title>{title}</title>
     <meta charset="UTF-8">
     <style>
-        body {{ font-family: Arial, sans-serif; background: #111827; color: #f9fafb; 
+        body {{ font-family: Arial, sans-serif; background: #111827; color: #f9fafb;
                 display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }}
         .container {{ text-align: center; }}
     </style>
@@ -551,55 +557,45 @@ class OverlayViewer(BaseViewer):
             if external_tag in html:
                 html = html.replace(external_tag, f'<script>\n{styles_js}\n</script>')
         
-        # Inject molecular data and settings before closing script tag
+        # Inject molecular data and settings
         settings_json = json.dumps(self.settings)
-        
-        # Insert initialization code before the last closing </script> tag
-        init_script = f"""
-// Initialize data from Python
-(function() {{
-    function initData() {{
-        console.log('Initializing overlay data...');
-        
-        // Apply settings from Python
-        const pythonSettings = {settings_json};
-        Object.assign(settings, pythonSettings);
-        console.log('Applied settings:', settings);
-        
-        // Wait for renderer to be initialized
-        function trySetData() {{
-            if (typeof renderer !== 'undefined' && renderer !== null) {{
-                console.log('Renderer ready, setting data');
-                if (typeof setMolecularData === 'function') {{
-                    setMolecularData({js_data});
-                }} else {{
-                    console.error('setMolecularData function not found!');
-                }}
-            }} else {{
-                console.log('Renderer not ready, waiting...');
-                setTimeout(trySetData, 50);
-            }}
-        }}
-        
-        trySetData();
-    }}
-    
-    if (document.readyState === 'loading') {{
-        document.addEventListener('DOMContentLoaded', initData);
-    }} else {{
-        initData();
-    }}
-}})();
+        script = f"""
+<script>
+    (function() {{
+        var MAX_RETRIES = 100;
+        var retryCount = 0;
 
+        function initData() {{
+            if (typeof settings === 'undefined') {{
+                window.settings = {{}};
+            }}
+            const pythonSettings = {settings_json};
+            Object.assign(settings, pythonSettings);
+
+            function trySetData() {{
+                retryCount++;
+                if (typeof renderer !== 'undefined' && renderer !== null) {{
+                    if (typeof setMolecularData === 'function') {{
+                        setMolecularData({js_data});
+                    }}
+                }} else if (retryCount < MAX_RETRIES) {{
+                    setTimeout(trySetData, 50);
+                }}
+            }}
+
+            trySetData();
+        }}
+
+        if (document.readyState === 'loading') {{
+            document.addEventListener('DOMContentLoaded', initData);
+        }} else {{
+            initData();
+        }}
+    }})();
 </script>
 </body>
 """
-        # Replace the last occurrence of </script></body>
-        last_script_close = html.rfind('</script>')
-        if last_script_close != -1:
-            html = html[:last_script_close] + init_script + html[last_script_close+9:]
-        
-        return html
+        return html.replace('</body>', script)
     
     def _generate_simple_html(self, title: str) -> str:
         """Generate a simple HTML fallback."""
