@@ -13,6 +13,82 @@ import threading
 import webbrowser
 import sys
 import os
+import signal
+
+
+def kill_port(port: int) -> bool:
+    """
+    Kill process using the specified port.
+
+    Returns True if a process was killed, False otherwise.
+    """
+    import socket
+    import struct
+
+    # Check if port is in use first
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind(('', port))
+        sock.close()
+        return False  # Port is free
+    except OSError:
+        pass  # Port is in use
+
+    # Find PID using the port by parsing /proc/net/tcp
+    port_hex = f"{port:04X}"
+    pids_to_kill = set()
+
+    try:
+        # Read /proc/net/tcp to find socket inode
+        with open('/proc/net/tcp', 'r') as f:
+            lines = f.readlines()[1:]  # Skip header
+
+        target_inodes = set()
+        for line in lines:
+            parts = line.split()
+            if len(parts) >= 10:
+                local_addr = parts[1]
+                # local_addr format: IP:PORT (hex)
+                local_port = int(local_addr.split(':')[1], 16)
+                if local_port == port:
+                    inode = parts[9]
+                    target_inodes.add(inode)
+
+        if not target_inodes:
+            return False
+
+        # Find PIDs that have these inodes
+        for pid in os.listdir('/proc'):
+            if not pid.isdigit():
+                continue
+
+            fd_dir = f'/proc/{pid}/fd'
+            try:
+                for fd in os.listdir(fd_dir):
+                    try:
+                        link = os.readlink(f'{fd_dir}/{fd}')
+                        if link.startswith('socket:['):
+                            inode = link[8:-1]
+                            if inode in target_inodes:
+                                pids_to_kill.add(int(pid))
+                    except (OSError, PermissionError):
+                        continue
+            except (OSError, PermissionError):
+                continue
+
+        # Kill the processes
+        for pid in pids_to_kill:
+            try:
+                os.kill(pid, signal.SIGKILL)
+                print(f"  Killed process {pid} on port {port}")
+            except (OSError, PermissionError) as e:
+                print(f"  Failed to kill process {pid}: {e}")
+
+        return len(pids_to_kill) > 0
+
+    except Exception as e:
+        print(f"  Error finding process: {e}")
+        return False
 
 
 def parse_index(index_str: str):
@@ -134,6 +210,7 @@ Examples:
   aseview2 trajectory.xyz -i -1      # View last frame
   aseview2 structure.cif -p 9000     # Use custom port
   aseview2 file1.xyz file2.xyz       # Overlay multiple structures
+  aseview2 molecule.xyz -k           # Kill existing server, then start
 
 SSH port forwarding:
   On remote server: aseview2 molecule.xyz -p 8080
@@ -202,7 +279,19 @@ SSH port forwarding:
         help="Visual style (default: cartoon)"
     )
 
+    parser.add_argument(
+        "-k", "--kill",
+        action="store_true",
+        help="Kill existing process on the port before starting"
+    )
+
     args = parser.parse_args()
+
+    # Kill existing process on port if requested
+    if args.kill:
+        if kill_port(args.port):
+            import time
+            time.sleep(0.5)  # Wait for port to be released
 
     # Import ASE for reading files
     try:
