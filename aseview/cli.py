@@ -26,6 +26,7 @@ app = typer.Typer(
     help="Molecular structure viewer for ASE-supported file formats",
     add_completion=False,
     rich_markup_mode="rich",
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 console = Console()
 
