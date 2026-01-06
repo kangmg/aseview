@@ -372,7 +372,7 @@ class NormalViewer(BaseViewer):
             self._extract_vibration_data(vibrations)
         elif mode_vectors is not None and frequencies is not None:
             self.mode_vectors = mode_vectors if isinstance(mode_vectors, list) else mode_vectors.tolist()
-            self.frequencies = self._format_frequencies(frequencies)
+            self.frequencies, self.is_imaginary = self._format_frequencies(frequencies)
 
         self.n_frames = n_frames
 
