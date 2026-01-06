@@ -613,13 +613,18 @@
                                 <span>Select Mode</span>
                             </div>
                             <select class="select" id="normal-mode">
-                                <option value="1">Mode 1 : ● 122.3i cm⁻¹</option>
-                                <option value="2">Mode 2 : ● 245.7 cm⁻¹</option>
-                                <option value="3">Mode 3 : ● 389.1 cm⁻¹</option>
-                                <option value="4">Mode 4 : ● 456.8 cm⁻¹</option>
-                                <option value="5">Mode 5 : ● 523.4 cm⁻¹</option>
-                                <option value="6">Mode 6 : ● 678.9 cm⁻¹</option>
+                                <option value="0">No vibration data loaded</option>
                             </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Amplitude</span>
+                                <span class="slider-value" id="amplitude-value">0.75</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.1" max="2.0" step="0.05" value="0.75" class="slider" id="amplitude-slider">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -698,16 +703,6 @@
                         <button class="anim-btn" id="anim-pause">⏸</button>
                         <button class="anim-btn" id="anim-stop">⏹</button>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-            <div class="viewer-container">
-                <div class="viewer" id="viewer">
-                    <canvas id="molecule-canvas"></canvas>
-                    <div class="help-text" id="help-text">Drag to rotate • Scroll to zoom</div>
                 </div>
             </div>
         </div>
@@ -1491,6 +1486,15 @@ function setupEventListeners() {
         }
     });
 
+    safeAddListener('amplitude-slider', 'input', function() {
+        const valueEl = document.getElementById('amplitude-value');
+        if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
+        vibrationData.amplitude = parseFloat(this.value);
+        if (!animationState.isPlaying) {
+            renderVibrationFrame();
+        }
+    });
+
     safeAddListener('frame-slider', 'input', function() {
         const frameNum = parseInt(this.value, 10);
         animationState.currentFrame = frameNum - 1;  // 0-indexed
@@ -1611,3 +1615,326 @@ function toggleCard(cardId) {
 
 function darkenColorHex(color, percent) {
     let R = parseInt(color.substring(1, 3), 16);
+    let G = parseInt(color.substring(3, 5), 16);
+    let B = parseInt(color.substring(5, 7), 16);
+
+    R = Math.floor(R * (100 - percent) / 100);
+    G = Math.floor(G * (100 - percent) / 100);
+    B = Math.floor(B * (100 - percent) / 100);
+
+    return `#${R.toString(16).padStart(2, '0')}${G.toString(16).padStart(2, '0')}${B.toString(16).padStart(2, '0')}`;
+}
+
+// ========== Normal Mode / Vibration Support ==========
+
+// Vibration state
+let vibrationData = {
+    equilibriumPositions: null,  // Original atom positions
+    modeVectors: null,           // [nModes][nAtoms][3] displacement vectors
+    frequencies: null,           // Array of frequency strings
+    isImaginary: null,           // Array of booleans
+    currentModeIndex: 0,
+    nFrames: 30,
+    phase: 0,                    // Current phase in animation cycle (0 to 2*PI)
+    amplitude: 0.75              // Displacement amplitude
+};
+
+/**
+ * Initialize the normal mode viewer with vibration data
+ * Called from Python after data injection
+ */
+function initNormalModeViewer(atomsData, vibData) {
+    console.log('Initializing Normal Mode Viewer');
+    console.log('Atoms data:', atomsData);
+    console.log('Vibration data:', vibData);
+
+    // Store equilibrium structure
+    if (atomsData) {
+        vibrationData.equilibriumPositions = atomsData.positions.map(p => [...p]);
+        molecularData = [atomsData];
+        cameraNeedsFit = true;
+    }
+
+    // Store vibration data if available
+    if (vibData && vibData.modeVectors) {
+        vibrationData.modeVectors = vibData.modeVectors;
+        vibrationData.frequencies = vibData.frequencies || [];
+        vibrationData.isImaginary = vibData.isImaginary || [];
+        vibrationData.nFrames = vibData.nFrames || 30;
+
+        // Populate mode selector dropdown
+        populateModeSelector();
+
+        // Show normal modes card
+        const modesCard = document.querySelector('.card:has(#normal-mode)');
+        if (modesCard) {
+            modesCard.style.display = 'block';
+        }
+    } else {
+        // Hide normal modes card if no vibration data
+        const modesCard = document.querySelector('.card:has(#normal-mode)');
+        if (modesCard) {
+            modesCard.style.display = 'none';
+        }
+    }
+
+    // Update frame display
+    updateFrameDisplay();
+    renderMolecule();
+}
+
+/**
+ * Populate the mode selector dropdown with frequencies
+ */
+function populateModeSelector() {
+    const select = document.getElementById('normal-mode');
+    if (!select || !vibrationData.frequencies) return;
+
+    select.innerHTML = '';
+
+    vibrationData.frequencies.forEach((freq, idx) => {
+        const option = document.createElement('option');
+        option.value = idx;
+
+        // Format frequency display
+        const isImag = vibrationData.isImaginary && vibrationData.isImaginary[idx];
+        const indicator = isImag ? '●' : '○';
+        const freqStr = freq.toString().includes('i') ? freq : `${freq} cm⁻¹`;
+
+        option.textContent = `Mode ${idx + 1}: ${indicator} ${freqStr}`;
+        if (isImag) {
+            option.style.color = '#ef4444';  // Red for imaginary frequencies
+        }
+        select.appendChild(option);
+    });
+
+    // Set up event listener for mode selection
+    select.addEventListener('change', function() {
+        vibrationData.currentModeIndex = parseInt(this.value, 10);
+        vibrationData.phase = 0;
+        renderMolecule();
+    });
+}
+
+/**
+ * Get displaced positions for current animation frame
+ */
+function getDisplacedPositions() {
+    if (!vibrationData.equilibriumPositions || !vibrationData.modeVectors) {
+        return null;
+    }
+
+    const modeIdx = vibrationData.currentModeIndex;
+    const modeVector = vibrationData.modeVectors[modeIdx];
+
+    if (!modeVector) return null;
+
+    const amplitude = vibrationData.amplitude;
+    const phase = vibrationData.phase;
+    const displacement = Math.sin(phase) * amplitude;
+
+    const displacedPositions = vibrationData.equilibriumPositions.map((pos, i) => {
+        const vec = modeVector[i] || [0, 0, 0];
+        return [
+            pos[0] + vec[0] * displacement,
+            pos[1] + vec[1] * displacement,
+            pos[2] + vec[2] * displacement
+        ];
+    });
+
+    return displacedPositions;
+}
+
+/**
+ * Override toggleAnimation for vibration mode
+ */
+const originalToggleAnimation = toggleAnimation;
+toggleAnimation = function() {
+    // Check if we're in vibration mode
+    if (vibrationData.modeVectors && vibrationData.modeVectors.length > 0) {
+        toggleVibrationAnimation();
+    } else {
+        // Fall back to trajectory animation
+        originalToggleAnimation();
+    }
+};
+
+/**
+ * Toggle vibration animation (sinusoidal)
+ */
+function toggleVibrationAnimation() {
+    const playBtn = document.getElementById('play-btn');
+
+    if (animationState.isPlaying) {
+        // Pause
+        animationState.isPlaying = false;
+        if (animationState.animationInterval) {
+            clearInterval(animationState.animationInterval);
+            animationState.animationInterval = null;
+        }
+
+        // Update button icon to play
+        if (playBtn) {
+            playBtn.innerHTML = `
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            `;
+        }
+    } else {
+        // Play
+        animationState.isPlaying = true;
+        const fps = settings.animationSpeed || 30;
+        const interval = 1000 / fps;
+        const phaseStep = (2 * Math.PI) / vibrationData.nFrames;
+
+        animationState.animationInterval = setInterval(() => {
+            vibrationData.phase += phaseStep;
+            if (vibrationData.phase >= 2 * Math.PI) {
+                vibrationData.phase -= 2 * Math.PI;
+            }
+
+            // Update frame display (convert phase to frame number)
+            const frameNum = Math.round((vibrationData.phase / (2 * Math.PI)) * vibrationData.nFrames);
+            animationState.currentFrame = frameNum;
+            updateFrameDisplay();
+
+            renderVibrationFrame();
+        }, interval);
+
+        // Update button icon to pause
+        if (playBtn) {
+            playBtn.innerHTML = `
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            `;
+        }
+    }
+}
+
+/**
+ * Render a single vibration frame with displaced positions
+ */
+function renderVibrationFrame() {
+    if (!scene || !camera || !renderer) return;
+    if (!molecularData || molecularData.length === 0) return;
+
+    const displacedPositions = getDisplacedPositions();
+    if (!displacedPositions) {
+        renderMolecule();
+        return;
+    }
+
+    // Create temporary molecule data with displaced positions
+    const molecule = { ...molecularData[0] };
+    molecule.positions = displacedPositions;
+
+    // Render with displaced positions
+    renderMoleculeWithData(molecule);
+}
+
+/**
+ * Render molecule with specific data (for vibration animation)
+ */
+function renderMoleculeWithData(molecule) {
+    if (!scene || !camera || !renderer) return;
+
+    if (moleculeGroup) {
+        scene.remove(moleculeGroup);
+        disposeObject3D(moleculeGroup);
+    }
+
+    moleculeGroup = new THREE.Group();
+
+    let positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
+    let symbols = molecule.symbols;
+
+    // Apply periodic boundary conditions if requested
+    if (periodicities.length > 0 && molecule.cell) {
+        const extended = applyPeriodicBoundaries(positions, symbols, molecule.cell, periodicities);
+        positions = extended.positions;
+        symbols = extended.symbols;
+    }
+
+    const styleName = (settings.style || 'cartoon').toLowerCase();
+    const atomFactory = atomFactories[styleName] || atomFactories['default'];
+    const bondFactory = bondFactories[styleName] || bondFactories['default'];
+
+    const atomScale = Math.max(settings.atomSize, 0.05);
+    const bondRadius = Math.max(settings.bondThickness, 0.005);
+    const bondCutoff = settings.bondThreshold;
+
+    const uniqueSymbols = [...new Set(symbols)];
+    const greyColorMap = {};
+    uniqueSymbols.forEach((sym, idx) => {
+        const lightness = (idx + 1) / (uniqueSymbols.length + 1);
+        greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
+    });
+    const helpers = { greyColorMap };
+
+    // Create atoms
+    positions.forEach((pos, i) => {
+        const symbol = symbols[i];
+        const atomMesh = atomFactory(pos, symbol, atomScale, helpers);
+        if (atomMesh) {
+            atomMesh.userData.atomIndex = i;
+            atomMesh.userData.symbol = symbol;
+            moleculeGroup.add(atomMesh);
+        }
+    });
+
+    // Create bonds
+    if (settings.showBond) {
+        const bonds = detectBonds(positions, symbols, bondCutoff);
+        bonds.forEach(bond => {
+            const bondMesh = bondFactory(
+                positions[bond.i], positions[bond.j],
+                symbols[bond.i], symbols[bond.j],
+                bondRadius, atomScale, helpers
+            );
+            if (bondMesh) moleculeGroup.add(bondMesh);
+        });
+    }
+
+    // Add unit cell if available
+    if (settings.showCell && molecule.cell) {
+        const cellGroup = createUnitCell(molecule.cell);
+        moleculeGroup.add(cellGroup);
+    }
+
+    scene.add(moleculeGroup);
+}
+
+// Override updateFrameDisplay for vibration mode
+const originalUpdateFrameDisplay = updateFrameDisplay;
+updateFrameDisplay = function() {
+    const frameValue = document.getElementById('frame-value');
+    const frameSlider = document.getElementById('frame-slider');
+
+    if (vibrationData.modeVectors && vibrationData.modeVectors.length > 0) {
+        // Vibration mode: show frame in cycle
+        const totalFrames = vibrationData.nFrames;
+        const currentFrame = animationState.currentFrame + 1;
+
+        if (frameValue) {
+            frameValue.textContent = `${currentFrame} / ${totalFrames}`;
+        }
+        if (frameSlider) {
+            frameSlider.max = totalFrames;
+            frameSlider.value = currentFrame;
+        }
+    } else {
+        // Trajectory mode: use original
+        originalUpdateFrameDisplay();
+    }
+};
+
+// Export functions for Python injection
+window.setMolecularData = setMolecularData;
+window.initNormalModeViewer = initNormalModeViewer;
+window.removePeriodicity = removePeriodicity;
+    </script>
+</body>
+</html>
