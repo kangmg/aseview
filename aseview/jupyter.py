@@ -3,7 +3,7 @@ from IPython.display import display, HTML
 import json
 from typing import Union, Dict, Any
 from ase import Atoms
-from .viewers import BaseViewer, MolecularData
+from .wrapper import BaseViewer, MolecularData
 
 
 class JupyterViewer(widgets.VBox):
@@ -101,7 +101,7 @@ def view_molecule(data: Union[Atoms, Dict[str, Any], str], viewer_type: str = "m
         JupyterViewer widget
     """
     # Import here to avoid circular imports
-    from .viewers import MolecularViewer, NormalViewer, OverlayViewer
+    from .wrapper import MolecularViewer, NormalViewer, OverlayViewer
     
     # Create the appropriate viewer
     if viewer_type == "molecular":
