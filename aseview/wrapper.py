@@ -331,40 +331,147 @@ class MolecularViewer(BaseViewer):
 
 class NormalViewer(BaseViewer):
     """Normal mode viewer for molecular vibrations."""
-    
-    def __init__(self, data: Union[Atoms, Dict[str, Any], str, List], **kwargs):
-        super().__init__(data)
+
+    def __init__(
+        self,
+        atoms: Union[Atoms, Dict[str, Any]],
+        vibrations=None,
+        mode_vectors: List = None,
+        frequencies: List = None,
+        n_frames: int = 30,
+        **kwargs
+    ):
+        """
+        Initialize NormalViewer for visualizing vibrational modes.
+
+        Args:
+            atoms: ASE Atoms object of equilibrium structure
+            vibrations: ASE Vibrations or VibrationsData object (optional)
+            mode_vectors: List of mode displacement vectors (optional, extracted from vibrations if not provided)
+            frequencies: List of frequencies in cm^-1 (optional, extracted from vibrations if not provided)
+            n_frames: Number of animation frames per cycle
+            **kwargs: Additional viewer settings
+        """
+        # Process atoms data
+        if isinstance(atoms, Atoms):
+            self.atoms_data = MolecularData.from_atoms(atoms)
+        elif isinstance(atoms, dict):
+            self.atoms_data = atoms
+        else:
+            raise ValueError(f"Unsupported atoms type: {type(atoms)}")
+
+        # Store as data for compatibility
+        self.data = self.atoms_data
+
+        # Extract vibration data
+        self.mode_vectors = None
+        self.frequencies = None
+        self.is_imaginary = None
+
+        if vibrations is not None:
+            self._extract_vibration_data(vibrations)
+        elif mode_vectors is not None and frequencies is not None:
+            self.mode_vectors = mode_vectors if isinstance(mode_vectors, list) else mode_vectors.tolist()
+            self.frequencies = self._format_frequencies(frequencies)
+
+        self.n_frames = n_frames
+
         self.settings = {
-            "bondThreshold": 1.0,  # Scale factor for covalent radii sum
+            "bondThreshold": 1.0,
             "bondThickness": 0.1,
             "atomSize": 0.4,
             "animationSpeed": 30,
-            "forceScale": 1.0,
             "backgroundColor": "#1f2937",
-            "style": "default",
+            "style": "cartoon",
             "showCell": True,
             "showBond": True,
             "showShadow": False,
-            "displacementAmplitude": 1.0,
+            "displacementAmplitude": 0.75,
             "showModeVector": False,
+            "initialModeIndex": 0,
+            "nFrames": n_frames,
             **kwargs
         }
-    
+
+    def _extract_vibration_data(self, vib):
+        """Extract mode vectors and frequencies from ASE Vibrations object."""
+        import numpy as np
+
+        # Try to get VibrationsData
+        try:
+            from ase.vibrations import Vibrations
+            from ase.vibrations.data import VibrationsData
+        except ImportError:
+            raise ImportError("ASE vibrations module is required")
+
+        if hasattr(vib, 'get_vibrations'):
+            vib_data = vib.get_vibrations()
+        else:
+            vib_data = vib
+
+        # Get mode vectors (all atoms)
+        modes = vib_data.get_modes(all_atoms=True)
+        self.mode_vectors = modes.tolist()
+
+        # Get frequencies and format them
+        freqs = vib_data.get_frequencies()
+        self.frequencies, self.is_imaginary = self._format_frequencies(freqs)
+
+    def _format_frequencies(self, freqs):
+        """Format frequencies for display, handling imaginary values."""
+        import numpy as np
+
+        formatted = []
+        is_imaginary = []
+
+        for f in freqs:
+            if np.iscomplexobj(f) and f.imag != 0:
+                formatted.append(f"{f.imag:.2f}i")
+                is_imaginary.append(True)
+            else:
+                val = f.real if np.iscomplexobj(f) else float(f)
+                formatted.append(f"{val:.2f}")
+                is_imaginary.append(False)
+
+        return formatted, is_imaginary
+
+    def _get_js_data(self) -> str:
+        """Get molecular data as JSON for JavaScript."""
+        return json.dumps(self.atoms_data)
+
+    def _get_vibration_data(self) -> dict:
+        """Get vibration data for JavaScript."""
+        return {
+            "modeVectors": self.mode_vectors,
+            "frequencies": self.frequencies,
+            "isImaginary": self.is_imaginary,
+            "nFrames": self.n_frames
+        }
+
     def _generate_html(self) -> str:
         """Generate the HTML content for the normal mode viewer."""
-        js_data = self._get_js_data()
-        
-        # Load normal_viewer template (now with THREE.js support)
+        atoms_json = self._get_js_data()
+
+        # Prepare vibration data
+        if self.mode_vectors is not None:
+            vib_data = self._get_vibration_data()
+            vib_json = json.dumps(vib_data)
+            has_vibrations = "true"
+        else:
+            vib_json = "null"
+            has_vibrations = "false"
+
+        # Load normal_viewer template
         try:
             template_path = os.path.join(os.path.dirname(__file__), "templates", "normal_viewer.html")
             with open(template_path, 'r', encoding='utf-8') as f:
                 html = f.read()
         except FileNotFoundError:
             return self._generate_simple_html("Normal Mode Viewer")
-        
+
         # Inline JavaScript dependencies
         vendor_dir = os.path.join(os.path.dirname(__file__), "static", "js", "vendor")
-        
+
         # Inline Three.js
         three_path = os.path.join(vendor_dir, "three.min.js")
         if os.path.exists(three_path):
@@ -374,7 +481,7 @@ class NormalViewer(BaseViewer):
                 '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>',
                 f'<script>{three_js}</script>'
             )
-        
+
         # Inline OrbitControls
         orbit_path = os.path.join(vendor_dir, "OrbitControls.js")
         if os.path.exists(orbit_path):
@@ -384,7 +491,7 @@ class NormalViewer(BaseViewer):
                 '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>',
                 f'<script>{orbit_js}</script>'
             )
-        
+
         # Inline TrackballControls
         trackball_path = os.path.join(vendor_dir, "TrackballControls.js")
         if os.path.exists(trackball_path):
@@ -394,24 +501,28 @@ class NormalViewer(BaseViewer):
                 '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>',
                 f'<script>{trackball_js}</script>'
             )
-        
+
         # Inline styles.js
         styles_path = os.path.join(os.path.dirname(__file__), "static", "js", "styles.js")
         if os.path.exists(styles_path):
             with open(styles_path, 'r', encoding='utf-8') as f:
                 styles_js = f.read()
-            # Replace external script tag with inline version
             external_tag = '<script src="/static/js/styles.js"></script>'
             if external_tag in html:
                 html = html.replace(external_tag, f'<script>\n{styles_js}\n</script>')
-        
-        # Inject molecular data and settings
+
+        # Inject data and settings
         settings_json = json.dumps(self.settings)
         script = f"""
 <script>
     (function() {{
         var MAX_RETRIES = 100;
         var retryCount = 0;
+
+        // Inject data from Python
+        window.equilibriumAtoms = {atoms_json};
+        window.vibrationData = {vib_json};
+        window.hasVibrations = {has_vibrations};
 
         function initData() {{
             if (typeof settings === 'undefined') {{
@@ -423,8 +534,11 @@ class NormalViewer(BaseViewer):
             function trySetData() {{
                 retryCount++;
                 if (typeof renderer !== 'undefined' && renderer !== null) {{
-                    if (typeof setMolecularData === 'function') {{
-                        setMolecularData({js_data});
+                    if (typeof initNormalModeViewer === 'function') {{
+                        initNormalModeViewer(window.equilibriumAtoms, window.vibrationData);
+                    }} else if (typeof setMolecularData === 'function') {{
+                        // Fallback for templates without vibration support
+                        setMolecularData([window.equilibriumAtoms]);
                     }}
                 }} else if (retryCount < MAX_RETRIES) {{
                     setTimeout(trySetData, 50);
