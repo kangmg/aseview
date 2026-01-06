@@ -1,9 +1,0 @@
-numpy
-ase
-ipywidgets
-jupyter
-
-[dev]
-pytest
-black
-flake8

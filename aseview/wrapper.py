@@ -3,7 +3,7 @@ Wrapper module for molecular visualization
 """
 import json
 import os
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Union
 from ase import Atoms
 
 
@@ -242,7 +242,6 @@ class MolecularViewer(BaseViewer):
 
         # If template does not expose placeholder, call setMolecularData at load
         # Use both DOMContentLoaded and immediate execution for iframe compatibility
-        import json
         settings_json = json.dumps(self.settings)
         script = f"""
 <script>
@@ -399,7 +398,6 @@ class NormalViewer(BaseViewer):
                 html = html.replace(external_tag, f'<script>\n{styles_js}\n</script>')
         
         # Inject molecular data and settings
-        import json
         settings_json = json.dumps(self.settings)
         script = f"""
 <script>
@@ -463,148 +461,6 @@ class NormalViewer(BaseViewer):
 </body>
 </html>
         """
-
-
-class OverlayViewer(BaseViewer):
-    """Overlay viewer for comparing multiple molecules."""
-    
-    def __init__(self, data: Union[Atoms, Dict[str, Any], str, List], **kwargs):
-        super().__init__(data)
-        self.settings = {
-            "bondThreshold": 1.7,
-            "bondThickness": 0.1,
-            "atomSize": 0.4,
-            "animationSpeed": 30,
-            "forceScale": 1.0,
-            "backgroundColor": "#1f2937",
-            "style": "default",
-            "showCell": True,
-            "showBond": True,
-            "showShadow": False,
-            "colorBy": "Atom",
-            **kwargs
-        }
-    
-    def _generate_html(self) -> str:
-        """Generate the HTML content for the overlay viewer."""
-        js_data = self._get_js_data()
-        
-        # Load overlay_viewer template (now with THREE.js support)
-        try:
-            template_path = os.path.join(os.path.dirname(__file__), "templates", "overlay_viewer.html")
-            with open(template_path, 'r', encoding='utf-8') as f:
-                html = f.read()
-        except FileNotFoundError:
-            return self._generate_simple_html("Overlay Viewer")
-        
-        # Inline JavaScript dependencies
-        vendor_dir = os.path.join(os.path.dirname(__file__), "static", "js", "vendor")
-        
-        # Inline Three.js
-        three_path = os.path.join(vendor_dir, "three.min.js")
-        if os.path.exists(three_path):
-            with open(three_path, 'r', encoding='utf-8') as f:
-                three_js = f.read()
-            html = html.replace(
-                '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>',
-                f'<script>{three_js}</script>'
-            )
-        
-        # Inline OrbitControls
-        orbit_path = os.path.join(vendor_dir, "OrbitControls.js")
-        if os.path.exists(orbit_path):
-            with open(orbit_path, 'r', encoding='utf-8') as f:
-                orbit_js = f.read()
-            html = html.replace(
-                '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>',
-                f'<script>{orbit_js}</script>'
-            )
-        
-        # Inline TrackballControls
-        trackball_path = os.path.join(vendor_dir, "TrackballControls.js")
-        if os.path.exists(trackball_path):
-            with open(trackball_path, 'r', encoding='utf-8') as f:
-                trackball_js = f.read()
-            html = html.replace(
-                '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>',
-                f'<script>{trackball_js}</script>'
-            )
-        
-        # Inline styles.js
-        styles_path = os.path.join(os.path.dirname(__file__), "static", "js", "styles.js")
-        if os.path.exists(styles_path):
-            with open(styles_path, 'r', encoding='utf-8') as f:
-                styles_js = f.read()
-            # Replace external script tag with inline version
-            external_tag = '<script src="/static/js/styles.js"></script>'
-            if external_tag in html:
-                html = html.replace(external_tag, f'<script>\n{styles_js}\n</script>')
-        
-        # Inject molecular data and settings
-        import json
-        settings_json = json.dumps(self.settings)
-        script = f"""
-<script>
-    (function() {{
-        function initData() {{
-            console.log('Initializing overlay data...');
-            
-            // Apply settings from Python
-            const pythonSettings = {settings_json};
-            Object.assign(settings, pythonSettings);
-            console.log('Applied settings:', settings);
-            
-            // Wait for renderer to be initialized
-            function trySetData() {{
-                if (typeof renderer !== 'undefined' && renderer !== null) {{
-                    console.log('Renderer ready, setting data');
-                    if (typeof setMolecularData === 'function') {{
-                        setMolecularData({js_data});
-                    }} else {{
-                        console.error('setMolecularData function not found!');
-                    }}
-                }} else {{
-                    console.log('Renderer not ready, waiting...');
-                    setTimeout(trySetData, 50);
-                }}
-            }}
-            
-            trySetData();
-        }}
-        
-        if (document.readyState === 'loading') {{
-            document.addEventListener('DOMContentLoaded', initData);
-        }} else {{
-            initData();
-        }}
-    }})();
-</script>
-</body>
-"""
-        return html.replace('</body>', script)
-    
-    def _generate_simple_html(self, title: str) -> str:
-        """Generate a simple HTML fallback."""
-        return f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{title}</title>
-    <meta charset="UTF-8">
-    <style>
-        body {{ font-family: Arial, sans-serif; background: #111827; color: #f9fafb; 
-                display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }}
-        .container {{ text-align: center; }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>{title}</h1>
-        <p>Data loaded successfully</p>
-    </div>
-</body>
-</html>
-"""
 
 
 class OverlayViewer(BaseViewer):
@@ -696,7 +552,6 @@ class OverlayViewer(BaseViewer):
                 html = html.replace(external_tag, f'<script>\n{styles_js}\n</script>')
         
         # Inject molecular data and settings before closing script tag
-        import json
         settings_json = json.dumps(self.settings)
         
         # Insert initialization code before the last closing </script> tag
