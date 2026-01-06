@@ -13,7 +13,6 @@ import threading
 import webbrowser
 import sys
 import os
-from typing import Optional
 
 
 def parse_index(index_str: str):
@@ -71,7 +70,6 @@ def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -
         open_browser: Whether to open browser automatically
     """
     import tempfile
-    import signal
 
     # Create temporary directory with HTML file
     temp_dir = tempfile.mkdtemp()
@@ -87,6 +85,7 @@ def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -
     for attempt in range(max_attempts):
         try:
             handler = lambda *args, **kwargs: QuietHandler(*args, directory=temp_dir, **kwargs)
+            socketserver.TCPServer.allow_reuse_address = True
             httpd = socketserver.TCPServer(("", port), handler)
             break
         except OSError:
@@ -98,32 +97,27 @@ def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -
     url = f"http://localhost:{port}"
 
     print(f"\n  aseview2 server running at: {url}")
-    print(f"  (for SSH port forwarding: ssh -L {port}:localhost:{port} user@host)")
-    print(f"\n  Press Ctrl+C to stop the server\n")
+    print(f"  (for SSH: ssh -L {port}:localhost:{port} ...)")
+    print(f"\n  Press Ctrl+C to stop\n")
 
     # Open browser if requested and not in SSH session
     if open_browser and not os.environ.get('SSH_CONNECTION'):
         threading.Timer(0.5, lambda: webbrowser.open(url)).start()
 
-    # Handle graceful shutdown
-    def shutdown_handler(signum, frame):
-        print("\n  Shutting down server...")
-        httpd.shutdown()
+    # Run server
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        print("\n  Shutting down...")
+        httpd.server_close()
         # Cleanup temp files
         try:
             os.remove(html_path)
             os.rmdir(temp_dir)
         except:
             pass
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, shutdown_handler)
-    signal.signal(signal.SIGTERM, shutdown_handler)
-
-    try:
-        httpd.serve_forever()
-    except KeyboardInterrupt:
-        shutdown_handler(None, None)
 
 
 def main():
