@@ -826,11 +826,13 @@ function initRenderer() {
     setupCamera();
     setupControls();
 
-    // Only ambient light - no directional light to avoid line artifacts
-    scene.add(new THREE.AmbientLight(0xffffff, 1.0));  // Full ambient lighting
-    
-    // Keep directionalLight variable for shadow feature (will be added when shadow is enabled)
-    directionalLight = null;
+    // Lighting setup - matching molecular_viewer
+    directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 10, 10);
+    scene.add(directionalLight);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    scene.add(ambientLight);
 
     window.addEventListener('resize', handleResize);
     handleResize();
