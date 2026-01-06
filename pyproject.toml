@@ -39,4 +39,11 @@ where = ["."]
 include = ["aseview*"]
 
 [tool.setuptools.package-data]
-aseview = ["static/*.html"]
+aseview = [
+    "templates/*.html",
+    "static/js/*.js",
+    "static/js/vendor/*.js",
+]
+
+[project.scripts]
+aseview2 = "aseview.cli:main"
