@@ -25,6 +25,8 @@ dependencies = [
     "ase",
     "ipywidgets",
     "jupyter",
+    "typer[all]>=0.9.0",
+    "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]
@@ -46,4 +48,4 @@ aseview = [
 ]
 
 [project.scripts]
-aseview2 = "aseview.cli:main"
+aseview2 = "aseview.cli:cli"
