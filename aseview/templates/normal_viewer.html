@@ -826,11 +826,13 @@ function initRenderer() {
     setupCamera();
     setupControls();
 
-    // Only ambient light - no directional light to avoid line artifacts
-    scene.add(new THREE.AmbientLight(0xffffff, 1.0));  // Full ambient lighting
-    
-    // Keep directionalLight variable for shadow feature (will be added when shadow is enabled)
-    directionalLight = null;
+    // Lighting setup - matching molecular_viewer
+    directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 10, 10);
+    scene.add(directionalLight);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    scene.add(ambientLight);
 
     window.addEventListener('resize', handleResize);
     handleResize();
@@ -1885,23 +1887,50 @@ function renderMoleculeWithData(molecule) {
         }
     });
 
-    // Create bonds
+    // Create bonds (inline detection)
     if (settings.showBond) {
-        const bonds = detectBonds(positions, symbols, bondCutoff);
-        bonds.forEach(bond => {
-            const bondMesh = bondFactory(
-                positions[bond.i], positions[bond.j],
-                symbols[bond.i], symbols[bond.j],
-                bondRadius, atomScale, helpers
-            );
-            if (bondMesh) moleculeGroup.add(bondMesh);
-        });
+        for (let i = 0; i < positions.length; i++) {
+            for (let j = i + 1; j < positions.length; j++) {
+                const dist = positions[i].distanceTo(positions[j]);
+                const info1 = atomInfo[symbols[i]] || atomInfo['default'];
+                const info2 = atomInfo[symbols[j]] || atomInfo['default'];
+                const covalentRadiusSum = info1.radius + info2.radius;
+                const adjustedCutoff = covalentRadiusSum * bondCutoff;
+
+                if (dist < adjustedCutoff) {
+                    const bondMesh = bondFactory(
+                        positions[i], positions[j],
+                        symbols[i], symbols[j],
+                        bondRadius, atomScale, helpers
+                    );
+                    if (bondMesh) moleculeGroup.add(bondMesh);
+                }
+            }
+        }
     }
 
-    // Add unit cell if available
+    // Add unit cell if available (inline)
     if (settings.showCell && molecule.cell) {
-        const cellGroup = createUnitCell(molecule.cell);
-        moleculeGroup.add(cellGroup);
+        const cellVectors = molecule.cell.map(c => new THREE.Vector3(...c));
+        const points = [
+            new THREE.Vector3(0, 0, 0), cellVectors[0],
+            new THREE.Vector3(0, 0, 0), cellVectors[1],
+            new THREE.Vector3(0, 0, 0), cellVectors[2],
+            cellVectors[0], cellVectors[0].clone().add(cellVectors[1]),
+            cellVectors[0], cellVectors[0].clone().add(cellVectors[2]),
+            cellVectors[1], cellVectors[1].clone().add(cellVectors[0]),
+            cellVectors[1], cellVectors[1].clone().add(cellVectors[2]),
+            cellVectors[2], cellVectors[2].clone().add(cellVectors[0]),
+            cellVectors[2], cellVectors[2].clone().add(cellVectors[1]),
+            cellVectors[0].clone().add(cellVectors[1]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+            cellVectors[0].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+            cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
+        ];
+        const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
+        const cellMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+        const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
+        cellMesh.renderOrder = 2;
+        moleculeGroup.add(cellMesh);
     }
 
     scene.add(moleculeGroup);
