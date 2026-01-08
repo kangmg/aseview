@@ -511,6 +511,13 @@ class NormalViewer(BaseViewer):
             if external_tag in html:
                 html = html.replace(external_tag, f'<script>\n{styles_js}\n</script>')
 
+        # Inline gifshot.js for GIF export
+        gifshot_path = os.path.join(vendor_dir, "gifshot.js")
+        if os.path.exists(gifshot_path):
+            with open(gifshot_path, 'r', encoding='utf-8') as f:
+                gifshot_js = f.read()
+            html = html.replace('</head>', f'<script>{gifshot_js}</script>\n</head>')
+
         # Inject data and settings
         settings_json = json.dumps(self.settings)
         script = f"""

@@ -81,11 +81,13 @@ class JupyterViewer(widgets.VBox):
         html_b64 = base64.b64encode(html_content.encode('utf-8')).decode('ascii')
 
         # Create download link using data URI
+        # Escape filename for safe JS string insertion
+        safe_filename = json.dumps(filename)  # Adds quotes and escapes special chars
         js_code = f"""
         (function() {{
             var link = document.createElement('a');
             link.href = 'data:text/html;base64,{html_b64}';
-            link.download = '{filename}';
+            link.download = {safe_filename};
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
