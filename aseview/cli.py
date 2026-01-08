@@ -216,7 +216,7 @@ def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -
         try:
             os.remove(html_path)
             os.rmdir(temp_dir)
-        except:
+        except OSError:
             pass
 
 

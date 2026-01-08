@@ -626,6 +626,16 @@
                                 <input type="range" min="0.1" max="2.0" step="0.05" value="0.75" class="slider" id="amplitude-slider">
                             </div>
                         </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Show Vectors</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-vectors">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -721,7 +731,7 @@ let downloadBaseName = 'vibration';
 let downloadCounters = { png: 0, gif: 0 };
 
 let settings = {
-    bondThreshold: 1.7,
+    bondThreshold: 1.0,
     bondThickness: 0.1,
     atomSize: 0.4,
     animationSpeed: 30,
@@ -733,6 +743,7 @@ let settings = {
     showShadow: false,
     showEnergyPlot: false,
     showForces: false,
+    showModeVector: false,
     viewMode: 'Perspective',
     rotationMode: 'TrackBall'
 };
@@ -1543,6 +1554,15 @@ function setupEventListeners() {
         renderMolecule();
     });
 
+    safeAddListener('show-vectors', 'change', function() {
+        settings.showModeVector = this.checked;
+        if (vibrationData.modeVectors) {
+            renderVibrationFrame();
+        } else {
+            renderMolecule();
+        }
+    });
+
     if (document.getElementById('orthographic-btn') && document.getElementById('perspective-btn')) {
         setupButtonGroup('view-mode', ['orthographic-btn', 'perspective-btn']);
     }
@@ -1634,6 +1654,13 @@ function saveAsGIF() {
         const nFrames = vibrationData.nFrames;
         const fps = settings.animationSpeed || 30;
         const interval = 1 / fps;
+
+        // Warn for large frame counts
+        if (nFrames > 60) {
+            if (!confirm(`This will capture ${nFrames} frames. This may take a while and use significant memory. Continue?`)) {
+                return;
+            }
+        }
 
         if (videoBtn) {
             videoBtn.innerHTML = '<span style="font-size: 10px;">...</span>';
@@ -2075,6 +2102,38 @@ function renderMoleculeWithData(molecule) {
         const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
         cellMesh.renderOrder = 2;
         moleculeGroup.add(cellMesh);
+    }
+
+    // Add mode vector arrows if enabled
+    if (settings.showModeVector && vibrationData.modeVectors) {
+        const modeIdx = vibrationData.currentModeIndex;
+        const modeVector = vibrationData.modeVectors[modeIdx];
+
+        if (modeVector && modeVector.length === positions.length) {
+            const arrowColor = 0x00ff00;  // Green arrows
+            const arrowScale = vibrationData.amplitude * 2;
+
+            for (let i = 0; i < positions.length; i++) {
+                const vec = modeVector[i];
+                if (!vec) continue;
+
+                const dir = new THREE.Vector3(vec[0], vec[1], vec[2]);
+                const length = dir.length() * arrowScale;
+
+                if (length > 0.01) {  // Skip very small vectors
+                    dir.normalize();
+                    const arrow = new THREE.ArrowHelper(
+                        dir,
+                        positions[i],
+                        length,
+                        arrowColor,
+                        length * 0.3,  // Head length
+                        length * 0.15  // Head width
+                    );
+                    moleculeGroup.add(arrow);
+                }
+            }
+        }
     }
 
     scene.add(moleculeGroup);
