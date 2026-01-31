@@ -105,6 +105,40 @@ viewer = OverlayViewer([reactant, product])
 viewer.show()
 ```
 
+### Normal Mode Visualization
+
+```python
+from ase import Atoms
+from ase.calculators.emt import EMT
+from ase.optimize import BFGS
+from ase.vibrations import Vibrations
+from aseview import NormalViewer
+
+# Create or load molecule
+atoms = Atoms('H2O', positions=[[0, 0, 0], [0.96, 0, 0], [-0.24, 0.93, 0]])
+atoms.calc = EMT()
+
+# Optimize structure
+opt = BFGS(atoms)
+opt.run(fmax=0.01)
+
+# Calculate vibrations
+vib = Vibrations(atoms, name='vib')
+vib.run()
+vib.summary()
+
+# Visualize normal modes
+viewer = NormalViewer(atoms, vibrations=vib)
+viewer.show()
+```
+
+Features:
+- Mode selector dropdown with frequencies
+- Sinusoidal animation of atomic displacements
+- Amplitude slider to control displacement magnitude
+- Show Vectors toggle to display mode displacement arrows
+- Imaginary frequencies (transition states) shown in red
+
 ### Using view_molecule Helper
 
 ```python
