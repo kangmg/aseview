@@ -713,9 +713,31 @@
                     <canvas id="molecule-canvas"></canvas>
                     <div class="help-text" id="help-text">Drag to rotate • Scroll to zoom</div>
                 </div>
+                <!-- Energy Plot -->
+                <div class="energy-plot-container" id="energy-plot-container" style="display: none;">
+                    <canvas id="energy-plot-canvas"></canvas>
+                </div>
             </div>
         </div>
     </div>
+
+    <style>
+        .energy-plot-container {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            height: 120px;
+            background: rgba(31, 41, 55, 0.9);
+            border-radius: 8px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        #energy-plot-canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
 
     <script>
         
@@ -1284,11 +1306,15 @@ function toggleAnimation() {
         animationState.isPlaying = true;
         const fps = settings.animationSpeed || 30;
         const interval = 1000 / fps;
-        
+
         animationState.animationInterval = setInterval(() => {
             animationState.currentFrame = (animationState.currentFrame + 1) % molecularData.length;
             updateFrameDisplay();
             renderMolecule();
+            // Update energy plot marker
+            if (settings.showEnergyPlot && energyPlotData.hasEnergy) {
+                drawEnergyPlot();
+            }
         }, interval);
         
         // Update button icon to pause
@@ -1408,8 +1434,30 @@ function setMolecularData(data) {
     if (cellColorGroup) {
         cellColorGroup.style.display = hasCell ? 'block' : 'none';
     }
-    
+
+    // Extract energy data for plotting
+    extractEnergyData();
+
+    // Show/hide energy plot checkbox based on energy availability
+    if (!energyPlotData.hasEnergy) {
+        const energyCheckbox = document.getElementById('show-energy-plot');
+        if (energyCheckbox) {
+            energyCheckbox.checked = false;
+            energyCheckbox.parentElement.parentElement.parentElement.style.opacity = '0.5';
+        }
+    } else {
+        const energyCheckbox = document.getElementById('show-energy-plot');
+        if (energyCheckbox) {
+            energyCheckbox.parentElement.parentElement.parentElement.style.opacity = '1';
+        }
+    }
+
     renderMolecule();
+
+    // Draw energy plot if enabled
+    if (settings.showEnergyPlot && energyPlotData.hasEnergy) {
+        drawEnergyPlot();
+    }
 }
 
 function setDownloadName(name) {
@@ -1555,6 +1603,10 @@ function setupEventListeners() {
         animationState.currentFrame = frameNum - 1;  // 0-indexed
         updateFrameDisplay();
         renderMolecule();
+        // Update energy plot
+        if (settings.showEnergyPlot && energyPlotData.hasEnergy) {
+            drawEnergyPlot();
+        }
     });
 
     safeAddListener('background-color', 'input', function() {
@@ -1597,6 +1649,13 @@ function setupEventListeners() {
 
     safeAddListener('show-energy-plot', 'change', function() {
         settings.showEnergyPlot = this.checked;
+        const plotContainer = document.getElementById('energy-plot-container');
+        if (plotContainer) {
+            plotContainer.style.display = this.checked ? 'block' : 'none';
+            if (this.checked) {
+                drawEnergyPlot();
+            }
+        }
     });
 
     safeAddListener('show-forces', 'change', function() {
@@ -1894,6 +1953,210 @@ function darkenColorHex(color, percent) {
     B = Math.floor(B * (100 - percent) / 100);
 
     return `#${R.toString(16).padStart(2, '0')}${G.toString(16).padStart(2, '0')}${B.toString(16).padStart(2, '0')}`;
+}
+
+// ========== Energy Plot Functions ==========
+
+let energyPlotData = {
+    energies: [],
+    minEnergy: 0,
+    maxEnergy: 0,
+    hasEnergy: false
+};
+
+function extractEnergyData() {
+    if (!molecularData || molecularData.length === 0) {
+        energyPlotData.hasEnergy = false;
+        return;
+    }
+
+    energyPlotData.energies = [];
+    let hasAnyEnergy = false;
+
+    for (let i = 0; i < molecularData.length; i++) {
+        const mol = molecularData[i];
+        if (mol.energy !== undefined && mol.energy !== null) {
+            energyPlotData.energies.push(mol.energy);
+            hasAnyEnergy = true;
+        } else {
+            energyPlotData.energies.push(null);
+        }
+    }
+
+    energyPlotData.hasEnergy = hasAnyEnergy;
+
+    if (hasAnyEnergy) {
+        const validEnergies = energyPlotData.energies.filter(e => e !== null);
+        energyPlotData.minEnergy = Math.min(...validEnergies);
+        energyPlotData.maxEnergy = Math.max(...validEnergies);
+    }
+}
+
+function drawEnergyPlot() {
+    const canvas = document.getElementById('energy-plot-canvas');
+    const container = document.getElementById('energy-plot-container');
+    if (!canvas || !container) return;
+
+    // Extract energy data if not done yet
+    if (energyPlotData.energies.length !== molecularData.length) {
+        extractEnergyData();
+    }
+
+    if (!energyPlotData.hasEnergy) {
+        container.style.display = 'none';
+        const checkbox = document.getElementById('show-energy-plot');
+        if (checkbox) checkbox.checked = false;
+        settings.showEnergyPlot = false;
+        console.log('No energy data available');
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    const rect = container.getBoundingClientRect();
+
+    // Set canvas size for sharp rendering
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = (rect.width - 20) * dpr;
+    canvas.height = (rect.height - 20) * dpr;
+    canvas.style.width = (rect.width - 20) + 'px';
+    canvas.style.height = (rect.height - 20) + 'px';
+    ctx.scale(dpr, dpr);
+
+    const width = rect.width - 20;
+    const height = rect.height - 20;
+    const padding = { left: 50, right: 20, top: 15, bottom: 25 };
+    const plotWidth = width - padding.left - padding.right;
+    const plotHeight = height - padding.top - padding.bottom;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+
+    // Draw background grid
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (plotHeight / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(width - padding.right, y);
+        ctx.stroke();
+    }
+
+    // Calculate scale
+    const energies = energyPlotData.energies;
+    const n = energies.length;
+    let minE = energyPlotData.minEnergy;
+    let maxE = energyPlotData.maxEnergy;
+
+    // Add some padding to range
+    const range = maxE - minE || 1;
+    minE -= range * 0.1;
+    maxE += range * 0.1;
+
+    // Draw energy line
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    let started = false;
+
+    for (let i = 0; i < n; i++) {
+        if (energies[i] === null) continue;
+        const x = padding.left + (i / (n - 1 || 1)) * plotWidth;
+        const y = padding.top + plotHeight - ((energies[i] - minE) / (maxE - minE)) * plotHeight;
+
+        if (!started) {
+            ctx.moveTo(x, y);
+            started = true;
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+    ctx.stroke();
+
+    // Draw data points
+    ctx.fillStyle = '#3b82f6';
+    for (let i = 0; i < n; i++) {
+        if (energies[i] === null) continue;
+        const x = padding.left + (i / (n - 1 || 1)) * plotWidth;
+        const y = padding.top + plotHeight - ((energies[i] - minE) / (maxE - minE)) * plotHeight;
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Draw current frame marker
+    drawEnergyPlotMarker();
+
+    // Draw axes labels
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(maxE.toFixed(2), padding.left - 5, padding.top + 5);
+    ctx.fillText(minE.toFixed(2), padding.left - 5, height - padding.bottom);
+
+    ctx.textAlign = 'center';
+    ctx.fillText('Frame', width / 2, height - 5);
+
+    // Y-axis label
+    ctx.save();
+    ctx.translate(12, height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Energy (eV)', 0, 0);
+    ctx.restore();
+}
+
+function drawEnergyPlotMarker() {
+    const canvas = document.getElementById('energy-plot-canvas');
+    const container = document.getElementById('energy-plot-container');
+    if (!canvas || !container || !energyPlotData.hasEnergy) return;
+
+    const ctx = canvas.getContext('2d');
+    const rect = container.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    const width = rect.width - 20;
+    const height = rect.height - 20;
+    const padding = { left: 50, right: 20, top: 15, bottom: 25 };
+    const plotWidth = width - padding.left - padding.right;
+    const plotHeight = height - padding.top - padding.bottom;
+
+    const energies = energyPlotData.energies;
+    const n = energies.length;
+    const frameIdx = animationState.currentFrame;
+
+    if (n <= 1 || frameIdx < 0 || frameIdx >= n) return;
+
+    // Draw current frame marker (vertical line)
+    const x = padding.left + (frameIdx / (n - 1 || 1)) * plotWidth;
+
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, padding.top);
+    ctx.lineTo(x, height - padding.bottom);
+    ctx.stroke();
+
+    // Draw marker point if energy exists
+    if (energies[frameIdx] !== null) {
+        let minE = energyPlotData.minEnergy;
+        let maxE = energyPlotData.maxEnergy;
+        const range = maxE - minE || 1;
+        minE -= range * 0.1;
+        maxE += range * 0.1;
+
+        const y = padding.top + plotHeight - ((energies[frameIdx] - minE) / (maxE - minE)) * plotHeight;
+
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Show energy value
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(energies[frameIdx].toFixed(4) + ' eV', x, padding.top - 3);
+    }
 }
 
 window.setMolecularData = setMolecularData;
