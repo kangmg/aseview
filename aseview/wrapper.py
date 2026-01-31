@@ -15,20 +15,34 @@ class MolecularData:
         """Convert ASE Atoms object to JSON-serializable dictionary."""
         positions = atoms.get_positions().tolist()
         symbols = atoms.get_chemical_symbols()
-        
+
         data = {
             "positions": positions,
             "symbols": symbols
         }
-        
+
         # Add cell information if present
         if atoms.pbc.any():
             data["cell"] = atoms.get_cell().tolist()
-            
+
         # Add forces if present
         if hasattr(atoms, 'arrays') and 'forces' in atoms.arrays:
             data["forces"] = atoms.arrays['forces'].tolist()
-            
+
+        # Add energy if available (from calculator or info dict)
+        try:
+            if atoms.calc is not None:
+                data["energy"] = float(atoms.get_potential_energy())
+        except Exception:
+            pass
+
+        # Check info dict for energy (common in trajectory files)
+        if "energy" not in data and hasattr(atoms, 'info'):
+            for key in ['energy', 'Energy', 'E', 'total_energy']:
+                if key in atoms.info:
+                    data["energy"] = float(atoms.info[key])
+                    break
+
         return data
     
     @staticmethod
