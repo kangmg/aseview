@@ -715,6 +715,7 @@
                 </div>
                 <!-- Energy Plot -->
                 <div class="energy-plot-container" id="energy-plot-container" style="display: none;">
+                    <div class="energy-plot-resize-handle" id="energy-plot-resize-handle"></div>
                     <canvas id="energy-plot-canvas"></canvas>
                 </div>
             </div>
@@ -728,10 +729,35 @@
             left: 10px;
             right: 10px;
             height: 120px;
+            min-height: 80px;
+            max-height: 400px;
             background: rgba(31, 41, 55, 0.9);
             border-radius: 8px;
             padding: 10px;
+            padding-top: 18px;
             box-sizing: border-box;
+        }
+        .energy-plot-resize-handle {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 18px;
+            cursor: ns-resize;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .energy-plot-resize-handle::after {
+            content: '';
+            width: 40px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+        .energy-plot-resize-handle:hover::after {
+            background: rgba(255, 255, 255, 0.5);
         }
         #energy-plot-canvas {
             width: 100%;
@@ -1675,6 +1701,42 @@ function setupEventListeners() {
     safeAddListener('copy-btn', 'click', copyCurrentFrameToClipboard);
     safeAddListener('video-btn', 'click', saveAsGIF);
     safeAddListener('download-btn', 'click', saveAsPNG);
+
+    // Energy plot resize handle
+    setupEnergyPlotResize();
+}
+
+function setupEnergyPlotResize() {
+    const handle = document.getElementById('energy-plot-resize-handle');
+    const container = document.getElementById('energy-plot-container');
+    if (!handle || !container) return;
+
+    let isResizing = false;
+    let startY = 0;
+    let startHeight = 0;
+
+    handle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        startY = e.clientY;
+        startHeight = container.offsetHeight;
+        document.body.style.cursor = 'ns-resize';
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        const deltaY = startY - e.clientY;
+        const newHeight = Math.min(400, Math.max(80, startHeight + deltaY));
+        container.style.height = newHeight + 'px';
+        drawEnergyPlot();
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = '';
+        }
+    });
 }
 
 function saveAsPNG() {
