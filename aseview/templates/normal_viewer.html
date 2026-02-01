@@ -2084,13 +2084,14 @@ function renderMoleculeWithData(molecule) {
         moleculeGroup.add(cellMesh);
     }
 
-    // Add mode vector arrows if enabled
+    // Add mode vector arrows if enabled (bidirectional: red +, blue -)
     if (settings.showModeVector && vibrationData.modeVectors) {
         const modeIdx = vibrationData.currentModeIndex;
         const modeVector = vibrationData.modeVectors[modeIdx];
 
         if (modeVector && modeVector.length === positions.length) {
-            const arrowColor = 0x00ff00;  // Green arrows
+            const positiveColor = 0xff0000;  // Red for positive direction
+            const negativeColor = 0x0000ff;  // Blue for negative direction
             const arrowScale = vibrationData.amplitude * 2;
 
             for (let i = 0; i < positions.length; i++) {
@@ -2102,15 +2103,29 @@ function renderMoleculeWithData(molecule) {
 
                 if (length > 0.01) {  // Skip very small vectors
                     dir.normalize();
-                    const arrow = new THREE.ArrowHelper(
+
+                    // Positive direction arrow (red)
+                    const arrowPositive = new THREE.ArrowHelper(
                         dir,
                         positions[i],
                         length,
-                        arrowColor,
+                        positiveColor,
                         length * 0.3,  // Head length
                         length * 0.15  // Head width
                     );
-                    moleculeGroup.add(arrow);
+                    moleculeGroup.add(arrowPositive);
+
+                    // Negative direction arrow (blue)
+                    const negDir = dir.clone().negate();
+                    const arrowNegative = new THREE.ArrowHelper(
+                        negDir,
+                        positions[i],
+                        length,
+                        negativeColor,
+                        length * 0.3,  // Head length
+                        length * 0.15  // Head width
+                    );
+                    moleculeGroup.add(arrowNegative);
                 }
             }
         }
