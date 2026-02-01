@@ -612,14 +612,14 @@ class NormalViewer(BaseViewer):
         """
 
     @classmethod
-    def from_orca(cls, atoms, hess_file: str, skip_imaginary: bool = True, **kwargs):
+    def from_orca(cls, atoms, hess_file: str, skip_imaginary: bool = False, **kwargs):
         """
         Create NormalViewer from ORCA .hess file.
 
         Args:
             atoms: ASE Atoms object of equilibrium structure
             hess_file: Path to ORCA .hess file
-            skip_imaginary: If True, skip translational/rotational modes (freq < 10 cm^-1)
+            skip_imaginary: If True, skip translational/rotational modes (freq < 10 cm^-1). Default False.
             **kwargs: Additional viewer settings
 
         Returns:
