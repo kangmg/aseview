@@ -267,17 +267,65 @@ def main(
     Molecular structure viewer for ASE-supported file formats.
 
     \b
-    Examples:
+    Basic Usage:
       aseview2 molecule.xyz              # View single structure
-      aseview2 trajectory.xyz -i :       # View all frames
-      aseview2 trajectory.xyz -i 0:10    # View frames 0-9
-      aseview2 molecule.xyz -k           # Kill existing server, then start
+      aseview2 trajectory.xyz            # View trajectory (animation)
+      aseview2 structure.cif             # View crystal structure
 
     \b
-    SSH port forwarding:
+    Indexing (ASE-style slicing):
+      aseview2 traj.xyz -i :             # All frames
+      aseview2 traj.xyz -i 0             # First frame only
+      aseview2 traj.xyz -i -1            # Last frame only
+      aseview2 traj.xyz -i 0:10          # Frames 0-9
+      aseview2 traj.xyz -i ::2           # Every 2nd frame
+      aseview2 traj.xyz -i 10:20:2       # Frames 10-19, step 2
+
+    \b
+    Viewer Types (-v/--viewer):
+      aseview2 mol.xyz -v molecular      # Standard viewer (default)
+      aseview2 mol.xyz -v overlay        # Overlay multiple structures
+      aseview2 mol.xyz -v normal         # Normal mode viewer
+
+    \b
+    Overlay Mode (comparing structures):
+      aseview2 a.xyz b.xyz               # Overlay two files (auto-detected)
+      aseview2 a.xyz b.xyz c.xyz         # Overlay multiple files
+      aseview2 traj.xyz -v overlay       # Overlay all frames from trajectory
+
+    \b
+    Colormap for Overlay (--cmap):
+      aseview2 traj.xyz -v overlay --cmap viridis   # Viridis gradient
+      aseview2 traj.xyz -v overlay --cmap plasma    # Plasma gradient
+      aseview2 traj.xyz -v overlay --cmap coolwarm  # Blue-Red diverging
+      aseview2 traj.xyz -v overlay --cmap jet       # Rainbow (classic)
+      aseview2 traj.xyz -v overlay --cmap grayscale # Black to white
+
+    \b
+    Visual Styles (--style):
+      aseview2 mol.xyz --style cartoon   # Cartoon style (default)
+      aseview2 mol.xyz --style default   # CPK coloring
+      aseview2 mol.xyz --style neon      # Neon glow effect
+      aseview2 mol.xyz --style glossy    # Shiny surface
+      aseview2 mol.xyz --style metallic  # Metallic appearance
+      aseview2 mol.xyz --style rowan     # Rowan style
+
+    \b
+    Output Options:
+      aseview2 mol.xyz -o viewer.html    # Save as HTML file
+      aseview2 mol.xyz -p 9000           # Use port 9000
+      aseview2 mol.xyz --no-browser      # Don't open browser
+
+    \b
+    SSH Port Forwarding:
       Server:  aseview2 molecule.xyz -p 8080
       Local:   ssh -L 8080:localhost:8080 user@remote
       Browser: http://localhost:8080
+
+    \b
+    Other Options:
+      aseview2 mol.xyz -k                # Kill existing server on port
+      aseview2 mol.xyz -f xyz            # Force file format
     """
     # Kill existing process on port if requested
     if kill:
