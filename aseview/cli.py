@@ -258,6 +258,10 @@ def main(
         None, "--cmap", "--colormap",
         help="Colormap for overlay (viridis, plasma, coolwarm, jet, rainbow, grayscale)",
     ),
+    hess: Optional[str] = typer.Option(
+        None, "--hess", "--hessian",
+        help="Hessian file for normal mode viewer (ORCA .hess format)",
+    ),
     kill: bool = typer.Option(
         False, "-k", "--kill",
         help="Kill existing process on the port before starting",
@@ -300,6 +304,11 @@ def main(
       aseview2 traj.xyz -v overlay --cmap coolwarm  # Blue-Red diverging
       aseview2 traj.xyz -v overlay --cmap jet       # Rainbow (classic)
       aseview2 traj.xyz -v overlay --cmap grayscale # Black to white
+
+    \b
+    Normal Mode Viewer (--hess):
+      aseview2 mol.xyz --hess orca.hess             # ORCA Hessian file
+      aseview2 mol.xyz --hess orca.hess -v normal   # Explicit normal viewer
 
     \b
     Visual Styles (--style):
@@ -375,7 +384,9 @@ def main(
     # Determine viewer type
     viewer_type = viewer
     if viewer_type is None:
-        if len(files) > 1:
+        if hess:
+            viewer_type = "normal"
+        elif len(files) > 1:
             viewer_type = "overlay"
         elif len(all_atoms) > 1:
             viewer_type = "molecular"
@@ -393,7 +404,19 @@ def main(
     if viewer_type == "molecular":
         viewer_obj = MolecularViewer(all_atoms, **viewer_kwargs)
     elif viewer_type == "normal":
-        viewer_obj = NormalViewer(all_atoms, **viewer_kwargs)
+        if hess:
+            # Use Hessian file for normal mode viewer
+            if not os.path.exists(hess):
+                console.print(f"[red]Error: Hessian file not found: {hess}[/red]")
+                raise typer.Exit(1)
+            try:
+                viewer_obj = NormalViewer.from_orca(all_atoms[0], hess, **viewer_kwargs)
+                console.print(f"  [green]✓[/green] Loaded Hessian from [bold]{hess}[/bold]")
+            except Exception as e:
+                console.print(f"[red]Error parsing Hessian file: {e}[/red]")
+                raise typer.Exit(1)
+        else:
+            viewer_obj = NormalViewer(all_atoms[0], **viewer_kwargs)
     elif viewer_type == "overlay":
         viewer_obj = OverlayViewer(all_atoms, **viewer_kwargs)
     else:
