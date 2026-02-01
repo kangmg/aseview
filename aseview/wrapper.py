@@ -611,6 +611,52 @@ class NormalViewer(BaseViewer):
 </html>
         """
 
+    @classmethod
+    def from_orca(cls, atoms, hess_file: str, skip_imaginary: bool = True, **kwargs):
+        """
+        Create NormalViewer from ORCA .hess file.
+
+        Args:
+            atoms: ASE Atoms object of equilibrium structure
+            hess_file: Path to ORCA .hess file
+            skip_imaginary: If True, skip translational/rotational modes (freq < 10 cm^-1)
+            **kwargs: Additional viewer settings
+
+        Returns:
+            NormalViewer instance
+
+        Example:
+            >>> from ase.io import read
+            >>> atoms = read("molecule.xyz")
+            >>> viewer = NormalViewer.from_orca(atoms, "orca.hess")
+            >>> viewer.show()
+        """
+        from .hessian_parsers import parse_orca_hess, reshape_modes_to_atoms, get_real_vibrations
+
+        # Parse ORCA .hess file
+        frequencies, normal_modes, n_atoms_hess = parse_orca_hess(hess_file)
+
+        # Verify atom count matches
+        if isinstance(atoms, Atoms):
+            n_atoms = len(atoms)
+        else:
+            n_atoms = len(atoms.get('symbols', []))
+
+        if n_atoms != n_atoms_hess:
+            raise ValueError(
+                f"Atom count mismatch: structure has {n_atoms} atoms, "
+                f"but Hessian file has {n_atoms_hess} atoms"
+            )
+
+        # Filter out translations/rotations if requested
+        if skip_imaginary:
+            frequencies, normal_modes = get_real_vibrations(frequencies, normal_modes)
+
+        # Reshape modes to per-atom format
+        mode_vectors = reshape_modes_to_atoms(normal_modes, n_atoms)
+
+        return cls(atoms, mode_vectors=mode_vectors, frequencies=frequencies.tolist(), **kwargs)
+
 
 class OverlayViewer(BaseViewer):
     """Overlay viewer for comparing multiple molecules simultaneously."""
