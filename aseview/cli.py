@@ -254,6 +254,10 @@ def main(
         "cartoon", "--style",
         help="Visual style: default, cartoon, neon, glossy, metallic, rowan, grey",
     ),
+    cmap: Optional[str] = typer.Option(
+        None, "--cmap", "--colormap",
+        help="Colormap for overlay (viridis, plasma, coolwarm, jet, rainbow, grayscale)",
+    ),
     kill: bool = typer.Option(
         False, "-k", "--kill",
         help="Kill existing process on the port before starting",
@@ -332,6 +336,11 @@ def main(
 
     # Create viewer
     viewer_kwargs = {"style": style}
+
+    # Add colormap settings for overlay viewer
+    if cmap:
+        viewer_kwargs["colorBy"] = "Colormap"
+        viewer_kwargs["colormap"] = cmap
 
     if viewer_type == "molecular":
         viewer_obj = MolecularViewer(all_atoms, **viewer_kwargs)

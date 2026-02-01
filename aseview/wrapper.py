@@ -25,8 +25,16 @@ class MolecularData:
         if atoms.pbc.any():
             data["cell"] = atoms.get_cell().tolist()
 
-        # Add forces if present
-        if hasattr(atoms, 'arrays') and 'forces' in atoms.arrays:
+        # Add forces if present (from calculator or arrays)
+        try:
+            if atoms.calc is not None:
+                forces = atoms.get_forces()
+                data["forces"] = forces.tolist()
+        except Exception:
+            pass
+
+        # Fallback to arrays if not from calculator
+        if "forces" not in data and hasattr(atoms, 'arrays') and 'forces' in atoms.arrays:
             data["forces"] = atoms.arrays['forces'].tolist()
 
         # Add energy if available (from calculator or info dict)

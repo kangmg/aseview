@@ -485,6 +485,21 @@
                             <select class="select" id="color-by">
                                 <option value="Atom">Atom</option>
                                 <option value="Molecule">Molecule</option>
+                                <option value="Colormap">Colormap (Gradient)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group" id="colormap-group" style="display: none;">
+                            <div class="control-label">
+                                <span>Colormap</span>
+                            </div>
+                            <select class="select" id="colormap-select">
+                                <option value="viridis">Viridis</option>
+                                <option value="plasma">Plasma</option>
+                                <option value="coolwarm">Coolwarm</option>
+                                <option value="jet">Jet</option>
+                                <option value="rainbow">Rainbow</option>
+                                <option value="grayscale">Grayscale</option>
                             </select>
                         </div>
                     </div>
@@ -750,7 +765,9 @@
             showEnergyPlot: false,
             showForces: false,
             viewMode: 'Perspective',
-            rotationMode: 'TrackBall'
+            rotationMode: 'TrackBall',
+            colorBy: 'Atom',
+            colormap: 'viridis'
         };
 
         // Check if styles.js is loaded
@@ -1034,7 +1051,13 @@
                 const molSettings = moleculeSettings[molIndex] || {};
                 if (molSettings.visible === false) return;  // Skip if hidden
 
-                const moleculeColor = molSettings.color || 0x3b82f6;  // Default blue
+                // Determine molecule color based on colorBy mode
+                let moleculeColor;
+                if (colorBy === 'Colormap') {
+                    moleculeColor = getColormapColor(molIndex, molecularData.length, settings.colormap);
+                } else {
+                    moleculeColor = molSettings.color || 0x3b82f6;  // Default blue
+                }
                 const opacity = molSettings.opacity !== undefined ? molSettings.opacity : 0.8;
 
                 const positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
@@ -1084,8 +1107,8 @@
                                     const blackBondStyles = ['rowan', 'cartoon'];
                                     const isBlackBondStyle = blackBondStyles.includes(styleName);
 
-                                    // Color by Molecule: Override bond color (except for black bond styles)
-                                    if (colorBy === 'Molecule' && !isBlackBondStyle) {
+                                    // Color by Molecule or Colormap: Override bond color (except for black bond styles)
+                                    if ((colorBy === 'Molecule' || colorBy === 'Colormap') && !isBlackBondStyle) {
                                         bondMesh.traverse((child) => {
                                             if (child.isMesh && child.material) {
                                                 child.material.color.setHex(moleculeColor);
@@ -1120,8 +1143,8 @@
                     }
 
                     if (atomMesh) {
-                        // Color by Molecule: Override atom color
-                        if (colorBy === 'Molecule') {
+                        // Color by Molecule or Colormap: Override atom color
+                        if (colorBy === 'Molecule' || colorBy === 'Colormap') {
                             atomMesh.traverse((child) => {
                                 if (child.isMesh && child.material) {
                                     child.material.color.setHex(moleculeColor);
@@ -1633,7 +1656,19 @@
 
             safeAddListener('color-by', 'change', function () {
                 settings.colorBy = this.value;
+                // Show/hide colormap selector based on colorBy mode
+                const colormapGroup = document.getElementById('colormap-group');
+                if (colormapGroup) {
+                    colormapGroup.style.display = this.value === 'Colormap' ? 'block' : 'none';
+                }
                 renderMolecule();
+            });
+
+            safeAddListener('colormap-select', 'change', function () {
+                settings.colormap = this.value;
+                if (settings.colorBy === 'Colormap') {
+                    renderMolecule();
+                }
             });
 
             safeAddListener('show-cell', 'change', function () {
@@ -1771,6 +1806,67 @@
             B = Math.floor(B * (100 - percent) / 100);
 
             return `#${R.toString(16).padStart(2, '0')}${G.toString(16).padStart(2, '0')}${B.toString(16).padStart(2, '0')}`;
+        }
+
+        // Colormap functions for gradient coloring
+        const colormaps = {
+            viridis: (t) => {
+                // Viridis colormap approximation
+                const r = Math.round(255 * Math.max(0, Math.min(1, 0.267004 + t * (0.004874 + t * (0.329415 + t * (-0.053599 + t * 0.450398))))));
+                const g = Math.round(255 * Math.max(0, Math.min(1, 0.004874 + t * (0.873449 + t * (-0.226173 + t * 0.348009)))));
+                const b = Math.round(255 * Math.max(0, Math.min(1, 0.329415 + t * (0.565522 + t * (-0.814363 + t * 0.919661)))));
+                return (r << 16) | (g << 8) | b;
+            },
+            plasma: (t) => {
+                // Plasma colormap approximation
+                const r = Math.round(255 * Math.max(0, Math.min(1, 0.050383 + t * (2.540837 + t * (-2.123601 + t * 0.532199)))));
+                const g = Math.round(255 * Math.max(0, Math.min(1, 0.029803 + t * (0.256073 + t * (0.741527 + t * (-0.027503))))));
+                const b = Math.round(255 * Math.max(0, Math.min(1, 0.527975 + t * (0.735683 + t * (-1.935073 + t * 0.671619)))));
+                return (r << 16) | (g << 8) | b;
+            },
+            coolwarm: (t) => {
+                // Cool (blue) to Warm (red)
+                const r = Math.round(255 * Math.max(0, Math.min(1, t < 0.5 ? 0.23 + t * 1.0 : 0.73 + (t - 0.5) * 0.54)));
+                const g = Math.round(255 * Math.max(0, Math.min(1, t < 0.5 ? 0.3 + t * 0.8 : 0.7 - (t - 0.5) * 1.0)));
+                const b = Math.round(255 * Math.max(0, Math.min(1, t < 0.5 ? 0.75 - t * 0.5 : 0.5 - (t - 0.5) * 0.8)));
+                return (r << 16) | (g << 8) | b;
+            },
+            jet: (t) => {
+                // Jet colormap (blue -> cyan -> yellow -> red)
+                let r, g, b;
+                if (t < 0.125) { r = 0; g = 0; b = 0.5 + t * 4; }
+                else if (t < 0.375) { r = 0; g = (t - 0.125) * 4; b = 1; }
+                else if (t < 0.625) { r = (t - 0.375) * 4; g = 1; b = 1 - (t - 0.375) * 4; }
+                else if (t < 0.875) { r = 1; g = 1 - (t - 0.625) * 4; b = 0; }
+                else { r = 1 - (t - 0.875) * 4; g = 0; b = 0; }
+                return (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
+            },
+            rainbow: (t) => {
+                // HSL rainbow
+                const h = t * 300; // 0 to 300 degrees (red to magenta)
+                const s = 1, l = 0.5;
+                const c = (1 - Math.abs(2 * l - 1)) * s;
+                const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+                const m = l - c / 2;
+                let r, g, b;
+                if (h < 60) { r = c; g = x; b = 0; }
+                else if (h < 120) { r = x; g = c; b = 0; }
+                else if (h < 180) { r = 0; g = c; b = x; }
+                else if (h < 240) { r = 0; g = x; b = c; }
+                else if (h < 300) { r = x; g = 0; b = c; }
+                else { r = c; g = 0; b = x; }
+                return (Math.round((r + m) * 255) << 16) | (Math.round((g + m) * 255) << 8) | Math.round((b + m) * 255);
+            },
+            grayscale: (t) => {
+                const v = Math.round(255 * t);
+                return (v << 16) | (v << 8) | v;
+            }
+        };
+
+        function getColormapColor(index, total, cmapName) {
+            const t = total > 1 ? index / (total - 1) : 0.5;
+            const cmap = colormaps[cmapName] || colormaps.viridis;
+            return cmap(t);
         }
 
         window.setMolecularData = setMolecularData;
