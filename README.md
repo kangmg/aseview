@@ -33,6 +33,12 @@ aseview2 molecule.xyz -p 9000
 # Overlay multiple structures
 aseview2 reactant.xyz product.xyz
 
+# Overlay with colormap
+aseview2 trajectory.xyz -v overlay --cmap viridis
+
+# Normal mode visualization with ORCA Hessian
+aseview2 molecule.xyz --hess orca.hess
+
 # Save as HTML file
 aseview2 molecule.xyz -o output.html
 
@@ -105,7 +111,39 @@ viewer = OverlayViewer([reactant, product])
 viewer.show()
 ```
 
+### Overlay with Colormap
+
+```python
+from ase.io import read
+from aseview import OverlayViewer
+
+trajectory = read('optimization.xyz', index=':')
+viewer = OverlayViewer(
+    trajectory,
+    colorBy='Colormap',
+    colormap='viridis'  # viridis, plasma, coolwarm, jet, rainbow, grayscale
+)
+viewer.show()
+```
+
+### Align Molecules (RMSD Minimization)
+
+```python
+from ase.io import read
+from aseview import OverlayViewer
+
+structures = [read(f'conf{i}.xyz') for i in range(5)]
+viewer = OverlayViewer(
+    structures,
+    alignMolecules=True,  # Kabsch rotation + Hungarian reordering
+    colorBy='Molecule'
+)
+viewer.show()
+```
+
 ### Normal Mode Visualization
+
+#### From ASE Vibrations
 
 ```python
 from ase import Atoms
@@ -129,6 +167,17 @@ vib.summary()
 
 # Visualize normal modes
 viewer = NormalViewer(atoms, vibrations=vib)
+viewer.show()
+```
+
+#### From ORCA Hessian File
+
+```python
+from ase.io import read
+from aseview import NormalViewer
+
+atoms = read('molecule.xyz')
+viewer = NormalViewer.from_orca(atoms, 'orca.hess')
 viewer.show()
 ```
 
