@@ -18,25 +18,25 @@ Sodium chloride in rocksalt structure:
 
 ---
 
-## Live Demo: Au(111) Surface
+## Live Demo: Au(111) + H₂O Adsorption
 
-Gold surface slab (4 layers, 3x3 cell):
+H₂O molecule adsorbing on Au(111) surface - relaxation trajectory with energy plot:
 
 <iframe src="../../assets/viewers/gold_surface.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ---
 
-## Live Demo: Graphene
+## Live Demo: Graphene Phonons
 
-Graphene nanoribbon (zigzag edge):
+Graphene nanoribbon with phonon normal modes (breathing, ZA, ZO modes):
 
 <iframe src="../../assets/viewers/graphene.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ---
 
-## Live Demo: Carbon Nanotube
+## Live Demo: Carbon Nanotube Vibrations
 
-(6,0) Carbon nanotube:
+(5,0) Carbon nanotube with vibrational modes (RBM, longitudinal, G-band):
 
 <iframe src="../../assets/viewers/carbon_nanotube.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
@@ -115,6 +115,25 @@ viewer = MolecularViewer(au111, style="metallic", showCell=True)
 viewer.show()
 ```
 
+### Surface Adsorption Trajectory
+
+```python
+from ase.io import read
+from aseview import MolecularViewer
+
+# Read relaxation trajectory (e.g., from VASP or ASE optimizer)
+traj = read("adsorption_relax.traj", index=":")
+
+# Visualize with energy plot
+viewer = MolecularViewer(
+    traj,
+    style="metallic",
+    showCell=True,
+    showEnergyPlot=True  # Shows energy convergence
+)
+viewer.show()
+```
+
 ### BCC Surfaces
 
 ```python
@@ -168,6 +187,69 @@ cnt_6_6 = nanotube(6, 6, length=4, vacuum=5.0)   # Armchair
 cnt_8_4 = nanotube(8, 4, length=4, vacuum=5.0)   # Chiral
 
 viewer = MolecularViewer(cnt_6_0, style="neon", backgroundColor="#000000")
+viewer.show()
+```
+
+## Phonon / Vibrational Modes
+
+Visualize phonon modes for periodic systems using NormalViewer:
+
+### CNT Radial Breathing Mode
+
+```python
+from ase.build import nanotube
+from aseview import NormalViewer
+import numpy as np
+
+cnt = nanotube(5, 0, length=2, vacuum=5.0)
+positions = cnt.get_positions()
+center = positions.mean(axis=0)
+
+# Create radial breathing mode (RBM)
+mode_rbm = []
+for pos in positions:
+    r = pos[:2] - center[:2]
+    r_norm = np.linalg.norm(r)
+    if r_norm > 0.1:
+        disp = r / r_norm * 0.4  # Radial displacement
+        mode_rbm.append([disp[0], disp[1], 0.0])
+    else:
+        mode_rbm.append([0.0, 0.0, 0.0])
+
+viewer = NormalViewer(
+    cnt,
+    mode_vectors=[mode_rbm],
+    frequencies=[280.0],  # RBM frequency
+    showModeVector=True,
+    style="neon",
+    backgroundColor="#000000"
+)
+viewer.show()
+```
+
+### Graphene Phonons
+
+```python
+from ase.build import graphene_nanoribbon
+from aseview import NormalViewer
+import numpy as np
+
+graphene = graphene_nanoribbon(3, 3, type='zigzag', saturated=False, vacuum=5.0)
+positions = graphene.get_positions()
+
+# Out-of-plane ZA mode
+mode_za = []
+for pos in positions:
+    phase = 0.5 * (pos[0] + pos[1])
+    mode_za.append([0.0, 0.0, 0.4 * np.sin(phase)])
+
+viewer = NormalViewer(
+    graphene,
+    mode_vectors=[mode_za],
+    frequencies=[450.0],
+    showModeVector=True,
+    style="cartoon"
+)
 viewer.show()
 ```
 
