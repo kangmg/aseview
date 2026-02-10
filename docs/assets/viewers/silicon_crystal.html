@@ -5786,6 +5786,40 @@ if (typeof define === 'function' && define.amd) {
                             </div>
                         </div>
 
+                        <!-- Color By section - only visible when charges are present -->
+                        <div class="control-group" id="color-by-section" style="display: none;">
+                            <div class="control-label">
+                                <span>Color By</span>
+                            </div>
+                            <select class="select" id="color-by-select">
+                                <option value="Element">Element</option>
+                                <option value="Charge">Charge</option>
+                            </select>
+                        </div>
+
+                        <!-- Normalize Charges toggle - only visible when colorBy is Charge -->
+                        <div class="control-group" id="normalize-charges-section" style="display: none;">
+                            <div class="control-label">
+                                <span>Normalize</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="normalize-charges">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Color bar for charge scale -->
+                        <div class="control-group" id="charge-colorbar-section" style="display: none;">
+                            <div style="width: 100%; padding: 0.25rem 0;">
+                                <div id="charge-colorbar" style="height: 12px; border-radius: 6px; background: linear-gradient(90deg, #3b4cc0 0%, #f7f7f7 50%, #b40426 100%);"></div>
+                                <div style="display: flex; justify-content: space-between; font-size: 10px; color: #9ca3af; margin-top: 2px;">
+                                    <span id="charge-min">-1.0</span>
+                                    <span>0</span>
+                                    <span id="charge-max">+1.0</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="control-group">
                             <div class="control-label">
                                 <span>View Mode</span>
@@ -6023,9 +6057,12 @@ let settings = {
     style: 'cartoon',
     showCell: true,
     showBond: true,
-    showShading: false,
+    showShading: true,
     showEnergyPlot: false,
     showForces: false,
+    colorBy: 'Element',  // 'Element' or 'Charge'
+    normalizeCharges: false,
+    chargeColormap: 'coolwarm',
     viewMode: 'Perspective',
     rotationMode: 'TrackBall'
 };
@@ -6062,6 +6099,181 @@ const bondFactories = {
     'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap)
 };
 
+// Charge coloring utilities
+let chargeStats = { hasCharges: false, min: 0, max: 0 };
+
+function checkChargesInData() {
+    if (!molecularData || molecularData.length === 0) return false;
+
+    let hasCharges = false;
+    let allCharges = [];
+
+    for (const frame of molecularData) {
+        if (frame.charges && Array.isArray(frame.charges) && frame.charges.length > 0) {
+            hasCharges = true;
+            allCharges = allCharges.concat(frame.charges);
+        }
+    }
+
+    if (hasCharges && allCharges.length > 0) {
+        chargeStats.hasCharges = true;
+        chargeStats.min = Math.min(...allCharges);
+        chargeStats.max = Math.max(...allCharges);
+        chargeStats.absMax = Math.max(Math.abs(chargeStats.min), Math.abs(chargeStats.max));
+    } else {
+        chargeStats.hasCharges = false;
+    }
+
+    return hasCharges;
+}
+
+function updateChargeUI() {
+    const colorBySection = document.getElementById('color-by-section');
+    const normalizeSection = document.getElementById('normalize-charges-section');
+    const colorbarSection = document.getElementById('charge-colorbar-section');
+
+    if (!colorBySection) return;
+
+    if (chargeStats.hasCharges) {
+        colorBySection.style.display = 'block';
+
+        // Show normalize and colorbar only when colorBy is 'Charge'
+        const showChargeOptions = settings.colorBy === 'Charge';
+        if (normalizeSection) normalizeSection.style.display = showChargeOptions ? 'block' : 'none';
+        if (colorbarSection) colorbarSection.style.display = showChargeOptions ? 'block' : 'none';
+
+        // Update colorbar labels
+        if (showChargeOptions) {
+            updateColorbarLabels();
+        }
+    } else {
+        colorBySection.style.display = 'none';
+        if (normalizeSection) normalizeSection.style.display = 'none';
+        if (colorbarSection) colorbarSection.style.display = 'none';
+    }
+}
+
+function updateColorbarLabels() {
+    const minLabel = document.getElementById('charge-min');
+    const maxLabel = document.getElementById('charge-max');
+
+    if (!minLabel || !maxLabel) return;
+
+    let minVal, maxVal;
+    if (settings.normalizeCharges) {
+        minVal = -1.0;
+        maxVal = 1.0;
+    } else {
+        // Use symmetric range for better visualization
+        const absMax = chargeStats.absMax || 1.0;
+        minVal = -absMax;
+        maxVal = absMax;
+    }
+
+    minLabel.textContent = minVal.toFixed(2);
+    maxLabel.textContent = (maxVal > 0 ? '+' : '') + maxVal.toFixed(2);
+}
+
+// Coolwarm colormap: blue (negative) -> white (zero) -> red (positive)
+function getChargeColor(charge, normalize = false) {
+    let normalizedCharge;
+
+    if (normalize) {
+        // Normalize to -1 to 1 based on actual range
+        const absMax = chargeStats.absMax || 1.0;
+        normalizedCharge = absMax > 0 ? charge / absMax : 0;
+    } else {
+        // Use symmetric range centered at 0
+        const absMax = chargeStats.absMax || 1.0;
+        normalizedCharge = absMax > 0 ? charge / absMax : 0;
+    }
+
+    // Clamp to -1 to 1
+    normalizedCharge = Math.max(-1, Math.min(1, normalizedCharge));
+
+    // Coolwarm colormap
+    const negativeColor = new THREE.Color(0x3b4cc0);  // Blue
+    const neutralColor = new THREE.Color(0xf7f7f7);   // White
+    const positiveColor = new THREE.Color(0xb40426);  // Red
+
+    let resultColor;
+    if (normalizedCharge <= 0) {
+        // Interpolate from negative (blue) to neutral (white)
+        const t = 1 + normalizedCharge;  // 0 to 1
+        resultColor = negativeColor.clone().lerp(neutralColor, t);
+    } else {
+        // Interpolate from neutral (white) to positive (red)
+        resultColor = neutralColor.clone().lerp(positiveColor, normalizedCharge);
+    }
+
+    return resultColor.getHex();
+}
+
+// Create atom with custom color (for charge coloring)
+function createAtomWithColor(pos, symbol, atomScale, colorHex, styleName) {
+    const info = atomInfo[symbol] || atomInfo['default'];
+    const scaledRadius = info.radius * atomScale;
+
+    // Create geometry based on style
+    let geometry, material, mesh;
+
+    switch (styleName) {
+        case 'neon':
+            geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
+            material = new THREE.MeshBasicMaterial({
+                color: colorHex,
+                transparent: true,
+                opacity: 0.9
+            });
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(pos);
+
+            // Add glow effect
+            const glowGeometry = new THREE.SphereGeometry(scaledRadius * 1.3, 32, 32);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: colorHex,
+                transparent: true,
+                opacity: 0.3
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.copy(pos);
+
+            const group = new THREE.Group();
+            group.add(glow);
+            group.add(mesh);
+            return group;
+
+        case 'glossy':
+            geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
+            material = new THREE.MeshPhongMaterial({
+                color: colorHex,
+                specular: 0x444444,
+                shininess: 100
+            });
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(pos);
+            return mesh;
+
+        case 'metallic':
+            geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
+            material = new THREE.MeshStandardMaterial({
+                color: colorHex,
+                metalness: 0.8,
+                roughness: 0.2
+            });
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(pos);
+            return mesh;
+
+        default:  // cartoon, default, etc.
+            geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
+            material = new THREE.MeshLambertMaterial({ color: colorHex });
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(pos);
+            return mesh;
+    }
+}
+
 let scene = null;
 let camera = null;
 let renderer = null;
@@ -6069,6 +6281,10 @@ let controls = null;
 let moleculeGroup = null;
 let directionalLight = null;
 let cameraNeedsFit = true;
+
+// Axis helper scene
+let axisScene = null;
+let axisCamera = null;
 
 // Animation state
 let animationState = {
@@ -6190,6 +6406,9 @@ function initRenderer() {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
     scene.add(ambientLight);
 
+    // Setup axis helper (XYZ indicator in corner)
+    setupAxisHelper();
+
     window.addEventListener('resize', handleResize);
     handleResize();
     animate();
@@ -6275,6 +6494,85 @@ function handleResize() {
     }
 }
 
+function setupAxisHelper() {
+    // Create a separate scene for the axis helper
+    axisScene = new THREE.Scene();
+
+    // Create orthographic camera for axis helper
+    const axisSize = 100;
+    axisCamera = new THREE.OrthographicCamera(-axisSize, axisSize, axisSize, -axisSize, -100, 100);
+    axisCamera.position.set(0, 0, 50);
+
+    // Axis colors
+    const colors = {
+        x: 0xff4444,  // Red
+        y: 0x44cc44,  // Green
+        z: 0x4488ff   // Blue
+    };
+
+    const axisLength = 40;
+    const arrowHeadLength = 12;
+    const arrowHeadWidth = 6;
+
+    // Create arrows for each axis
+    const xDir = new THREE.Vector3(1, 0, 0);
+    const yDir = new THREE.Vector3(0, 1, 0);
+    const zDir = new THREE.Vector3(0, 0, 1);
+    const origin = new THREE.Vector3(0, 0, 0);
+
+    const xArrow = new THREE.ArrowHelper(xDir, origin, axisLength, colors.x, arrowHeadLength, arrowHeadWidth);
+    const yArrow = new THREE.ArrowHelper(yDir, origin, axisLength, colors.y, arrowHeadLength, arrowHeadWidth);
+    const zArrow = new THREE.ArrowHelper(zDir, origin, axisLength, colors.z, arrowHeadLength, arrowHeadWidth);
+
+    // Make arrows thicker
+    xArrow.line.material.linewidth = 2;
+    yArrow.line.material.linewidth = 2;
+    zArrow.line.material.linewidth = 2;
+
+    axisScene.add(xArrow);
+    axisScene.add(yArrow);
+    axisScene.add(zArrow);
+
+    // Create text labels using sprites
+    const createTextSprite = (text, color) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Convert hex color to CSS
+        const cssColor = '#' + color.toString(16).padStart(6, '0');
+        ctx.fillStyle = cssColor;
+        ctx.fillText(text, 32, 32);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+        const sprite = new THREE.Sprite(material);
+        sprite.scale.set(16, 16, 1);
+        return sprite;
+    };
+
+    const xLabel = createTextSprite('X', colors.x);
+    const yLabel = createTextSprite('Y', colors.y);
+    const zLabel = createTextSprite('Z', colors.z);
+
+    xLabel.position.set(axisLength + 12, 0, 0);
+    yLabel.position.set(0, axisLength + 12, 0);
+    zLabel.position.set(0, 0, axisLength + 12);
+
+    axisScene.add(xLabel);
+    axisScene.add(yLabel);
+    axisScene.add(zLabel);
+
+    // Add ambient light to axis scene
+    const axisAmbient = new THREE.AmbientLight(0xffffff, 1.0);
+    axisScene.add(axisAmbient);
+}
+
 function animate() {
     requestAnimationFrame(animate);
     if (controls && typeof controls.update === 'function') {
@@ -6297,6 +6595,31 @@ function animate() {
     }
     if (renderer && scene && camera) {
         renderer.render(scene, camera);
+
+        // Render axis helper in bottom-left corner
+        if (axisScene && axisCamera) {
+            // Sync axis camera rotation with main camera
+            axisCamera.quaternion.copy(camera.quaternion);
+
+            // Save current viewport and scissor state
+            const currentViewport = renderer.getViewport(new THREE.Vector4());
+
+            // Set viewport for axis helper (bottom-left corner, 100x100 pixels)
+            const axisViewportSize = 100;
+            renderer.setViewport(10, 10, axisViewportSize, axisViewportSize);
+            renderer.setScissor(10, 10, axisViewportSize, axisViewportSize);
+            renderer.setScissorTest(true);
+
+            // Clear depth buffer only (keep transparent background)
+            renderer.clearDepth();
+
+            // Render axis scene
+            renderer.render(axisScene, axisCamera);
+
+            // Restore viewport
+            renderer.setScissorTest(false);
+            renderer.setViewport(currentViewport);
+        }
     }
 }
 
@@ -6440,11 +6763,26 @@ function renderMolecule() {
         console.log('Total bonds created:', bondCount, 'for style:', styleName);
     }
 
+    // Get charges for current frame (if available)
+    const frameCharges = molecule.charges || [];
+    const useChargeColor = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
+
     for (let i = 0; i < positions.length; i++) {
-        let atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
-        if (!atom) {
-            atom = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
+        let atom;
+
+        if (useChargeColor) {
+            // Use charge-based coloring
+            const charge = frameCharges[i] || 0;
+            const chargeColor = getChargeColor(charge, settings.normalizeCharges);
+            atom = createAtomWithColor(positions[i], symbols[i], atomScale, chargeColor, styleName);
+        } else {
+            // Use element-based coloring (default)
+            atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
+            if (!atom) {
+                atom = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
+            }
         }
+
         if (atom) {
             atom.renderOrder = 0;
             moleculeGroup.add(atom);
@@ -6694,6 +7032,10 @@ function setMolecularData(data) {
     // Extract energy data for plotting
     extractEnergyData();
 
+    // Check for charge data and update UI
+    checkChargesInData();
+    updateChargeUI();
+
     // Show/hide energy plot checkbox based on energy availability
     if (!energyPlotData.hasEnergy) {
         const energyCheckbox = document.getElementById('show-energy-plot');
@@ -6916,6 +7258,20 @@ function setupEventListeners() {
 
     safeAddListener('show-forces', 'change', function() {
         settings.showForces = this.checked;
+        renderMolecule();
+    });
+
+    // Color by selection (Element or Charge)
+    safeAddListener('color-by-select', 'change', function() {
+        settings.colorBy = this.value;
+        updateChargeUI();
+        renderMolecule();
+    });
+
+    // Normalize charges toggle
+    safeAddListener('normalize-charges', 'change', function() {
+        settings.normalizeCharges = this.checked;
+        updateColorbarLabels();
         renderMolecule();
     });
 
@@ -7467,7 +7823,7 @@ window.removePeriodicity = removePeriodicity;
             if (typeof settings === 'undefined') {
                 window.settings = {};
             }
-            const pythonSettings = {"bondThreshold": 1.0, "bondThickness": 0.1, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "glossy", "showCell": true, "showBond": true, "showShadow": false, "showEnergyPlot": false, "showForces": false, "viewMode": "Perspective", "rotationMode": "TrackBall", "selectionMode": "Lasso"};
+            const pythonSettings = {"bondThreshold": 1.0, "bondThickness": 0.1, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "glossy", "showCell": true, "showBond": true, "showShadow": false, "showShading": true, "showEnergyPlot": false, "showForces": false, "colorBy": "Element", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Perspective", "rotationMode": "TrackBall", "selectionMode": "Lasso"};
             Object.assign(settings, pythonSettings);
 
             // Wait for renderer to be initialized with timeout

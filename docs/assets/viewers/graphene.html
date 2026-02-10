@@ -5999,6 +5999,10 @@ let moleculeGroup = null;
 let directionalLight = null;
 let cameraNeedsFit = true;
 
+// Axis helper scene
+let axisScene = null;
+let axisCamera = null;
+
 // Animation state
 let animationState = {
     isPlaying: false,
@@ -6054,6 +6058,8 @@ function initRenderer() {
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
     scene.add(ambientLight);
+
+    setupAxisHelper();
 
     window.addEventListener('resize', handleResize);
     handleResize();
@@ -6162,7 +6168,111 @@ function animate() {
     }
     if (renderer && scene && camera) {
         renderer.render(scene, camera);
+
+        // Render axis helper in bottom-left corner
+        if (axisScene && axisCamera) {
+            // Sync axis camera rotation with main camera
+            axisCamera.quaternion.copy(camera.quaternion);
+
+            // Save current viewport and scissor state
+            const currentViewport = renderer.getViewport(new THREE.Vector4());
+
+            // Set viewport for axis helper (bottom-left corner, 100x100 pixels)
+            const axisViewportSize = 100;
+            renderer.setViewport(10, 10, axisViewportSize, axisViewportSize);
+            renderer.setScissor(10, 10, axisViewportSize, axisViewportSize);
+            renderer.setScissorTest(true);
+
+            // Clear depth buffer only (keep transparent background)
+            renderer.clearDepth();
+
+            // Render axis scene
+            renderer.render(axisScene, axisCamera);
+
+            // Restore viewport
+            renderer.setScissorTest(false);
+            renderer.setViewport(currentViewport);
+        }
     }
+}
+
+function setupAxisHelper() {
+    // Create a separate scene for the axis helper
+    axisScene = new THREE.Scene();
+
+    // Create orthographic camera for axis helper
+    const axisSize = 100;
+    axisCamera = new THREE.OrthographicCamera(-axisSize, axisSize, axisSize, -axisSize, -100, 100);
+    axisCamera.position.set(0, 0, 50);
+
+    // Axis colors
+    const colors = {
+        x: 0xff4444,  // Red
+        y: 0x44cc44,  // Green
+        z: 0x4488ff   // Blue
+    };
+
+    const axisLength = 40;
+    const arrowHeadLength = 12;
+    const arrowHeadWidth = 6;
+
+    // Create arrows for each axis
+    const xDir = new THREE.Vector3(1, 0, 0);
+    const yDir = new THREE.Vector3(0, 1, 0);
+    const zDir = new THREE.Vector3(0, 0, 1);
+    const origin = new THREE.Vector3(0, 0, 0);
+
+    const xArrow = new THREE.ArrowHelper(xDir, origin, axisLength, colors.x, arrowHeadLength, arrowHeadWidth);
+    const yArrow = new THREE.ArrowHelper(yDir, origin, axisLength, colors.y, arrowHeadLength, arrowHeadWidth);
+    const zArrow = new THREE.ArrowHelper(zDir, origin, axisLength, colors.z, arrowHeadLength, arrowHeadWidth);
+
+    // Make arrows thicker
+    xArrow.line.material.linewidth = 2;
+    yArrow.line.material.linewidth = 2;
+    zArrow.line.material.linewidth = 2;
+
+    axisScene.add(xArrow);
+    axisScene.add(yArrow);
+    axisScene.add(zArrow);
+
+    // Create text labels using sprites
+    const createTextSprite = (text, color) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Convert hex color to CSS
+        const cssColor = '#' + color.toString(16).padStart(6, '0');
+        ctx.fillStyle = cssColor;
+        ctx.fillText(text, 32, 32);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+        const sprite = new THREE.Sprite(material);
+        sprite.scale.set(16, 16, 1);
+        return sprite;
+    };
+
+    const xLabel = createTextSprite('X', colors.x);
+    const yLabel = createTextSprite('Y', colors.y);
+    const zLabel = createTextSprite('Z', colors.z);
+
+    xLabel.position.set(axisLength + 12, 0, 0);
+    yLabel.position.set(0, axisLength + 12, 0);
+    zLabel.position.set(0, 0, axisLength + 12);
+
+    axisScene.add(xLabel);
+    axisScene.add(yLabel);
+    axisScene.add(zLabel);
+
+    // Add ambient light to axis scene
+    const axisAmbient = new THREE.AmbientLight(0xffffff, 1.0);
+    axisScene.add(axisAmbient);
 }
 
 function disposeObject3D(object) {
@@ -7096,13 +7206,11 @@ function populateModeSelector() {
 
         // Format frequency display
         const isImag = vibrationData.isImaginary && vibrationData.isImaginary[idx];
-        const indicator = isImag ? '●' : '○';
         const freqStr = freq.toString().includes('i') ? freq : `${freq} cm⁻¹`;
 
-        option.textContent = `Mode ${idx + 1}: ${indicator} ${freqStr}`;
-        if (isImag) {
-            option.style.color = '#ef4444';  // Red for imaginary frequencies
-        }
+        option.textContent = `Mode ${idx + 1}: ${freqStr}`;
+        // Red for imaginary, green for real frequencies
+        option.style.color = isImag ? '#ef4444' : '#22c55e';
         select.appendChild(option);
     });
 

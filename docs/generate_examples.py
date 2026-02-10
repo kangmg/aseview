@@ -385,6 +385,100 @@ def create_fcc_metal_viewer():
     print("Created copper_fcc.html")
 
 
+def create_aspirin_charge_viewer():
+    """Create aspirin molecule with partial charge visualization."""
+    # Aspirin (acetylsalicylic acid) C9H8O4
+    # Approximate 3D coordinates
+    aspirin = Atoms(
+        symbols=['C', 'C', 'C', 'C', 'C', 'C', 'C', 'O', 'O', 'C', 'O', 'O', 'C',
+                 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+        positions=[
+            # Benzene ring
+            [0.000, 1.400, 0.000],   # C1
+            [1.212, 0.700, 0.000],   # C2
+            [1.212, -0.700, 0.000],  # C3
+            [0.000, -1.400, 0.000],  # C4
+            [-1.212, -0.700, 0.000], # C5
+            [-1.212, 0.700, 0.000],  # C6
+            # Carboxylic acid group
+            [0.000, 2.900, 0.000],   # C7 (COOH carbon)
+            [1.100, 3.500, 0.000],   # O (=O)
+            [-1.100, 3.600, 0.000],  # O (OH)
+            # Acetyl group
+            [-2.500, 1.300, 0.000],  # C8 (acetyl C)
+            [-2.400, -1.400, 0.000], # O (ester O)
+            [-3.600, 0.700, 0.000],  # O (=O)
+            [-2.600, 2.800, 0.000],  # C9 (methyl)
+            # Hydrogens
+            [2.156, 1.250, 0.000],   # H on C2
+            [2.156, -1.250, 0.000],  # H on C3
+            [0.000, -2.490, 0.000],  # H on C4
+            [-2.156, -1.250, 0.000], # H on C5
+            [-1.000, 4.560, 0.000],  # H on COOH
+            [-3.400, 3.200, 0.900],  # H on methyl
+            [-3.400, 3.200, -0.900], # H on methyl
+            [-1.700, 3.400, 0.000],  # H on methyl
+        ]
+    )
+
+    # Partial charges (approximate Gasteiger-like charges)
+    # Negative on oxygens, positive on carbons bonded to O
+    charges = [
+        -0.05,  # C1 (ring)
+        -0.10,  # C2 (ring)
+        -0.10,  # C3 (ring)
+        -0.10,  # C4 (ring)
+        -0.10,  # C5 (ring)
+        0.10,   # C6 (ring, connected to ester O)
+        0.50,   # C7 (carboxyl carbon, very positive)
+        -0.45,  # O (=O of COOH)
+        -0.55,  # O (OH of COOH)
+        0.45,   # C8 (acetyl carbonyl carbon)
+        -0.30,  # O (ester oxygen)
+        -0.40,  # O (=O of acetyl)
+        -0.15,  # C9 (methyl)
+        0.10,   # H
+        0.10,   # H
+        0.10,   # H
+        0.10,   # H
+        0.40,   # H (on COOH, acidic)
+        0.05,   # H (methyl)
+        0.05,   # H (methyl)
+        0.05,   # H (methyl)
+    ]
+
+    aspirin.arrays['charges'] = np.array(charges)
+
+    viewer = MolecularViewer(aspirin, style="cartoon", colorBy="Charge")
+    viewer.save_html(os.path.join(OUTPUT_DIR, "aspirin_charges.html"))
+    print("Created aspirin_charges.html (partial charge visualization)")
+
+
+def create_ethanol_charge_viewer():
+    """Create ethanol molecule with partial charge visualization."""
+    ethanol = molecule("CH3CH2OH")
+
+    # Partial charges for ethanol (approximate)
+    # Order: C(methyl), H, H, H, C(methylene), H, H, O, H
+    charges = [
+        -0.18,  # C (methyl)
+        0.06,   # H
+        0.06,   # H
+        0.06,   # H
+        0.15,   # C (connected to O)
+        0.04,   # H
+        0.04,   # H
+        -0.65,  # O (hydroxyl)
+        0.42,   # H (hydroxyl, acidic)
+    ]
+
+    ethanol.arrays['charges'] = np.array(charges)
+
+    viewer = MolecularViewer(ethanol, style="glossy", colorBy="Charge")
+    viewer.save_html(os.path.join(OUTPUT_DIR, "ethanol_charges.html"))
+    print("Created ethanol_charges.html (partial charge visualization)")
+
+
 if __name__ == "__main__":
     print("Generating example viewer HTML files...")
     # Molecules
@@ -406,4 +500,7 @@ if __name__ == "__main__":
     create_graphene_viewer()
     create_nanotube_viewer()
     create_fcc_metal_viewer()
+    # Charge visualization
+    create_aspirin_charge_viewer()
+    create_ethanol_charge_viewer()
     print("Done!")
