@@ -66,6 +66,21 @@ OverlayViewer(data, **kwargs)
 | `showShadow` | `bool` | Enable shadows | `False` |
 | `centerMolecules` | `bool` | Center each molecule at origin before overlay | `False` |
 
+#### Alignment Settings
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `alignMolecules` | `bool` | Align molecules using Kabsch + Hungarian algorithm | `False` |
+
+!!! tip "Molecular Alignment"
+    When `alignMolecules=True`:
+
+    - First molecule is used as reference
+    - Other molecules are aligned using RMSD minimization
+    - **Kabsch algorithm**: Finds optimal rotation matrix
+    - **Hungarian reordering**: Matches atoms by element type and position
+    - Automatically centers molecules (no need for `centerMolecules`)
+
 #### View Settings
 
 | Parameter | Type | Description | Default |
@@ -154,6 +169,24 @@ viewer = OverlayViewer(
 )
 viewer.show()
 ```
+
+### Aligned Molecules (RMSD Minimization)
+
+```python
+# Align molecules using Kabsch rotation + Hungarian reordering
+# First molecule is the reference
+viewer = OverlayViewer(
+    [reference, conformer1, conformer2],
+    alignMolecules=True,
+    colorBy="Molecule"
+)
+viewer.show()
+```
+
+This uses:
+
+- **Kabsch algorithm**: Optimal rotation via SVD
+- **Hungarian algorithm**: Atom correspondence matching by element type
 
 ### Custom Styling
 

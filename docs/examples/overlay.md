@@ -94,6 +94,29 @@ viewer = OverlayViewer(
 
 This is useful when comparing conformers that are not pre-aligned.
 
+## Aligning Molecules (Kabsch + Hungarian)
+
+For optimal structural comparison with RMSD minimization:
+
+```python
+viewer = OverlayViewer(
+    structures,
+    alignMolecules=True
+)
+```
+
+This performs:
+
+1. **Centering**: Both molecules centered at origin
+2. **Hungarian reordering**: Match atoms by element type and position
+3. **Kabsch rotation**: Find optimal rotation via SVD to minimize RMSD
+
+The first molecule is used as the reference; all others are aligned to it.
+
+!!! note "When to use alignment"
+    - **`centerMolecules`**: Simple translation to origin (fast)
+    - **`alignMolecules`**: Full RMSD minimization with rotation (more accurate)
+
 ## Interactive Controls
 
 ### Molecule Panel
@@ -111,6 +134,7 @@ For each overlaid molecule:
 | Control | Description |
 |---------|-------------|
 | **Center Molecules** | Toggle centering at origin |
+| **Align Molecules (Kabsch)** | RMSD-minimizing alignment |
 | **Color by** | Switch between Atom/Molecule/Colormap |
 | **Colormap** | Select gradient colormap |
 
