@@ -552,6 +552,16 @@
 
                         <div class="control-group">
                             <div class="control-label">
+                                <span>Center Molecules</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="center-molecules">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
                                 <span>View Mode</span>
                             </div>
                             <div class="button-group">
@@ -767,7 +777,8 @@
             viewMode: 'Perspective',
             rotationMode: 'TrackBall',
             colorBy: 'Atom',
-            colormap: 'viridis'
+            colormap: 'viridis',
+            centerMolecules: false
         };
 
         // Check if styles.js is loaded
@@ -1060,8 +1071,16 @@
                 }
                 const opacity = molSettings.opacity !== undefined ? molSettings.opacity : 0.8;
 
-                const positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
+                let positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
                 const symbols = molecule.symbols;
+
+                // Center molecules at origin if enabled
+                if (settings.centerMolecules && positions.length > 0) {
+                    const center = new THREE.Vector3();
+                    positions.forEach(p => center.add(p));
+                    center.divideScalar(positions.length);
+                    positions = positions.map(p => p.clone().sub(center));
+                }
 
                 // Create molecule group
                 const molGroup = new THREE.Group();
@@ -1678,6 +1697,11 @@
 
             safeAddListener('show-bond', 'change', function () {
                 settings.showBond = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('center-molecules', 'change', function () {
+                settings.centerMolecules = this.checked;
                 renderMolecule();
             });
 

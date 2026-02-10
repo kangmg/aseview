@@ -1,0 +1,63 @@
+site_name: aseview2 Documentation
+site_description: Interactive molecular visualization for ASE
+site_url: https://kangmg.github.io/aseview_v2_dev
+repo_url: https://github.com/kangmg/aseview_v2_dev
+repo_name: kangmg/aseview_v2_dev
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - content.tabs.link
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - tables
+  - attr_list
+  - md_in_html
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+  - CLI Reference: cli-reference.md
+  - Python API:
+    - MolecularViewer: api/molecular-viewer.md
+    - OverlayViewer: api/overlay-viewer.md
+    - NormalViewer: api/normal-viewer.md
+  - Examples:
+    - Basic Visualization: examples/basic.md
+    - Trajectory Animation: examples/trajectory.md
+    - Overlay Comparison: examples/overlay.md
+    - Normal Modes: examples/normal-modes.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/kangmg/aseview_v2_dev
