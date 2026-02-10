@@ -2,7 +2,7 @@
 
 This example demonstrates basic molecular visualization with different styles.
 
-## Water Molecule
+## Water Molecule (Cartoon Style)
 
 === "Python"
 
@@ -11,45 +11,79 @@ This example demonstrates basic molecular visualization with different styles.
     from aseview import MolecularViewer
 
     water = molecule('H2O')
-    viewer = MolecularViewer(water)
+    viewer = MolecularViewer(water, style="cartoon")
     viewer.show()
     ```
 
 === "CLI"
 
     ```bash
-    aseview2 water.xyz
+    aseview2 water.xyz --style cartoon
     ```
 
-<div class="viewer-container" id="water-viewer">
-    <iframe
-        src="../assets/viewers/water.html"
-        width="100%"
-        height="500px"
-        style="border: 1px solid #374151; border-radius: 8px;"
-        loading="lazy">
-    </iframe>
-</div>
+<iframe src="../assets/viewers/water.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
-## Ethanol with Different Styles
+---
 
-### Cartoon Style (Default)
+## Ethanol (Neon Style)
 
 ```python
-viewer = MolecularViewer(atoms, style="cartoon")
+from ase.build import molecule
+from aseview import MolecularViewer
+
+ethanol = molecule('CH3CH2OH')
+viewer = MolecularViewer(
+    ethanol,
+    style="neon",
+    backgroundColor="#000000"
+)
+viewer.show()
 ```
 
-### Neon Style
+<iframe src="../assets/viewers/ethanol_neon.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+
+---
+
+## Benzene (Glossy Style)
 
 ```python
-viewer = MolecularViewer(atoms, style="neon")
+from ase.build import molecule
+from aseview import MolecularViewer
+
+benzene = molecule('C6H6')
+viewer = MolecularViewer(benzene, style="glossy")
+viewer.show()
 ```
 
-### Glossy Style
+<iframe src="../assets/viewers/benzene_glossy.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+
+---
+
+## Caffeine (Metallic Style)
 
 ```python
-viewer = MolecularViewer(atoms, style="glossy")
+from aseview import MolecularViewer
+
+viewer = MolecularViewer(caffeine, style="metallic")
+viewer.show()
 ```
+
+<iframe src="../assets/viewers/caffeine.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+
+---
+
+## Available Styles
+
+| Style | Description |
+|-------|-------------|
+| `default` | Standard CPK coloring |
+| `cartoon` | Cartoon style with black bonds (default) |
+| `neon` | Glowing neon effect |
+| `glossy` | Shiny reflective surface |
+| `metallic` | Metallic appearance |
+| `rowan` | Rowan-inspired style |
+| `grey` | Greyscale rendering |
+| `bubble` | Bubble-like appearance |
 
 ## Customizing Appearance
 
@@ -58,6 +92,7 @@ viewer = MolecularViewer(
     atoms,
     atomSize=0.5,           # Larger atoms
     bondThickness=0.15,     # Thicker bonds
+    bondThreshold=1.2,      # More bonds detected
     backgroundColor="#000000",  # Black background
     style="metallic"
 )
