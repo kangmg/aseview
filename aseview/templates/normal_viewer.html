@@ -721,6 +721,7 @@ let settings = {
     showCell: true,
     showBond: true,
     showShadow: false,
+    showShading: true,
     showEnergyPlot: false,
     showForces: false,
     showModeVector: false,
@@ -914,7 +915,21 @@ function animate() {
     if (controls && typeof controls.update === 'function') {
         controls.update();
     }
-    // Directional light stays fixed at top-right position (10, 10, 10)
+    // Light behavior depends on shading setting (matching molecular_viewer)
+    if (directionalLight && camera) {
+        if (settings.showShading) {
+            // Light position relative to camera for consistent shading direction
+            // Light stays in camera space, so shading direction is fixed from viewer's perspective
+            const offset = new THREE.Vector3(5, 8, 5);
+            const lightPos = camera.position.clone().add(
+                offset.applyQuaternion(camera.quaternion)
+            );
+            directionalLight.position.copy(lightPos);
+        } else {
+            // Light follows camera for flat lighting (no shading)
+            directionalLight.position.copy(camera.position);
+        }
+    }
     if (renderer && scene && camera) {
         renderer.render(scene, camera);
     }
