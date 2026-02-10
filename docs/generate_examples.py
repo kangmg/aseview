@@ -8,7 +8,8 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ase import Atoms
-from ase.build import molecule
+from ase.build import molecule, bulk, fcc111, graphene_nanoribbon, nanotube
+from ase.lattice.cubic import FaceCenteredCubic
 from aseview import MolecularViewer, OverlayViewer, NormalViewer
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "assets", "viewers")
@@ -185,14 +186,80 @@ def create_caffeine_viewer():
     print("Created caffeine.html")
 
 
+def create_silicon_crystal_viewer():
+    """Create silicon crystal (diamond structure)."""
+    si = bulk('Si', 'diamond', a=5.43, cubic=True)
+    # Create 2x2x2 supercell for better visualization
+    si = si * (2, 2, 2)
+    viewer = MolecularViewer(si, style="glossy", showCell=True)
+    viewer.save_html(os.path.join(OUTPUT_DIR, "silicon_crystal.html"))
+    print("Created silicon_crystal.html")
+
+
+def create_nacl_crystal_viewer():
+    """Create NaCl crystal (rocksalt structure)."""
+    nacl = bulk('NaCl', crystalstructure='rocksalt', a=5.64)
+    # Create 2x2x2 supercell
+    nacl = nacl * (2, 2, 2)
+    viewer = MolecularViewer(nacl, style="default", showCell=True)
+    viewer.save_html(os.path.join(OUTPUT_DIR, "nacl_crystal.html"))
+    print("Created nacl_crystal.html")
+
+
+def create_gold_surface_viewer():
+    """Create Au(111) surface slab."""
+    # Create 4-layer Au(111) slab with 3x3 surface cell
+    au_slab = fcc111('Au', size=(3, 3, 4), vacuum=5.0)
+    viewer = MolecularViewer(au_slab, style="metallic", showCell=True)
+    viewer.save_html(os.path.join(OUTPUT_DIR, "gold_surface.html"))
+    print("Created gold_surface.html")
+
+
+def create_graphene_viewer():
+    """Create graphene sheet."""
+    # Create graphene nanoribbon (zigzag, width=4, length=6)
+    graphene = graphene_nanoribbon(4, 6, type='zigzag', saturated=True, vacuum=5.0)
+    viewer = MolecularViewer(graphene, style="cartoon", showCell=True)
+    viewer.save_html(os.path.join(OUTPUT_DIR, "graphene.html"))
+    print("Created graphene.html")
+
+
+def create_nanotube_viewer():
+    """Create carbon nanotube."""
+    cnt = nanotube(6, 0, length=4, vacuum=5.0)
+    viewer = MolecularViewer(cnt, style="neon", backgroundColor="#000000")
+    viewer.save_html(os.path.join(OUTPUT_DIR, "carbon_nanotube.html"))
+    print("Created carbon_nanotube.html")
+
+
+def create_fcc_metal_viewer():
+    """Create FCC copper crystal."""
+    cu = bulk('Cu', 'fcc', a=3.61, cubic=True)
+    cu = cu * (3, 3, 3)
+    viewer = MolecularViewer(cu, style="metallic", showCell=True)
+    viewer.save_html(os.path.join(OUTPUT_DIR, "copper_fcc.html"))
+    print("Created copper_fcc.html")
+
+
 if __name__ == "__main__":
     print("Generating example viewer HTML files...")
+    # Molecules
     create_water_viewer()
     create_ethanol_viewer()
     create_benzene_viewer()
+    create_caffeine_viewer()
+    # Trajectory
     create_trajectory_viewer()
+    # Overlay
     create_overlay_viewer()
     create_overlay_colormap_viewer()
+    # Normal modes
     create_normal_mode_viewer()
-    create_caffeine_viewer()
+    # Solid-state structures
+    create_silicon_crystal_viewer()
+    create_nacl_crystal_viewer()
+    create_gold_surface_viewer()
+    create_graphene_viewer()
+    create_nanotube_viewer()
+    create_fcc_metal_viewer()
     print("Done!")
