@@ -3,7 +3,392 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Molecular Viewer</title>
+    <title>Normal Mode Viewer</title>
+    <style>
+        :root {
+            --sidebar-bg: #1f2937;
+            --card-bg: #374151;
+            --border-color: #4b5563;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --accent-color: #3b82f6;
+            --hover-color: #4b5563;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #111827;
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+            border-right: none;
+        }
+
+        .sidebar-content {
+            padding: 1rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 100;
+            background-color: rgba(31, 41, 55, 0.9);
+            border: none;
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 0.75rem 1rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .card-header h3 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-content {
+            padding: 1rem;
+        }
+
+        .card-content.collapsed {
+            display: none;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .slider {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: var(--border-color);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .slider-value {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .color-picker {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .color-input {
+            width: 40px;
+            height: 30px;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+
+        .color-value {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .select {
+            width: 100%;
+            background-color: var(--hover-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            color: var(--text-primary);
+            padding: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-switch {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border-color);
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider-switch:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider-switch {
+            background-color: var(--accent-color);
+        }
+
+        input:checked + .slider-switch:before {
+            transform: translateX(20px);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            background-color: var(--hover-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            color: var(--text-secondary);
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            transition: all 0.2s;
+        }
+
+        .btn.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .btn:hover {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: var(--text-primary);
+        }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-height: 0;
+            width: 100%;
+        }
+
+        .toolbar {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 10;
+        }
+
+        .toolbar-btn {
+            background-color: rgba(31, 41, 55, 0.9);
+            border: none;
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .viewer-container {
+            flex: 1;
+            display: flex;
+            background: linear-gradient(135deg, #1f2937, #111827);
+            position: relative;
+            min-height: 0;
+            width: 100%;
+        }
+
+        .viewer {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Molecular visualization */
+        #molecule-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: grab;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #molecule-canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Icons */
+        .icon {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+        }
+
+        /* Animation */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Help text */
+        .help-text {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #9CA3AF;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 4px;
+            z-index: 5;
+        }
+        
+        /* Animation controls */
+        .animation-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            background: rgba(31, 41, 55, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 5;
+        }
+        
+        .anim-btn {
+            background-color: var(--hover-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            color: var(--text-primary);
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .anim-btn.active {
+            background-color: var(--accent-color);
+        }
+    </style>
     <script>/**
  * @license
  * Copyright 2010-2021 Three.js Authors
@@ -2412,380 +2797,6 @@ function createHalfBondGrey(start, end, color, bondThickness) {
     return bond;
 }
 </script>
-    <style>
-        :root {
-            --sidebar-bg: #1f2937;
-            --card-bg: #374151;
-            --border-color: #4b5563;
-            --text-primary: #f9fafb;
-            --text-secondary: #d1d5db;
-            --accent-color: #3b82f6;
-            --hover-color: #4b5563;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #111827;
-            color: var(--text-primary);
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .app {
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 320px;
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s ease;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-
-        .sidebar.collapsed {
-            width: 0;
-            border-right: none;
-            overflow: hidden;
-        }
-
-        .sidebar-content {
-            padding: 1rem;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .sidebar-toggle {
-            position: absolute;
-            top: 1rem;
-            left: 1rem;
-            z-index: 100;
-            background-color: rgba(31, 41, 55, 0.9);
-            border: none;
-            border-radius: 0.5rem;
-            color: var(--text-primary);
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Cards */
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            overflow: hidden;
-        }
-
-        .card-header {
-            padding: 0.75rem 1rem;
-            background-color: rgba(255, 255, 255, 0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .card-header h3 {
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .card-content {
-            padding: 1rem;
-        }
-
-        .card-content.collapsed {
-            display: none;
-        }
-
-        /* Controls */
-        .control-group {
-            margin-bottom: 1rem;
-        }
-
-        .control-group:last-child {
-            margin-bottom: 0;
-        }
-
-        .control-label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-        }
-
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .slider {
-            flex: 1;
-            height: 6px;
-            -webkit-appearance: none;
-            background: var(--border-color);
-            border-radius: 3px;
-            outline: none;
-        }
-
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--accent-color);
-            cursor: pointer;
-        }
-
-        .slider-value {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            min-width: 40px;
-            text-align: right;
-        }
-
-        .color-picker {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .color-input {
-            width: 40px;
-            height: 30px;
-            border: none;
-            border-radius: 0.25rem;
-            cursor: pointer;
-        }
-
-        .color-value {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
-
-        .select {
-            width: 100%;
-            background-color: var(--hover-color);
-            border: 1px solid var(--border-color);
-            border-radius: 0.25rem;
-            color: var(--text-primary);
-            padding: 0.5rem;
-            font-size: 0.875rem;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 40px;
-            height: 20px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider-switch {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--border-color);
-            transition: .4s;
-            border-radius: 20px;
-        }
-
-        .slider-switch:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 2px;
-            bottom: 2px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider-switch {
-            background-color: var(--accent-color);
-        }
-
-        input:checked + .slider-switch:before {
-            transform: translateX(20px);
-        }
-
-        .button-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.5rem;
-        }
-
-        .btn {
-            background-color: var(--hover-color);
-            border: 1px solid var(--border-color);
-            border-radius: 0.25rem;
-            color: var(--text-secondary);
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.25rem;
-            transition: all 0.2s;
-        }
-
-        .btn.active {
-            background-color: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
-        }
-
-        .btn:hover {
-            background-color: rgba(59, 130, 246, 0.2);
-            color: var(--text-primary);
-        }
-
-        /* Periodicity controls */
-        .periodicity-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: var(--hover-color);
-            border: 1px solid var(--border-color);
-            border-radius: 0.25rem;
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .periodicity-item:last-child {
-            margin-bottom: 0;
-        }
-
-        /* Main content */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            min-height: 0;
-            width: 100%;
-        }
-
-        .toolbar {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            display: flex;
-            gap: 0.5rem;
-            z-index: 10;
-        }
-
-        .toolbar-btn {
-            background-color: rgba(31, 41, 55, 0.9);
-            border: none;
-            border-radius: 0.5rem;
-            color: var(--text-primary);
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .viewer-container {
-            flex: 1;
-            display: flex;
-            background: linear-gradient(135deg, #1f2937, #111827);
-            position: relative;
-            min-height: 0;
-            width: 100%;
-        }
-
-        .viewer {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Molecular visualization */
-        #molecule-canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-            cursor: grab;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-
-        #molecule-canvas:active {
-            cursor: grabbing;
-        }
-
-        /* Icons */
-        .icon {
-            width: 16px;
-            height: 16px;
-            display: inline-block;
-        }
-
-        /* Animation */
-        .fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Help text */
-        .help-text {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            color: #9CA3AF;
-            font-size: 12px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            border-radius: 4px;
-            z-index: 5;
-        }
-    </style>
 <script>/*Copyrights for code authored by Yahoo Inc. is licensed under the following terms:
 MIT License
 Copyright  2017 Yahoo Inc.
@@ -5636,30 +5647,30 @@ if (typeof define === 'function' && define.amd) {
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Bond Threshold Scale</span>
-                                <span class="slider-value" id="bond-threshold-value">1.0</span>
+                                <span class="slider-value" id="bond-threshold-value">1.5</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.5" max="3" step="0.1" value="1.0" class="slider" id="bond-threshold">
+                                <input type="range" min="0.5" max="3" step="0.1" value="1.5" class="slider" id="bond-threshold">
                             </div>
                         </div>
 
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Bond Thickness</span>
-                                <span class="slider-value" id="bond-thickness-value">0.10</span>
+                                <span class="slider-value" id="bond-thickness-value">0.20</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.05" max="0.5" step="0.01" value="0.1" class="slider" id="bond-thickness">
+                                <input type="range" min="0.05" max="1" step="0.05" value="0.2" class="slider" id="bond-thickness">
                             </div>
                         </div>
 
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Atom Size</span>
-                                <span class="slider-value" id="atom-size-value">0.4×</span>
+                                <span class="slider-value" id="atom-size-value">1.0×</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.1" max="2" step="0.1" value="0.4" class="slider" id="atom-size">
+                                <input type="range" min="0.2" max="2" step="0.1" value="1.0" class="slider" id="atom-size">
                             </div>
                         </div>
 
@@ -5675,31 +5686,11 @@ if (typeof define === 'function' && define.amd) {
 
                         <div class="control-group">
                             <div class="control-label">
-                                <span>Force Scale</span>
-                                <span class="slider-value" id="force-scale-value">0.5×</span>
-                            </div>
-                            <div class="slider-container">
-                                <input type="range" min="0.1" max="5" step="0.1" value="0.5" class="slider" id="force-scale">
-                            </div>
-                        </div>
-
-                        <div class="control-group">
-                            <div class="control-label">
                                 <span>Background Color</span>
                             </div>
                             <div class="color-picker">
                                 <input type="color" value="#1f2937" class="color-input" id="background-color">
                                 <span class="color-value" id="background-color-value">#1f2937</span>
-                            </div>
-                        </div>
-
-                        <div class="control-group" id="cell-color-group" style="display: none;">
-                            <div class="control-label">
-                                <span>Cell Color</span>
-                            </div>
-                            <div class="color-picker">
-                                <input type="color" value="#808080" class="color-input" id="cell-color">
-                                <span class="color-value" id="cell-color-value">#808080</span>
                             </div>
                         </div>
 
@@ -5758,36 +5749,6 @@ if (typeof define === 'function' && define.amd) {
 
                         <div class="control-group">
                             <div class="control-label">
-                                <span>Shading</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="show-shading">
-                                    <span class="slider-switch"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="control-group">
-                            <div class="control-label">
-                                <span>Energy Plot</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="show-energy-plot">
-                                    <span class="slider-switch"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="control-group">
-                            <div class="control-label">
-                                <span>Forces</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="show-forces">
-                                    <span class="slider-switch"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="control-group">
-                            <div class="control-label">
                                 <span>View Mode</span>
                             </div>
                             <div class="button-group">
@@ -5804,38 +5765,6 @@ if (typeof define === 'function' && define.amd) {
                                     </svg>
                                     Perspective
                                 </button>
-                            </div>
-                        </div>
-
-                        <!-- Add Periodicity -->
-                        <div class="control-group">
-                            <div class="control-label">
-                                <span>Add Periodicity</span>
-                            </div>
-                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                <select class="select" id="periodicity-select" style="flex: 1;">
-                                    <option value="+x">+x</option>
-                                    <option value="+y">+y</option>
-                                    <option value="+z">+z</option>
-                                    <option value="±x">±x</option>
-                                    <option value="±y">±y</option>
-                                    <option value="±z">±z</option>
-                                </select>
-                                <button class="btn" id="add-periodicity-btn" style="padding: 0.5rem; min-width: 40px;">
-                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Added Periodicities -->
-                        <div class="control-group" id="periodicities-container">
-                            <div class="control-label">
-                                <span>Periodicities</span>
-                            </div>
-                            <div id="periodicities-list">
-                                <!-- Periodicity items will be added here -->
                             </div>
                         </div>
                     </div>
@@ -5878,6 +5807,48 @@ if (typeof define === 'function' && define.amd) {
                     </div>
                 </div>
 
+                <!-- Normal Modes -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Normal Modes
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Select Mode</span>
+                            </div>
+                            <select class="select" id="normal-mode">
+                                <option value="0">No vibration data loaded</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Amplitude</span>
+                                <span class="slider-value" id="amplitude-value">0.75</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.1" max="2.0" step="0.05" value="0.75" class="slider" id="amplitude-slider">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Show Vectors</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-vectors">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Animation -->
                 <div class="card">
                     <div class="card-header">
@@ -5899,6 +5870,11 @@ if (typeof define === 'function' && define.amd) {
                             <button class="toolbar-btn" id="copy-btn">
                                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                            </button>
+                            <button class="toolbar-btn" id="layers-btn">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                                 </svg>
                             </button>
                         </div>
@@ -5943,57 +5919,9 @@ if (typeof define === 'function' && define.amd) {
                     <canvas id="molecule-canvas"></canvas>
                     <div class="help-text" id="help-text">Drag to rotate • Scroll to zoom</div>
                 </div>
-                <!-- Energy Plot -->
-                <div class="energy-plot-container" id="energy-plot-container" style="display: none;">
-                    <div class="energy-plot-resize-handle" id="energy-plot-resize-handle"></div>
-                    <canvas id="energy-plot-canvas"></canvas>
-                </div>
             </div>
         </div>
     </div>
-
-    <style>
-        .energy-plot-container {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            right: 10px;
-            height: 120px;
-            min-height: 80px;
-            max-height: 400px;
-            background: rgba(31, 41, 55, 0.9);
-            border-radius: 8px;
-            padding: 10px;
-            padding-top: 18px;
-            box-sizing: border-box;
-        }
-        .energy-plot-resize-handle {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 18px;
-            cursor: ns-resize;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px 8px 0 0;
-        }
-        .energy-plot-resize-handle::after {
-            content: '';
-            width: 40px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 2px;
-        }
-        .energy-plot-resize-handle:hover::after {
-            background: rgba(255, 255, 255, 0.5);
-        }
-        #energy-plot-canvas {
-            width: 100%;
-            height: 100%;
-        }
-    </style>
 
     <script>
         
@@ -6009,8 +5937,8 @@ let cards = {
 let periodicities = [];
 
 // File naming for downloads
-let downloadBaseName = 'molecule';  // Can be set via setDownloadName()
-let downloadCounters = { png: 0, gif: 0 };  // Track download counts
+let downloadBaseName = 'vibration';
+let downloadCounters = { png: 0, gif: 0 };
 
 let settings = {
     bondThreshold: 1.0,
@@ -6019,13 +5947,14 @@ let settings = {
     animationSpeed: 30,
     forceScale: 0.5,
     backgroundColor: '#1f2937',
-    cellColor: '#808080',
     style: 'cartoon',
     showCell: true,
     showBond: true,
-    showShading: false,
+    showShadow: false,
+    showShading: true,
     showEnergyPlot: false,
     showForces: false,
+    showModeVector: false,
     viewMode: 'Perspective',
     rotationMode: 'TrackBall'
 };
@@ -6078,73 +6007,9 @@ let animationState = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    initSettingsFromUI();
     setupEventListeners();
     initRenderer();
 });
-
-// Initialize settings from UI values on page load
-function initSettingsFromUI() {
-    const bondThresholdSlider = document.getElementById('bond-threshold');
-    if (bondThresholdSlider) {
-        settings.bondThreshold = parseFloat(bondThresholdSlider.value);
-    }
-    
-    const bondThicknessSlider = document.getElementById('bond-thickness');
-    if (bondThicknessSlider) {
-        settings.bondThickness = parseFloat(bondThicknessSlider.value);
-    }
-    
-    const atomSizeSlider = document.getElementById('atom-size');
-    if (atomSizeSlider) {
-        settings.atomSize = parseFloat(atomSizeSlider.value);
-    }
-    
-    const animSpeedSlider = document.getElementById('animation-speed');
-    if (animSpeedSlider) {
-        settings.animationSpeed = parseInt(animSpeedSlider.value, 10);
-    }
-    
-    const forceScaleSlider = document.getElementById('force-scale');
-    if (forceScaleSlider) {
-        settings.forceScale = parseFloat(forceScaleSlider.value);
-    }
-    
-    const bgColorInput = document.getElementById('background-color');
-    if (bgColorInput) {
-        settings.backgroundColor = bgColorInput.value;
-    }
-    
-    const cellColorInput = document.getElementById('cell-color');
-    if (cellColorInput) {
-        settings.cellColor = cellColorInput.value;
-    }
-    
-    const styleSelect = document.getElementById('style');
-    if (styleSelect) {
-        settings.style = styleSelect.value;
-    }
-    
-    const showCellCheckbox = document.getElementById('show-cell');
-    if (showCellCheckbox) {
-        settings.showCell = showCellCheckbox.checked;
-    }
-    
-    const showBondCheckbox = document.getElementById('show-bond');
-    if (showBondCheckbox) {
-        settings.showBond = showBondCheckbox.checked;
-    }
-    
-    const showShadingCheckbox = document.getElementById('show-shading');
-    if (showShadingCheckbox) {
-        settings.showShading = showShadingCheckbox.checked;
-    }
-    
-    const showForcesCheckbox = document.getElementById('show-forces');
-    if (showForcesCheckbox) {
-        settings.showForces = showForcesCheckbox.checked;
-    }
-}
 
 function initRenderer() {
     const viewer = document.getElementById('viewer');
@@ -6156,15 +6021,15 @@ function initRenderer() {
         placeholderCanvas.remove();
     }
 
-    renderer = new THREE.WebGLRenderer({ 
-        antialias: true, 
-        alpha: true,
-        preserveDrawingBuffer: true  // Required for canvas capture (PNG/GIF export)
-    });
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.domElement.id = 'molecule-canvas';
     renderer.sortObjects = true;
     renderer.setPixelRatio(window.devicePixelRatio || 1);
     renderer.setSize(Math.max(viewer.clientWidth, 1), Math.max(viewer.clientHeight, 1));
+    
+    // Enable shadow mapping
+    renderer.shadowMap.enabled = false;  // Will be enabled when showShadow is true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
     // Enable better rendering for special effects like neon
     renderer.outputEncoding = THREE.sRGBEncoding;
@@ -6182,11 +6047,11 @@ function initRenderer() {
     setupCamera();
     setupControls();
 
-    // Lighting setup - matching old version
+    // Lighting setup - matching molecular_viewer
     directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(10, 10, 10);
     scene.add(directionalLight);
-    
+
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
     scene.add(ambientLight);
 
@@ -6280,7 +6145,7 @@ function animate() {
     if (controls && typeof controls.update === 'function') {
         controls.update();
     }
-    // Light behavior depends on shading setting
+    // Light behavior depends on shading setting (matching molecular_viewer)
     if (directionalLight && camera) {
         if (settings.showShading) {
             // Light position relative to camera for consistent shading direction
@@ -6389,8 +6254,7 @@ function renderMolecule() {
             cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
         ];
         const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-        const cellColor = new THREE.Color(settings.cellColor);
-        const cellMaterial = new THREE.LineBasicMaterial({ color: cellColor });
+        const cellMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });  // Red color
         const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
         cellMesh.renderOrder = 2;
         moleculeGroup.add(cellMesh);
@@ -6420,6 +6284,13 @@ function renderMolecule() {
                     );
                     if (bond) {
                         bond.renderOrder = 1;
+                        // Enable shadow casting and receiving for bonds
+                        bond.traverse((child) => {
+                            if (child.isMesh) {
+                                child.castShadow = settings.showShadow;
+                                child.receiveShadow = settings.showShadow;
+                            }
+                        });
                         moleculeGroup.add(bond);
                         bondCount++;
                         
@@ -6447,6 +6318,13 @@ function renderMolecule() {
         }
         if (atom) {
             atom.renderOrder = 0;
+            // Enable shadow casting and receiving
+            atom.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = settings.showShadow;
+                    child.receiveShadow = settings.showShadow;
+                }
+            });
             moleculeGroup.add(atom);
         }
     }
@@ -6510,10 +6388,40 @@ function updateBackgroundColor() {
     renderer.setClearColor(color, 1);
 }
 
-function updateShading() {
-    // This function controls shading (lighting), not cast shadows
-    // When enabled: light offset from camera creates visible shading on spheres
-    // When disabled: light follows camera for flat appearance
+function updateShadow() {
+    if (!renderer) return;
+    
+    if (settings.showShadow) {
+        // Enable shadows and add directional light
+        renderer.shadowMap.enabled = true;
+        
+        if (!directionalLight) {
+            directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(50, 50, 50);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.near = 0.5;
+            directionalLight.shadow.camera.far = 500;
+            directionalLight.shadow.camera.left = -50;
+            directionalLight.shadow.camera.right = 50;
+            directionalLight.shadow.camera.top = 50;
+            directionalLight.shadow.camera.bottom = -50;
+            directionalLight.shadow.bias = -0.0001;
+            scene.add(directionalLight);
+        } else {
+            directionalLight.castShadow = true;
+        }
+    } else {
+        // Disable shadows and remove directional light
+        renderer.shadowMap.enabled = false;
+        
+        if (directionalLight) {
+            scene.remove(directionalLight);
+            directionalLight = null;
+        }
+    }
+    
     renderMolecule();
 }
 
@@ -6562,15 +6470,11 @@ function toggleAnimation() {
         animationState.isPlaying = true;
         const fps = settings.animationSpeed || 30;
         const interval = 1000 / fps;
-
+        
         animationState.animationInterval = setInterval(() => {
             animationState.currentFrame = (animationState.currentFrame + 1) % molecularData.length;
             updateFrameDisplay();
             renderMolecule();
-            // Update energy plot marker
-            if (settings.showEnergyPlot && energyPlotData.hasEnergy) {
-                drawEnergyPlot();
-            }
         }, interval);
         
         // Update button icon to pause
@@ -6684,42 +6588,7 @@ function setMolecularData(data) {
         animationCard.style.display = molecularData.length > 1 ? 'block' : 'none';
     }
     
-    // Show/hide cell color control based on whether any molecule has a cell
-    const hasCell = molecularData.some(mol => mol && mol.cell);
-    const cellColorGroup = document.getElementById('cell-color-group');
-    if (cellColorGroup) {
-        cellColorGroup.style.display = hasCell ? 'block' : 'none';
-    }
-
-    // Extract energy data for plotting
-    extractEnergyData();
-
-    // Show/hide energy plot checkbox based on energy availability
-    if (!energyPlotData.hasEnergy) {
-        const energyCheckbox = document.getElementById('show-energy-plot');
-        if (energyCheckbox) {
-            energyCheckbox.checked = false;
-            energyCheckbox.parentElement.parentElement.parentElement.style.opacity = '0.5';
-        }
-    } else {
-        const energyCheckbox = document.getElementById('show-energy-plot');
-        if (energyCheckbox) {
-            energyCheckbox.parentElement.parentElement.parentElement.style.opacity = '1';
-        }
-    }
-
     renderMolecule();
-
-    // Draw energy plot if enabled
-    if (settings.showEnergyPlot && energyPlotData.hasEnergy) {
-        drawEnergyPlot();
-    }
-}
-
-function setDownloadName(name) {
-    downloadBaseName = name;
-    downloadCounters = { png: 0, gif: 0 };  // Reset counters
-    console.log('Download base name set to:', name);
 }
 
 function addPeriodicity() {
@@ -6854,15 +6723,20 @@ function setupEventListeners() {
         }
     });
 
+    safeAddListener('amplitude-slider', 'input', function() {
+        const valueEl = document.getElementById('amplitude-value');
+        if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
+        vibrationData.amplitude = parseFloat(this.value);
+        if (!animationState.isPlaying) {
+            renderVibrationFrame();
+        }
+    });
+
     safeAddListener('frame-slider', 'input', function() {
         const frameNum = parseInt(this.value, 10);
         animationState.currentFrame = frameNum - 1;  // 0-indexed
         updateFrameDisplay();
         renderMolecule();
-        // Update energy plot
-        if (settings.showEnergyPlot && energyPlotData.hasEnergy) {
-            drawEnergyPlot();
-        }
     });
 
     safeAddListener('background-color', 'input', function() {
@@ -6874,13 +6748,6 @@ function setupEventListeners() {
         }
         settings.backgroundColor = this.value;
         updateBackgroundColor();
-    });
-
-    safeAddListener('cell-color', 'input', function() {
-        const valueEl = document.getElementById('cell-color-value');
-        if (valueEl) valueEl.textContent = this.value;
-        settings.cellColor = this.value;
-        renderMolecule();
     });
 
     safeAddListener('style', 'change', function() {
@@ -6898,25 +6765,27 @@ function setupEventListeners() {
         renderMolecule();
     });
 
-    safeAddListener('show-shading', 'change', function() {
-        settings.showShading = this.checked;
-        updateShading();
+    safeAddListener('show-shadow', 'change', function() {
+        settings.showShadow = this.checked;
+        updateShadow();
     });
 
     safeAddListener('show-energy-plot', 'change', function() {
         settings.showEnergyPlot = this.checked;
-        const plotContainer = document.getElementById('energy-plot-container');
-        if (plotContainer) {
-            plotContainer.style.display = this.checked ? 'block' : 'none';
-            if (this.checked) {
-                drawEnergyPlot();
-            }
-        }
     });
 
     safeAddListener('show-forces', 'change', function() {
         settings.showForces = this.checked;
         renderMolecule();
+    });
+
+    safeAddListener('show-vectors', 'change', function() {
+        settings.showModeVector = this.checked;
+        if (vibrationData.modeVectors) {
+            renderVibrationFrame();
+        } else {
+            renderMolecule();
+        }
     });
 
     if (document.getElementById('orthographic-btn') && document.getElementById('perspective-btn')) {
@@ -6931,42 +6800,6 @@ function setupEventListeners() {
     safeAddListener('copy-btn', 'click', copyCurrentFrameToClipboard);
     safeAddListener('video-btn', 'click', saveAsGIF);
     safeAddListener('download-btn', 'click', saveAsPNG);
-
-    // Energy plot resize handle
-    setupEnergyPlotResize();
-}
-
-function setupEnergyPlotResize() {
-    const handle = document.getElementById('energy-plot-resize-handle');
-    const container = document.getElementById('energy-plot-container');
-    if (!handle || !container) return;
-
-    let isResizing = false;
-    let startY = 0;
-    let startHeight = 0;
-
-    handle.addEventListener('mousedown', (e) => {
-        isResizing = true;
-        startY = e.clientY;
-        startHeight = container.offsetHeight;
-        document.body.style.cursor = 'ns-resize';
-        e.preventDefault();
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (!isResizing) return;
-        const deltaY = startY - e.clientY;
-        const newHeight = Math.min(400, Math.max(80, startHeight + deltaY));
-        container.style.height = newHeight + 'px';
-        drawEnergyPlot();
-    });
-
-    document.addEventListener('mouseup', () => {
-        if (isResizing) {
-            isResizing = false;
-            document.body.style.cursor = '';
-        }
-    });
 }
 
 function saveAsPNG() {
@@ -6974,24 +6807,24 @@ function saveAsPNG() {
         alert('Renderer not ready');
         return;
     }
-    
+
     // Store original background
     const originalBackground = scene.background;
-    
+
     // Set transparent background
     scene.background = null;
-    renderer.setClearColor(0x000000, 0); // Transparent
-    
+    renderer.setClearColor(0x000000, 0);
+
     // Render one frame
     renderer.render(scene, camera);
-    
+
     // Get canvas data as PNG
     renderer.domElement.toBlob(function(blob) {
         // Restore original background
         scene.background = originalBackground;
         updateBackgroundColor();
-        
-        // Generate filename with counter to avoid overwriting
+
+        // Generate filename
         let filename;
         if (downloadCounters.png === 0) {
             filename = `${downloadBaseName}.png`;
@@ -6999,113 +6832,85 @@ function saveAsPNG() {
             filename = `${downloadBaseName}_${downloadCounters.png}.png`;
         }
         downloadCounters.png++;
-        
-        // Try multiple download methods for better compatibility
+
+        // Download
         const url = URL.createObjectURL(blob);
-        
-        // Method 1: Try standard download attribute
         const link = document.createElement('a');
         link.href = url;
         link.download = filename;
         link.style.display = 'none';
         document.body.appendChild(link);
-        
+
         try {
             link.click();
             console.log('PNG download initiated:', filename);
         } catch (e) {
-            console.log('Standard download failed, trying alternative:', e);
-            // Method 2: Try opening in new window (for Jupyter)
-            try {
-                const win = window.open(url, '_blank');
-                if (!win) {
-                    // Method 3: Try data URL
-                    const reader = new FileReader();
-                    reader.onload = function() {
-                        const dataUrl = reader.result;
-                        const newLink = document.createElement('a');
-                        newLink.href = dataUrl;
-                        newLink.download = filename;
-                        document.body.appendChild(newLink);
-                        newLink.click();
-                        document.body.removeChild(newLink);
-                    };
-                    reader.readAsDataURL(blob);
-                }
-            } catch (e2) {
-                console.error('All download methods failed:', e2);
-                alert('Download failed. Please try saving the HTML file and opening it directly in a browser.');
-            }
+            console.error('Download failed:', e);
+            window.open(url, '_blank');
         }
-        
-        // Cleanup
+
         setTimeout(() => {
-            if (link.parentNode) {
-                document.body.removeChild(link);
-            }
+            if (link.parentNode) document.body.removeChild(link);
             URL.revokeObjectURL(url);
         }, 1000);
     }, 'image/png');
 }
 
 function saveAsGIF() {
-    if (!molecularData || molecularData.length <= 1) {
-        alert('No animation frames available for GIF');
+    if (!vibrationData.modeVectors || vibrationData.modeVectors.length === 0) {
+        alert('No vibration data available for GIF');
         return;
     }
-    
+
     if (!renderer || !scene || !camera) {
         alert('Renderer not ready');
         return;
     }
-    
-    // Check if gifshot is loaded
+
     if (typeof gifshot === 'undefined') {
         alert('GIF library not loaded');
-        console.error('gifshot is undefined');
         return;
     }
-    
+
     const videoBtn = document.getElementById('video-btn');
     const originalHTML = videoBtn ? videoBtn.innerHTML : '';
-    
+
     try {
+        const nFrames = vibrationData.nFrames;
         const fps = settings.animationSpeed || 30;
         const interval = 1 / fps;
-        
-        console.log('Creating GIF at', fps, 'fps');
-        console.log('Total frames:', molecularData.length);
-        
-        // Show progress message
+
+        // Warn for large frame counts
+        if (nFrames > 60) {
+            if (!confirm(`This will capture ${nFrames} frames. This may take a while and use significant memory. Continue?`)) {
+                return;
+            }
+        }
+
         if (videoBtn) {
-            videoBtn.innerHTML = '<span style="font-size: 10px;">Processing...</span>';
+            videoBtn.innerHTML = '<span style="font-size: 10px;">...</span>';
             videoBtn.disabled = true;
         }
-        
-        // Store current frame
-        const originalFrame = animationState.currentFrame;
-        
-        // Capture all frames as data URLs
+
+        // Store current phase
+        const originalPhase = vibrationData.phase;
+
+        // Capture all frames
         const images = [];
-        for (let i = 0; i < molecularData.length; i++) {
-            animationState.currentFrame = i;
-            renderMolecule();
+        for (let i = 0; i < nFrames; i++) {
+            vibrationData.phase = (i / nFrames) * 2 * Math.PI;
+            renderVibrationFrame();
             renderer.render(scene, camera);
-            
-            // Get frame as data URL
+
             const dataURL = renderer.domElement.toDataURL('image/png');
             images.push(dataURL);
-            
-            console.log('Captured frame', i + 1, 'of', molecularData.length);
         }
-        
-        // Restore original frame
-        animationState.currentFrame = originalFrame;
-        renderMolecule();
-        
-        console.log('Creating GIF from', images.length, 'frames...');
-        
-        // Create GIF using gifshot
+
+        // Restore original phase
+        vibrationData.phase = originalPhase;
+        renderVibrationFrame();
+
+        // Create GIF
         gifshot.createGIF({
             images: images,
             gifWidth: renderer.domElement.clientWidth,
@@ -7117,9 +6922,6 @@ function saveAsGIF() {
             numWorkers: 2
         }, function(obj) {
             if (!obj.error) {
-                console.log('GIF created successfully');
-                
-                // Generate filename with counter to avoid overwriting
                 let filename;
                 if (downloadCounters.gif === 0) {
                     filename = `${downloadBaseName}.gif`;
@@ -7127,54 +6929,28 @@ function saveAsGIF() {
                     filename = `${downloadBaseName}_${downloadCounters.gif}.gif`;
                 }
                 downloadCounters.gif++;
-                
-                // Try multiple download methods for better compatibility
+
                 const link = document.createElement('a');
                 link.href = obj.image;
                 link.download = filename;
-                link.style.display = 'none';
                 document.body.appendChild(link);
-                
-                try {
-                    link.click();
-                } catch (e) {
-                    // Try opening in new window (for Jupyter)
-                    try {
-                        const win = window.open(obj.image, '_blank');
-                        if (!win) {
-                            alert('Download blocked. Please allow popups or save the HTML file and open it directly in a browser.');
-                        }
-                    } catch (e2) {
-                        console.error('All download methods failed:', e2);
-                        alert('Download failed. Please try saving the HTML file and opening it directly in a browser.');
-                    }
-                }
-                
-                // Cleanup
-                setTimeout(() => {
-                    if (link.parentNode) {
-                        document.body.removeChild(link);
-                    }
-                }, 1000);
-                
-                // Restore button
-                if (videoBtn) {
-                    videoBtn.innerHTML = originalHTML;
-                    videoBtn.disabled = false;
-                }
+                link.click();
+                document.body.removeChild(link);
+
+                console.log('GIF saved:', filename);
             } else {
                 console.error('GIF creation error:', obj.error);
-                alert('Failed to create GIF: ' + obj.error);
-                if (videoBtn) {
-                    videoBtn.innerHTML = originalHTML;
-                    videoBtn.disabled = false;
-                }
+                alert('Failed to create GIF');
+            }
+
+            if (videoBtn) {
+                videoBtn.innerHTML = originalHTML;
+                videoBtn.disabled = false;
             }
         });
-        
-    } catch (error) {
-        console.error('GIF creation error:', error);
-        alert('Failed to create GIF: ' + error.message);
+    } catch (e) {
+        console.error('GIF creation error:', e);
+        alert('Failed to create GIF: ' + e.message);
         if (videoBtn) {
             videoBtn.innerHTML = originalHTML;
             videoBtn.disabled = false;
@@ -7247,242 +7023,420 @@ function darkenColorHex(color, percent) {
     return `#${R.toString(16).padStart(2, '0')}${G.toString(16).padStart(2, '0')}${B.toString(16).padStart(2, '0')}`;
 }
 
-// ========== Energy Plot Functions ==========
+// ========== Normal Mode / Vibration Support ==========
 
-let energyPlotData = {
-    energies: [],
-    minEnergy: 0,
-    maxEnergy: 0,
-    hasEnergy: false
+// Vibration state
+let vibrationData = {
+    equilibriumPositions: null,  // Original atom positions
+    modeVectors: null,           // [nModes][nAtoms][3] displacement vectors
+    frequencies: null,           // Array of frequency strings
+    isImaginary: null,           // Array of booleans
+    currentModeIndex: 0,
+    nFrames: 30,
+    phase: 0,                    // Current phase in animation cycle (0 to 2*PI)
+    amplitude: 0.75              // Displacement amplitude
 };
 
-function extractEnergyData() {
-    if (!molecularData || molecularData.length === 0) {
-        energyPlotData.hasEnergy = false;
-        return;
+/**
+ * Initialize the normal mode viewer with vibration data
+ * Called from Python after data injection
+ */
+function initNormalModeViewer(atomsData, vibData) {
+    console.log('Initializing Normal Mode Viewer');
+    console.log('Atoms data:', atomsData);
+    console.log('Vibration data:', vibData);
+
+    // Store equilibrium structure
+    if (atomsData) {
+        vibrationData.equilibriumPositions = atomsData.positions.map(p => [...p]);
+        molecularData = [atomsData];
+        cameraNeedsFit = true;
     }
 
-    energyPlotData.energies = [];
-    let hasAnyEnergy = false;
+    // Store vibration data if available
+    if (vibData && vibData.modeVectors) {
+        vibrationData.modeVectors = vibData.modeVectors;
+        vibrationData.frequencies = vibData.frequencies || [];
+        vibrationData.isImaginary = vibData.isImaginary || [];
+        vibrationData.nFrames = vibData.nFrames || 30;
 
-    for (let i = 0; i < molecularData.length; i++) {
-        const mol = molecularData[i];
-        if (mol.energy !== undefined && mol.energy !== null) {
-            energyPlotData.energies.push(mol.energy);
-            hasAnyEnergy = true;
-        } else {
-            energyPlotData.energies.push(null);
+        // Populate mode selector dropdown
+        populateModeSelector();
+
+        // Show normal modes card
+        const modesCard = document.querySelector('.card:has(#normal-mode)');
+        if (modesCard) {
+            modesCard.style.display = 'block';
+        }
+    } else {
+        // Hide normal modes card if no vibration data
+        const modesCard = document.querySelector('.card:has(#normal-mode)');
+        if (modesCard) {
+            modesCard.style.display = 'none';
         }
     }
 
-    energyPlotData.hasEnergy = hasAnyEnergy;
+    // Update frame display
+    updateFrameDisplay();
+    renderMolecule();
+}
 
-    if (hasAnyEnergy) {
-        const validEnergies = energyPlotData.energies.filter(e => e !== null);
-        energyPlotData.minEnergy = Math.min(...validEnergies);
-        energyPlotData.maxEnergy = Math.max(...validEnergies);
+/**
+ * Populate the mode selector dropdown with frequencies
+ */
+function populateModeSelector() {
+    const select = document.getElementById('normal-mode');
+    if (!select || !vibrationData.frequencies) return;
+
+    select.innerHTML = '';
+
+    vibrationData.frequencies.forEach((freq, idx) => {
+        const option = document.createElement('option');
+        option.value = idx;
+
+        // Format frequency display
+        const isImag = vibrationData.isImaginary && vibrationData.isImaginary[idx];
+        const indicator = isImag ? '●' : '○';
+        const freqStr = freq.toString().includes('i') ? freq : `${freq} cm⁻¹`;
+
+        option.textContent = `Mode ${idx + 1}: ${indicator} ${freqStr}`;
+        if (isImag) {
+            option.style.color = '#ef4444';  // Red for imaginary frequencies
+        }
+        select.appendChild(option);
+    });
+
+    // Set up event listener for mode selection
+    select.addEventListener('change', function() {
+        vibrationData.currentModeIndex = parseInt(this.value, 10);
+        vibrationData.phase = 0;
+        renderMolecule();
+    });
+}
+
+/**
+ * Get displaced positions for current animation frame
+ */
+function getDisplacedPositions() {
+    if (!vibrationData.equilibriumPositions || !vibrationData.modeVectors) {
+        return null;
+    }
+
+    const modeIdx = vibrationData.currentModeIndex;
+    const modeVector = vibrationData.modeVectors[modeIdx];
+
+    if (!modeVector) return null;
+
+    const amplitude = vibrationData.amplitude;
+    const phase = vibrationData.phase;
+    const displacement = Math.sin(phase) * amplitude;
+
+    const displacedPositions = vibrationData.equilibriumPositions.map((pos, i) => {
+        const vec = modeVector[i] || [0, 0, 0];
+        return [
+            pos[0] + vec[0] * displacement,
+            pos[1] + vec[1] * displacement,
+            pos[2] + vec[2] * displacement
+        ];
+    });
+
+    return displacedPositions;
+}
+
+/**
+ * Override toggleAnimation for vibration mode
+ */
+const originalToggleAnimation = toggleAnimation;
+toggleAnimation = function() {
+    // Check if we're in vibration mode
+    if (vibrationData.modeVectors && vibrationData.modeVectors.length > 0) {
+        toggleVibrationAnimation();
+    } else {
+        // Fall back to trajectory animation
+        originalToggleAnimation();
+    }
+};
+
+/**
+ * Toggle vibration animation (sinusoidal)
+ */
+function toggleVibrationAnimation() {
+    const playBtn = document.getElementById('play-btn');
+
+    if (animationState.isPlaying) {
+        // Pause
+        animationState.isPlaying = false;
+        if (animationState.animationInterval) {
+            clearInterval(animationState.animationInterval);
+            animationState.animationInterval = null;
+        }
+
+        // Update button icon to play
+        if (playBtn) {
+            playBtn.innerHTML = `
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            `;
+        }
+    } else {
+        // Play
+        animationState.isPlaying = true;
+        const fps = settings.animationSpeed || 30;
+        const interval = 1000 / fps;
+        const phaseStep = (2 * Math.PI) / vibrationData.nFrames;
+
+        animationState.animationInterval = setInterval(() => {
+            vibrationData.phase += phaseStep;
+            if (vibrationData.phase >= 2 * Math.PI) {
+                vibrationData.phase -= 2 * Math.PI;
+            }
+
+            // Update frame display (convert phase to frame number)
+            const frameNum = Math.round((vibrationData.phase / (2 * Math.PI)) * vibrationData.nFrames);
+            animationState.currentFrame = frameNum;
+            updateFrameDisplay();
+
+            renderVibrationFrame();
+        }, interval);
+
+        // Update button icon to pause
+        if (playBtn) {
+            playBtn.innerHTML = `
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            `;
+        }
     }
 }
 
-function drawEnergyPlot() {
-    const canvas = document.getElementById('energy-plot-canvas');
-    const container = document.getElementById('energy-plot-container');
-    if (!canvas || !container) return;
+/**
+ * Render a single vibration frame with displaced positions
+ */
+function renderVibrationFrame() {
+    if (!scene || !camera || !renderer) return;
+    if (!molecularData || molecularData.length === 0) return;
 
-    // Extract energy data if not done yet
-    if (energyPlotData.energies.length !== molecularData.length) {
-        extractEnergyData();
-    }
-
-    if (!energyPlotData.hasEnergy) {
-        container.style.display = 'none';
-        const checkbox = document.getElementById('show-energy-plot');
-        if (checkbox) checkbox.checked = false;
-        settings.showEnergyPlot = false;
-        console.log('No energy data available');
+    const displacedPositions = getDisplacedPositions();
+    if (!displacedPositions) {
+        renderMolecule();
         return;
     }
 
-    const ctx = canvas.getContext('2d');
-    const rect = container.getBoundingClientRect();
+    // Create temporary molecule data with displaced positions
+    const molecule = { ...molecularData[0] };
+    molecule.positions = displacedPositions;
 
-    // Set canvas size for sharp rendering
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = (rect.width - 20) * dpr;
-    canvas.height = (rect.height - 20) * dpr;
-    canvas.style.width = (rect.width - 20) + 'px';
-    canvas.style.height = (rect.height - 20) + 'px';
-    ctx.scale(dpr, dpr);
+    // Render with displaced positions
+    renderMoleculeWithData(molecule);
+}
 
-    const width = rect.width - 20;
-    const height = rect.height - 20;
-    const padding = { left: 50, right: 20, top: 15, bottom: 25 };
-    const plotWidth = width - padding.left - padding.right;
-    const plotHeight = height - padding.top - padding.bottom;
+/**
+ * Render molecule with specific data (for vibration animation)
+ */
+function renderMoleculeWithData(molecule) {
+    if (!scene || !camera || !renderer) return;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
-
-    // Draw background grid
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 4; i++) {
-        const y = padding.top + (plotHeight / 4) * i;
-        ctx.beginPath();
-        ctx.moveTo(padding.left, y);
-        ctx.lineTo(width - padding.right, y);
-        ctx.stroke();
+    if (moleculeGroup) {
+        scene.remove(moleculeGroup);
+        disposeObject3D(moleculeGroup);
     }
 
-    // Calculate scale
-    const energies = energyPlotData.energies;
-    const n = energies.length;
-    let minE = energyPlotData.minEnergy;
-    let maxE = energyPlotData.maxEnergy;
+    moleculeGroup = new THREE.Group();
 
-    // Add some padding to range
-    const range = maxE - minE || 1;
-    minE -= range * 0.1;
-    maxE += range * 0.1;
+    let positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
+    let symbols = molecule.symbols;
 
-    // Draw energy line
-    ctx.strokeStyle = '#3b82f6';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    let started = false;
+    // Apply periodic boundary conditions if requested
+    if (periodicities.length > 0 && molecule.cell) {
+        const extended = applyPeriodicBoundaries(positions, symbols, molecule.cell, periodicities);
+        positions = extended.positions;
+        symbols = extended.symbols;
+    }
 
-    for (let i = 0; i < n; i++) {
-        if (energies[i] === null) continue;
-        const x = padding.left + (i / (n - 1 || 1)) * plotWidth;
-        const y = padding.top + plotHeight - ((energies[i] - minE) / (maxE - minE)) * plotHeight;
+    const styleName = (settings.style || 'cartoon').toLowerCase();
+    const atomFactory = atomFactories[styleName] || atomFactories['default'];
+    const bondFactory = bondFactories[styleName] || bondFactories['default'];
 
-        if (!started) {
-            ctx.moveTo(x, y);
-            started = true;
-        } else {
-            ctx.lineTo(x, y);
+    const atomScale = Math.max(settings.atomSize, 0.05);
+    const bondRadius = Math.max(settings.bondThickness, 0.005);
+    const bondCutoff = settings.bondThreshold;
+
+    const uniqueSymbols = [...new Set(symbols)];
+    const greyColorMap = {};
+    uniqueSymbols.forEach((sym, idx) => {
+        const lightness = (idx + 1) / (uniqueSymbols.length + 1);
+        greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
+    });
+    const helpers = { greyColorMap };
+
+    // Create atoms
+    positions.forEach((pos, i) => {
+        const symbol = symbols[i];
+        const atomMesh = atomFactory(pos, symbol, atomScale, helpers);
+        if (atomMesh) {
+            atomMesh.userData.atomIndex = i;
+            atomMesh.userData.symbol = symbol;
+            moleculeGroup.add(atomMesh);
+        }
+    });
+
+    // Create bonds (inline detection)
+    if (settings.showBond) {
+        for (let i = 0; i < positions.length; i++) {
+            for (let j = i + 1; j < positions.length; j++) {
+                const dist = positions[i].distanceTo(positions[j]);
+                const info1 = atomInfo[symbols[i]] || atomInfo['default'];
+                const info2 = atomInfo[symbols[j]] || atomInfo['default'];
+                const covalentRadiusSum = info1.radius + info2.radius;
+                const adjustedCutoff = covalentRadiusSum * bondCutoff;
+
+                if (dist < adjustedCutoff) {
+                    const bondMesh = bondFactory(
+                        positions[i], positions[j],
+                        symbols[i], symbols[j],
+                        bondRadius, atomScale, helpers
+                    );
+                    if (bondMesh) moleculeGroup.add(bondMesh);
+                }
+            }
         }
     }
-    ctx.stroke();
 
-    // Draw data points
-    ctx.fillStyle = '#3b82f6';
-    for (let i = 0; i < n; i++) {
-        if (energies[i] === null) continue;
-        const x = padding.left + (i / (n - 1 || 1)) * plotWidth;
-        const y = padding.top + plotHeight - ((energies[i] - minE) / (maxE - minE)) * plotHeight;
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fill();
+    // Add unit cell if available (inline)
+    if (settings.showCell && molecule.cell) {
+        const cellVectors = molecule.cell.map(c => new THREE.Vector3(...c));
+        const points = [
+            new THREE.Vector3(0, 0, 0), cellVectors[0],
+            new THREE.Vector3(0, 0, 0), cellVectors[1],
+            new THREE.Vector3(0, 0, 0), cellVectors[2],
+            cellVectors[0], cellVectors[0].clone().add(cellVectors[1]),
+            cellVectors[0], cellVectors[0].clone().add(cellVectors[2]),
+            cellVectors[1], cellVectors[1].clone().add(cellVectors[0]),
+            cellVectors[1], cellVectors[1].clone().add(cellVectors[2]),
+            cellVectors[2], cellVectors[2].clone().add(cellVectors[0]),
+            cellVectors[2], cellVectors[2].clone().add(cellVectors[1]),
+            cellVectors[0].clone().add(cellVectors[1]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+            cellVectors[0].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+            cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
+        ];
+        const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
+        const cellMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+        const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
+        cellMesh.renderOrder = 2;
+        moleculeGroup.add(cellMesh);
     }
 
-    // Draw current frame marker
-    drawEnergyPlotMarker();
+    // Add mode vector arrows if enabled (bidirectional: red +, blue -)
+    if (settings.showModeVector && vibrationData.modeVectors) {
+        const modeIdx = vibrationData.currentModeIndex;
+        const modeVector = vibrationData.modeVectors[modeIdx];
 
-    // Draw axes labels
-    ctx.fillStyle = '#9ca3af';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(maxE.toFixed(2), padding.left - 5, padding.top + 5);
-    ctx.fillText(minE.toFixed(2), padding.left - 5, height - padding.bottom);
+        if (modeVector && modeVector.length === positions.length) {
+            const positiveColor = 0xff0000;  // Red for positive direction
+            const negativeColor = 0x0000ff;  // Blue for negative direction
+            const arrowScale = vibrationData.amplitude * 2;
 
-    ctx.textAlign = 'center';
-    ctx.fillText('Frame', width / 2, height - 5);
+            for (let i = 0; i < positions.length; i++) {
+                const vec = modeVector[i];
+                if (!vec) continue;
 
-    // Y-axis label
-    ctx.save();
-    ctx.translate(12, height / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText('Energy (eV)', 0, 0);
-    ctx.restore();
-}
+                const dir = new THREE.Vector3(vec[0], vec[1], vec[2]);
+                const length = dir.length() * arrowScale;
 
-function drawEnergyPlotMarker() {
-    const canvas = document.getElementById('energy-plot-canvas');
-    const container = document.getElementById('energy-plot-container');
-    if (!canvas || !container || !energyPlotData.hasEnergy) return;
+                if (length > 0.01) {  // Skip very small vectors
+                    dir.normalize();
 
-    const ctx = canvas.getContext('2d');
-    const rect = container.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
+                    // Positive direction arrow (red)
+                    const arrowPositive = new THREE.ArrowHelper(
+                        dir,
+                        positions[i],
+                        length,
+                        positiveColor,
+                        length * 0.3,  // Head length
+                        length * 0.15  // Head width
+                    );
+                    moleculeGroup.add(arrowPositive);
 
-    const width = rect.width - 20;
-    const height = rect.height - 20;
-    const padding = { left: 50, right: 20, top: 15, bottom: 25 };
-    const plotWidth = width - padding.left - padding.right;
-    const plotHeight = height - padding.top - padding.bottom;
-
-    const energies = energyPlotData.energies;
-    const n = energies.length;
-    const frameIdx = animationState.currentFrame;
-
-    if (n <= 1 || frameIdx < 0 || frameIdx >= n) return;
-
-    // Draw current frame marker (vertical line)
-    const x = padding.left + (frameIdx / (n - 1 || 1)) * plotWidth;
-
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x, padding.top);
-    ctx.lineTo(x, height - padding.bottom);
-    ctx.stroke();
-
-    // Draw marker point if energy exists
-    if (energies[frameIdx] !== null) {
-        let minE = energyPlotData.minEnergy;
-        let maxE = energyPlotData.maxEnergy;
-        const range = maxE - minE || 1;
-        minE -= range * 0.1;
-        maxE += range * 0.1;
-
-        const y = padding.top + plotHeight - ((energies[frameIdx] - minE) / (maxE - minE)) * plotHeight;
-
-        ctx.fillStyle = '#ef4444';
-        ctx.beginPath();
-        ctx.arc(x, y, 5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Show energy value
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 11px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(energies[frameIdx].toFixed(4) + ' eV', x, padding.top - 3);
+                    // Negative direction arrow (blue)
+                    const negDir = dir.clone().negate();
+                    const arrowNegative = new THREE.ArrowHelper(
+                        negDir,
+                        positions[i],
+                        length,
+                        negativeColor,
+                        length * 0.3,  // Head length
+                        length * 0.15  // Head width
+                    );
+                    moleculeGroup.add(arrowNegative);
+                }
+            }
+        }
     }
+
+    scene.add(moleculeGroup);
 }
 
+// Override updateFrameDisplay for vibration mode
+const originalUpdateFrameDisplay = updateFrameDisplay;
+updateFrameDisplay = function() {
+    const frameValue = document.getElementById('frame-value');
+    const frameSlider = document.getElementById('frame-slider');
+
+    if (vibrationData.modeVectors && vibrationData.modeVectors.length > 0) {
+        // Vibration mode: show frame in cycle
+        const totalFrames = vibrationData.nFrames;
+        const currentFrame = animationState.currentFrame + 1;
+
+        if (frameValue) {
+            frameValue.textContent = `${currentFrame} / ${totalFrames}`;
+        }
+        if (frameSlider) {
+            frameSlider.max = totalFrames;
+            frameSlider.value = currentFrame;
+        }
+    } else {
+        // Trajectory mode: use original
+        originalUpdateFrameDisplay();
+    }
+};
+
+// Export functions for Python injection
 window.setMolecularData = setMolecularData;
+window.initNormalModeViewer = initNormalModeViewer;
 window.removePeriodicity = removePeriodicity;
-</script>
+    </script>
 
 <script>
     (function() {
-        var MAX_RETRIES = 100;  // 5 seconds max (100 * 50ms)
+        var MAX_RETRIES = 100;
         var retryCount = 0;
 
-        function initData() {
-            console.log('Initializing molecular data...');
+        // Inject data from Python
+        window.equilibriumAtoms = {"positions": [[8.914435157494722, 6.861424532075102, 0.0], [8.540639861643363, 8.011848160390382, 3.55], [8.540639861643363, 8.011848160390382, 2.13], [7.562031072269683, 8.722849064150203, 1.42], [7.562031072269683, 8.722849064150203, 0.0], [6.352404085225039, 8.722849064150203, 3.55], [6.352404085225039, 8.722849064150203, 2.1300000000000003], [5.373795295851359, 8.011848160390382, 1.4200000000000004], [5.373795295851359, 8.011848160390382, 0.0], [5.0, 6.861424532075102, 3.549999999999999], [5.0, 6.861424532075102, 2.1299999999999994], [5.373795295851359, 5.711000903759821, 1.4199999999999995], [5.373795295851359, 5.711000903759821, 0.0], [6.352404085225039, 5.000000000000001, 3.5500000000000007], [6.352404085225039, 5.000000000000001, 2.1299999999999994], [7.562031072269683, 5.0, 1.4199999999999995], [7.562031072269683, 5.0, 0.0], [8.540639861643363, 5.71100090375982, 3.5500000000000007], [8.540639861643363, 5.71100090375982, 2.1299999999999994], [8.914435157494722, 6.861424532075101, 1.4199999999999995], [8.914435157494722, 6.861424532075102, 4.26], [8.540639861643363, 8.011848160390382, 7.81], [8.540639861643363, 8.011848160390382, 6.39], [7.562031072269683, 8.722849064150203, 5.68], [7.562031072269683, 8.722849064150203, 4.26], [6.352404085225039, 8.722849064150203, 7.81], [6.352404085225039, 8.722849064150203, 6.390000000000001], [5.373795295851359, 8.011848160390382, 5.68], [5.373795295851359, 8.011848160390382, 4.26], [5.0, 6.861424532075102, 7.809999999999999], [5.0, 6.861424532075102, 6.389999999999999], [5.373795295851359, 5.711000903759821, 5.68], [5.373795295851359, 5.711000903759821, 4.26], [6.352404085225039, 5.000000000000001, 7.8100000000000005], [6.352404085225039, 5.000000000000001, 6.389999999999999], [7.562031072269683, 5.0, 5.68], [7.562031072269683, 5.0, 4.26], [8.540639861643363, 5.71100090375982, 7.8100000000000005], [8.540639861643363, 5.71100090375982, 6.389999999999999], [8.914435157494722, 6.861424532075101, 5.68]], "symbols": ["C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C"], "cell": [[13.914435157494722, 0.0, 0.0], [0.0, 13.722849064150203, 0.0], [0.0, 0.0, 8.52]]};
+        window.vibrationData = {"modeVectors": [[[0.4, 1.8151858625111421e-16, 0.0], [0.323606797749979, 0.23511410091698914, 0.0], [0.323606797749979, 0.23511410091698914, 0.0], [0.12360679774997924, 0.38042260651806137, 0.0], [0.12360679774997924, 0.38042260651806137, 0.0], [-0.12360679774997857, 0.3804226065180616, 0.0], [-0.12360679774997857, 0.3804226065180616, 0.0], [-0.3236067977499788, 0.23511410091698948, 0.0], [-0.3236067977499788, 0.23511410091698948, 0.0], [-0.4, 1.8151858625111453e-16, 0.0], [-0.4, 1.8151858625111453e-16, 0.0], [-0.323606797749979, -0.23511410091698923, 0.0], [-0.323606797749979, -0.23511410091698923, 0.0], [-0.12360679774997872, -0.38042260651806153, 0.0], [-0.12360679774997872, -0.38042260651806153, 0.0], [0.12360679774997935, -0.38042260651806137, 0.0], [0.12360679774997935, -0.38042260651806137, 0.0], [0.3236067977499792, -0.23511410091698903, 0.0], [0.3236067977499792, -0.23511410091698903, 0.0], [0.4, 0.0, 0.0], [0.4, 1.8151858625111421e-16, 0.0], [0.323606797749979, 0.23511410091698914, 0.0], [0.323606797749979, 0.23511410091698914, 0.0], [0.12360679774997924, 0.38042260651806137, 0.0], [0.12360679774997924, 0.38042260651806137, 0.0], [-0.12360679774997857, 0.3804226065180616, 0.0], [-0.12360679774997857, 0.3804226065180616, 0.0], [-0.3236067977499788, 0.23511410091698948, 0.0], [-0.3236067977499788, 0.23511410091698948, 0.0], [-0.4, 1.8151858625111453e-16, 0.0], [-0.4, 1.8151858625111453e-16, 0.0], [-0.323606797749979, -0.23511410091698923, 0.0], [-0.323606797749979, -0.23511410091698923, 0.0], [-0.12360679774997872, -0.38042260651806153, 0.0], [-0.12360679774997872, -0.38042260651806153, 0.0], [0.12360679774997935, -0.38042260651806137, 0.0], [0.12360679774997935, -0.38042260651806137, 0.0], [0.3236067977499792, -0.23511410091698903, 0.0], [0.3236067977499792, -0.23511410091698903, 0.0], [0.4, 0.0, 0.0]], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.29694643256427977], [0.0, 0.0, 0.22672487230627747], [0.0, 0.0, 0.16219224523667922], [0.0, 0.0, 0.0], [0.0, 0.0, 0.29694643256427977], [0.0, 0.0, 0.22672487230627747], [0.0, 0.0, 0.1621922452366793], [0.0, 0.0, 0.0], [0.0, 0.0, 0.29694643256427977], [0.0, 0.0, 0.22672487230627741], [0.0, 0.0, 0.1621922452366792], [0.0, 0.0, 0.0], [0.0, 0.0, 0.29694643256427977], [0.0, 0.0, 0.22672487230627741], [0.0, 0.0, 0.1621922452366792], [0.0, 0.0, 0.0], [0.0, 0.0, 0.29694643256427977], [0.0, 0.0, 0.22672487230627741], [0.0, 0.0, 0.1621922452366792], [0.0, 0.0, 0.2969464325642798], [0.0, 0.0, 1.699661669294394e-16], [0.0, 0.0, 0.16219224523667933], [0.0, 0.0, 0.22672487230627758], [0.0, 0.0, 0.2969464325642798], [0.0, 0.0, 1.699661669294394e-16], [0.0, 0.0, 0.16219224523667922], [0.0, 0.0, 0.22672487230627758], [0.0, 0.0, 0.2969464325642798], [0.0, 0.0, 3.0319292988445817e-16], [0.0, 0.0, 0.16219224523667944], [0.0, 0.0, 0.22672487230627758], [0.0, 0.0, 0.2969464325642798], [0.0, 0.0, 3.6739403974420595e-17], [0.0, 0.0, 0.16219224523667944], [0.0, 0.0, 0.22672487230627758], [0.0, 0.0, 0.2969464325642798], [0.0, 0.0, 3.6739403974420595e-17], [0.0, 0.0, 0.16219224523667944], [0.0, 0.0, 0.22672487230627758]], [[-1.1344911640694638e-16, 0.25, 0.0], [-0.1469463130731182, 0.2022542485937369, 0.0], [-0.1469463130731182, 0.2022542485937369, 0.0], [-0.23776412907378836, 0.07725424859373702, 0.0], [-0.23776412907378836, 0.07725424859373702, 0.0], [-0.23776412907378847, -0.0772542485937366, 0.0], [-0.23776412907378847, -0.0772542485937366, 0.0], [-0.14694631307311842, -0.20225424859373675, 0.0], [-0.14694631307311842, -0.20225424859373675, 0.0], [-1.1344911640694657e-16, -0.25, 0.0], [-1.1344911640694657e-16, -0.25, 0.0], [0.14694631307311826, -0.20225424859373686, 0.0], [0.14694631307311826, -0.20225424859373686, 0.0], [0.23776412907378844, -0.0772542485937367, 0.0], [0.23776412907378844, -0.0772542485937367, 0.0], [0.23776412907378833, 0.07725424859373708, 0.0], [0.23776412907378833, 0.07725424859373708, 0.0], [0.14694631307311815, 0.20225424859373697, 0.0], [0.14694631307311815, 0.20225424859373697, 0.0], [-0.0, 0.25, 0.0], [-1.1344911640694638e-16, 0.25, 0.0], [-0.1469463130731182, 0.2022542485937369, 0.0], [-0.1469463130731182, 0.2022542485937369, 0.0], [-0.23776412907378836, 0.07725424859373702, 0.0], [-0.23776412907378836, 0.07725424859373702, 0.0], [-0.23776412907378847, -0.0772542485937366, 0.0], [-0.23776412907378847, -0.0772542485937366, 0.0], [-0.14694631307311842, -0.20225424859373675, 0.0], [-0.14694631307311842, -0.20225424859373675, 0.0], [-1.1344911640694657e-16, -0.25, 0.0], [-1.1344911640694657e-16, -0.25, 0.0], [0.14694631307311826, -0.20225424859373686, 0.0], [0.14694631307311826, -0.20225424859373686, 0.0], [0.23776412907378844, -0.0772542485937367, 0.0], [0.23776412907378844, -0.0772542485937367, 0.0], [0.23776412907378833, 0.07725424859373708, 0.0], [0.23776412907378833, 0.07725424859373708, 0.0], [0.14694631307311815, 0.20225424859373697, 0.0], [0.14694631307311815, 0.20225424859373697, 0.0], [-0.0, 0.25, 0.0]]], "frequencies": ["280.00", "850.00", "1590.00"], "isImaginary": [false, false, false], "nFrames": 30};
+        window.hasVibrations = true;
 
-            // Apply settings from Python (ensure settings exists)
+        function initData() {
             if (typeof settings === 'undefined') {
                 window.settings = {};
             }
-            const pythonSettings = {"bondThreshold": 1.0, "bondThickness": 0.1, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#000000", "style": "neon", "showCell": true, "showBond": true, "showShadow": false, "showEnergyPlot": false, "showForces": false, "viewMode": "Perspective", "rotationMode": "TrackBall", "selectionMode": "Lasso"};
+            const pythonSettings = {"bondThreshold": 1.0, "bondThickness": 0.1, "atomSize": 0.4, "animationSpeed": 30, "backgroundColor": "#000000", "style": "neon", "showCell": true, "showBond": true, "showShadow": false, "displacementAmplitude": 0.75, "showModeVector": true, "initialModeIndex": 0, "nFrames": 30};
             Object.assign(settings, pythonSettings);
 
-            // Wait for renderer to be initialized with timeout
             function trySetData() {
                 retryCount++;
                 if (typeof renderer !== 'undefined' && renderer !== null) {
-                    if (typeof setMolecularData === 'function') {
-                        setMolecularData([{"positions": [[9.697322188993667, 7.348661094496833, 0.0], [9.382661267211256, 8.52299164174525, 3.55], [9.382661267211256, 8.52299164174525, 2.13], [8.52299164174525, 9.382661267211256, 1.42], [8.52299164174525, 9.382661267211256, 0.0], [7.348661094496833, 9.697322188993667, 3.55], [7.348661094496833, 9.697322188993667, 2.1300000000000003], [6.174330547248417, 9.382661267211256, 1.4200000000000004], [6.174330547248417, 9.382661267211256, 0.0], [5.314660921782411, 8.522991641745252, 3.549999999999999], [5.314660921782411, 8.522991641745252, 2.1299999999999994], [4.999999999999999, 7.348661094496834, 1.4199999999999995], [4.999999999999999, 7.348661094496833, 0.0], [5.31466092178241, 6.174330547248417, 3.5500000000000007], [5.31466092178241, 6.174330547248417, 2.1299999999999994], [6.174330547248415, 5.314660921782412, 1.4199999999999995], [6.174330547248415, 5.314660921782412, 0.0], [7.348661094496833, 4.999999999999999, 3.5500000000000007], [7.348661094496833, 4.999999999999999, 2.1299999999999994], [8.52299164174525, 5.31466092178241, 1.4199999999999995], [8.522991641745248, 5.31466092178241, 0.0], [9.382661267211255, 6.174330547248415, 3.549999999999998], [9.382661267211255, 6.174330547248415, 2.1299999999999994], [9.697322188993667, 7.3486610944968325, 1.4199999999999995], [9.697322188993667, 7.348661094496833, 4.26], [9.382661267211256, 8.52299164174525, 7.81], [9.382661267211256, 8.52299164174525, 6.39], [8.52299164174525, 9.382661267211256, 5.68], [8.52299164174525, 9.382661267211256, 4.26], [7.348661094496833, 9.697322188993667, 7.81], [7.348661094496833, 9.697322188993667, 6.390000000000001], [6.174330547248417, 9.382661267211256, 5.68], [6.174330547248417, 9.382661267211256, 4.26], [5.314660921782411, 8.522991641745252, 7.809999999999999], [5.314660921782411, 8.522991641745252, 6.389999999999999], [4.999999999999999, 7.348661094496834, 5.68], [4.999999999999999, 7.348661094496833, 4.26], [5.31466092178241, 6.174330547248417, 7.8100000000000005], [5.31466092178241, 6.174330547248417, 6.389999999999999], [6.174330547248415, 5.314660921782412, 5.68], [6.174330547248415, 5.314660921782412, 4.26], [7.348661094496833, 4.999999999999999, 7.8100000000000005], [7.348661094496833, 4.999999999999999, 6.389999999999999], [8.52299164174525, 5.31466092178241, 5.68], [8.522991641745248, 5.31466092178241, 4.26], [9.382661267211255, 6.174330547248415, 7.809999999999998], [9.382661267211255, 6.174330547248415, 6.389999999999999], [9.697322188993667, 7.3486610944968325, 5.68], [9.697322188993667, 7.348661094496833, 8.52], [9.382661267211256, 8.52299164174525, 12.07], [9.382661267211256, 8.52299164174525, 10.649999999999999], [8.52299164174525, 9.382661267211256, 9.94], [8.52299164174525, 9.382661267211256, 8.52], [7.348661094496833, 9.697322188993667, 12.07], [7.348661094496833, 9.697322188993667, 10.65], [6.174330547248417, 9.382661267211256, 9.94], [6.174330547248417, 9.382661267211256, 8.52], [5.314660921782411, 8.522991641745252, 12.069999999999999], [5.314660921782411, 8.522991641745252, 10.649999999999999], [4.999999999999999, 7.348661094496834, 9.94], [4.999999999999999, 7.348661094496833, 8.52], [5.31466092178241, 6.174330547248417, 12.07], [5.31466092178241, 6.174330547248417, 10.649999999999999], [6.174330547248415, 5.314660921782412, 9.94], [6.174330547248415, 5.314660921782412, 8.52], [7.348661094496833, 4.999999999999999, 12.07], [7.348661094496833, 4.999999999999999, 10.649999999999999], [8.52299164174525, 5.31466092178241, 9.94], [8.522991641745248, 5.31466092178241, 8.52], [9.382661267211255, 6.174330547248415, 12.069999999999997], [9.382661267211255, 6.174330547248415, 10.649999999999999], [9.697322188993667, 7.3486610944968325, 9.94], [9.697322188993667, 7.348661094496833, 12.78], [9.382661267211256, 8.52299164174525, 16.33], [9.382661267211256, 8.52299164174525, 14.91], [8.52299164174525, 9.382661267211256, 14.2], [8.52299164174525, 9.382661267211256, 12.78], [7.348661094496833, 9.697322188993667, 16.33], [7.348661094496833, 9.697322188993667, 14.91], [6.174330547248417, 9.382661267211256, 14.2], [6.174330547248417, 9.382661267211256, 12.78], [5.314660921782411, 8.522991641745252, 16.33], [5.314660921782411, 8.522991641745252, 14.909999999999998], [4.999999999999999, 7.348661094496834, 14.2], [4.999999999999999, 7.348661094496833, 12.78], [5.31466092178241, 6.174330547248417, 16.33], [5.31466092178241, 6.174330547248417, 14.909999999999998], [6.174330547248415, 5.314660921782412, 14.2], [6.174330547248415, 5.314660921782412, 12.78], [7.348661094496833, 4.999999999999999, 16.33], [7.348661094496833, 4.999999999999999, 14.909999999999998], [8.52299164174525, 5.31466092178241, 14.2], [8.522991641745248, 5.31466092178241, 12.78], [9.382661267211255, 6.174330547248415, 16.33], [9.382661267211255, 6.174330547248415, 14.909999999999998], [9.697322188993667, 7.3486610944968325, 14.2]], "symbols": ["C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C"], "cell": [[14.697322188993668, 0.0, 0.0], [0.0, 14.697322188993668, 0.0], [0.0, 0.0, 17.04]]}]);
-                    } else {
-                        console.error('setMolecularData function not found!');
+                    if (typeof initNormalModeViewer === 'function') {
+                        initNormalModeViewer(window.equilibriumAtoms, window.vibrationData);
+                    } else if (typeof setMolecularData === 'function') {
+                        // Fallback for templates without vibration support
+                        setMolecularData([window.equilibriumAtoms]);
                     }
                 } else if (retryCount < MAX_RETRIES) {
                     setTimeout(trySetData, 50);
-                } else {
-                    console.error('Renderer initialization timeout after ' + (MAX_RETRIES * 50) + 'ms');
                 }
             }
 

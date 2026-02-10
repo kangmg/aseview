@@ -51,6 +51,10 @@ class MolecularData:
                     data["energy"] = float(atoms.info[key])
                     break
 
+        # Add name if available in info dict
+        if hasattr(atoms, 'info') and 'name' in atoms.info:
+            data["name"] = str(atoms.info['name'])
+
         return data
     
     @staticmethod

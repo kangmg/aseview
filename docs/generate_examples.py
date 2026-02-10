@@ -71,6 +71,11 @@ def create_overlay_viewer():
     mol2 = mol1.copy()
     mol3 = mol1.copy()
 
+    # Set custom names for each molecule
+    mol1.info['name'] = "Conformer A (reference)"
+    mol2.info['name'] = "Conformer B (+15°)"
+    mol3.info['name'] = "Conformer C (-15°)"
+
     # Rotate mol2 slightly
     positions2 = mol2.get_positions()
     angle = np.pi / 12  # 15 degrees
@@ -207,29 +212,168 @@ def create_nacl_crystal_viewer():
 
 
 def create_gold_surface_viewer():
-    """Create Au(111) surface slab."""
-    # Create 4-layer Au(111) slab with 3x3 surface cell
-    au_slab = fcc111('Au', size=(3, 3, 4), vacuum=5.0)
-    viewer = MolecularViewer(au_slab, style="metallic", showCell=True)
+    """Create Au(111) + H2O adsorption relaxation trajectory."""
+    # Create 3-layer Au(111) slab with 2x2 surface cell
+    au_slab = fcc111('Au', size=(2, 2, 3), vacuum=8.0)
+
+    # Add H2O molecule above the surface
+    au_positions = au_slab.get_positions()
+    z_max = au_positions[:, 2].max()
+
+    # H2O initial position (high above surface)
+    h2o_init_z = z_max + 4.0
+
+    # Create relaxation trajectory (H2O approaching and relaxing on surface)
+    trajectory = []
+    n_frames = 20
+
+    for i in range(n_frames):
+        atoms = au_slab.copy()
+
+        # H2O descends and relaxes
+        progress = i / (n_frames - 1)
+        # Exponential decay for smooth approach
+        h2o_z = z_max + 2.2 + 1.8 * np.exp(-3 * progress)
+
+        # Add H2O (O and two H atoms)
+        center_xy = au_positions[:, :2].mean(axis=0)
+        # Slight oscillation during relaxation
+        wobble = 0.1 * np.sin(4 * np.pi * progress) * (1 - progress)
+
+        h2o_positions = [
+            [center_xy[0] + wobble, center_xy[1], h2o_z],  # O
+            [center_xy[0] - 0.76 + wobble, center_xy[1] + 0.59, h2o_z + 0.2],  # H
+            [center_xy[0] + 0.76 + wobble, center_xy[1] + 0.59, h2o_z + 0.2],  # H
+        ]
+
+        from ase import Atoms as AseAtoms
+        h2o = AseAtoms('OH2', positions=h2o_positions)
+        atoms += h2o
+
+        # Energy: starts high, decreases as H2O adsorbs
+        energy = -150.0 - 2.0 * progress + 0.3 * np.exp(-5 * progress) * np.sin(6 * np.pi * progress)
+        atoms.info['energy'] = energy
+
+        trajectory.append(atoms)
+
+    viewer = MolecularViewer(trajectory, style="metallic", showCell=True, showEnergyPlot=True)
     viewer.save_html(os.path.join(OUTPUT_DIR, "gold_surface.html"))
-    print("Created gold_surface.html")
+    print("Created gold_surface.html (Au + H2O relaxation)")
 
 
 def create_graphene_viewer():
-    """Create graphene sheet."""
-    # Create graphene nanoribbon (zigzag, width=4, length=6)
-    graphene = graphene_nanoribbon(4, 6, type='zigzag', saturated=True, vacuum=5.0)
-    viewer = MolecularViewer(graphene, style="cartoon", showCell=True)
+    """Create graphene with phonon normal modes."""
+    # Create small graphene nanoribbon
+    graphene = graphene_nanoribbon(3, 3, type='zigzag', saturated=False, vacuum=5.0)
+    n_atoms = len(graphene)
+
+    # Create fake phonon modes (out-of-plane vibrations are characteristic)
+    mode_vectors = []
+    frequencies = []
+
+    positions = graphene.get_positions()
+    center = positions.mean(axis=0)
+
+    # Mode 1: Breathing mode (in-plane radial)
+    mode1 = []
+    for pos in positions:
+        r = pos - center
+        r_norm = np.linalg.norm(r[:2])
+        if r_norm > 0.1:
+            disp = r[:2] / r_norm * 0.3
+            mode1.append([disp[0], disp[1], 0.0])
+        else:
+            mode1.append([0.0, 0.0, 0.0])
+    mode_vectors.append(mode1)
+    frequencies.append(1580.0)  # G-band like
+
+    # Mode 2: Out-of-plane acoustic (ZA mode)
+    mode2 = []
+    for pos in positions:
+        # Wave-like displacement
+        phase = 0.5 * (pos[0] + pos[1])
+        mode2.append([0.0, 0.0, 0.4 * np.sin(phase)])
+    mode_vectors.append(mode2)
+    frequencies.append(450.0)
+
+    # Mode 3: Optical out-of-plane (ZO mode)
+    mode3 = []
+    for i, pos in enumerate(positions):
+        # Alternating up/down pattern
+        sign = 1 if i % 2 == 0 else -1
+        mode3.append([0.0, 0.0, 0.3 * sign])
+    mode_vectors.append(mode3)
+    frequencies.append(860.0)
+
+    viewer = NormalViewer(
+        graphene,
+        mode_vectors=mode_vectors,
+        frequencies=frequencies,
+        showModeVector=True,
+        style="cartoon"
+    )
     viewer.save_html(os.path.join(OUTPUT_DIR, "graphene.html"))
-    print("Created graphene.html")
+    print("Created graphene.html (phonon modes)")
 
 
 def create_nanotube_viewer():
-    """Create carbon nanotube."""
-    cnt = nanotube(6, 0, length=4, vacuum=5.0)
-    viewer = MolecularViewer(cnt, style="neon", backgroundColor="#000000")
+    """Create carbon nanotube with vibrational modes."""
+    cnt = nanotube(5, 0, length=2, vacuum=5.0)
+    n_atoms = len(cnt)
+
+    positions = cnt.get_positions()
+    center = positions.mean(axis=0)
+
+    mode_vectors = []
+    frequencies = []
+
+    # Mode 1: Radial breathing mode (RBM) - characteristic of CNTs
+    mode1 = []
+    for pos in positions:
+        r = pos[:2] - center[:2]
+        r_norm = np.linalg.norm(r)
+        if r_norm > 0.1:
+            disp = r / r_norm * 0.4
+            mode1.append([disp[0], disp[1], 0.0])
+        else:
+            mode1.append([0.0, 0.0, 0.0])
+    mode_vectors.append(mode1)
+    frequencies.append(280.0)  # RBM frequency
+
+    # Mode 2: Longitudinal acoustic mode
+    mode2 = []
+    z_min, z_max = positions[:, 2].min(), positions[:, 2].max()
+    z_range = z_max - z_min if z_max > z_min else 1.0
+    for pos in positions:
+        z_rel = (pos[2] - z_min) / z_range
+        mode2.append([0.0, 0.0, 0.3 * np.sin(np.pi * z_rel)])
+    mode_vectors.append(mode2)
+    frequencies.append(850.0)
+
+    # Mode 3: G-band like tangential mode
+    mode3 = []
+    for pos in positions:
+        r = pos[:2] - center[:2]
+        r_norm = np.linalg.norm(r)
+        if r_norm > 0.1:
+            # Tangential direction
+            tangent = np.array([-r[1], r[0]]) / r_norm * 0.25
+            mode3.append([tangent[0], tangent[1], 0.0])
+        else:
+            mode3.append([0.0, 0.0, 0.0])
+    mode_vectors.append(mode3)
+    frequencies.append(1590.0)  # G-band
+
+    viewer = NormalViewer(
+        cnt,
+        mode_vectors=mode_vectors,
+        frequencies=frequencies,
+        showModeVector=True,
+        style="neon",
+        backgroundColor="#000000"
+    )
     viewer.save_html(os.path.join(OUTPUT_DIR, "carbon_nanotube.html"))
-    print("Created carbon_nanotube.html")
+    print("Created carbon_nanotube.html (vibrational modes)")
 
 
 def create_fcc_metal_viewer():
