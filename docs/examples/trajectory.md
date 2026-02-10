@@ -2,6 +2,12 @@
 
 This example demonstrates trajectory visualization with animation and energy plots.
 
+## Live Demo: Trajectory with Energy Plot
+
+<iframe src="../assets/viewers/trajectory.html" width="100%" height="600" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+
+---
+
 ## Loading a Trajectory
 
 === "Python"
@@ -34,9 +40,12 @@ This example demonstrates trajectory visualization with animation and energy plo
 
 The viewer provides playback controls:
 
-- **Play/Pause**: Start/stop animation
-- **Frame slider**: Jump to specific frame
-- **Speed control**: Adjust playback speed (ms per frame)
+| Control | Description |
+|---------|-------------|
+| **Play/Pause** | Start/stop animation |
+| **Frame slider** | Jump to specific frame |
+| **Speed control** | Adjust playback speed (ms per frame) |
+| **First/Last** | Jump to first or last frame |
 
 ## Energy Plot
 
@@ -53,8 +62,15 @@ viewer.show()
 The energy plot:
 
 - Shows energy vs. frame number
-- Highlights current frame with a marker
-- Can be resized by dragging the resize handle
+- Highlights current frame with a red marker
+- Resizable by dragging the handle at the bottom
+
+### Energy Data Sources
+
+Energy is automatically extracted from:
+
+1. **ASE Calculator**: `atoms.get_potential_energy()`
+2. **Info dict**: `atoms.info['energy']`, `atoms.info['Energy']`, etc.
 
 ## Force Vectors
 
@@ -96,3 +112,12 @@ viewer = MolecularViewer(
 )
 viewer.show()
 ```
+
+## Saving Trajectory Viewer
+
+```python
+viewer = MolecularViewer(trajectory, showEnergyPlot=True)
+viewer.save_html("trajectory_viewer.html")
+```
+
+The saved HTML includes all frames and can be animated in the browser.

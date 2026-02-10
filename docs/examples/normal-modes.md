@@ -2,6 +2,14 @@
 
 Visualize molecular vibrations from frequency calculations.
 
+## Live Demo: Water Vibrations
+
+Water molecule with three vibrational modes (symmetric stretch, asymmetric stretch, bending). Toggle "Mode Vectors" to see displacement arrows:
+
+<iframe src="../assets/viewers/normal_modes.html" width="100%" height="600" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+
+---
+
 ## From ORCA Hessian File
 
 === "Python"
@@ -40,14 +48,18 @@ viewer.show()
 
 ### Mode Selection
 
-- **Mode dropdown**: Select vibrational mode by frequency
-- **Frequency display**: Shows wavenumber in cm⁻¹
-- **Imaginary flag**: Indicates imaginary frequencies (e.g., `123.45i`)
+| Control | Description |
+|---------|-------------|
+| **Mode dropdown** | Select vibrational mode by frequency |
+| **Frequency display** | Shows wavenumber in cm⁻¹ |
+| **Imaginary flag** | Indicates imaginary frequencies (e.g., `123.45i`) |
 
 ### Animation
 
-- **Play/Pause**: Toggle vibration animation
-- **Amplitude slider**: Adjust displacement magnitude
+| Control | Description |
+|---------|-------------|
+| **Play/Pause** | Toggle vibration animation |
+| **Amplitude slider** | Adjust displacement magnitude |
 
 ### Mode Vectors
 
@@ -63,8 +75,10 @@ viewer = NormalViewer.from_orca(
 
 Vector colors:
 
-- **Red arrows**: Positive displacement direction (+)
-- **Blue arrows**: Negative displacement direction (-)
+| Color | Meaning |
+|-------|---------|
+| **Red arrows** | Positive displacement direction (+) |
+| **Blue arrows** | Negative displacement direction (-) |
 
 ## Customizing Display
 
@@ -108,9 +122,9 @@ viewer = NormalViewer.from_orca(
 
 Imaginary frequencies indicate:
 
-- Transition states (one imaginary)
-- Higher-order saddle points (multiple imaginary)
-- Incomplete optimization
+- **Transition states** (one imaginary)
+- **Higher-order saddle points** (multiple imaginary)
+- **Incomplete optimization**
 
 ## ORCA Workflow Example
 
@@ -119,7 +133,8 @@ Imaginary frequencies indicate:
    ! B3LYP def2-SVP Opt
 
    * xyz 0 1
-   ...
+   C   0.0  0.0  0.0
+   O   1.2  0.0  0.0
    *
    ```
 
@@ -135,7 +150,7 @@ Imaginary frequencies indicate:
    aseview2 optimized.xyz --hess orca.hess
    ```
 
-## Supported Formats
+## Supported Hessian Formats
 
 | Program | File | Status |
 |---------|------|--------|
@@ -143,6 +158,22 @@ Imaginary frequencies indicate:
 | VASP | `OUTCAR` | 🔜 Planned |
 | Gaussian | `.fchk` | 🔜 Planned |
 | xTB | `hessian` | 🔜 Planned |
+
+## Direct Mode Vectors
+
+You can also provide mode vectors directly:
+
+```python
+# mode_vectors: List of modes, each mode is list of [x,y,z] per atom
+# frequencies: List of frequencies in cm^-1
+
+viewer = NormalViewer(
+    atoms,
+    mode_vectors=mode_vectors,
+    frequencies=frequencies
+)
+viewer.show()
+```
 
 ## Saving Normal Mode Viewer
 

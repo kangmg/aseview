@@ -7,6 +7,7 @@ on:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
+      - 'aseview/**'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -36,6 +37,12 @@ jobs:
       - name: Install dependencies
         run: |
           pip install mkdocs-material pymdown-extensions
+          pip install numpy ase
+          pip install -e .
+
+      - name: Generate example viewers
+        run: |
+          python docs/generate_examples.py
 
       - name: Build documentation
         run: mkdocs build

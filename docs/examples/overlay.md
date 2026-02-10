@@ -2,6 +2,22 @@
 
 Compare multiple molecular structures by overlaying them in a single view.
 
+## Live Demo: Conformer Comparison
+
+Three ethanol conformers overlaid with different colors:
+
+<iframe src="../assets/viewers/overlay_conformers.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+
+---
+
+## Live Demo: Colormap Gradient
+
+Trajectory overlaid with viridis colormap (blue → green → yellow):
+
+<iframe src="../assets/viewers/overlay_colormap.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+
+---
+
 ## Comparing Two Structures
 
 === "Python"
@@ -54,14 +70,14 @@ viewer = OverlayViewer(
 )
 ```
 
-Available colormaps:
+### Available Colormaps
 
 | Colormap | Description |
 |----------|-------------|
-| `viridis` | Blue → Green → Yellow |
+| `viridis` | Blue → Green → Yellow (perceptually uniform) |
 | `plasma` | Purple → Orange → Yellow |
-| `coolwarm` | Blue → White → Red |
-| `jet` | Rainbow spectrum |
+| `coolwarm` | Blue → White → Red (diverging) |
+| `jet` | Blue → Cyan → Yellow → Red |
 | `rainbow` | Full color spectrum |
 | `grayscale` | Black → White |
 
@@ -84,16 +100,19 @@ This is useful when comparing conformers that are not pre-aligned.
 
 For each overlaid molecule:
 
-- **Visibility toggle**: Show/hide individual structures
-- **Opacity slider**: Adjust transparency (0-100%)
-- **Color picker**: Change molecule color
+| Control | Description |
+|---------|-------------|
+| **Visibility toggle** | Show/hide individual structures |
+| **Opacity slider** | Adjust transparency (0-100%) |
+| **Color picker** | Change molecule color |
 
-### Animation
+### Display Settings
 
-When overlaying trajectory frames:
-
-- **Play/Pause**: Animate through frames
-- **Frame slider**: Jump to specific frame
+| Control | Description |
+|---------|-------------|
+| **Center Molecules** | Toggle centering at origin |
+| **Color by** | Switch between Atom/Molecule/Colormap |
+| **Colormap** | Select gradient colormap |
 
 ## Examples
 
