@@ -6,7 +6,7 @@ Compare multiple molecular structures by overlaying them in a single view.
 
 Three ethanol conformers overlaid with different colors:
 
-<iframe src="../assets/viewers/overlay_conformers.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+<iframe src="../../assets/viewers/overlay_conformers.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ---
 
@@ -14,7 +14,7 @@ Three ethanol conformers overlaid with different colors:
 
 Trajectory overlaid with viridis colormap (blue → green → yellow):
 
-<iframe src="../assets/viewers/overlay_colormap.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+<iframe src="../../assets/viewers/overlay_colormap.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ---
 

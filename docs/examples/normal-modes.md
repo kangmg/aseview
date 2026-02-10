@@ -6,7 +6,7 @@ Visualize molecular vibrations from frequency calculations.
 
 Water molecule with three vibrational modes (symmetric stretch, asymmetric stretch, bending). Toggle "Mode Vectors" to see displacement arrows:
 
-<iframe src="../assets/viewers/normal_modes.html" width="100%" height="600" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+<iframe src="../../assets/viewers/normal_modes.html" width="100%" height="600" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ---
 

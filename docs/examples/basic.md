@@ -21,7 +21,7 @@ This example demonstrates basic molecular visualization with different styles.
     aseview2 water.xyz --style cartoon
     ```
 
-<iframe src="../assets/viewers/water.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+<iframe src="../../assets/viewers/water.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ---
 
@@ -40,7 +40,7 @@ viewer = MolecularViewer(
 viewer.show()
 ```
 
-<iframe src="../assets/viewers/ethanol_neon.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+<iframe src="../../assets/viewers/ethanol_neon.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ---
 
@@ -55,7 +55,7 @@ viewer = MolecularViewer(benzene, style="glossy")
 viewer.show()
 ```
 
-<iframe src="../assets/viewers/benzene_glossy.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+<iframe src="../../assets/viewers/benzene_glossy.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ---
 
@@ -68,7 +68,7 @@ viewer = MolecularViewer(caffeine, style="metallic")
 viewer.show()
 ```
 
-<iframe src="../assets/viewers/caffeine.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+<iframe src="../../assets/viewers/caffeine.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ---
 
