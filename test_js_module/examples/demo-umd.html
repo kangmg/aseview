@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASEView.js - UMD Demo (CDN-style)</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #111827;
+            font-family: sans-serif;
+            color: #fff;
+        }
+        h1 { text-align: center; color: #3b82f6; }
+        #viewer {
+            width: 800px;
+            height: 500px;
+            margin: 20px auto;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px;
+        }
+        button {
+            background: #4b5563;
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover { background: #6b7280; }
+        button.active { background: #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>ASEView.js - CDN Usage Demo</h1>
+    <div id="viewer"></div>
+    <div class="controls">
+        <strong>Style:</strong>
+        <button onclick="setStyle('cartoon')" class="active">Cartoon</button>
+        <button onclick="setStyle('glossy')">Glossy</button>
+        <button onclick="setStyle('metallic')">Metallic</button>
+        <button onclick="setStyle('neon')">Neon</button>
+        <button onclick="setStyle('bubble')">Bubble</button>
+    </div>
+    <div class="controls">
+        <strong>Color:</strong>
+        <button onclick="setColorBy('Element')" class="active">Element</button>
+        <button onclick="setColorBy('Charge')">Charge</button>
+    </div>
+
+    <!-- Three.js (required) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
+
+    <!-- ASEView.js (local build for demo) -->
+    <script src="../dist/aseview.umd.js"></script>
+
+    <script>
+        // Create viewer
+        const viewer = new ASEView.MolecularViewer('#viewer', {
+            style: 'cartoon',
+            colorBy: 'Element',
+            backgroundColor: '#1f2937'
+        });
+
+        // Caffeine molecule data
+        viewer.setData({
+            symbols: ['N', 'C', 'N', 'C', 'C', 'C', 'N', 'C', 'N', 'C', 'O', 'O', 'C', 'C',
+                     'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+            positions: [
+                [-1.47, -1.19, 0.00],   // N
+                [-2.23, 0.02, 0.00],    // C
+                [-1.47, 1.15, 0.00],    // N
+                [-0.07, 0.83, 0.00],    // C
+                [0.35, -0.49, 0.00],    // C
+                [-0.16, -1.63, 0.00],   // C
+                [1.13, 1.60, 0.00],     // N
+                [2.05, 0.60, 0.00],     // C
+                [1.68, -0.66, 0.00],    // N
+                [2.48, -1.87, 0.00],    // C
+                [-3.44, 0.14, 0.00],    // O
+                [0.26, -2.77, 0.00],    // O
+                [-2.07, 2.47, 0.00],    // C
+                [1.26, 3.04, 0.00],     // C
+                [3.09, 0.88, 0.00],     // H
+                [3.53, -1.60, 0.00],    // H
+                [2.25, -2.47, -0.88],   // H
+                [2.25, -2.47, 0.88],    // H
+                [-3.13, 2.25, 0.00],    // H
+                [-1.81, 3.02, 0.88],    // H
+                [-1.81, 3.02, -0.88],   // H
+                [2.30, 3.36, 0.00],     // H
+                [0.78, 3.46, 0.88],     // H
+                [0.78, 3.46, -0.88]     // H
+            ],
+            charges: [
+                -0.36, 0.52, -0.36, 0.08, -0.02, 0.48,
+                -0.52, 0.26, -0.36, 0.02, -0.42, -0.42,
+                0.02, 0.02,
+                0.15, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08
+            ]
+        });
+
+        // Control functions
+        function setStyle(style) {
+            viewer.setOptions({ style });
+            document.querySelectorAll('.controls:first-of-type button').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === style);
+            });
+        }
+
+        function setColorBy(colorBy) {
+            viewer.setOptions({ colorBy });
+            document.querySelectorAll('.controls:last-of-type button').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === colorBy);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASEView.js Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #111827;
+            color: #f9fafb;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #3b82f6;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .viewer-card {
+            background: #1f2937;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .viewer-header {
+            padding: 15px 20px;
+            background: #374151;
+            border-bottom: 1px solid #4b5563;
+        }
+
+        .viewer-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .viewer-header p {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 5px;
+        }
+
+        .viewer-container {
+            width: 100%;
+            height: 350px;
+            position: relative;
+        }
+
+        .controls {
+            padding: 15px 20px;
+            background: #374151;
+            border-top: 1px solid #4b5563;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #4b5563;
+            border: none;
+            color: #f9fafb;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #6b7280;
+        }
+
+        .btn.active {
+            background: #3b82f6;
+        }
+
+        .code-section {
+            max-width: 1400px;
+            margin: 40px auto;
+            background: #1f2937;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .code-header {
+            padding: 15px 20px;
+            background: #374151;
+            font-weight: 600;
+        }
+
+        pre {
+            padding: 20px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        code {
+            color: #93c5fd;
+        }
+
+        .comment { color: #6b7280; }
+        .keyword { color: #c084fc; }
+        .string { color: #86efac; }
+        .number { color: #fcd34d; }
+    </style>
+</head>
+<body>
+    <h1>ASEView.js Demo</h1>
+
+    <div class="container">
+        <!-- Water molecule -->
+        <div class="viewer-card">
+            <div class="viewer-header">
+                <h3>Water Molecule (H2O)</h3>
+                <p>Style: Cartoon | Color by: Element</p>
+            </div>
+            <div class="viewer-container" id="viewer-water"></div>
+            <div class="controls">
+                <button class="btn active" onclick="setStyle('water', 'cartoon')">Cartoon</button>
+                <button class="btn" onclick="setStyle('water', 'glossy')">Glossy</button>
+                <button class="btn" onclick="setStyle('water', 'neon')">Neon</button>
+            </div>
+        </div>
+
+        <!-- Ethanol with charges -->
+        <div class="viewer-card">
+            <div class="viewer-header">
+                <h3>Ethanol with Partial Charges</h3>
+                <p>Style: Glossy | Color by: Charge (coolwarm)</p>
+            </div>
+            <div class="viewer-container" id="viewer-ethanol"></div>
+            <div class="controls">
+                <button class="btn" onclick="setColorBy('ethanol', 'Element')">Element</button>
+                <button class="btn active" onclick="setColorBy('ethanol', 'Charge')">Charge</button>
+            </div>
+        </div>
+
+        <!-- Benzene -->
+        <div class="viewer-card">
+            <div class="viewer-header">
+                <h3>Benzene (C6H6)</h3>
+                <p>Style: Metallic</p>
+            </div>
+            <div class="viewer-container" id="viewer-benzene"></div>
+            <div class="controls">
+                <button class="btn" onclick="setStyle('benzene', 'cartoon')">Cartoon</button>
+                <button class="btn" onclick="setStyle('benzene', 'metallic')">Metallic</button>
+                <button class="btn" onclick="setStyle('benzene', 'bubble')">Bubble</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="code-section">
+        <div class="code-header">Usage Example</div>
+        <pre><code><span class="comment">// Include Three.js and ASEView.js</span>
+<span class="keyword">const</span> viewer = <span class="keyword">new</span> ASEView.MolecularViewer(<span class="string">'#container'</span>, {
+    style: <span class="string">'cartoon'</span>,
+    colorBy: <span class="string">'Element'</span>,
+    backgroundColor: <span class="string">'#1f2937'</span>
+});
+
+<span class="comment">// Set molecular data</span>
+viewer.setData({
+    symbols: [<span class="string">'O'</span>, <span class="string">'H'</span>, <span class="string">'H'</span>],
+    positions: [
+        [<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>],
+        [<span class="number">0.96</span>, <span class="number">0</span>, <span class="number">0</span>],
+        [<span class="number">-0.24</span>, <span class="number">0.93</span>, <span class="number">0</span>]
+    ],
+    charges: [<span class="number">-0.8</span>, <span class="number">0.4</span>, <span class="number">0.4</span>]  <span class="comment">// Optional</span>
+});
+
+<span class="comment">// Update options dynamically</span>
+viewer.setOptions({ style: <span class="string">'glossy'</span>, colorBy: <span class="string">'Charge'</span> });</code></pre>
+    </div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
+
+    <!-- ASEView.js (using ES modules directly for demo) -->
+    <script type="module">
+        import { MolecularViewer } from '../src/index.js';
+
+        // Store viewers globally for button controls
+        window.viewers = {};
+
+        // Water molecule
+        window.viewers.water = new MolecularViewer('#viewer-water', {
+            style: 'cartoon',
+            backgroundColor: '#1f2937'
+        });
+        window.viewers.water.setData({
+            symbols: ['O', 'H', 'H'],
+            positions: [
+                [0, 0, 0],
+                [0.96, 0, 0],
+                [-0.24, 0.93, 0]
+            ]
+        });
+
+        // Ethanol with charges
+        window.viewers.ethanol = new MolecularViewer('#viewer-ethanol', {
+            style: 'glossy',
+            colorBy: 'Charge',
+            backgroundColor: '#1f2937'
+        });
+        window.viewers.ethanol.setData({
+            symbols: ['C', 'H', 'H', 'H', 'C', 'H', 'H', 'O', 'H'],
+            positions: [
+                [-1.27, 0.26, 0.00],
+                [-1.27, 0.90, 0.88],
+                [-1.27, 0.90, -0.88],
+                [-2.17, -0.35, 0.00],
+                [0.00, -0.60, 0.00],
+                [0.00, -1.23, 0.88],
+                [0.00, -1.23, -0.88],
+                [1.13, 0.24, 0.00],
+                [1.96, -0.28, 0.00]
+            ],
+            charges: [-0.18, 0.06, 0.06, 0.06, 0.15, 0.04, 0.04, -0.65, 0.42]
+        });
+
+        // Benzene
+        window.viewers.benzene = new MolecularViewer('#viewer-benzene', {
+            style: 'metallic',
+            backgroundColor: '#1f2937'
+        });
+        window.viewers.benzene.setData({
+            symbols: ['C', 'C', 'C', 'C', 'C', 'C', 'H', 'H', 'H', 'H', 'H', 'H'],
+            positions: [
+                [1.40, 0.00, 0.00],
+                [0.70, 1.21, 0.00],
+                [-0.70, 1.21, 0.00],
+                [-1.40, 0.00, 0.00],
+                [-0.70, -1.21, 0.00],
+                [0.70, -1.21, 0.00],
+                [2.49, 0.00, 0.00],
+                [1.24, 2.16, 0.00],
+                [-1.24, 2.16, 0.00],
+                [-2.49, 0.00, 0.00],
+                [-1.24, -2.16, 0.00],
+                [1.24, -2.16, 0.00]
+            ]
+        });
+
+        // Global functions for button controls
+        window.setStyle = function(viewerName, style) {
+            window.viewers[viewerName].setOptions({ style });
+            // Update button states
+            const container = document.querySelector(`#viewer-${viewerName}`).parentElement;
+            container.querySelectorAll('.controls .btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === style);
+            });
+        };
+
+        window.setColorBy = function(viewerName, colorBy) {
+            window.viewers[viewerName].setOptions({ colorBy });
+            const container = document.querySelector(`#viewer-${viewerName}`).parentElement;
+            container.querySelectorAll('.controls .btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === colorBy);
+            });
+        };
+    </script>
+</body>
+</html>
