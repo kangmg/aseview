@@ -7823,7 +7823,7 @@ window.removePeriodicity = removePeriodicity;
             if (typeof settings === 'undefined') {
                 window.settings = {};
             }
-            const pythonSettings = {"bondThreshold": 1.0, "bondThickness": 0.1, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "cartoon", "showCell": true, "showBond": true, "showShadow": false, "showShading": true, "showEnergyPlot": false, "showForces": false, "colorBy": "Element", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Perspective", "rotationMode": "TrackBall", "selectionMode": "Lasso"};
+            const pythonSettings = {"bondThreshold": 1.0, "bondThickness": 0.1, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "cartoon", "showCell": true, "showBond": true, "showShadow": false, "showShading": true, "showEnergyPlot": false, "showForces": false, "colorBy": "Charge", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Perspective", "rotationMode": "TrackBall", "selectionMode": "Lasso"};
             Object.assign(settings, pythonSettings);
 
             // Wait for renderer to be initialized with timeout
@@ -7831,7 +7831,7 @@ window.removePeriodicity = removePeriodicity;
                 retryCount++;
                 if (typeof renderer !== 'undefined' && renderer !== null) {
                     if (typeof setMolecularData === 'function') {
-                        setMolecularData([{"positions": [[0.0, 0.0, 0.119262], [0.0, 0.763239, -0.477047], [0.0, -0.763239, -0.477047]], "symbols": ["O", "H", "H"]}]);
+                        setMolecularData([{"positions": [[0.0, 1.4, 0.0], [1.212, 0.7, 0.0], [1.212, -0.7, 0.0], [0.0, -1.4, 0.0], [-1.212, -0.7, 0.0], [-1.212, 0.7, 0.0], [0.0, 2.9, 0.0], [1.1, 3.5, 0.0], [-1.1, 3.6, 0.0], [-2.5, 1.3, 0.0], [-2.4, -1.4, 0.0], [-3.6, 0.7, 0.0], [-2.6, 2.8, 0.0], [2.156, 1.25, 0.0], [2.156, -1.25, 0.0], [0.0, -2.49, 0.0], [-2.156, -1.25, 0.0], [-1.0, 4.56, 0.0], [-3.4, 3.2, 0.9], [-3.4, 3.2, -0.9], [-1.7, 3.4, 0.0]], "symbols": ["C", "C", "C", "C", "C", "C", "C", "O", "O", "C", "O", "O", "C", "H", "H", "H", "H", "H", "H", "H", "H"], "charges": [-0.05, -0.1, -0.1, -0.1, -0.1, 0.1, 0.5, -0.45, -0.55, 0.45, -0.3, -0.4, -0.15, 0.1, 0.1, 0.1, 0.1, 0.4, 0.05, 0.05, 0.05]}]);
                     } else {
                         console.error('setMolecularData function not found!');
                     }

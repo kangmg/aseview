@@ -1976,13 +1976,11 @@ function populateModeSelector() {
 
         // Format frequency display
         const isImag = vibrationData.isImaginary && vibrationData.isImaginary[idx];
-        const indicator = isImag ? '●' : '○';
         const freqStr = freq.toString().includes('i') ? freq : `${freq} cm⁻¹`;
 
-        option.textContent = `Mode ${idx + 1}: ${indicator} ${freqStr}`;
-        if (isImag) {
-            option.style.color = '#ef4444';  // Red for imaginary frequencies
-        }
+        option.textContent = `Mode ${idx + 1}: ${freqStr}`;
+        // Red for imaginary, green for real frequencies
+        option.style.color = isImag ? '#ef4444' : '#22c55e';
         select.appendChild(option);
     });
 

@@ -2189,15 +2189,17 @@
                  + M[0][2] * (M[1][0] * M[2][1] - M[1][1] * M[2][0]);
         }
 
-        // Kabsch algorithm: find optimal rotation matrix to align P onto Q
+        // Kabsch algorithm: find optimal rotation matrix to align Q onto P
+        // P is reference, Q is target to be rotated
         // P and Q should be centered at origin
         function kabsch(P, Q) {
             if (P.length !== Q.length || P.length === 0) {
                 return [[1,0,0], [0,1,0], [0,0,1]]; // Identity
             }
 
-            // Compute covariance matrix
-            const H = covarianceMatrix(P, Q);
+            // Compute covariance matrix H = Q^T * P
+            // This finds R such that R * Q ≈ P
+            const H = covarianceMatrix(Q, P);
 
             // SVD of H
             const { U, S, V } = svd3x3(H);
@@ -2217,13 +2219,60 @@
             return R;
         }
 
-        // Hungarian algorithm for optimal atom assignment
-        // Simplified greedy version for small molecules
-        function hungarianReorder(P, Q, symbolsP, symbolsQ) {
-            const n = P.length;
-            if (n === 0) return { reorderedQ: Q, reorderedSymbols: symbolsQ };
+        // Full alignment: iterative Kabsch + Hungarian
+        // 1. Center both molecules
+        // 2. Initial Kabsch rotation (rough alignment)
+        // 3. Hungarian reordering on rotated positions
+        // 4. Final Kabsch with reordered atoms
+        function alignMolecule(refPositions, refSymbols, targetPositions, targetSymbols) {
+            const n = refPositions.length;
+            if (n === 0 || targetPositions.length !== n) {
+                return {
+                    positions: targetPositions.map(p => [...p]),
+                    symbols: targetSymbols.slice(),
+                    rotation: [[1,0,0], [0,1,0], [0,0,1]]
+                };
+            }
 
-            // Group atoms by element
+            // Step 1: Center both molecules
+            const refCentered = centerPositions(refPositions);
+            const targetCentered = centerPositions(targetPositions);
+
+            // Step 2: Initial Kabsch rotation (same atom order, rough alignment)
+            const R1 = kabsch(refCentered, targetCentered);
+            const rotatedTarget = targetCentered.map(p => matVecMul(R1, p));
+
+            // Step 3: Hungarian reordering on rotated positions
+            // This matches atoms after rough alignment for better pairing
+            const { reorderedIndices } = hungarianReorderWithIndices(
+                refCentered, rotatedTarget, refSymbols, targetSymbols
+            );
+
+            // Step 4: Reorder original centered target using the indices
+            const reorderedTarget = reorderedIndices.map(i =>
+                i >= 0 ? targetCentered[i] : [0, 0, 0]
+            );
+            const reorderedSymbols = reorderedIndices.map(i =>
+                i >= 0 ? targetSymbols[i] : 'X'
+            );
+
+            // Step 5: Final Kabsch rotation with properly ordered atoms
+            const R2 = kabsch(refCentered, reorderedTarget);
+            const alignedPositions = reorderedTarget.map(p => matVecMul(R2, p));
+
+            return {
+                positions: alignedPositions,
+                symbols: reorderedSymbols,
+                rotation: R2
+            };
+        }
+
+        // Hungarian reordering that returns indices for remapping
+        function hungarianReorderWithIndices(P, Q, symbolsP, symbolsQ) {
+            const n = P.length;
+            if (n === 0) return { reorderedIndices: [] };
+
+            // Group Q atoms by element
             const groups = {};
             for (let i = 0; i < n; i++) {
                 const sym = symbolsQ[i];
@@ -2232,7 +2281,7 @@
             }
 
             const used = new Set();
-            const mapping = new Array(n).fill(-1);
+            const reorderedIndices = new Array(n).fill(-1);
 
             // For each atom in P, find best matching atom in Q (same element)
             for (let i = 0; i < n; i++) {
@@ -2253,41 +2302,12 @@
                 }
 
                 if (bestJ >= 0) {
-                    mapping[i] = bestJ;
+                    reorderedIndices[i] = bestJ;
                     used.add(bestJ);
                 }
             }
 
-            // Reorder Q according to mapping
-            const reorderedQ = mapping.map(j => j >= 0 ? Q[j] : [0, 0, 0]);
-            const reorderedSymbols = mapping.map(j => j >= 0 ? symbolsQ[j] : 'X');
-
-            return { reorderedQ, reorderedSymbols };
-        }
-
-        // Full alignment: center, reorder (Hungarian), rotate (Kabsch)
-        function alignMolecule(refPositions, refSymbols, targetPositions, targetSymbols) {
-            // Step 1: Center both molecules
-            const refCentered = centerPositions(refPositions);
-            let targetCentered = centerPositions(targetPositions);
-
-            // Step 2: Hungarian reordering (match atoms by element and position)
-            const { reorderedQ, reorderedSymbols } = hungarianReorder(
-                refCentered, targetCentered, refSymbols, targetSymbols
-            );
-            targetCentered = reorderedQ;
-
-            // Step 3: Kabsch rotation
-            const R = kabsch(refCentered, targetCentered);
-
-            // Step 4: Apply rotation to target
-            const alignedPositions = targetCentered.map(p => matVecMul(R, p));
-
-            return {
-                positions: alignedPositions,
-                symbols: reorderedSymbols,
-                rotation: R
-            };
+            return { reorderedIndices };
         }
 
         // ========== End Alignment Algorithms ==========
