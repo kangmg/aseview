@@ -4,7 +4,7 @@ This example demonstrates trajectory visualization with animation and energy plo
 
 ## Live Demo: Trajectory with Energy Plot
 
-<iframe src="../assets/viewers/trajectory.html" width="100%" height="600" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+<iframe src="../../assets/viewers/trajectory.html" width="100%" height="600" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ---
 
