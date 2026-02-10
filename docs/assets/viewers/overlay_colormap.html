@@ -2966,6 +2966,16 @@ function createHalfBondGrey(start, end, color, bondThickness) {
 
                         <div class="control-group">
                             <div class="control-label">
+                                <span>Align Molecules (Kabsch)</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="align-molecules">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
                                 <span>View Mode</span>
                             </div>
                             <div class="button-group">
@@ -3182,7 +3192,8 @@ function createHalfBondGrey(start, end, color, bondThickness) {
             rotationMode: 'TrackBall',
             colorBy: 'Atom',
             colormap: 'viridis',
-            centerMolecules: false
+            centerMolecules: false,
+            alignMolecules: false  // Kabsch rotation + Hungarian reordering
         };
 
         // Check if styles.js is loaded
@@ -3476,10 +3487,29 @@ function createHalfBondGrey(start, end, color, bondThickness) {
                 const opacity = molSettings.opacity !== undefined ? molSettings.opacity : 0.8;
 
                 let positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
-                const symbols = molecule.symbols;
+                let symbols = molecule.symbols.slice(); // Copy symbols array
 
-                // Center molecules at origin if enabled
-                if (settings.centerMolecules && positions.length > 0) {
+                // Alignment: align to first molecule using Kabsch + Hungarian
+                if (settings.alignMolecules && molIndex > 0 && molecularData[0]) {
+                    const refMol = molecularData[0];
+                    const refPositions = refMol.positions;
+                    const refSymbols = refMol.symbols;
+                    const targetPositions = molecule.positions;
+                    const targetSymbols = molecule.symbols;
+
+                    const aligned = alignMolecule(refPositions, refSymbols, targetPositions, targetSymbols);
+                    positions = aligned.positions.map(p => new THREE.Vector3(p[0], p[1], p[2]));
+                    symbols = aligned.symbols;
+                }
+                // Center first molecule if alignment is enabled
+                else if (settings.alignMolecules && molIndex === 0 && positions.length > 0) {
+                    const center = new THREE.Vector3();
+                    positions.forEach(p => center.add(p));
+                    center.divideScalar(positions.length);
+                    positions = positions.map(p => p.clone().sub(center));
+                }
+                // Center molecules at origin if centering (without alignment) is enabled
+                else if (settings.centerMolecules && positions.length > 0) {
                     const center = new THREE.Vector3();
                     positions.forEach(p => center.add(p));
                     center.divideScalar(positions.length);
@@ -4109,6 +4139,17 @@ function createHalfBondGrey(start, end, color, bondThickness) {
                 renderMolecule();
             });
 
+            safeAddListener('align-molecules', 'change', function () {
+                settings.alignMolecules = this.checked;
+                // Disable centerMolecules when alignment is enabled (alignment includes centering)
+                if (this.checked) {
+                    settings.centerMolecules = false;
+                    const centerCheckbox = document.getElementById('center-molecules');
+                    if (centerCheckbox) centerCheckbox.checked = false;
+                }
+                renderMolecule();
+            });
+
             safeAddListener('show-shading', 'change', function () {
                 settings.showShading = this.checked;
                 updateShading();
@@ -4296,6 +4337,254 @@ function createHalfBondGrey(start, end, color, bondThickness) {
             const cmap = colormaps[cmapName] || colormaps.viridis;
             return cmap(t);
         }
+
+        // ========== Molecular Alignment Algorithms ==========
+
+        // Calculate centroid of positions
+        function centroid(positions) {
+            const n = positions.length;
+            if (n === 0) return [0, 0, 0];
+            let cx = 0, cy = 0, cz = 0;
+            for (const p of positions) {
+                cx += p[0]; cy += p[1]; cz += p[2];
+            }
+            return [cx / n, cy / n, cz / n];
+        }
+
+        // Center positions at origin
+        function centerPositions(positions) {
+            const c = centroid(positions);
+            return positions.map(p => [p[0] - c[0], p[1] - c[1], p[2] - c[2]]);
+        }
+
+        // Matrix multiplication (3x3 * 3x1)
+        function matVecMul(M, v) {
+            return [
+                M[0][0] * v[0] + M[0][1] * v[1] + M[0][2] * v[2],
+                M[1][0] * v[0] + M[1][1] * v[1] + M[1][2] * v[2],
+                M[2][0] * v[0] + M[2][1] * v[1] + M[2][2] * v[2]
+            ];
+        }
+
+        // Matrix multiplication (3x3 * 3x3)
+        function matMul(A, B) {
+            const C = [[0,0,0], [0,0,0], [0,0,0]];
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    for (let k = 0; k < 3; k++) {
+                        C[i][j] += A[i][k] * B[k][j];
+                    }
+                }
+            }
+            return C;
+        }
+
+        // Transpose 3x3 matrix
+        function transpose(M) {
+            return [
+                [M[0][0], M[1][0], M[2][0]],
+                [M[0][1], M[1][1], M[2][1]],
+                [M[0][2], M[1][2], M[2][2]]
+            ];
+        }
+
+        // Compute covariance matrix H = P^T * Q
+        function covarianceMatrix(P, Q) {
+            const H = [[0,0,0], [0,0,0], [0,0,0]];
+            const n = P.length;
+            for (let k = 0; k < n; k++) {
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        H[i][j] += P[k][i] * Q[k][j];
+                    }
+                }
+            }
+            return H;
+        }
+
+        // Simple SVD for 3x3 matrix using Jacobi iteration
+        // Returns {U, S, V} where A = U * diag(S) * V^T
+        function svd3x3(A) {
+            // Use iterative approach for 3x3 SVD
+            // Compute A^T * A
+            const AtA = matMul(transpose(A), A);
+
+            // Power iteration to find eigenvalues/vectors of AtA
+            // This is simplified - for production use a proper SVD library
+            let V = [[1,0,0], [0,1,0], [0,0,1]];
+            const S = [0, 0, 0];
+
+            // Jacobi eigenvalue algorithm for symmetric matrix
+            function jacobiRotate(M, V) {
+                const tol = 1e-10;
+                const maxIter = 50;
+
+                for (let iter = 0; iter < maxIter; iter++) {
+                    // Find largest off-diagonal element
+                    let maxVal = 0, p = 0, q = 1;
+                    for (let i = 0; i < 3; i++) {
+                        for (let j = i + 1; j < 3; j++) {
+                            if (Math.abs(M[i][j]) > maxVal) {
+                                maxVal = Math.abs(M[i][j]);
+                                p = i; q = j;
+                            }
+                        }
+                    }
+                    if (maxVal < tol) break;
+
+                    // Compute rotation angle
+                    const theta = 0.5 * Math.atan2(2 * M[p][q], M[q][q] - M[p][p]);
+                    const c = Math.cos(theta), s = Math.sin(theta);
+
+                    // Create rotation matrix
+                    const G = [[1,0,0], [0,1,0], [0,0,1]];
+                    G[p][p] = c; G[q][q] = c;
+                    G[p][q] = s; G[q][p] = -s;
+
+                    // Apply rotation: M = G^T * M * G
+                    M = matMul(matMul(transpose(G), M), G);
+                    V = matMul(V, G);
+                }
+                return { eigenvalues: [M[0][0], M[1][1], M[2][2]], eigenvectors: V };
+            }
+
+            const eigen = jacobiRotate(AtA, V);
+
+            // Sort eigenvalues descending
+            const indices = [0, 1, 2].sort((a, b) => eigen.eigenvalues[b] - eigen.eigenvalues[a]);
+
+            for (let i = 0; i < 3; i++) {
+                S[i] = Math.sqrt(Math.max(0, eigen.eigenvalues[indices[i]]));
+            }
+
+            // Reorder V columns
+            V = [
+                [eigen.eigenvectors[0][indices[0]], eigen.eigenvectors[0][indices[1]], eigen.eigenvectors[0][indices[2]]],
+                [eigen.eigenvectors[1][indices[0]], eigen.eigenvectors[1][indices[1]], eigen.eigenvectors[1][indices[2]]],
+                [eigen.eigenvectors[2][indices[0]], eigen.eigenvectors[2][indices[1]], eigen.eigenvectors[2][indices[2]]]
+            ];
+
+            // Compute U = A * V * S^-1
+            const U = [[0,0,0], [0,0,0], [0,0,0]];
+            const AV = matMul(A, V);
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    U[i][j] = S[j] > 1e-10 ? AV[i][j] / S[j] : 0;
+                }
+            }
+
+            return { U, S, V };
+        }
+
+        // Determinant of 3x3 matrix
+        function det3x3(M) {
+            return M[0][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1])
+                 - M[0][1] * (M[1][0] * M[2][2] - M[1][2] * M[2][0])
+                 + M[0][2] * (M[1][0] * M[2][1] - M[1][1] * M[2][0]);
+        }
+
+        // Kabsch algorithm: find optimal rotation matrix to align P onto Q
+        // P and Q should be centered at origin
+        function kabsch(P, Q) {
+            if (P.length !== Q.length || P.length === 0) {
+                return [[1,0,0], [0,1,0], [0,0,1]]; // Identity
+            }
+
+            // Compute covariance matrix
+            const H = covarianceMatrix(P, Q);
+
+            // SVD of H
+            const { U, S, V } = svd3x3(H);
+
+            // Compute rotation matrix R = V * U^T
+            let R = matMul(V, transpose(U));
+
+            // Ensure proper rotation (det = 1, not -1 for reflection)
+            if (det3x3(R) < 0) {
+                // Flip sign of last column of V
+                V[0][2] = -V[0][2];
+                V[1][2] = -V[1][2];
+                V[2][2] = -V[2][2];
+                R = matMul(V, transpose(U));
+            }
+
+            return R;
+        }
+
+        // Hungarian algorithm for optimal atom assignment
+        // Simplified greedy version for small molecules
+        function hungarianReorder(P, Q, symbolsP, symbolsQ) {
+            const n = P.length;
+            if (n === 0) return { reorderedQ: Q, reorderedSymbols: symbolsQ };
+
+            // Group atoms by element
+            const groups = {};
+            for (let i = 0; i < n; i++) {
+                const sym = symbolsQ[i];
+                if (!groups[sym]) groups[sym] = [];
+                groups[sym].push(i);
+            }
+
+            const used = new Set();
+            const mapping = new Array(n).fill(-1);
+
+            // For each atom in P, find best matching atom in Q (same element)
+            for (let i = 0; i < n; i++) {
+                const symP = symbolsP[i];
+                const candidates = groups[symP] || [];
+
+                let bestJ = -1, bestDist = Infinity;
+                for (const j of candidates) {
+                    if (used.has(j)) continue;
+                    const dx = P[i][0] - Q[j][0];
+                    const dy = P[i][1] - Q[j][1];
+                    const dz = P[i][2] - Q[j][2];
+                    const dist = dx*dx + dy*dy + dz*dz;
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        bestJ = j;
+                    }
+                }
+
+                if (bestJ >= 0) {
+                    mapping[i] = bestJ;
+                    used.add(bestJ);
+                }
+            }
+
+            // Reorder Q according to mapping
+            const reorderedQ = mapping.map(j => j >= 0 ? Q[j] : [0, 0, 0]);
+            const reorderedSymbols = mapping.map(j => j >= 0 ? symbolsQ[j] : 'X');
+
+            return { reorderedQ, reorderedSymbols };
+        }
+
+        // Full alignment: center, reorder (Hungarian), rotate (Kabsch)
+        function alignMolecule(refPositions, refSymbols, targetPositions, targetSymbols) {
+            // Step 1: Center both molecules
+            const refCentered = centerPositions(refPositions);
+            let targetCentered = centerPositions(targetPositions);
+
+            // Step 2: Hungarian reordering (match atoms by element and position)
+            const { reorderedQ, reorderedSymbols } = hungarianReorder(
+                refCentered, targetCentered, refSymbols, targetSymbols
+            );
+            targetCentered = reorderedQ;
+
+            // Step 3: Kabsch rotation
+            const R = kabsch(refCentered, targetCentered);
+
+            // Step 4: Apply rotation to target
+            const alignedPositions = targetCentered.map(p => matVecMul(R, p));
+
+            return {
+                positions: alignedPositions,
+                symbols: reorderedSymbols,
+                rotation: R
+            };
+        }
+
+        // ========== End Alignment Algorithms ==========
 
         window.setMolecularData = setMolecularData;
         window.removePeriodicity = removePeriodicity;
