@@ -71,6 +71,11 @@ def create_overlay_viewer():
     mol2 = mol1.copy()
     mol3 = mol1.copy()
 
+    # Set custom names for each molecule
+    mol1.info['name'] = "Conformer A (reference)"
+    mol2.info['name'] = "Conformer B (+15°)"
+    mol3.info['name'] = "Conformer C (-15°)"
+
     # Rotate mol2 slightly
     positions2 = mol2.get_positions()
     angle = np.pi / 12  # 15 degrees

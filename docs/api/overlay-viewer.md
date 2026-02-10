@@ -170,6 +170,36 @@ viewer = OverlayViewer(
 viewer.show()
 ```
 
+### Custom Molecule Names
+
+Set custom names for molecules using `atoms.info['name']`:
+
+```python
+from ase.build import molecule
+from aseview import OverlayViewer
+
+# Create molecules and set names
+reactant = molecule("C2H6")
+reactant.info['name'] = "Ethane (reactant)"
+
+ts = molecule("C2H6")
+ts.info['name'] = "Transition State"
+
+product = molecule("C2H4")
+product.info['name'] = "Ethene (product)"
+
+viewer = OverlayViewer(
+    [reactant, ts, product],
+    colorBy="Molecule",
+    centerMolecules=True
+)
+viewer.show()
+```
+
+!!! tip "Naming Convention"
+    Without `atoms.info['name']`, molecules are labeled as "Molecule 1", "Molecule 2", etc.
+    Custom names appear in the molecule control panel for easier identification.
+
 ### Aligned Molecules (RMSD Minimization)
 
 ```python
