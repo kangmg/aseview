@@ -55,6 +55,22 @@ class MolecularData:
         if hasattr(atoms, 'info') and 'name' in atoms.info:
             data["name"] = str(atoms.info['name'])
 
+        # Add charges if available (from arrays or info dict)
+        charges = None
+        if hasattr(atoms, 'arrays') and 'charges' in atoms.arrays:
+            charges = atoms.arrays['charges']
+        elif hasattr(atoms, 'info') and 'charges' in atoms.info:
+            charges = atoms.info['charges']
+
+        if charges is not None:
+            try:
+                import numpy as np
+                charges_array = np.asarray(charges, dtype=float).flatten()
+                if len(charges_array) == len(symbols):
+                    data["charges"] = charges_array.tolist()
+            except (TypeError, ValueError):
+                pass
+
         return data
     
     @staticmethod
@@ -184,8 +200,12 @@ class MolecularViewer(BaseViewer):
             "showCell": True,
             "showBond": True,
             "showShadow": False,
+            "showShading": True,
             "showEnergyPlot": False,
             "showForces": False,
+            "colorBy": "Element",  # "Element" or "Charge"
+            "normalizeCharges": False,  # Normalize charges to -1 to 1 range
+            "chargeColormap": "coolwarm",  # Colormap for charge visualization
             "viewMode": "Perspective",
             "rotationMode": "TrackBall",
             "selectionMode": "Lasso",
