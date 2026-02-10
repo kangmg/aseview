@@ -53,6 +53,28 @@ MolecularViewer(data, **kwargs)
 | `showShadow` | `bool` | Enable shadows | `False` |
 | `showEnergyPlot` | `bool` | Show energy plot (if energy data available) | `False` |
 | `showForces` | `bool` | Show force vectors | `False` |
+| `showShading` | `bool` | Enable 3D shading effect | `True` |
+
+#### Color Settings
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `colorBy` | `str` | Atom coloring mode: `"Element"` or `"Charge"` | `"Element"` |
+| `normalizeCharges` | `bool` | Normalize charges to symmetric range | `False` |
+| `chargeColormap` | `str` | Colormap for charge visualization | `"coolwarm"` |
+
+!!! note "Charge Coloring"
+    The `colorBy="Charge"` option is only available when atoms have charge data.
+    Charges can be set via:
+
+    - `atoms.arrays['charges']` - per-atom array
+    - `atoms.info['charges']` - list in info dict
+
+    The colormap uses a diverging scheme:
+
+    - **Blue** → negative charges
+    - **White** → neutral (zero)
+    - **Red** → positive charges
 
 #### Force Vector Settings
 
@@ -151,6 +173,36 @@ viewer = MolecularViewer(
 )
 viewer.show()
 ```
+
+### Partial Charge Visualization
+
+```python
+import numpy as np
+from ase.build import molecule
+from aseview import MolecularViewer
+
+# Create molecule with partial charges
+water = molecule("H2O")
+
+# Set charges (e.g., from DFT Mulliken/Hirshfeld analysis)
+# O is negative, H atoms are positive
+charges = np.array([-0.82, 0.41, 0.41])
+water.arrays['charges'] = charges
+
+# Visualize with charge coloring
+viewer = MolecularViewer(
+    water,
+    colorBy="Charge",
+    normalizeCharges=False  # Use actual charge values
+)
+viewer.show()
+```
+
+!!! tip "Setting Charges"
+    Charges can also be set via `atoms.info['charges']`:
+    ```python
+    water.info['charges'] = [-0.82, 0.41, 0.41]
+    ```
 
 ### Save to File
 
