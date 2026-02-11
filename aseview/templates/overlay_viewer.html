@@ -552,16 +552,6 @@
 
                         <div class="control-group">
                             <div class="control-label">
-                                <span>Center Molecules</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="center-molecules">
-                                    <span class="slider-switch"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="control-group">
-                            <div class="control-label">
                                 <span>Align Molecules (Kabsch)</span>
                                 <label class="switch">
                                     <input type="checkbox" id="align-molecules">
@@ -748,7 +738,6 @@
             <div class="viewer-container">
                 <div class="viewer" id="viewer">
                     <canvas id="molecule-canvas"></canvas>
-                    <div class="help-text" id="help-text">Drag to rotate • Scroll to zoom</div>
                 </div>
             </div>
         </div>
@@ -788,7 +777,6 @@
             rotationMode: 'TrackBall',
             colorBy: 'Atom',
             colormap: 'viridis',
-            centerMolecules: false,
             alignMolecules: false  // Kabsch rotation + Hungarian reordering
         };
 
@@ -1056,10 +1044,10 @@
                     const currentViewport = renderer.getViewport(new THREE.Vector4());
                     const currentAutoClear = renderer.autoClear;
 
-                    // Set viewport for axis helper (bottom-left corner, 1.5x bigger, slight margin)
-                    const axisViewportSize = 120;
-                    renderer.setViewport(8, 8, axisViewportSize, axisViewportSize);
-                    renderer.setScissor(8, 8, axisViewportSize, axisViewportSize);
+                    // Set viewport for axis helper (bottom-left corner with increased margin)
+                    const axisViewportSize = 150;
+                    renderer.setViewport(20, 20, axisViewportSize, axisViewportSize);
+                    renderer.setScissor(20, 20, axisViewportSize, axisViewportSize);
                     renderer.setScissorTest(true);
 
                     // Disable auto clear to preserve main scene, only clear depth
@@ -1083,9 +1071,9 @@
             axisScene.background = null;  // Transparent background
 
             // Create orthographic camera for axis helper (fixed position)
-            // Size 1.5x bigger: viewport 120px, slight offset for margin
-            const axisSize = 120;
-            axisCamera = new THREE.OrthographicCamera(-15, axisSize * 2 - 15, axisSize * 2 - 15, -15, -100, 100);
+            // Increased size and adjusted offset to keep arrows within viewport
+            const axisSize = 150;
+            axisCamera = new THREE.OrthographicCamera(-20, axisSize * 2 - 20, axisSize * 2 - 20, -20, -100, 100);
             axisCamera.position.set(0, 0, 50);
 
             // Create a group to hold all axis objects (will be rotated)
@@ -1220,13 +1208,6 @@
                 }
                 // Center first molecule if alignment is enabled
                 else if (settings.alignMolecules && molIndex === 0 && positions.length > 0) {
-                    const center = new THREE.Vector3();
-                    positions.forEach(p => center.add(p));
-                    center.divideScalar(positions.length);
-                    positions = positions.map(p => p.clone().sub(center));
-                }
-                // Center molecules at origin if centering (without alignment) is enabled
-                else if (settings.centerMolecules && positions.length > 0) {
                     const center = new THREE.Vector3();
                     positions.forEach(p => center.add(p));
                     center.divideScalar(positions.length);
@@ -1851,19 +1832,8 @@
                 renderMolecule();
             });
 
-            safeAddListener('center-molecules', 'change', function () {
-                settings.centerMolecules = this.checked;
-                renderMolecule();
-            });
-
             safeAddListener('align-molecules', 'change', function () {
                 settings.alignMolecules = this.checked;
-                // Disable centerMolecules when alignment is enabled (alignment includes centering)
-                if (this.checked) {
-                    settings.centerMolecules = false;
-                    const centerCheckbox = document.getElementById('center-molecules');
-                    if (centerCheckbox) centerCheckbox.checked = false;
-                }
                 renderMolecule();
             });
 
