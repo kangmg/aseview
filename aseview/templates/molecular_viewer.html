@@ -1641,7 +1641,9 @@ function renderMolecule() {
 
                 if (dist <= adjustedCutoff) {
                     let bond;
-                    if (useChargeColor) {
+                    // Styles with fixed bond colors (not dependent on atom colors)
+                    const fixedBondStyles = ['rowan', 'neon', 'cartoon', '2d'];
+                    if (useChargeColor && !fixedBondStyles.includes(styleName)) {
                         // Use charge-based coloring for bonds
                         bond = createBondWithColor(
                             positions[i],
@@ -1652,7 +1654,7 @@ function renderMolecule() {
                             styleName
                         );
                     } else {
-                        // Use element-based coloring
+                        // Use element-based coloring or fixed style coloring
                         bond = bondFactory(
                             positions[i],
                             positions[j],
