@@ -22,6 +22,7 @@ export class MolecularViewer {
             bondThickness: 0.15,
             bondThreshold: 1.2,
             colorBy: 'Element',  // 'Element' or 'Charge'
+            normalizeCharge: true,  // true: use data range, false: use fixed range (-1 to 1)
             ...options
         };
 
@@ -77,14 +78,28 @@ export class MolecularViewer {
         const n = positions.length;
 
         // Calculate charge range for coloring
-        let minCharge = 0, maxCharge = 0;
-        if (charges && this.options.colorBy === 'Charge') {
-            minCharge = Math.min(...charges);
-            maxCharge = Math.max(...charges);
-            // Ensure symmetric range around 0
-            const absMax = Math.max(Math.abs(minCharge), Math.abs(maxCharge));
-            minCharge = -absMax;
-            maxCharge = absMax;
+        let minCharge = -1, maxCharge = 1;
+        const useChargeColor = charges && this.options.colorBy === 'Charge';
+
+        if (useChargeColor) {
+            if (this.options.normalizeCharge) {
+                // Normalize based on data range
+                const dataMin = Math.min(...charges);
+                const dataMax = Math.max(...charges);
+                // Ensure symmetric range around 0
+                const absMax = Math.max(Math.abs(dataMin), Math.abs(dataMax));
+                minCharge = -absMax;
+                maxCharge = absMax;
+            }
+            // else use fixed range (-1 to 1)
+        }
+
+        // Pre-calculate charge colors for all atoms
+        const atomColors = [];
+        if (useChargeColor) {
+            for (let i = 0; i < n; i++) {
+                atomColors[i] = getChargeColor(charges[i], minCharge, maxCharge);
+            }
         }
 
         // Detect bonds
@@ -94,13 +109,22 @@ export class MolecularViewer {
 
         // Render bonds
         bonds.forEach(([i, j]) => {
+            const bondOptions = {
+                useChargeColor: useChargeColor
+            };
+            if (useChargeColor) {
+                bondOptions.color1 = atomColors[i];
+                bondOptions.color2 = atomColors[j];
+            }
+
             const bond = createBond(
                 positions[i],
                 positions[j],
                 symbols[i],
                 symbols[j],
                 this.options.bondThickness,
-                this.options.style
+                this.options.style,
+                bondOptions
             );
             if (bond) {
                 this.moleculeGroup.add(bond);
@@ -109,10 +133,7 @@ export class MolecularViewer {
 
         // Render atoms
         for (let i = 0; i < n; i++) {
-            let atomColor;
-            if (this.options.colorBy === 'Charge' && charges) {
-                atomColor = getChargeColor(charges[i], minCharge, maxCharge);
-            }
+            const atomColor = useChargeColor ? atomColors[i] : undefined;
 
             const atom = createAtom(
                 positions[i],

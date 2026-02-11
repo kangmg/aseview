@@ -581,6 +581,7 @@ function getChargeColor(charge, minCharge = -1, maxCharge = 1) {
 
 /**
  * Create bond mesh between two atoms
+ * @param {Object} options - Options including color1, color2 for custom colors
  */
 function createBond(pos1, pos2, symbol1, symbol2, radius = 0.1, style = 'cartoon', options = {}) {
     const p1 = Array.isArray(pos1)
@@ -590,28 +591,30 @@ function createBond(pos1, pos2, symbol1, symbol2, radius = 0.1, style = 'cartoon
         ? new THREE.Vector3(pos2[0], pos2[1], pos2[2])
         : pos2;
 
+    // Use custom colors if provided, otherwise use element colors
+    const color1 = options.color1 !== undefined ? options.color1 : getAtomInfo(symbol1).color;
+    const color2 = options.color2 !== undefined ? options.color2 : getAtomInfo(symbol2).color;
+    const useChargeColor = options.useChargeColor || false;
+
     switch (style) {
         case 'cartoon':
-            return createBondCartoon(p1, p2, symbol1, symbol2, radius);
+            return createBondCartoon(p1, p2, color1, color2, radius, useChargeColor);
         case 'neon':
-            return createBondNeon(p1, p2, symbol1, symbol2);
+            return createBondNeon(p1, p2, color1, color2);
         case '2d':
             return createBond2D(p1, p2);
         default:
-            return createBondDefault(p1, p2, symbol1, symbol2, radius);
+            return createBondDefault(p1, p2, color1, color2, radius);
     }
 }
 
-function createBondDefault(pos1, pos2, symbol1, symbol2, radius) {
+function createBondDefault(pos1, pos2, color1, color2, radius) {
     const group = new THREE.Group();
 
     const midpoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
     const direction = new THREE.Vector3().subVectors(pos2, pos1);
     const length = direction.length();
     const halfLength = length / 2;
-
-    const color1 = getAtomInfo(symbol1).color;
-    const color2 = getAtomInfo(symbol2).color;
 
     // First half (from atom 1 to midpoint)
     const geometry1 = new THREE.CylinderGeometry(radius, radius, halfLength, 16);
@@ -642,7 +645,7 @@ function createBondDefault(pos1, pos2, symbol1, symbol2, radius) {
     return group;
 }
 
-function createBondCartoon(pos1, pos2, symbol1, symbol2, radius) {
+function createBondCartoon(pos1, pos2, color1, color2, radius, useChargeColor = false) {
     const group = new THREE.Group();
 
     const midpoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
@@ -650,11 +653,12 @@ function createBondCartoon(pos1, pos2, symbol1, symbol2, radius) {
     const length = direction.length();
     const halfLength = length / 2;
 
-    // Black bonds for cartoon style
-    const bondColor = 0x333333;
+    // Use dark gray for element colors, charge colors (darkened) for charge visualization
+    const bondColor1 = useChargeColor ? darkenColor(color1, 0.6) : 0x333333;
+    const bondColor2 = useChargeColor ? darkenColor(color2, 0.6) : 0x333333;
 
     const geometry1 = new THREE.CylinderGeometry(radius, radius, halfLength, 16);
-    const material1 = new THREE.MeshToonMaterial({ color: bondColor });
+    const material1 = new THREE.MeshToonMaterial({ color: bondColor1 });
     const cylinder1 = new THREE.Mesh(geometry1, material1);
 
     const half1Mid = new THREE.Vector3().addVectors(pos1, midpoint).multiplyScalar(0.5);
@@ -666,7 +670,7 @@ function createBondCartoon(pos1, pos2, symbol1, symbol2, radius) {
     group.add(cylinder1);
 
     const geometry2 = new THREE.CylinderGeometry(radius, radius, halfLength, 16);
-    const material2 = new THREE.MeshToonMaterial({ color: bondColor });
+    const material2 = new THREE.MeshToonMaterial({ color: bondColor2 });
     const cylinder2 = new THREE.Mesh(geometry2, material2);
 
     const half2Mid = new THREE.Vector3().addVectors(midpoint, pos2).multiplyScalar(0.5);
@@ -680,15 +684,17 @@ function createBondCartoon(pos1, pos2, symbol1, symbol2, radius) {
     return group;
 }
 
-function createBondNeon(pos1, pos2, symbol1, symbol2, radius) {
+// Helper to darken a color
+function darkenColor(color, factor) {
+    const c = new THREE.Color(color);
+    c.multiplyScalar(factor);
+    return c.getHex();
+}
+
+function createBondNeon(pos1, pos2, color1, color2, radius) {
     const group = new THREE.Group();
 
     const midpoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
-    const direction = new THREE.Vector3().subVectors(pos2, pos1);
-    direction.length();
-
-    const color1 = getAtomInfo(symbol1).color;
-    const color2 = getAtomInfo(symbol2).color;
 
     // Use line for neon style
     const points = [pos1, midpoint];
@@ -712,7 +718,7 @@ function createBondNeon(pos1, pos2, symbol1, symbol2, radius) {
     return group;
 }
 
-function createBond2D(pos1, pos2, symbol1, symbol2, radius) {
+function createBond2D(pos1, pos2, color1, color2, radius) {
     const points = [pos1, pos2];
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     const material = new THREE.LineBasicMaterial({
@@ -742,6 +748,7 @@ class MolecularViewer {
             bondThickness: 0.15,
             bondThreshold: 1.2,
             colorBy: 'Element',  // 'Element' or 'Charge'
+            normalizeCharge: true,  // true: use data range, false: use fixed range (-1 to 1)
             ...options
         };
 
@@ -797,14 +804,28 @@ class MolecularViewer {
         const n = positions.length;
 
         // Calculate charge range for coloring
-        let minCharge = 0, maxCharge = 0;
-        if (charges && this.options.colorBy === 'Charge') {
-            minCharge = Math.min(...charges);
-            maxCharge = Math.max(...charges);
-            // Ensure symmetric range around 0
-            const absMax = Math.max(Math.abs(minCharge), Math.abs(maxCharge));
-            minCharge = -absMax;
-            maxCharge = absMax;
+        let minCharge = -1, maxCharge = 1;
+        const useChargeColor = charges && this.options.colorBy === 'Charge';
+
+        if (useChargeColor) {
+            if (this.options.normalizeCharge) {
+                // Normalize based on data range
+                const dataMin = Math.min(...charges);
+                const dataMax = Math.max(...charges);
+                // Ensure symmetric range around 0
+                const absMax = Math.max(Math.abs(dataMin), Math.abs(dataMax));
+                minCharge = -absMax;
+                maxCharge = absMax;
+            }
+            // else use fixed range (-1 to 1)
+        }
+
+        // Pre-calculate charge colors for all atoms
+        const atomColors = [];
+        if (useChargeColor) {
+            for (let i = 0; i < n; i++) {
+                atomColors[i] = getChargeColor(charges[i], minCharge, maxCharge);
+            }
         }
 
         // Detect bonds
@@ -814,13 +835,22 @@ class MolecularViewer {
 
         // Render bonds
         bonds.forEach(([i, j]) => {
+            const bondOptions = {
+                useChargeColor: useChargeColor
+            };
+            if (useChargeColor) {
+                bondOptions.color1 = atomColors[i];
+                bondOptions.color2 = atomColors[j];
+            }
+
             const bond = createBond(
                 positions[i],
                 positions[j],
                 symbols[i],
                 symbols[j],
                 this.options.bondThickness,
-                this.options.style
+                this.options.style,
+                bondOptions
             );
             if (bond) {
                 this.moleculeGroup.add(bond);
@@ -829,10 +859,7 @@ class MolecularViewer {
 
         // Render atoms
         for (let i = 0; i < n; i++) {
-            let atomColor;
-            if (this.options.colorBy === 'Charge' && charges) {
-                atomColor = getChargeColor(charges[i], minCharge, maxCharge);
-            }
+            const atomColor = useChargeColor ? atomColors[i] : undefined;
 
             const atom = createAtom(
                 positions[i],
