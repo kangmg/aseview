@@ -51,12 +51,14 @@ nav:
     - MolecularViewer: api/molecular-viewer.md
     - OverlayViewer: api/overlay-viewer.md
     - NormalViewer: api/normal-viewer.md
+  - JavaScript Module: js-module.md
   - Examples:
     - Basic Visualization: examples/basic.md
     - Trajectory Animation: examples/trajectory.md
     - Overlay Comparison: examples/overlay.md
     - Normal Modes: examples/normal-modes.md
     - Solid-State Structures: examples/solid-state.md
+  - File Formats: file-formats.md
 
 extra:
   social:
