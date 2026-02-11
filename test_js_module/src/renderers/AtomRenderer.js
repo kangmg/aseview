@@ -145,22 +145,25 @@ function createAtom2D(position, radius, color, symbol) {
 
 /**
  * Get color for charge visualization (coolwarm colormap)
+ * Positive and negative charges are normalized independently
+ * 0 is always white, positive → red, negative → blue
  */
-export function getChargeColor(charge, minCharge = -1, maxCharge = 1) {
-    // Normalize charge to 0-1 range
-    const range = maxCharge - minCharge;
-    const normalized = range > 0 ? (charge - minCharge) / range : 0.5;
-
+export function getChargeColor(charge, minNegative = -1, maxPositive = 1) {
     // Coolwarm colormap: blue -> white -> red
-    const negativeColor = new THREE.Color(0x3b4cc0);
-    const neutralColor = new THREE.Color(0xf7f7f7);
-    const positiveColor = new THREE.Color(0xb40426);
+    const negativeColor = new THREE.Color(0x3b4cc0);  // blue for negative
+    const neutralColor = new THREE.Color(0xf7f7f7);   // white for zero
+    const positiveColor = new THREE.Color(0xb40426);  // red for positive
 
     const result = new THREE.Color();
-    if (normalized < 0.5) {
-        result.lerpColors(negativeColor, neutralColor, normalized * 2);
+
+    if (charge >= 0) {
+        // Positive: white → red
+        const normalized = maxPositive > 0 ? Math.min(charge / maxPositive, 1) : 0;
+        result.lerpColors(neutralColor, positiveColor, normalized);
     } else {
-        result.lerpColors(neutralColor, positiveColor, (normalized - 0.5) * 2);
+        // Negative: blue → white
+        const normalized = minNegative < 0 ? Math.min(Math.abs(charge) / Math.abs(minNegative), 1) : 0;
+        result.lerpColors(neutralColor, negativeColor, normalized);
     }
 
     return result.getHex();

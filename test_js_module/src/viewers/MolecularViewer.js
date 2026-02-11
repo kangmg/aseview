@@ -78,18 +78,17 @@ export class MolecularViewer {
         const n = positions.length;
 
         // Calculate charge range for coloring
-        let minCharge = -1, maxCharge = 1;
+        // minNegative: most negative charge (for blue), maxPositive: most positive charge (for red)
+        let minNegative = -1, maxPositive = 1;
         const useChargeColor = charges && this.options.colorBy === 'Charge';
 
         if (useChargeColor) {
             if (this.options.normalizeCharge) {
-                // Normalize based on data range
-                const dataMin = Math.min(...charges);
-                const dataMax = Math.max(...charges);
-                // Ensure symmetric range around 0
-                const absMax = Math.max(Math.abs(dataMin), Math.abs(dataMax));
-                minCharge = -absMax;
-                maxCharge = absMax;
+                // Normalize positive and negative charges independently
+                const positiveCharges = charges.filter(c => c > 0);
+                const negativeCharges = charges.filter(c => c < 0);
+                maxPositive = positiveCharges.length > 0 ? Math.max(...positiveCharges) : 0;
+                minNegative = negativeCharges.length > 0 ? Math.min(...negativeCharges) : 0;
             }
             // else use fixed range (-1 to 1)
         }
@@ -98,7 +97,7 @@ export class MolecularViewer {
         const atomColors = [];
         if (useChargeColor) {
             for (let i = 0; i < n; i++) {
-                atomColors[i] = getChargeColor(charges[i], minCharge, maxCharge);
+                atomColors[i] = getChargeColor(charges[i], minNegative, maxPositive);
             }
         }
 

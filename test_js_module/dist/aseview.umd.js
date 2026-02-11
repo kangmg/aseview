@@ -560,22 +560,25 @@
 
     /**
      * Get color for charge visualization (coolwarm colormap)
+     * Positive and negative charges are normalized independently
+     * 0 is always white, positive → red, negative → blue
      */
-    function getChargeColor(charge, minCharge = -1, maxCharge = 1) {
-        // Normalize charge to 0-1 range
-        const range = maxCharge - minCharge;
-        const normalized = range > 0 ? (charge - minCharge) / range : 0.5;
-
+    function getChargeColor(charge, minNegative = -1, maxPositive = 1) {
         // Coolwarm colormap: blue -> white -> red
-        const negativeColor = new THREE.Color(0x3b4cc0);
-        const neutralColor = new THREE.Color(0xf7f7f7);
-        const positiveColor = new THREE.Color(0xb40426);
+        const negativeColor = new THREE.Color(0x3b4cc0);  // blue for negative
+        const neutralColor = new THREE.Color(0xf7f7f7);   // white for zero
+        const positiveColor = new THREE.Color(0xb40426);  // red for positive
 
         const result = new THREE.Color();
-        if (normalized < 0.5) {
-            result.lerpColors(negativeColor, neutralColor, normalized * 2);
+
+        if (charge >= 0) {
+            // Positive: white → red
+            const normalized = maxPositive > 0 ? Math.min(charge / maxPositive, 1) : 0;
+            result.lerpColors(neutralColor, positiveColor, normalized);
         } else {
-            result.lerpColors(neutralColor, positiveColor, (normalized - 0.5) * 2);
+            // Negative: blue → white
+            const normalized = minNegative < 0 ? Math.min(Math.abs(charge) / Math.abs(minNegative), 1) : 0;
+            result.lerpColors(neutralColor, negativeColor, normalized);
         }
 
         return result.getHex();
@@ -606,15 +609,18 @@
             case 'cartoon':
                 return createBondCartoon(p1, p2, color1, color2, radius, useChargeColor);
             case 'neon':
-                return createBondNeon(p1, p2, color1, color2);
+                return createBondNeon(p1, p2, color1, color2, radius, useChargeColor);
             case '2d':
                 return createBond2D(p1, p2);
+            case 'glossy':
+            case 'metallic':
+            case 'bubble':
             default:
-                return createBondDefault(p1, p2, color1, color2, radius);
+                return createBondDefault(p1, p2, color1, color2, radius, useChargeColor);
         }
     }
 
-    function createBondDefault(pos1, pos2, color1, color2, radius) {
+    function createBondDefault(pos1, pos2, color1, color2, radius, useChargeColor = false) {
         const group = new THREE.Group();
 
         const midpoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
@@ -622,9 +628,13 @@
         const length = direction.length();
         const halfLength = length / 2;
 
+        // Use darkened colors for charge visualization, element colors otherwise
+        const bondColor1 = useChargeColor ? darkenColor(color1, 0.7) : color1;
+        const bondColor2 = useChargeColor ? darkenColor(color2, 0.7) : color2;
+
         // First half (from atom 1 to midpoint)
         const geometry1 = new THREE.CylinderGeometry(radius, radius, halfLength, 16);
-        const material1 = new THREE.MeshPhongMaterial({ color: color1 });
+        const material1 = new THREE.MeshPhongMaterial({ color: bondColor1 });
         const cylinder1 = new THREE.Mesh(geometry1, material1);
 
         const half1Mid = new THREE.Vector3().addVectors(pos1, midpoint).multiplyScalar(0.5);
@@ -637,7 +647,7 @@
 
         // Second half (from midpoint to atom 2)
         const geometry2 = new THREE.CylinderGeometry(radius, radius, halfLength, 16);
-        const material2 = new THREE.MeshPhongMaterial({ color: color2 });
+        const material2 = new THREE.MeshPhongMaterial({ color: bondColor2 });
         const cylinder2 = new THREE.Mesh(geometry2, material2);
 
         const half2Mid = new THREE.Vector3().addVectors(midpoint, pos2).multiplyScalar(0.5);
@@ -697,16 +707,20 @@
         return c.getHex();
     }
 
-    function createBondNeon(pos1, pos2, color1, color2, radius) {
+    function createBondNeon(pos1, pos2, color1, color2, radius, useChargeColor = false) {
         const group = new THREE.Group();
 
         const midpoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
+
+        // For neon style, use colors directly (glow effect)
+        const bondColor1 = useChargeColor ? color1 : color1;
+        const bondColor2 = useChargeColor ? color2 : color2;
 
         // Use line for neon style
         const points = [pos1, midpoint];
         const geometry1 = new THREE.BufferGeometry().setFromPoints(points);
         const material1 = new THREE.LineBasicMaterial({
-            color: color1,
+            color: bondColor1,
             linewidth: 2
         });
         const line1 = new THREE.Line(geometry1, material1);
@@ -715,7 +729,7 @@
         const points2 = [midpoint, pos2];
         const geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
         const material2 = new THREE.LineBasicMaterial({
-            color: color2,
+            color: bondColor2,
             linewidth: 2
         });
         const line2 = new THREE.Line(geometry2, material2);
@@ -810,18 +824,17 @@
             const n = positions.length;
 
             // Calculate charge range for coloring
-            let minCharge = -1, maxCharge = 1;
+            // minNegative: most negative charge (for blue), maxPositive: most positive charge (for red)
+            let minNegative = -1, maxPositive = 1;
             const useChargeColor = charges && this.options.colorBy === 'Charge';
 
             if (useChargeColor) {
                 if (this.options.normalizeCharge) {
-                    // Normalize based on data range
-                    const dataMin = Math.min(...charges);
-                    const dataMax = Math.max(...charges);
-                    // Ensure symmetric range around 0
-                    const absMax = Math.max(Math.abs(dataMin), Math.abs(dataMax));
-                    minCharge = -absMax;
-                    maxCharge = absMax;
+                    // Normalize positive and negative charges independently
+                    const positiveCharges = charges.filter(c => c > 0);
+                    const negativeCharges = charges.filter(c => c < 0);
+                    maxPositive = positiveCharges.length > 0 ? Math.max(...positiveCharges) : 0;
+                    minNegative = negativeCharges.length > 0 ? Math.min(...negativeCharges) : 0;
                 }
                 // else use fixed range (-1 to 1)
             }
@@ -830,7 +843,7 @@
             const atomColors = [];
             if (useChargeColor) {
                 for (let i = 0; i < n; i++) {
-                    atomColors[i] = getChargeColor(charges[i], minCharge, maxCharge);
+                    atomColors[i] = getChargeColor(charges[i], minNegative, maxPositive);
                 }
             }
 

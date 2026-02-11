@@ -24,15 +24,18 @@ export function createBond(pos1, pos2, symbol1, symbol2, radius = 0.1, style = '
         case 'cartoon':
             return createBondCartoon(p1, p2, color1, color2, radius, useChargeColor);
         case 'neon':
-            return createBondNeon(p1, p2, color1, color2, radius);
+            return createBondNeon(p1, p2, color1, color2, radius, useChargeColor);
         case '2d':
             return createBond2D(p1, p2, color1, color2, radius);
+        case 'glossy':
+        case 'metallic':
+        case 'bubble':
         default:
-            return createBondDefault(p1, p2, color1, color2, radius);
+            return createBondDefault(p1, p2, color1, color2, radius, useChargeColor);
     }
 }
 
-function createBondDefault(pos1, pos2, color1, color2, radius) {
+function createBondDefault(pos1, pos2, color1, color2, radius, useChargeColor = false) {
     const group = new THREE.Group();
 
     const midpoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
@@ -40,9 +43,13 @@ function createBondDefault(pos1, pos2, color1, color2, radius) {
     const length = direction.length();
     const halfLength = length / 2;
 
+    // Use darkened colors for charge visualization, element colors otherwise
+    const bondColor1 = useChargeColor ? darkenColor(color1, 0.7) : color1;
+    const bondColor2 = useChargeColor ? darkenColor(color2, 0.7) : color2;
+
     // First half (from atom 1 to midpoint)
     const geometry1 = new THREE.CylinderGeometry(radius, radius, halfLength, 16);
-    const material1 = new THREE.MeshPhongMaterial({ color: color1 });
+    const material1 = new THREE.MeshPhongMaterial({ color: bondColor1 });
     const cylinder1 = new THREE.Mesh(geometry1, material1);
 
     const half1Mid = new THREE.Vector3().addVectors(pos1, midpoint).multiplyScalar(0.5);
@@ -55,7 +62,7 @@ function createBondDefault(pos1, pos2, color1, color2, radius) {
 
     // Second half (from midpoint to atom 2)
     const geometry2 = new THREE.CylinderGeometry(radius, radius, halfLength, 16);
-    const material2 = new THREE.MeshPhongMaterial({ color: color2 });
+    const material2 = new THREE.MeshPhongMaterial({ color: bondColor2 });
     const cylinder2 = new THREE.Mesh(geometry2, material2);
 
     const half2Mid = new THREE.Vector3().addVectors(midpoint, pos2).multiplyScalar(0.5);
@@ -115,16 +122,20 @@ function darkenColor(color, factor) {
     return c.getHex();
 }
 
-function createBondNeon(pos1, pos2, color1, color2, radius) {
+function createBondNeon(pos1, pos2, color1, color2, radius, useChargeColor = false) {
     const group = new THREE.Group();
 
     const midpoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
+
+    // For neon style, use colors directly (glow effect)
+    const bondColor1 = useChargeColor ? color1 : color1;
+    const bondColor2 = useChargeColor ? color2 : color2;
 
     // Use line for neon style
     const points = [pos1, midpoint];
     const geometry1 = new THREE.BufferGeometry().setFromPoints(points);
     const material1 = new THREE.LineBasicMaterial({
-        color: color1,
+        color: bondColor1,
         linewidth: 2
     });
     const line1 = new THREE.Line(geometry1, material1);
@@ -133,7 +144,7 @@ function createBondNeon(pos1, pos2, color1, color2, radius) {
     const points2 = [midpoint, pos2];
     const geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
     const material2 = new THREE.LineBasicMaterial({
-        color: color2,
+        color: bondColor2,
         linewidth: 2
     });
     const line2 = new THREE.Line(geometry2, material2);
