@@ -13,14 +13,8 @@
             padding: 2rem;
             line-height: 1.6;
         }
-        h1 {
-            color: #60a5fa;
-            margin-bottom: 0.5rem;
-        }
-        .subtitle {
-            color: #94a3b8;
-            margin-bottom: 2rem;
-        }
+        h1 { color: #60a5fa; margin-bottom: 0.5rem; }
+        .subtitle { color: #94a3b8; margin-bottom: 2rem; }
         .demo-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -47,12 +41,9 @@
             overflow-x: auto;
             font-family: 'Monaco', 'Menlo', monospace;
             font-size: 0.8rem;
-            line-height: 1.5;
+            line-height: 1.6;
         }
-        .code-content pre {
-            margin: 0;
-            white-space: pre;
-        }
+        .code-content pre { margin: 0; white-space: pre; }
         .keyword { color: #c792ea; }
         .string { color: #c3e88d; }
         .comment { color: #546e7a; }
@@ -69,16 +60,25 @@
             font-size: 0.875rem;
             color: #94a3b8;
             border-bottom: 1px solid #475569;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
+        .style-buttons { display: flex; gap: 0.5rem; }
+        .style-buttons button {
+            background: #475569;
+            border: none;
+            color: #e2e8f0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .style-buttons button:hover { background: #64748b; }
+        .style-buttons button.active { background: #3b82f6; }
         #viewer-container {
             width: 100%;
             height: 450px;
-            position: relative;
-        }
-        #viewer-canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
         }
         .note {
             background: #1e3a5f;
@@ -93,101 +93,86 @@
 </head>
 <body>
     <h1>ASEView.js Usage Demo</h1>
-    <p class="subtitle">Molecular visualization using Three.js and ASEView styles</p>
+    <p class="subtitle">High-level JavaScript API for molecular visualization</p>
 
     <div class="demo-section">
         <div class="code-panel">
             <div class="code-header">HTML Code</div>
             <div class="code-content">
-<pre><span class="comment">&lt;!-- Dependencies --&gt;</span>
+<pre><span class="comment">&lt;!-- 1. Load dependencies --&gt;</span>
 <span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="string">"three.min.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
 <span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="string">"TrackballControls.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
 <span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="string">"styles.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
+<span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="string">"aseview.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
 
-<span class="comment">&lt;!-- Viewer Container --&gt;</span>
+<span class="comment">&lt;!-- 2. Create container --&gt;</span>
 <span class="tag">&lt;div</span> <span class="attr">id</span>=<span class="string">"viewer"</span> <span class="attr">style</span>=<span class="string">"width:600px;height:400px"</span><span class="tag">&gt;&lt;/div&gt;</span>
 
+<span class="comment">&lt;!-- 3. Initialize viewer --&gt;</span>
 <span class="tag">&lt;script&gt;</span>
-<span class="comment">// Molecule data</span>
-<span class="keyword">const</span> molecule = {
+<span class="keyword">const</span> viewer = <span class="keyword">new</span> ASEView.MolecularViewer(<span class="string">'#viewer'</span>, {
+    style: <span class="string">'cartoon'</span>,
+    backgroundColor: <span class="string">'#1f2937'</span>
+});
+
+viewer.setData({
     symbols: [<span class="string">'C'</span>, <span class="string">'C'</span>, <span class="string">'O'</span>, <span class="string">'H'</span>, <span class="string">'H'</span>, <span class="string">'H'</span>, <span class="string">'H'</span>, <span class="string">'H'</span>, <span class="string">'H'</span>],
     positions: [
         [-0.047, 0.666, 0.000],
         [-0.047, -0.866, 0.000],
         [1.204, 1.144, 0.000],
-        [0.869, 1.685, 0.000],
+        [1.869, 0.485, 0.000],
         [-0.570, 1.035, 0.889],
         [-0.570, 1.035, -0.889],
         [0.982, -1.162, 0.000],
         [-0.557, -1.222, 0.889],
         [-0.557, -1.222, -0.889]
     ]
-};
-
-<span class="comment">// Initialize viewer</span>
-<span class="keyword">const</span> viewer = <span class="keyword">new</span> ASEView.MolecularViewer(<span class="string">'#viewer'</span>, {
-    style: <span class="string">'cartoon'</span>,
-    backgroundColor: <span class="string">'#1f2937'</span>
 });
-viewer.setData(molecule);
+
+<span class="comment">// Change style dynamically</span>
+viewer.setStyle(<span class="string">'glossy'</span>);
 <span class="tag">&lt;/script&gt;</span></pre>
             </div>
         </div>
 
         <div class="viewer-panel">
-            <div class="viewer-header">Result (Ethanol - C₂H₅OH)</div>
-            <div id="viewer-container">
-                <canvas id="viewer-canvas"></canvas>
+            <div class="viewer-header">
+                <span>Result (Ethanol - C₂H₅OH)</span>
+                <div class="style-buttons">
+                    <button class="active" onclick="setStyle('cartoon')">Cartoon</button>
+                    <button onclick="setStyle('glossy')">Glossy</button>
+                    <button onclick="setStyle('neon')">Neon</button>
+                    <button onclick="setStyle('bubble')">Bubble</button>
+                </div>
             </div>
+            <div id="viewer-container"></div>
         </div>
     </div>
 
     <div class="note">
-        <strong>Note:</strong> This demo uses the same rendering code as Python ASEView.
-        The JavaScript module provides identical visualization styles (cartoon, glossy, neon, etc.)
-        for web-based embedding without requiring a Python backend.
+        <strong>API:</strong>
+        <code>new ASEView.MolecularViewer(selector, options)</code> -
+        styles: cartoon, glossy, metallic, neon, bubble, rowan, 2d, grey
     </div>
 
-    <!-- Three.js -->
+    <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
 
-    <!-- ASEView styles.js via jsDelivr -->
+    <!-- ASEView (styles.js + aseview.js) -->
     <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/styles.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/aseview.js"></script>
 
     <script>
-        // Simple viewer implementation using styles.js
-        const container = document.getElementById('viewer-container');
-        const canvas = document.getElementById('viewer-canvas');
+        // Initialize viewer with high-level API
+        const viewer = new ASEView.MolecularViewer('#viewer-container', {
+            style: 'cartoon',
+            backgroundColor: '#1f2937'
+        });
 
-        // Scene setup
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1f2937);
-
-        // Camera
-        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 0, 10);
-
-        // Renderer
-        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-
-        // Controls
-        const controls = new THREE.TrackballControls(camera, renderer.domElement);
-        controls.rotateSpeed = 2.0;
-        controls.zoomSpeed = 1.2;
-        controls.panSpeed = 0.8;
-
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(5, 5, 5);
-        scene.add(directionalLight);
-
-        // Ethanol molecule data
-        const molecule = {
+        // Ethanol molecule
+        viewer.setData({
             symbols: ['C', 'C', 'O', 'H', 'H', 'H', 'H', 'H', 'H'],
             positions: [
                 [-0.047, 0.666, 0.000],
@@ -200,73 +185,15 @@ viewer.setData(molecule);
                 [-0.557, -1.222, 0.889],
                 [-0.557, -1.222, -0.889]
             ]
-        };
-
-        const atomScale = 0.4;
-        const bondThickness = 0.1;
-        const style = 'cartoon';
-
-        // Create atoms using styles.js
-        molecule.positions.forEach((pos, i) => {
-            const position = new THREE.Vector3(...pos);
-            const symbol = molecule.symbols[i];
-
-            let atom;
-            if (style === 'cartoon') {
-                atom = createAtomStyleCartoon(position, symbol, atomScale);
-            } else if (style === 'glossy') {
-                atom = createAtomStyleGlossy(position, symbol, atomScale);
-            } else {
-                atom = createAtomStyleDefault(position, symbol, atomScale);
-            }
-            scene.add(atom);
         });
 
-        // Detect and create bonds
-        const bondThreshold = 1.2;
-        for (let i = 0; i < molecule.positions.length; i++) {
-            for (let j = i + 1; j < molecule.positions.length; j++) {
-                const p1 = new THREE.Vector3(...molecule.positions[i]);
-                const p2 = new THREE.Vector3(...molecule.positions[j]);
-                const info1 = atomInfo[molecule.symbols[i]] || atomInfo.default;
-                const info2 = atomInfo[molecule.symbols[j]] || atomInfo.default;
-                const maxDist = (info1.radius + info2.radius) * bondThreshold;
-
-                if (p1.distanceTo(p2) < maxDist) {
-                    let bond;
-                    if (style === 'cartoon') {
-                        bond = createBondStyleCartoon(p1, p2, molecule.symbols[i], molecule.symbols[j], bondThickness, atomScale);
-                    } else {
-                        bond = createBondStyleDefault(p1, p2, molecule.symbols[i], molecule.symbols[j], bondThickness, atomScale, style);
-                    }
-                    if (bond) scene.add(bond);
-                }
-            }
+        // Style change function
+        function setStyle(style) {
+            viewer.setStyle(style);
+            document.querySelectorAll('.style-buttons button').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === style);
+            });
         }
-
-        // Center camera on molecule
-        const box = new THREE.Box3().setFromObject(scene);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3()).length();
-        camera.position.set(center.x, center.y, center.z + size * 1.5);
-        controls.target.copy(center);
-
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        // Handle resize
-        window.addEventListener('resize', () => {
-            const width = container.clientWidth;
-            const height = container.clientHeight;
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-            renderer.setSize(width, height);
-        });
     </script>
 </body>
 </html>
