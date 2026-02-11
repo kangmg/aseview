@@ -119,6 +119,9 @@ class BaseViewer:
             return processed_list
         elif isinstance(data, dict):
             return data
+        elif hasattr(data, '__iter__') and not isinstance(data, (str, dict)):
+            # Handle iterables like ASE Trajectory - convert to list and process
+            return self._process_data(list(data))
         else:
             raise ValueError(f"Unsupported data type: {type(data)}")
     

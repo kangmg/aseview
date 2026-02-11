@@ -772,6 +772,7 @@ let cameraNeedsFit = true;
 // Axis helper scene
 let axisScene = null;
 let axisCamera = null;
+let axisGroup = null;
 
 // Animation state
 let animationState = {
@@ -940,18 +941,18 @@ function animate() {
         renderer.render(scene, camera);
 
         // Render axis helper in bottom-left corner (transparent overlay)
-        if (axisScene && axisCamera) {
-            // Sync axis camera rotation with main camera
-            axisCamera.quaternion.copy(camera.quaternion);
+        if (axisScene && axisCamera && axisGroup) {
+            // Rotate the axis group to match camera view (origin stays fixed)
+            axisGroup.quaternion.copy(camera.quaternion);
 
             // Save current state
             const currentViewport = renderer.getViewport(new THREE.Vector4());
             const currentAutoClear = renderer.autoClear;
 
-            // Set viewport for axis helper (bottom-left corner)
-            const axisViewportSize = 80;
-            renderer.setViewport(5, 5, axisViewportSize, axisViewportSize);
-            renderer.setScissor(5, 5, axisViewportSize, axisViewportSize);
+            // Set viewport for axis helper (bottom-left corner, 1.5x bigger, slight margin)
+            const axisViewportSize = 120;
+            renderer.setViewport(8, 8, axisViewportSize, axisViewportSize);
+            renderer.setScissor(8, 8, axisViewportSize, axisViewportSize);
             renderer.setScissorTest(true);
 
             // Disable auto clear to preserve main scene, only clear depth
@@ -974,11 +975,14 @@ function setupAxisHelper() {
     axisScene = new THREE.Scene();
     axisScene.background = null;  // Transparent background
 
-    // Create orthographic camera for axis helper
-    // Offset so origin appears at bottom-left of viewport
-    const axisSize = 80;
-    axisCamera = new THREE.OrthographicCamera(-20, axisSize * 2 - 20, axisSize * 2 - 20, -20, -100, 100);
+    // Create orthographic camera for axis helper (fixed position)
+    // Size 1.5x bigger: viewport 120px, slight offset for margin
+    const axisSize = 120;
+    axisCamera = new THREE.OrthographicCamera(-15, axisSize * 2 - 15, axisSize * 2 - 15, -15, -100, 100);
     axisCamera.position.set(0, 0, 50);
+
+    // Create a group to hold all axis objects (will be rotated)
+    axisGroup = new THREE.Group();
 
     // Axis colors
     const colors = {
@@ -987,9 +991,9 @@ function setupAxisHelper() {
         z: 0x4488ff   // Blue
     };
 
-    const axisLength = 50;
-    const arrowHeadLength = 12;
-    const arrowHeadWidth = 6;
+    const axisLength = 70;  // 1.5x bigger
+    const arrowHeadLength = 16;
+    const arrowHeadWidth = 8;
 
     // Create arrows for each axis starting from origin
     const xDir = new THREE.Vector3(1, 0, 0);
@@ -1006,9 +1010,9 @@ function setupAxisHelper() {
     yArrow.line.material.linewidth = 2;
     zArrow.line.material.linewidth = 2;
 
-    axisScene.add(xArrow);
-    axisScene.add(yArrow);
-    axisScene.add(zArrow);
+    axisGroup.add(xArrow);
+    axisGroup.add(yArrow);
+    axisGroup.add(zArrow);
 
     // Create text labels using sprites
     const createTextSprite = (text, color) => {
@@ -1029,7 +1033,7 @@ function setupAxisHelper() {
         const texture = new THREE.CanvasTexture(canvas);
         const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
         const sprite = new THREE.Sprite(material);
-        sprite.scale.set(14, 14, 1);
+        sprite.scale.set(18, 18, 1);  // 1.5x bigger
         return sprite;
     };
 
@@ -1037,13 +1041,15 @@ function setupAxisHelper() {
     const yLabel = createTextSprite('Y', colors.y);
     const zLabel = createTextSprite('Z', colors.z);
 
-    xLabel.position.set(axisLength + 10, 0, 0);
-    yLabel.position.set(0, axisLength + 10, 0);
-    zLabel.position.set(0, 0, axisLength + 10);
+    xLabel.position.set(axisLength + 12, 0, 0);
+    yLabel.position.set(0, axisLength + 12, 0);
+    zLabel.position.set(0, 0, axisLength + 12);
 
-    axisScene.add(xLabel);
-    axisScene.add(yLabel);
-    axisScene.add(zLabel);
+    axisGroup.add(xLabel);
+    axisGroup.add(yLabel);
+    axisGroup.add(zLabel);
+
+    axisScene.add(axisGroup);
 
     // Add ambient light to axis scene
     const axisAmbient = new THREE.AmbientLight(0xffffff, 1.0);
