@@ -623,7 +623,7 @@
                         <!-- Color bar for charge scale -->
                         <div class="control-group" id="charge-colorbar-section" style="display: none;">
                             <div style="width: 100%; padding: 0.25rem 0;">
-                                <div id="charge-colorbar" style="height: 12px; border-radius: 6px; background: linear-gradient(90deg, #3b4cc0 0%, #f7f7f7 50%, #b40426 100%);"></div>
+                                <div id="charge-colorbar" style="height: 12px; border-radius: 6px; background: linear-gradient(90deg, #b40426 0%, #f7f7f7 50%, #3b4cc0 100%);"></div>
                                 <div style="display: flex; justify-content: space-between; font-size: 10px; color: #9ca3af; margin-top: 2px;">
                                     <span id="charge-min">-1.0</span>
                                     <span>0</span>
@@ -985,44 +985,34 @@ function updateColorbarLabels() {
         minVal = -1.0;
         maxVal = 1.0;
     } else {
-        // Use symmetric range for better visualization
-        const absMax = chargeStats.absMax || 1.0;
-        minVal = -absMax;
-        maxVal = absMax;
+        // Show actual charge range (red=negative on left, blue=positive on right)
+        minVal = chargeStats.minNegative || 0;
+        maxVal = chargeStats.maxPositive || 0;
     }
 
     minLabel.textContent = minVal.toFixed(2);
     maxLabel.textContent = (maxVal > 0 ? '+' : '') + maxVal.toFixed(2);
 }
 
-// Coolwarm colormap: blue (negative) -> white (zero) -> red (positive)
+// Coolwarm colormap: red (negative) -> white (zero) -> blue (positive)
 function getChargeColor(charge, normalize = false) {
-    // Coolwarm colormap
-    const negativeColor = new THREE.Color(0x3b4cc0);  // Blue
+    // Standard convention: red = negative, blue = positive
+    const negativeColor = new THREE.Color(0xb40426);  // Red
     const neutralColor = new THREE.Color(0xf7f7f7);   // White
-    const positiveColor = new THREE.Color(0xb40426);  // Red
+    const positiveColor = new THREE.Color(0x3b4cc0);  // Blue
 
     let resultColor = new THREE.Color();
 
-    if (normalize) {
-        // Normalize positive and negative independently
-        if (charge >= 0) {
-            const maxPos = chargeStats.maxPositive || 1.0;
-            const normalized = maxPos > 0 ? Math.min(charge / maxPos, 1) : 0;
-            resultColor.lerpColors(neutralColor, positiveColor, normalized);
-        } else {
-            const minNeg = chargeStats.minNegative || -1.0;
-            const normalized = minNeg < 0 ? Math.min(Math.abs(charge) / Math.abs(minNeg), 1) : 0;
-            resultColor.lerpColors(neutralColor, negativeColor, normalized);
-        }
+    // Always use actual charge range for coloring
+    // normalize parameter only affects colorbar labels display
+    if (charge >= 0) {
+        const maxPos = chargeStats.maxPositive || 1.0;
+        const normalized = maxPos > 0 ? Math.min(charge / maxPos, 1) : 0;
+        resultColor.lerpColors(neutralColor, positiveColor, normalized);
     } else {
-        // Use fixed range -1 to 1
-        const clampedCharge = Math.max(-1, Math.min(1, charge));
-        if (clampedCharge >= 0) {
-            resultColor.lerpColors(neutralColor, positiveColor, clampedCharge);
-        } else {
-            resultColor.lerpColors(neutralColor, negativeColor, Math.abs(clampedCharge));
-        }
+        const minNeg = chargeStats.minNegative || -1.0;
+        const normalized = minNeg < 0 ? Math.min(Math.abs(charge) / Math.abs(minNeg), 1) : 0;
+        resultColor.lerpColors(neutralColor, negativeColor, normalized);
     }
 
     return resultColor.getHex();
@@ -1506,10 +1496,11 @@ function animate() {
             const currentViewport = renderer.getViewport(new THREE.Vector4());
             const currentAutoClear = renderer.autoClear;
 
-            // Set viewport for axis helper (bottom-left corner with increased margin)
+            // Set viewport for axis helper (bottom-left corner with margin to prevent clipping)
             const axisViewportSize = 150;
-            renderer.setViewport(20, 20, axisViewportSize, axisViewportSize);
-            renderer.setScissor(20, 20, axisViewportSize, axisViewportSize);
+            const axisMargin = 35;
+            renderer.setViewport(axisMargin, axisMargin, axisViewportSize, axisViewportSize);
+            renderer.setScissor(axisMargin, axisMargin, axisViewportSize, axisViewportSize);
             renderer.setScissorTest(true);
 
             // Disable auto clear to preserve main scene, only clear depth

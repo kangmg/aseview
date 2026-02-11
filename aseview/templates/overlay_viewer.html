@@ -1044,10 +1044,11 @@
                     const currentViewport = renderer.getViewport(new THREE.Vector4());
                     const currentAutoClear = renderer.autoClear;
 
-                    // Set viewport for axis helper (bottom-left corner with increased margin)
+                    // Set viewport for axis helper (bottom-left corner with margin to prevent clipping)
                     const axisViewportSize = 150;
-                    renderer.setViewport(20, 20, axisViewportSize, axisViewportSize);
-                    renderer.setScissor(20, 20, axisViewportSize, axisViewportSize);
+                    const axisMargin = 35;
+                    renderer.setViewport(axisMargin, axisMargin, axisViewportSize, axisViewportSize);
+                    renderer.setScissor(axisMargin, axisMargin, axisViewportSize, axisViewportSize);
                     renderer.setScissorTest(true);
 
                     // Disable auto clear to preserve main scene, only clear depth
