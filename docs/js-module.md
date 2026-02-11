@@ -4,7 +4,7 @@ Standalone JavaScript library for molecular visualization. Use it in any web pag
 
 [**Live Demo**](demo.html){ .md-button }
 
-## CDN Usage (GitHub Raw)
+## CDN Usage (jsDelivr)
 
 ```html
 <!-- Three.js (required) -->
@@ -12,7 +12,7 @@ Standalone JavaScript library for molecular visualization. Use it in any web pag
 <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
 
 <!-- ASEView.js -->
-<script src="https://raw.githubusercontent.com/kangmg/aseview_v2_dev/main/test_js_module/dist/aseview.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/test_js_module/dist/aseview.umd.min.js"></script>
 ```
 
 ## Quick Start
@@ -30,7 +30,7 @@ Standalone JavaScript library for molecular visualization. Use it in any web pag
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
-    <script src="https://raw.githubusercontent.com/kangmg/aseview_v2_dev/main/test_js_module/dist/aseview.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/test_js_module/dist/aseview.umd.min.js"></script>
 
     <script>
         const viewer = new ASEView.MolecularViewer('#viewer', {
@@ -135,7 +135,7 @@ viewer.dispose();
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
-    <script src="https://raw.githubusercontent.com/kangmg/aseview_v2_dev/main/test_js_module/dist/aseview.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/test_js_module/dist/aseview.umd.min.js"></script>
 
     <script>
         const viewer = new ASEView.MolecularViewer('#viewer', {
