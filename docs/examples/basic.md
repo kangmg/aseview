@@ -72,6 +72,49 @@ viewer.show()
 
 ---
 
+## Partial Charge Visualization
+
+You can visualize partial charges using `colorBy="Charge"`. Atoms are colored using a coolwarm colormap: blue (negative) → white (neutral) → red (positive).
+
+### Aspirin with Partial Charges
+
+```python
+import numpy as np
+from ase import Atoms
+from aseview import MolecularViewer
+
+# Create aspirin molecule with partial charges
+aspirin = Atoms(...)  # positions defined
+charges = [-0.05, -0.10, ..., 0.50, -0.45, ...]  # partial charges
+aspirin.arrays['charges'] = np.array(charges)
+
+viewer = MolecularViewer(aspirin, style="cartoon", colorBy="Charge")
+viewer.show()
+```
+
+<iframe src="../../assets/viewers/aspirin_charges.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+
+### Ethanol with Partial Charges
+
+```python
+from ase.build import molecule
+import numpy as np
+from aseview import MolecularViewer
+
+ethanol = molecule("CH3CH2OH")
+
+# Partial charges: O is negative, acidic H is positive
+charges = [-0.18, 0.06, 0.06, 0.06, 0.15, 0.04, 0.04, -0.65, 0.42]
+ethanol.arrays['charges'] = np.array(charges)
+
+viewer = MolecularViewer(ethanol, style="glossy", colorBy="Charge")
+viewer.show()
+```
+
+<iframe src="../../assets/viewers/ethanol_charges.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+
+---
+
 ## Available Styles
 
 | Style | Description |
