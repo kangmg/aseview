@@ -620,6 +620,17 @@
                             </div>
                         </div>
 
+                        <!-- Show Charge Labels toggle - only visible when colorBy is Charge -->
+                        <div class="control-group" id="show-charge-labels-section" style="display: none;">
+                            <div class="control-label">
+                                <span>Show Labels</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-charge-labels">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
                         <!-- Color bar for charge scale -->
                         <div class="control-group" id="charge-colorbar-section" style="display: none;">
                             <div style="width: 100%; padding: 0.25rem 0;">
@@ -878,6 +889,7 @@ let settings = {
     showForces: false,
     colorBy: 'Element',  // 'Element' or 'Charge'
     normalizeCharges: false,
+    showChargeLabels: false,
     chargeColormap: 'coolwarm',
     viewMode: 'Perspective',
     rotationMode: 'TrackBall'
@@ -951,6 +963,7 @@ function checkChargesInData() {
 function updateChargeUI() {
     const colorBySection = document.getElementById('color-by-section');
     const normalizeSection = document.getElementById('normalize-charges-section');
+    const labelsSection = document.getElementById('show-charge-labels-section');
     const colorbarSection = document.getElementById('charge-colorbar-section');
 
     if (!colorBySection) return;
@@ -958,9 +971,10 @@ function updateChargeUI() {
     if (chargeStats.hasCharges) {
         colorBySection.style.display = 'block';
 
-        // Show normalize and colorbar only when colorBy is 'Charge'
+        // Show options only when colorBy is 'Charge'
         const showChargeOptions = settings.colorBy === 'Charge';
         if (normalizeSection) normalizeSection.style.display = showChargeOptions ? 'block' : 'none';
+        if (labelsSection) labelsSection.style.display = showChargeOptions ? 'block' : 'none';
         if (colorbarSection) colorbarSection.style.display = showChargeOptions ? 'block' : 'none';
 
         // Update colorbar labels
@@ -970,6 +984,7 @@ function updateChargeUI() {
     } else {
         colorBySection.style.display = 'none';
         if (normalizeSection) normalizeSection.style.display = 'none';
+        if (labelsSection) labelsSection.style.display = 'none';
         if (colorbarSection) colorbarSection.style.display = 'none';
     }
 }
@@ -982,12 +997,14 @@ function updateColorbarLabels() {
 
     let minVal, maxVal;
     if (settings.normalizeCharges) {
+        // Normalize mode: show -1.0 to +1.0 (full range used)
         minVal = -1.0;
         maxVal = 1.0;
     } else {
-        // Show actual charge range (red=negative on left, blue=positive on right)
-        minVal = chargeStats.minNegative || 0;
-        maxVal = chargeStats.maxPositive || 0;
+        // Non-normalize mode: show symmetric range based on absMax
+        const absMax = chargeStats.absMax || 1.0;
+        minVal = -absMax;
+        maxVal = absMax;
     }
 
     minLabel.textContent = minVal.toFixed(2);
@@ -1002,17 +1019,29 @@ function getChargeColor(charge, normalize = false) {
     const positiveColor = new THREE.Color(0x3b4cc0);  // Blue
 
     let resultColor = new THREE.Color();
+    let t;
 
-    // Always use actual charge range for coloring
-    // normalize parameter only affects colorbar labels display
-    if (charge >= 0) {
-        const maxPos = chargeStats.maxPositive || 1.0;
-        const normalized = maxPos > 0 ? Math.min(charge / maxPos, 1) : 0;
-        resultColor.lerpColors(neutralColor, positiveColor, normalized);
+    if (normalize) {
+        // Normalize: scale each direction to its max (full color range)
+        if (charge >= 0) {
+            const maxPos = chargeStats.maxPositive || 1.0;
+            t = maxPos > 0 ? Math.min(charge / maxPos, 1) : 0;
+            resultColor.lerpColors(neutralColor, positiveColor, t);
+        } else {
+            const minNeg = chargeStats.minNegative || -1.0;
+            t = minNeg < 0 ? Math.min(Math.abs(charge) / Math.abs(minNeg), 1) : 0;
+            resultColor.lerpColors(neutralColor, negativeColor, t);
+        }
     } else {
-        const minNeg = chargeStats.minNegative || -1.0;
-        const normalized = minNeg < 0 ? Math.min(Math.abs(charge) / Math.abs(minNeg), 1) : 0;
-        resultColor.lerpColors(neutralColor, negativeColor, normalized);
+        // Non-normalize: use symmetric range based on absMax
+        const absMax = chargeStats.absMax || 1.0;
+        if (charge >= 0) {
+            t = absMax > 0 ? Math.min(charge / absMax, 1) : 0;
+            resultColor.lerpColors(neutralColor, positiveColor, t);
+        } else {
+            t = absMax > 0 ? Math.min(Math.abs(charge) / absMax, 1) : 0;
+            resultColor.lerpColors(neutralColor, negativeColor, t);
+        }
     }
 
     return resultColor.getHex();
@@ -1081,6 +1110,47 @@ function createAtomWithColor(pos, symbol, atomScale, colorHex, styleName) {
             mesh.position.copy(pos);
             return mesh;
     }
+}
+
+// Create charge label sprite
+function createChargeLabelSprite(charge, position, atomScale) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+
+    // Format charge value
+    const sign = charge >= 0 ? '+' : '';
+    const text = sign + charge.toFixed(3);
+
+    // Draw text with outline for visibility
+    ctx.font = 'bold 32px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Outline
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 4;
+    ctx.strokeText(text, 64, 32);
+
+    // Fill with color based on charge
+    ctx.fillStyle = charge >= 0 ? '#3b82f6' : '#ef4444';
+    ctx.fillText(text, 64, 32);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        depthTest: false
+    });
+    const sprite = new THREE.Sprite(material);
+
+    // Position above the atom
+    const offset = atomScale * 0.8;
+    sprite.position.set(position.x, position.y + offset, position.z);
+    sprite.scale.set(1.2, 0.6, 1);
+
+    return sprite;
 }
 
 // Create bond with custom colors (for charge coloring)
@@ -1383,11 +1453,10 @@ function setupAxisHelper() {
     axisScene = new THREE.Scene();
     axisScene.background = null;  // Transparent background
 
-    // Create orthographic camera for axis helper (fixed position)
-    // Increased size and adjusted offset to keep arrows within viewport
-    const axisSize = 150;
-    axisCamera = new THREE.OrthographicCamera(-20, axisSize * 2 - 20, axisSize * 2 - 20, -20, -100, 100);
-    axisCamera.position.set(0, 0, 50);
+    // Create orthographic camera for axis helper (centered on origin)
+    const axisViewSize = 100;  // How much world units to show
+    axisCamera = new THREE.OrthographicCamera(-axisViewSize, axisViewSize, axisViewSize, -axisViewSize, -200, 200);
+    axisCamera.position.set(0, 0, 100);
 
     // Create a group to hold all axis objects (will be rotated)
     axisGroup = new THREE.Group();
@@ -1399,9 +1468,9 @@ function setupAxisHelper() {
         z: 0x4488ff   // Blue
     };
 
-    const axisLength = 70;  // 1.5x bigger
-    const arrowHeadLength = 16;
-    const arrowHeadWidth = 8;
+    const axisLength = 50;
+    const arrowHeadLength = 12;
+    const arrowHeadWidth = 6;
 
     // Create arrows for each axis starting from origin
     const xDir = new THREE.Vector3(1, 0, 0);
@@ -1441,7 +1510,7 @@ function setupAxisHelper() {
         const texture = new THREE.CanvasTexture(canvas);
         const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
         const sprite = new THREE.Sprite(material);
-        sprite.scale.set(18, 18, 1);  // 1.5x bigger
+        sprite.scale.set(14, 14, 1);
         return sprite;
     };
 
@@ -1449,9 +1518,9 @@ function setupAxisHelper() {
     const yLabel = createTextSprite('Y', colors.y);
     const zLabel = createTextSprite('Z', colors.z);
 
-    xLabel.position.set(axisLength + 12, 0, 0);
-    yLabel.position.set(0, axisLength + 12, 0);
-    zLabel.position.set(0, 0, axisLength + 12);
+    xLabel.position.set(axisLength + 10, 0, 0);
+    yLabel.position.set(0, axisLength + 10, 0);
+    zLabel.position.set(0, 0, axisLength + 10);
 
     axisGroup.add(xLabel);
     axisGroup.add(yLabel);
@@ -1489,8 +1558,8 @@ function animate() {
 
         // Render axis helper in bottom-left corner (transparent overlay)
         if (axisScene && axisCamera && axisGroup) {
-            // Rotate the axis group to match camera view (origin stays fixed)
-            axisGroup.quaternion.copy(camera.quaternion);
+            // Rotate axis group inversely to camera - shows world axes from camera's view
+            axisGroup.quaternion.copy(camera.quaternion).invert();
 
             // Save current state
             const currentViewport = renderer.getViewport(new THREE.Vector4());
@@ -1693,6 +1762,18 @@ function renderMolecule() {
         if (atom) {
             atom.renderOrder = 0;
             moleculeGroup.add(atom);
+        }
+    }
+
+    // Add charge labels if enabled
+    if (settings.showChargeLabels && useChargeColor && frameCharges.length > 0) {
+        for (let i = 0; i < positions.length; i++) {
+            const charge = frameCharges[i] || 0;
+            const label = createChargeLabelSprite(charge, positions[i], atomScale);
+            if (label) {
+                label.renderOrder = 4;
+                moleculeGroup.add(label);
+            }
         }
     }
 
@@ -2249,6 +2330,12 @@ function setupEventListeners() {
     safeAddListener('normalize-charges', 'change', function() {
         settings.normalizeCharges = this.checked;
         updateColorbarLabels();
+        renderMolecule();
+    });
+
+    // Show charge labels toggle
+    safeAddListener('show-charge-labels', 'change', function() {
+        settings.showChargeLabels = this.checked;
         renderMolecule();
     });
 

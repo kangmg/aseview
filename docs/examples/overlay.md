@@ -2,23 +2,13 @@
 
 Compare multiple molecular structures by overlaying them in a single view.
 
-## Live Demo: Conformer Comparison
-
-Three ethanol conformers overlaid with different colors:
+## Live Demo
 
 <iframe src="../../assets/viewers/overlay_conformers.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ---
 
-## Live Demo: Colormap Gradient
-
-Trajectory overlaid with viridis colormap (blue → green → yellow):
-
-<iframe src="../../assets/viewers/overlay_colormap.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
-
----
-
-## Comparing Two Structures
+## Basic Usage
 
 === "Python"
 
@@ -36,161 +26,75 @@ Trajectory overlaid with viridis colormap (blue → green → yellow):
 === "CLI"
 
     ```bash
-    # Auto-detected as overlay when multiple files given
     aseview2 reactant.xyz product.xyz
     ```
+
+---
 
 ## Color Modes
 
 ### Color by Atom (Default)
-
 Each atom colored by element (CPK colors):
-
 ```python
 viewer = OverlayViewer(structures, colorBy="Atom")
 ```
 
 ### Color by Molecule
-
 Each structure gets a distinct color:
-
 ```python
 viewer = OverlayViewer(structures, colorBy="Molecule")
 ```
 
-### Color by Colormap (Gradient)
-
+### Color by Colormap
 Gradient coloring for trajectories:
-
 ```python
-viewer = OverlayViewer(
-    trajectory,
-    colorBy="Colormap",
-    colormap="viridis"
-)
+viewer = OverlayViewer(trajectory, colorBy="Colormap", colormap="viridis")
 ```
+
+<iframe src="../../assets/viewers/overlay_colormap.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ### Available Colormaps
 
 | Colormap | Description |
 |----------|-------------|
-| `viridis` | Blue → Green → Yellow (perceptually uniform) |
+| `viridis` | Blue → Green → Yellow |
 | `plasma` | Purple → Orange → Yellow |
-| `coolwarm` | Blue → White → Red (diverging) |
+| `coolwarm` | Blue → White → Red |
 | `jet` | Blue → Cyan → Yellow → Red |
-| `rainbow` | Full color spectrum |
-| `grayscale` | Black → White |
 
-## Centering Molecules
+---
 
-By default, molecules are displayed at their original coordinates. To center each molecule at the origin for better comparison:
+## Molecule Alignment (Kabsch)
 
-```python
-viewer = OverlayViewer(
-    structures,
-    centerMolecules=True
-)
-```
-
-This is useful when comparing conformers that are not pre-aligned.
-
-## Aligning Molecules (Kabsch + Hungarian)
-
-For optimal structural comparison with RMSD minimization:
+Align structures for optimal RMSD comparison:
 
 ```python
-viewer = OverlayViewer(
-    structures,
-    alignMolecules=True
-)
+viewer = OverlayViewer(structures, alignMolecules=True)
 ```
 
 This performs:
-
 1. **Centering**: Both molecules centered at origin
-2. **Hungarian reordering**: Match atoms by element type and position
-3. **Kabsch rotation**: Find optimal rotation via SVD to minimize RMSD
+2. **Hungarian reordering**: Match atoms by element and position
+3. **Kabsch rotation**: Optimal rotation via SVD to minimize RMSD
 
-The first molecule is used as the reference; all others are aligned to it.
-
-!!! note "When to use alignment"
-    - **`centerMolecules`**: Simple translation to origin (fast)
-    - **`alignMolecules`**: Full RMSD minimization with rotation (more accurate)
+---
 
 ## Interactive Controls
-
-### Molecule Panel
-
-For each overlaid molecule:
 
 | Control | Description |
 |---------|-------------|
 | **Visibility toggle** | Show/hide individual structures |
-| **Opacity slider** | Adjust transparency (0-100%) |
-| **Color picker** | Change molecule color |
+| **Opacity slider** | Adjust transparency |
+| **Align Molecules** | Toggle Kabsch alignment |
 
-### Display Settings
+---
 
-| Control | Description |
-|---------|-------------|
-| **Center Molecules** | Toggle centering at origin |
-| **Align Molecules (Kabsch)** | RMSD-minimizing alignment |
-| **Color by** | Switch between Atom/Molecule/Colormap |
-| **Colormap** | Select gradient colormap |
-
-## Examples
-
-### Reaction Path
-
-```python
-from ase.io import read
-from aseview import OverlayViewer
-
-# Load IRC trajectory
-irc = read("irc.xyz", index=":")
-
-viewer = OverlayViewer(
-    irc,
-    colorBy="Colormap",
-    colormap="coolwarm"  # Blue (reactant) → Red (product)
-)
-viewer.show()
-```
-
-### Conformer Comparison
-
-```python
-# Compare multiple conformers
-conformers = [read(f"conf{i}.xyz") for i in range(1, 5)]
-
-viewer = OverlayViewer(
-    conformers,
-    centerMolecules=True,  # Align at center
-    colorBy="Molecule"
-)
-viewer.show()
-```
-
-### Optimization Overlay
-
-```python
-# Overlay first and last frames of optimization
-traj = read("optimization.xyz", index=":")
-first_last = [traj[0], traj[-1]]
-
-viewer = OverlayViewer(
-    first_last,
-    colorBy="Molecule"
-)
-viewer.show()
-```
-
-### CLI with Colormap
+## CLI Options
 
 ```bash
-# Overlay trajectory with plasma colormap
-aseview2 trajectory.xyz -v overlay --cmap plasma
+# With colormap
+aseview2 trajectory.xyz -v overlay --cmap viridis
 
-# Multiple files with viridis
-aseview2 *.xyz --cmap viridis
+# Multiple files
+aseview2 *.xyz --cmap plasma
 ```
