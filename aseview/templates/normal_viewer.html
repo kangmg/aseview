@@ -296,6 +296,48 @@
             justify-content: center;
         }
 
+        /* Animation control buttons */
+        .animation-btn-group {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .anim-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(145deg, #3b4252, #2e3440);
+            color: #eceff4;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .anim-btn:hover {
+            background: linear-gradient(145deg, #4c566a, #3b4252);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .anim-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .anim-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .anim-btn.playing {
+            background: linear-gradient(145deg, #5e81ac, #4c6a91);
+        }
+
         .viewer-container {
             flex: 1;
             display: flex;
@@ -631,19 +673,24 @@
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                            <button class="toolbar-btn" id="play-btn">
-                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <div class="animation-btn-group">
+                            <button class="anim-btn" id="play-btn" title="Play/Pause">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                                 </svg>
                             </button>
-                            <button class="toolbar-btn" id="copy-btn">
-                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <button class="anim-btn" id="copy-btn" title="Copy current frame">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                 </svg>
                             </button>
-                            <button class="toolbar-btn" id="layers-btn">
-                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <button class="anim-btn" id="copy-all-btn" title="Copy all frames">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </button>
+                            <button class="anim-btn" id="layers-btn" title="Mode selector">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                                 </svg>
                             </button>
@@ -687,7 +734,6 @@
             <div class="viewer-container">
                 <div class="viewer" id="viewer">
                     <canvas id="molecule-canvas"></canvas>
-                    <div class="help-text" id="help-text">Drag to rotate • Scroll to zoom</div>
                 </div>
             </div>
         </div>
@@ -949,10 +995,10 @@ function animate() {
             const currentViewport = renderer.getViewport(new THREE.Vector4());
             const currentAutoClear = renderer.autoClear;
 
-            // Set viewport for axis helper (bottom-left corner, 1.5x bigger, slight margin)
-            const axisViewportSize = 120;
-            renderer.setViewport(8, 8, axisViewportSize, axisViewportSize);
-            renderer.setScissor(8, 8, axisViewportSize, axisViewportSize);
+            // Set viewport for axis helper (bottom-left corner with increased margin)
+            const axisViewportSize = 150;
+            renderer.setViewport(20, 20, axisViewportSize, axisViewportSize);
+            renderer.setScissor(20, 20, axisViewportSize, axisViewportSize);
             renderer.setScissorTest(true);
 
             // Disable auto clear to preserve main scene, only clear depth
@@ -976,9 +1022,9 @@ function setupAxisHelper() {
     axisScene.background = null;  // Transparent background
 
     // Create orthographic camera for axis helper (fixed position)
-    // Size 1.5x bigger: viewport 120px, slight offset for margin
-    const axisSize = 120;
-    axisCamera = new THREE.OrthographicCamera(-15, axisSize * 2 - 15, axisSize * 2 - 15, -15, -100, 100);
+    // Increased size and adjusted offset to keep arrows within viewport
+    const axisSize = 150;
+    axisCamera = new THREE.OrthographicCamera(-20, axisSize * 2 - 20, axisSize * 2 - 20, -20, -100, 100);
     axisCamera.position.set(0, 0, 50);
 
     // Create a group to hold all axis objects (will be rotated)
@@ -1458,6 +1504,76 @@ function copyCurrentFrameToClipboard() {
     }
 }
 
+function getAllFramesAsXYZ() {
+    if (!molecularData || molecularData.length === 0) return '';
+
+    let xyzString = '';
+    for (let i = 0; i < molecularData.length; i++) {
+        const molecule = molecularData[i];
+        if (!molecule) continue;
+
+        const numAtoms = molecule.positions.length;
+        xyzString += `${numAtoms}\n`;
+        xyzString += `Frame ${i + 1}`;
+        if (molecule.energy !== undefined) {
+            xyzString += ` Energy: ${molecule.energy}`;
+        }
+        xyzString += '\n';
+
+        for (let j = 0; j < numAtoms; j++) {
+            const symbol = molecule.symbols[j];
+            const pos = molecule.positions[j];
+            xyzString += `${symbol}  ${pos[0].toFixed(6)}  ${pos[1].toFixed(6)}  ${pos[2].toFixed(6)}\n`;
+        }
+    }
+
+    return xyzString;
+}
+
+function copyAllFramesToClipboard() {
+    const xyzString = getAllFramesAsXYZ();
+
+    if (!xyzString) {
+        alert('No molecular data to copy');
+        return;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(xyzString).then(() => {
+            const copyAllBtn = document.getElementById('copy-all-btn');
+            if (copyAllBtn) {
+                const originalHTML = copyAllBtn.innerHTML;
+                copyAllBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                `;
+                setTimeout(() => {
+                    copyAllBtn.innerHTML = originalHTML;
+                }, 1000);
+            }
+            console.log(`Copied ${molecularData.length} frames to clipboard`);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy to clipboard');
+        });
+    } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = xyzString;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            alert(`Copied ${molecularData.length} frames to clipboard!`);
+        } catch (err) {
+            alert('Failed to copy to clipboard');
+        }
+        document.body.removeChild(textArea);
+    }
+}
+
 function setMolecularData(data) {
     molecularData = Array.isArray(data) ? data : [data];
     cameraNeedsFit = true;
@@ -1689,6 +1805,7 @@ function setupEventListeners() {
     safeAddListener('add-periodicity-btn', 'click', addPeriodicity);
     safeAddListener('play-btn', 'click', toggleAnimation);
     safeAddListener('copy-btn', 'click', copyCurrentFrameToClipboard);
+    safeAddListener('copy-all-btn', 'click', copyAllFramesToClipboard);
     safeAddListener('video-btn', 'click', saveAsGIF);
     safeAddListener('download-btn', 'click', saveAsPNG);
 }

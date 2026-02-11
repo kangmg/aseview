@@ -317,6 +317,48 @@
             justify-content: center;
         }
 
+        /* Animation control buttons */
+        .animation-btn-group {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .anim-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(145deg, #3b4252, #2e3440);
+            color: #eceff4;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .anim-btn:hover {
+            background: linear-gradient(145deg, #4c566a, #3b4252);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .anim-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .anim-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .anim-btn.playing {
+            background: linear-gradient(145deg, #5e81ac, #4c6a91);
+        }
+
         .viewer-container {
             flex: 1;
             display: flex;
@@ -694,15 +736,20 @@
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                            <button class="toolbar-btn" id="play-btn">
-                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <div class="animation-btn-group">
+                            <button class="anim-btn" id="play-btn" title="Play/Pause">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                                 </svg>
                             </button>
-                            <button class="toolbar-btn" id="copy-btn">
-                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <button class="anim-btn" id="copy-btn" title="Copy current frame">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                            </button>
+                            <button class="anim-btn" id="copy-all-btn" title="Copy all frames">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </button>
                         </div>
@@ -745,7 +792,6 @@
             <div class="viewer-container">
                 <div class="viewer" id="viewer">
                     <canvas id="molecule-canvas"></canvas>
-                    <div class="help-text" id="help-text">Drag to rotate • Scroll to zoom</div>
                 </div>
                 <!-- Energy Plot -->
                 <div class="energy-plot-container" id="energy-plot-container" style="display: none;">
@@ -870,7 +916,7 @@ const bondFactories = {
 };
 
 // Charge coloring utilities
-let chargeStats = { hasCharges: false, min: 0, max: 0 };
+let chargeStats = { hasCharges: false, min: 0, max: 0, maxPositive: 0, minNegative: 0 };
 
 function checkChargesInData() {
     if (!molecularData || molecularData.length === 0) return false;
@@ -890,6 +936,11 @@ function checkChargesInData() {
         chargeStats.min = Math.min(...allCharges);
         chargeStats.max = Math.max(...allCharges);
         chargeStats.absMax = Math.max(Math.abs(chargeStats.min), Math.abs(chargeStats.max));
+        // Track positive and negative ranges separately
+        const positiveCharges = allCharges.filter(c => c > 0);
+        const negativeCharges = allCharges.filter(c => c < 0);
+        chargeStats.maxPositive = positiveCharges.length > 0 ? Math.max(...positiveCharges) : 0;
+        chargeStats.minNegative = negativeCharges.length > 0 ? Math.min(...negativeCharges) : 0;
     } else {
         chargeStats.hasCharges = false;
     }
@@ -946,34 +997,32 @@ function updateColorbarLabels() {
 
 // Coolwarm colormap: blue (negative) -> white (zero) -> red (positive)
 function getChargeColor(charge, normalize = false) {
-    let normalizedCharge;
-
-    if (normalize) {
-        // Normalize to -1 to 1 based on actual range
-        const absMax = chargeStats.absMax || 1.0;
-        normalizedCharge = absMax > 0 ? charge / absMax : 0;
-    } else {
-        // Use symmetric range centered at 0
-        const absMax = chargeStats.absMax || 1.0;
-        normalizedCharge = absMax > 0 ? charge / absMax : 0;
-    }
-
-    // Clamp to -1 to 1
-    normalizedCharge = Math.max(-1, Math.min(1, normalizedCharge));
-
     // Coolwarm colormap
     const negativeColor = new THREE.Color(0x3b4cc0);  // Blue
     const neutralColor = new THREE.Color(0xf7f7f7);   // White
     const positiveColor = new THREE.Color(0xb40426);  // Red
 
-    let resultColor;
-    if (normalizedCharge <= 0) {
-        // Interpolate from negative (blue) to neutral (white)
-        const t = 1 + normalizedCharge;  // 0 to 1
-        resultColor = negativeColor.clone().lerp(neutralColor, t);
+    let resultColor = new THREE.Color();
+
+    if (normalize) {
+        // Normalize positive and negative independently
+        if (charge >= 0) {
+            const maxPos = chargeStats.maxPositive || 1.0;
+            const normalized = maxPos > 0 ? Math.min(charge / maxPos, 1) : 0;
+            resultColor.lerpColors(neutralColor, positiveColor, normalized);
+        } else {
+            const minNeg = chargeStats.minNegative || -1.0;
+            const normalized = minNeg < 0 ? Math.min(Math.abs(charge) / Math.abs(minNeg), 1) : 0;
+            resultColor.lerpColors(neutralColor, negativeColor, normalized);
+        }
     } else {
-        // Interpolate from neutral (white) to positive (red)
-        resultColor = neutralColor.clone().lerp(positiveColor, normalizedCharge);
+        // Use fixed range -1 to 1
+        const clampedCharge = Math.max(-1, Math.min(1, charge));
+        if (clampedCharge >= 0) {
+            resultColor.lerpColors(neutralColor, positiveColor, clampedCharge);
+        } else {
+            resultColor.lerpColors(neutralColor, negativeColor, Math.abs(clampedCharge));
+        }
     }
 
     return resultColor.getHex();
@@ -1042,6 +1091,80 @@ function createAtomWithColor(pos, symbol, atomScale, colorHex, styleName) {
             mesh.position.copy(pos);
             return mesh;
     }
+}
+
+// Create bond with custom colors (for charge coloring)
+function createBondWithColor(pos1, pos2, bondRadius, color1Hex, color2Hex, styleName) {
+    const group = new THREE.Group();
+
+    const midpoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
+    const direction = new THREE.Vector3().subVectors(pos2, pos1);
+    const length = direction.length();
+    const halfLength = length / 2;
+
+    // Darken colors for bonds
+    const darkenFactor = 0.7;
+    const bondColor1 = new THREE.Color(color1Hex).multiplyScalar(darkenFactor).getHex();
+    const bondColor2 = new THREE.Color(color2Hex).multiplyScalar(darkenFactor).getHex();
+
+    let material1, material2;
+
+    switch (styleName) {
+        case 'neon':
+            // Use lines for neon style
+            const points1 = [pos1, midpoint];
+            const geometry1 = new THREE.BufferGeometry().setFromPoints(points1);
+            material1 = new THREE.LineBasicMaterial({ color: bondColor1, linewidth: 2 });
+            group.add(new THREE.Line(geometry1, material1));
+
+            const points2 = [midpoint, pos2];
+            const geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
+            material2 = new THREE.LineBasicMaterial({ color: bondColor2, linewidth: 2 });
+            group.add(new THREE.Line(geometry2, material2));
+            return group;
+
+        case 'cartoon':
+            material1 = new THREE.MeshToonMaterial({ color: bondColor1 });
+            material2 = new THREE.MeshToonMaterial({ color: bondColor2 });
+            break;
+
+        case 'metallic':
+            material1 = new THREE.MeshStandardMaterial({ color: bondColor1, metalness: 0.8, roughness: 0.2 });
+            material2 = new THREE.MeshStandardMaterial({ color: bondColor2, metalness: 0.8, roughness: 0.2 });
+            break;
+
+        case 'glossy':
+            material1 = new THREE.MeshPhongMaterial({ color: bondColor1, shininess: 100, specular: 0x444444 });
+            material2 = new THREE.MeshPhongMaterial({ color: bondColor2, shininess: 100, specular: 0x444444 });
+            break;
+
+        case 'bubble':
+            material1 = new THREE.MeshPhongMaterial({ color: bondColor1, transparent: true, opacity: 0.6, shininess: 100, specular: 0xffffff });
+            material2 = new THREE.MeshPhongMaterial({ color: bondColor2, transparent: true, opacity: 0.6, shininess: 100, specular: 0xffffff });
+            break;
+
+        default:
+            material1 = new THREE.MeshPhongMaterial({ color: bondColor1, shininess: 30 });
+            material2 = new THREE.MeshPhongMaterial({ color: bondColor2, shininess: 30 });
+    }
+
+    // First half
+    const cylGeom1 = new THREE.CylinderGeometry(bondRadius, bondRadius, halfLength, 16);
+    const cylinder1 = new THREE.Mesh(cylGeom1, material1);
+    const half1Mid = new THREE.Vector3().addVectors(pos1, midpoint).multiplyScalar(0.5);
+    cylinder1.position.copy(half1Mid);
+    cylinder1.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+    group.add(cylinder1);
+
+    // Second half
+    const cylGeom2 = new THREE.CylinderGeometry(bondRadius, bondRadius, halfLength, 16);
+    const cylinder2 = new THREE.Mesh(cylGeom2, material2);
+    const half2Mid = new THREE.Vector3().addVectors(midpoint, pos2).multiplyScalar(0.5);
+    cylinder2.position.copy(half2Mid);
+    cylinder2.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+    group.add(cylinder2);
+
+    return group;
 }
 
 let scene = null;
@@ -1271,9 +1394,9 @@ function setupAxisHelper() {
     axisScene.background = null;  // Transparent background
 
     // Create orthographic camera for axis helper (fixed position)
-    // Size 1.5x bigger: viewport 120px, slight offset for margin
-    const axisSize = 120;
-    axisCamera = new THREE.OrthographicCamera(-15, axisSize * 2 - 15, axisSize * 2 - 15, -15, -100, 100);
+    // Increased size and adjusted offset to keep arrows within viewport
+    const axisSize = 150;
+    axisCamera = new THREE.OrthographicCamera(-20, axisSize * 2 - 20, axisSize * 2 - 20, -20, -100, 100);
     axisCamera.position.set(0, 0, 50);
 
     // Create a group to hold all axis objects (will be rotated)
@@ -1383,10 +1506,10 @@ function animate() {
             const currentViewport = renderer.getViewport(new THREE.Vector4());
             const currentAutoClear = renderer.autoClear;
 
-            // Set viewport for axis helper (bottom-left corner, 1.5x bigger, slight margin)
-            const axisViewportSize = 120;
-            renderer.setViewport(8, 8, axisViewportSize, axisViewportSize);
-            renderer.setScissor(8, 8, axisViewportSize, axisViewportSize);
+            // Set viewport for axis helper (bottom-left corner with increased margin)
+            const axisViewportSize = 150;
+            renderer.setViewport(20, 20, axisViewportSize, axisViewportSize);
+            renderer.setScissor(20, 20, axisViewportSize, axisViewportSize);
             renderer.setScissorTest(true);
 
             // Disable auto clear to preserve main scene, only clear depth
@@ -1500,43 +1623,59 @@ function renderMolecule() {
         moleculeGroup.add(cellMesh);
     }
 
+    // Get charges for current frame (if available)
+    const frameCharges = molecule.charges || [];
+    const useChargeColor = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
+
+    // Pre-calculate charge colors for all atoms
+    const atomChargeColors = [];
+    if (useChargeColor) {
+        for (let i = 0; i < positions.length; i++) {
+            const charge = frameCharges[i] || 0;
+            atomChargeColors[i] = getChargeColor(charge, settings.normalizeCharges);
+        }
+    }
+
     if (settings.showBond) {
         let bondCount = 0;
         for (let i = 0; i < positions.length; i++) {
             for (let j = i + 1; j < positions.length; j++) {
                 const dist = positions[i].distanceTo(positions[j]);
-                
+
                 // Calculate bond cutoff based on covalent radii of both atoms
                 const info1 = atomInfo[symbols[i]] || atomInfo['default'];
                 const info2 = atomInfo[symbols[j]] || atomInfo['default'];
                 const covalentRadiusSum = info1.radius + info2.radius;
                 const adjustedCutoff = covalentRadiusSum * bondCutoff;
-                
+
                 if (dist <= adjustedCutoff) {
-                    const bond = bondFactory(
-                        positions[i],
-                        positions[j],
-                        symbols[i],
-                        symbols[j],
-                        bondRadius,
-                        atomScale,
-                        helpers
-                    );
+                    let bond;
+                    if (useChargeColor) {
+                        // Use charge-based coloring for bonds
+                        bond = createBondWithColor(
+                            positions[i],
+                            positions[j],
+                            bondRadius,
+                            atomChargeColors[i],
+                            atomChargeColors[j],
+                            styleName
+                        );
+                    } else {
+                        // Use element-based coloring
+                        bond = bondFactory(
+                            positions[i],
+                            positions[j],
+                            symbols[i],
+                            symbols[j],
+                            bondRadius,
+                            atomScale,
+                            helpers
+                        );
+                    }
                     if (bond) {
                         bond.renderOrder = 1;
                         moleculeGroup.add(bond);
                         bondCount++;
-                        
-                        // Debug: Log bond colors
-                        if (bondCount === 1) {
-                            console.log('Style:', styleName);
-                            console.log('Bond factory:', bondFactory.name || 'anonymous');
-                            bond.traverse((child) => {
-                                if (child.material && child.material.color) {
-                                    console.log('Bond material color:', '#' + child.material.color.getHexString());
-                                }
-                            });
-                        }
                     }
                 }
             }
@@ -1544,18 +1683,12 @@ function renderMolecule() {
         console.log('Total bonds created:', bondCount, 'for style:', styleName);
     }
 
-    // Get charges for current frame (if available)
-    const frameCharges = molecule.charges || [];
-    const useChargeColor = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
-
     for (let i = 0; i < positions.length; i++) {
         let atom;
 
         if (useChargeColor) {
-            // Use charge-based coloring
-            const charge = frameCharges[i] || 0;
-            const chargeColor = getChargeColor(charge, settings.normalizeCharges);
-            atom = createAtomWithColor(positions[i], symbols[i], atomScale, chargeColor, styleName);
+            // Use charge-based coloring (colors already calculated)
+            atom = createAtomWithColor(positions[i], symbols[i], atomScale, atomChargeColors[i], styleName);
         } else {
             // Use element-based coloring (default)
             atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
@@ -1775,6 +1908,76 @@ function copyCurrentFrameToClipboard() {
         try {
             document.execCommand('copy');
             alert('Copied to clipboard!');
+        } catch (err) {
+            alert('Failed to copy to clipboard');
+        }
+        document.body.removeChild(textArea);
+    }
+}
+
+function getAllFramesAsXYZ() {
+    if (!molecularData || molecularData.length === 0) return '';
+
+    let xyzString = '';
+    for (let i = 0; i < molecularData.length; i++) {
+        const molecule = molecularData[i];
+        if (!molecule) continue;
+
+        const numAtoms = molecule.positions.length;
+        xyzString += `${numAtoms}\n`;
+        xyzString += `Frame ${i + 1}`;
+        if (molecule.energy !== undefined) {
+            xyzString += ` Energy: ${molecule.energy}`;
+        }
+        xyzString += '\n';
+
+        for (let j = 0; j < numAtoms; j++) {
+            const symbol = molecule.symbols[j];
+            const pos = molecule.positions[j];
+            xyzString += `${symbol}  ${pos[0].toFixed(6)}  ${pos[1].toFixed(6)}  ${pos[2].toFixed(6)}\n`;
+        }
+    }
+
+    return xyzString;
+}
+
+function copyAllFramesToClipboard() {
+    const xyzString = getAllFramesAsXYZ();
+
+    if (!xyzString) {
+        alert('No molecular data to copy');
+        return;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(xyzString).then(() => {
+            const copyAllBtn = document.getElementById('copy-all-btn');
+            if (copyAllBtn) {
+                const originalHTML = copyAllBtn.innerHTML;
+                copyAllBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                `;
+                setTimeout(() => {
+                    copyAllBtn.innerHTML = originalHTML;
+                }, 1000);
+            }
+            console.log(`Copied ${molecularData.length} frames to clipboard`);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy to clipboard');
+        });
+    } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = xyzString;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            alert(`Copied ${molecularData.length} frames to clipboard!`);
         } catch (err) {
             alert('Failed to copy to clipboard');
         }
@@ -2066,6 +2269,7 @@ function setupEventListeners() {
     safeAddListener('add-periodicity-btn', 'click', addPeriodicity);
     safeAddListener('play-btn', 'click', toggleAnimation);
     safeAddListener('copy-btn', 'click', copyCurrentFrameToClipboard);
+    safeAddListener('copy-all-btn', 'click', copyAllFramesToClipboard);
     safeAddListener('video-btn', 'click', saveAsGIF);
     safeAddListener('download-btn', 'click', saveAsPNG);
 
