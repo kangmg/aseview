@@ -390,7 +390,7 @@
     /**
      * Detect bonds between atoms based on covalent radii
      */
-    function detectBonds(positions, symbols, threshold = 1.5) {
+    function detectBonds(positions, symbols, threshold = 1.2) {
         const bonds = [];
         const n = positions.length;
 
@@ -746,7 +746,7 @@
                 showCell: false,
                 atomSize: 1.0,
                 bondThickness: 0.15,
-                bondThreshold: 1.5,
+                bondThreshold: 1.2,
                 colorBy: 'Element',  // 'Element' or 'Charge'
                 ...options
             };

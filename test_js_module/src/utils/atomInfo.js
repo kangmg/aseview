@@ -88,7 +88,7 @@ export function getAtomInfo(symbol) {
 /**
  * Detect bonds between atoms based on covalent radii
  */
-export function detectBonds(positions, symbols, threshold = 1.5) {
+export function detectBonds(positions, symbols, threshold = 1.2) {
     const bonds = [];
     const n = positions.length;
 
