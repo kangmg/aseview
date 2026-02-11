@@ -309,24 +309,20 @@
             justify-content: center;
             width: 36px;
             height: 36px;
-            border: none;
-            border-radius: 8px;
-            background: linear-gradient(145deg, #3b4252, #2e3440);
-            color: #eceff4;
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            background-color: var(--hover-color);
+            color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.15s ease;
         }
 
         .anim-btn:hover {
-            background: linear-gradient(145deg, #4c566a, #3b4252);
-            transform: translateY(-1px);
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            background-color: var(--border-color);
         }
 
         .anim-btn:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            background-color: var(--card-bg);
         }
 
         .anim-btn svg {
@@ -335,7 +331,8 @@
         }
 
         .anim-btn.playing {
-            background: linear-gradient(145deg, #5e81ac, #4c6a91);
+            background-color: #5e81ac;
+            color: #eceff4;
         }
 
         .viewer-container {
@@ -561,6 +558,16 @@
 
                         <div class="control-group">
                             <div class="control-label">
+                                <span>Axis</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-axis" checked>
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
                                 <span>View Mode</span>
                             </div>
                             <div class="button-group">
@@ -765,6 +772,7 @@ let settings = {
     showShading: true,
     showEnergyPlot: false,
     showForces: false,
+    showAxis: true,
     showModeVector: false,
     viewMode: 'Perspective',
     rotationMode: 'TrackBall'
@@ -982,7 +990,7 @@ function animate() {
         renderer.render(scene, camera);
 
         // Render axis helper in bottom-left corner (transparent overlay)
-        if (axisScene && axisCamera && axisGroup) {
+        if (settings.showAxis && axisScene && axisCamera && axisGroup) {
             // Rotate axis group inversely to camera - shows world axes from camera's view
             axisGroup.quaternion.copy(camera.quaternion).invert();
 
@@ -990,11 +998,12 @@ function animate() {
             const currentViewport = renderer.getViewport(new THREE.Vector4());
             const currentAutoClear = renderer.autoClear;
 
-            // Set viewport for axis helper (bottom-left corner with margin to prevent clipping)
+            // Set viewport for axis helper (bottom-left corner)
             const axisViewportSize = 150;
-            const axisMargin = 35;
-            renderer.setViewport(axisMargin, axisMargin, axisViewportSize, axisViewportSize);
-            renderer.setScissor(axisMargin, axisMargin, axisViewportSize, axisViewportSize);
+            const axisMarginX = 15;
+            const axisMarginY = 20;
+            renderer.setViewport(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
+            renderer.setScissor(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
             renderer.setScissorTest(true);
 
             // Disable auto clear to preserve main scene, only clear depth
@@ -1779,6 +1788,11 @@ function setupEventListeners() {
     safeAddListener('show-forces', 'change', function() {
         settings.showForces = this.checked;
         renderMolecule();
+    });
+
+    safeAddListener('show-axis', 'change', function() {
+        settings.showAxis = this.checked;
+        render();
     });
 
     safeAddListener('show-vectors', 'change', function() {
