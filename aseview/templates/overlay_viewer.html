@@ -2208,9 +2208,9 @@
                 return [[1,0,0], [0,1,0], [0,0,1]]; // Identity
             }
 
-            // Compute covariance matrix H = Q^T * P
+            // Compute covariance matrix H = P^T * Q
             // This finds R such that R * Q ≈ P
-            const H = covarianceMatrix(Q, P);
+            const H = covarianceMatrix(P, Q);
 
             // SVD of H
             const { U, S, V } = svd3x3(H);
