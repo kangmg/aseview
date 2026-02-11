@@ -2,6 +2,8 @@
 
 Standalone JavaScript library for molecular visualization. Use it in any web page without Python.
 
+[**Live Demo**](demo.html){ .md-button }
+
 ## CDN Usage (GitHub Raw)
 
 ```html
