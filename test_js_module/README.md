@@ -59,7 +59,7 @@ const viewer = new ASEView.MolecularViewer(container, options);
 - `colorBy` - Color mode: `'Element'` or `'Charge'`
 - `atomSize` - Atom size scale (default: `1.0`)
 - `bondThickness` - Bond radius (default: `0.15`)
-- `bondThreshold` - Bond detection threshold (default: `1.5`)
+- `bondThreshold` - Bond detection threshold (default: `1.2`)
 - `showBond` - Show bonds (default: `true`)
 - `showCell` - Show unit cell (default: `false`)
 

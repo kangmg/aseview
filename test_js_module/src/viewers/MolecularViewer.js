@@ -20,7 +20,7 @@ export class MolecularViewer {
             showCell: false,
             atomSize: 1.0,
             bondThickness: 0.15,
-            bondThreshold: 1.5,
+            bondThreshold: 1.2,
             colorBy: 'Element',  // 'Element' or 'Charge'
             ...options
         };
