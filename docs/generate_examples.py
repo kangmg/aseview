@@ -385,73 +385,84 @@ def create_fcc_metal_viewer():
     print("Created copper_fcc.html")
 
 
-def create_aspirin_charge_viewer():
-    """Create aspirin molecule with partial charge visualization."""
-    # Aspirin (acetylsalicylic acid) C9H8O4
-    # Approximate 3D coordinates
-    aspirin = Atoms(
-        symbols=['C', 'C', 'C', 'C', 'C', 'C', 'C', 'O', 'O', 'C', 'O', 'O', 'C',
-                 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
+def create_phosphine_charge_viewer():
+    """Create triphenylphosphine molecule with partial charge visualization."""
+    # Triphenylphosphine-like molecule with P center
+    phosphine = Atoms(
+        symbols=['C', 'C', 'O', 'P', 'H', 'C', 'C', 'C', 'C', 'H', 'C', 'H', 'C', 'H', 'H', 'H',
+                 'C', 'C', 'C', 'C', 'H', 'C', 'H', 'C', 'H', 'H', 'H',
+                 'C', 'C', 'C', 'C', 'H', 'C', 'H', 'C', 'H', 'H', 'H',
+                 'C', 'H', 'H', 'H', 'C', 'H', 'H', 'H', 'H'],
         positions=[
-            # Benzene ring
-            [0.000, 1.400, 0.000],   # C1
-            [1.212, 0.700, 0.000],   # C2
-            [1.212, -0.700, 0.000],  # C3
-            [0.000, -1.400, 0.000],  # C4
-            [-1.212, -0.700, 0.000], # C5
-            [-1.212, 0.700, 0.000],  # C6
-            # Carboxylic acid group
-            [0.000, 2.900, 0.000],   # C7 (COOH carbon)
-            [1.100, 3.500, 0.000],   # O (=O)
-            [-1.100, 3.600, 0.000],  # O (OH)
-            # Acetyl group
-            [-2.500, 1.300, 0.000],  # C8 (acetyl C)
-            [-2.400, -1.400, 0.000], # O (ester O)
-            [-3.600, 0.700, 0.000],  # O (=O)
-            [-2.600, 2.800, 0.000],  # C9 (methyl)
-            # Hydrogens
-            [2.156, 1.250, 0.000],   # H on C2
-            [2.156, -1.250, 0.000],  # H on C3
-            [0.000, -2.490, 0.000],  # H on C4
-            [-2.156, -1.250, 0.000], # H on C5
-            [-1.000, 4.560, 0.000],  # H on COOH
-            [-3.400, 3.200, 0.900],  # H on methyl
-            [-3.400, 3.200, -0.900], # H on methyl
-            [-1.700, 3.400, 0.000],  # H on methyl
+            [-1.450827, -1.737032, 1.036957],
+            [-1.237239, -1.242182, 2.469770],
+            [-0.302701, -0.154739, 2.173112],
+            [-0.175123, -0.288858, 0.477351],
+            [-0.692752, -1.973794, 3.079871],
+            [-1.321641, 0.590023, -0.710356],
+            [-1.416249, 0.316537, -2.082437],
+            [-2.164868, 1.570102, -0.159671],
+            [-2.333323, 1.007374, -2.883611],
+            [-0.771664, -0.422915, -2.545414],
+            [-3.086658, 2.252319, -0.957761],
+            [-2.102498, 1.811603, 0.898579],
+            [-3.175449, 1.972217, -2.325043],
+            [-2.384614, 0.787877, -3.946900],
+            [-3.731184, 3.004342, -0.510295],
+            [-3.889341, 2.503663, -2.948197],
+            [1.060058, 1.202925, 0.512177],
+            [1.626613, 1.611358, -0.710060],
+            [1.414893, 1.930588, 1.660761],
+            [2.512089, 2.688546, -0.787579],
+            [1.381869, 1.079259, -1.625809],
+            [2.298839, 3.016923, 1.590660],
+            [1.002143, 1.647801, 2.621096],
+            [2.853216, 3.400310, 0.368173],
+            [2.933792, 2.971811, -1.748789],
+            [2.552737, 3.559290, 2.498335],
+            [3.540268, 4.240706, 0.313683],
+            [1.015325, -1.465638, -0.354058],
+            [2.349228, -1.520924, 0.079158],
+            [0.575887, -2.417359, -1.290946],
+            [3.224214, -2.493662, -0.415966],
+            [2.713772, -0.807609, 0.811543],
+            [1.459158, -3.363106, -1.817026],
+            [-0.462154, -2.437643, -1.607783],
+            [2.786418, -3.408585, -1.376212],
+            [4.248384, -2.527658, -0.054273],
+            [1.104614, -4.075043, -2.557541],
+            [3.468716, -4.155756, -1.772097],
+            [-2.425796, -0.719459, 3.260493],
+            [-2.086685, -0.280880, 4.205484],
+            [-2.980400, 0.045097, 2.707630],
+            [-3.113280, -1.539529, 3.498833],
+            [-2.871566, -1.829498, 0.491716],
+            [-3.449353, -2.593170, 1.031144],
+            [-3.421248, -0.886713, 0.563562],
+            [-2.862052, -2.121865, -0.564535],
+            [-0.958633, -2.703662, 0.893846]
         ]
     )
 
-    # Partial charges (approximate Gasteiger-like charges)
-    # Negative on oxygens, positive on carbons bonded to O
+    # Partial charges from DFT calculation
     charges = [
-        -0.05,  # C1 (ring)
-        -0.10,  # C2 (ring)
-        -0.10,  # C3 (ring)
-        -0.10,  # C4 (ring)
-        -0.10,  # C5 (ring)
-        0.10,   # C6 (ring, connected to ester O)
-        0.50,   # C7 (carboxyl carbon, very positive)
-        -0.45,  # O (=O of COOH)
-        -0.55,  # O (OH of COOH)
-        0.45,   # C8 (acetyl carbonyl carbon)
-        -0.30,  # O (ester oxygen)
-        -0.40,  # O (=O of acetyl)
-        -0.15,  # C9 (methyl)
-        0.10,   # H
-        0.10,   # H
-        0.10,   # H
-        0.10,   # H
-        0.40,   # H (on COOH, acidic)
-        0.05,   # H (methyl)
-        0.05,   # H (methyl)
-        0.05,   # H (methyl)
+        0.0, 0.0, 0.06482878, 0.0, -0.01466073,
+        0.0, 0.036884, 0.02864599, 0.04268293, -0.03649907,
+        0.04313092, -0.01624414, 0.04600992, -0.01249285, -0.02825931,
+        -0.01286479, 0.0, 0.03094519, 0.03708687, 0.04317401,
+        -0.03103787, 0.04241059, -0.00997932, 0.04502739, -0.02730842,
+        -0.02597865, -0.01794624, 0.01191878, 0.02973731, 0.03265756,
+        0.0, -0.01961894, 0.04197893, -0.03086294, 0.04600057,
+        -0.02808898, -0.02057052, -0.01400861, 0.0, -0.02920944,
+        -0.0244752, -0.00137575, 0.01974016, -0.03187145, -0.01698247,
+        -0.02150444, -0.00701329
     ]
 
-    aspirin.arrays['charges'] = np.array(charges)
+    phosphine.arrays['charges'] = np.array(charges)
 
-    viewer = MolecularViewer(aspirin, style="cartoon", colorBy="Charge")
-    viewer.save_html(os.path.join(OUTPUT_DIR, "aspirin_charges.html"))
-    print("Created aspirin_charges.html (partial charge visualization)")
+    viewer = MolecularViewer(phosphine, style="cartoon", colorBy="Charge")
+    viewer.save_html(os.path.join(OUTPUT_DIR, "phosphine_charges.html"))
+    print("Created phosphine_charges.html (partial charge visualization)")
 
 
 def create_ethanol_charge_viewer():
@@ -501,6 +512,6 @@ if __name__ == "__main__":
     create_nanotube_viewer()
     create_fcc_metal_viewer()
     # Charge visualization
-    create_aspirin_charge_viewer()
+    create_phosphine_charge_viewer()
     create_ethanol_charge_viewer()
     print("Done!")

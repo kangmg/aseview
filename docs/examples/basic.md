@@ -76,23 +76,23 @@ viewer.show()
 
 You can visualize partial charges using `colorBy="Charge"`. Atoms are colored using a coolwarm colormap: blue (negative) → white (neutral) → red (positive).
 
-### Aspirin with Partial Charges
+### Phosphine with Partial Charges
 
 ```python
 import numpy as np
 from ase import Atoms
 from aseview import MolecularViewer
 
-# Create aspirin molecule with partial charges
-aspirin = Atoms(...)  # positions defined
-charges = [-0.05, -0.10, ..., 0.50, -0.45, ...]  # partial charges
-aspirin.arrays['charges'] = np.array(charges)
+# Create phosphine molecule with partial charges
+phosphine = Atoms(symbols=[...], positions=[...])  # 47 atoms
+charges = [0.0, 0.0, 0.065, ...]  # partial charges from DFT
+phosphine.arrays['charges'] = np.array(charges)
 
-viewer = MolecularViewer(aspirin, style="cartoon", colorBy="Charge")
+viewer = MolecularViewer(phosphine, style="cartoon", colorBy="Charge")
 viewer.show()
 ```
 
-<iframe src="../../assets/viewers/aspirin_charges.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+<iframe src="../../assets/viewers/phosphine_charges.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ### Ethanol with Partial Charges
 
