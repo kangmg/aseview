@@ -83,6 +83,7 @@ venv.bak/
 # Project specific
 *.html
 !aseview/templates/*.html
+!docs/*.html
 *.xyz
 *.cif
 *.json

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASEView.js Demo</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        header {
+            background: #1e293b;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #334155;
+        }
+        h1 { font-size: 1.5rem; color: #60a5fa; }
+        main {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+        .sidebar {
+            width: 280px;
+            background: #1e293b;
+            padding: 1rem;
+            overflow-y: auto;
+            border-right: 1px solid #334155;
+        }
+        .viewer-container {
+            flex: 1;
+            position: relative;
+        }
+        #viewer {
+            width: 100%;
+            height: 100%;
+        }
+        .section {
+            margin-bottom: 1.5rem;
+        }
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        button {
+            background: #334155;
+            border: none;
+            color: #e2e8f0;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        button:hover { background: #475569; }
+        button.active { background: #3b82f6; }
+        select {
+            width: 100%;
+            background: #334155;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+        .info {
+            background: #334155;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+        .info code {
+            background: #1e293b;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>ASEView.js Demo</h1>
+    </header>
+    <main>
+        <div class="sidebar">
+            <div class="section">
+                <div class="section-title">Style</div>
+                <div class="btn-group" id="style-buttons">
+                    <button data-style="cartoon" class="active">Cartoon</button>
+                    <button data-style="glossy">Glossy</button>
+                    <button data-style="metallic">Metallic</button>
+                    <button data-style="neon">Neon</button>
+                    <button data-style="bubble">Bubble</button>
+                    <button data-style="rowan">Rowan</button>
+                    <button data-style="2d">2D</button>
+                    <button data-style="grey">Grey</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Color By</div>
+                <div class="btn-group" id="color-buttons">
+                    <button data-color="Element" class="active">Element</button>
+                    <button data-color="Charge">Charge</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Molecule</div>
+                <select id="molecule-select">
+                    <option value="water">Water (H₂O)</option>
+                    <option value="co2">Carbon Dioxide (CO₂)</option>
+                    <option value="methane">Methane (CH₄)</option>
+                    <option value="benzene">Benzene (C₆H₆)</option>
+                    <option value="caffeine" selected>Caffeine</option>
+                </select>
+            </div>
+
+            <div class="section">
+                <div class="info">
+                    <strong>Usage:</strong><br>
+                    Load via GitHub raw URL:<br>
+                    <code>aseview.umd.min.js</code>
+                </div>
+            </div>
+        </div>
+        <div class="viewer-container">
+            <div id="viewer"></div>
+        </div>
+    </main>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
+
+    <!-- ASEView.js - local path for testing -->
+    <script src="../test_js_module/dist/aseview.umd.js"></script>
+
+    <script>
+        // Molecule database
+        const molecules = {
+            water: {
+                symbols: ['O', 'H', 'H'],
+                positions: [[0, 0, 0.117], [0, 0.757, -0.469], [0, -0.757, -0.469]],
+                charges: [-0.82, 0.41, 0.41]
+            },
+            co2: {
+                symbols: ['C', 'O', 'O'],
+                positions: [[0, 0, 0], [1.16, 0, 0], [-1.16, 0, 0]],
+                charges: [0.7, -0.35, -0.35]
+            },
+            methane: {
+                symbols: ['C', 'H', 'H', 'H', 'H'],
+                positions: [
+                    [0, 0, 0],
+                    [0.629, 0.629, 0.629],
+                    [-0.629, -0.629, 0.629],
+                    [-0.629, 0.629, -0.629],
+                    [0.629, -0.629, -0.629]
+                ],
+                charges: [-0.48, 0.12, 0.12, 0.12, 0.12]
+            },
+            benzene: {
+                symbols: ['C', 'C', 'C', 'C', 'C', 'C', 'H', 'H', 'H', 'H', 'H', 'H'],
+                positions: [
+                    [1.39, 0, 0], [0.695, 1.204, 0], [-0.695, 1.204, 0],
+                    [-1.39, 0, 0], [-0.695, -1.204, 0], [0.695, -1.204, 0],
+                    [2.47, 0, 0], [1.235, 2.14, 0], [-1.235, 2.14, 0],
+                    [-2.47, 0, 0], [-1.235, -2.14, 0], [1.235, -2.14, 0]
+                ],
+                charges: [-0.12, -0.12, -0.12, -0.12, -0.12, -0.12, 0.12, 0.12, 0.12, 0.12, 0.12, 0.12]
+            },
+            caffeine: {
+                symbols: ['N','C','N','C','C','N','C','N','C','C','O','N','C','O','H','H','H','H','H','H','H','H','H','H'],
+                positions: [
+                    [1.287,-1.067,0],[1.998,0.121,0],[1.282,1.294,0],[-0.09,1.05,0],[-0.462,-0.326,0],
+                    [0.133,-1.32,0],[-0.678,2.247,0],[3.414,0.172,0],[-1.771,-0.809,0],[-2.781,0.187,0],
+                    [-0.114,3.308,0],[-2.009,2.007,0],[-2.549,1.536,0],[-2.06,-2,0],[3.72,1.145,0],
+                    [3.774,-0.332,0.89],[3.774,-0.332,-0.89],[-2.732,2.828,0],[-0.393,-2.247,0],
+                    [-3.598,1.832,0],[1.769,-1.964,0],[-2.883,-0.101,1.029],[-2.883,-0.101,-1.029],[-3.803,-0.166,0]
+                ],
+                charges: [-0.36,0.52,-0.56,0.32,0.18,-0.28,0.54,-0.12,0.22,0.18,-0.42,-0.34,0.28,-0.38,0.08,0.06,0.06,0.16,0.12,0.06,0.22,0.04,0.04,0.04]
+            }
+        };
+
+        // Create viewer
+        const viewer = new ASEView.MolecularViewer('#viewer', {
+            style: 'cartoon',
+            colorBy: 'Element',
+            backgroundColor: '#0f172a'
+        });
+
+        // Load default molecule
+        viewer.setData(molecules.caffeine);
+
+        // Style buttons
+        document.querySelectorAll('#style-buttons button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#style-buttons button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                viewer.setOptions({ style: btn.dataset.style });
+            });
+        });
+
+        // Color buttons
+        document.querySelectorAll('#color-buttons button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#color-buttons button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                viewer.setOptions({ colorBy: btn.dataset.color });
+            });
+        });
+
+        // Molecule select
+        document.getElementById('molecule-select').addEventListener('change', (e) => {
+            viewer.setData(molecules[e.target.value]);
+        });
+    </script>
+</body>
+</html>
