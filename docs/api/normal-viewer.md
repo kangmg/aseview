@@ -29,7 +29,7 @@ NormalViewer(atoms, vibrations=None, mode_vectors=None, frequencies=None, n_fram
 |-----------|------|-------------|---------|
 | `atomSize` | `float` | Atom sphere radius scale | `0.4` |
 | `bondThickness` | `float` | Bond cylinder radius | `0.1` |
-| `bondThreshold` | `float` | Bond detection threshold | `1.0` |
+| `bondThreshold` | `float` | Bond detection threshold | `1.2` |
 
 #### Style Settings
 

@@ -190,7 +190,7 @@ class MolecularViewer(BaseViewer):
     def __init__(self, data: Union[Atoms, Dict[str, Any], str, List], **kwargs):
         super().__init__(data)
         self.settings = {
-            "bondThreshold": 1.0,  # Scale factor for covalent radii sum
+            "bondThreshold": 1.2,  # Scale factor for covalent radii sum
             "bondThickness": 0.1,
             "atomSize": 0.4,
             "animationSpeed": 30,
@@ -423,7 +423,7 @@ class NormalViewer(BaseViewer):
         self.n_frames = n_frames
 
         self.settings = {
-            "bondThreshold": 1.0,
+            "bondThreshold": 1.2,
             "bondThickness": 0.1,
             "atomSize": 0.4,
             "animationSpeed": 30,
@@ -701,7 +701,7 @@ class OverlayViewer(BaseViewer):
             self.data = [self.data]
         
         self.settings = {
-            "bondThreshold": 1.0,  # Scale factor for covalent radii sum
+            "bondThreshold": 1.2,  # Scale factor for covalent radii sum
             "bondThickness": 0.1,
             "atomSize": 0.4,
             "backgroundColor": "#1f2937",
