@@ -100,6 +100,48 @@ const dataUrl = viewer.screenshot();
 viewer.dispose();
 ```
 
+### NormalModeViewer
+
+Viewer for molecular vibration animations.
+
+```javascript
+const viewer = new ASEView.NormalModeViewer('#container', {
+    style: 'cartoon',
+    amplitude: 1.0,
+    animationSpeed: 0.05
+});
+
+viewer.setData({
+    symbols: ['O', 'H', 'H'],
+    positions: [[0, 0, 0.117], [0, 0.757, -0.469], [0, -0.757, -0.469]],
+    displacements: [[0, 0, -0.07], [0, 0.42, 0.56], [0, -0.42, 0.56]]
+});
+
+// Control animation
+viewer.play();
+viewer.pause();
+viewer.setAmplitude(2.0);
+viewer.setAnimationSpeed(0.1);
+```
+
+### OverlayViewer
+
+Compare two molecular structures by overlaying them.
+
+```javascript
+const viewer = new ASEView.OverlayViewer('#container', {
+    style: 'cartoon',
+    opacity1: 1.0,
+    opacity2: 0.5
+});
+
+const structure1 = { symbols: ['O', 'H', 'H'], positions: [...] };
+const structure2 = { symbols: ['O', 'H', 'H'], positions: [...] };
+
+viewer.setStructures(structure1, structure2);
+viewer.setOpacity(1.0, 0.3);  // Adjust opacity
+```
+
 ### InteractiveViewer
 
 Full-featured viewer with sidebar controls (same experience as Python viewer).
@@ -119,6 +161,8 @@ The InteractiveViewer includes:
 - **Style selector**: cartoon, glossy, metallic, neon, bubble
 - **Display toggles**: Show/hide bonds and unit cell
 - **Size controls**: Atom size and bond thickness sliders
+
+Also available: `InteractiveNormalModeViewer` and `InteractiveOverlayViewer` with full UI controls.
 
 ## Jekyll / GitHub Pages Usage
 
