@@ -12,8 +12,8 @@
 (function(global) {
     'use strict';
 
-    // CDN base URL for templates
-    const CDN_BASE = 'https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/templates';
+    // CDN base URL for templates (using commit hash until merged to main)
+    const CDN_BASE = 'https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@1bfff87/aseview/templates';
 
     /**
      * Base class for all viewers
