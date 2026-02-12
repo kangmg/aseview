@@ -2,19 +2,9 @@
 
 Standalone JavaScript library for molecular visualization. Use it in any web page without Python.
 
+The JavaScript module uses the **same templates as the Python package**, ensuring identical UI and features.
+
 [**Live Demo**](demo.html){ .md-button }
-
-## CDN Usage (jsDelivr)
-
-```html
-<!-- Three.js (required) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
-
-<!-- ASEView.js -->
-<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/styles.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/aseview.js"></script>
-```
 
 ## Quick Start
 
@@ -23,24 +13,15 @@ Standalone JavaScript library for molecular visualization. Use it in any web pag
 <html>
 <head>
     <style>
-        #viewer { width: 600px; height: 400px; }
+        #viewer { width: 100%; height: 500px; }
     </style>
 </head>
 <body>
     <div id="viewer"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/styles.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/aseview.js"></script>
-
     <script>
-        const viewer = new ASEView.MolecularViewer('#viewer', {
-            style: 'cartoon',
-            backgroundColor: '#1f2937'
-        });
-
-        // Water molecule
+        const viewer = new ASEView.MolecularViewer('#viewer');
         viewer.setData({
             symbols: ['O', 'H', 'H'],
             positions: [
@@ -54,136 +35,160 @@ Standalone JavaScript library for molecular visualization. Use it in any web pag
 </html>
 ```
 
-## API
+## Available Viewers
 
 ### MolecularViewer
 
-```javascript
-const viewer = new ASEView.MolecularViewer(container, options);
-```
+Full-featured molecular structure viewer with sidebar controls.
 
-**Options:**
+**Features:**
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `style` | string | `'cartoon'` | Rendering style |
-| `backgroundColor` | string | `'#1f2937'` | Background color |
-| `atomSize` | number | `0.4` | Atom size scale |
-| `bondThickness` | number | `0.1` | Bond thickness |
-| `bondThreshold` | number | `1.2` | Bond detection threshold |
-| `showBond` | boolean | `true` | Show bonds |
-| `showCell` | boolean | `false` | Show unit cell |
-| `rotationMode` | string | `'trackball'` | `'trackball'` or `'orbit'` |
-
-**Styles:** `cartoon`, `glossy`, `metallic`, `neon`, `bubble`, `rowan`, `2d`, `grey`
-
-### Methods
+- Style selector (Cartoon, Glossy, Metallic, Neon, etc.)
+- Bond/Cell display toggles
+- Atom size and bond thickness sliders
+- Trajectory animation with playback controls
+- Energy plot visualization
+- Screenshot and GIF export
 
 ```javascript
-// Set molecular data
+const viewer = new ASEView.MolecularViewer('#container');
+
+// Single structure
 viewer.setData({
-    symbols: ['C', 'O', 'O'],
-    positions: [[0, 0, 0], [1.16, 0, 0], [-1.16, 0, 0]],
-    cell: [[10, 0, 0], [0, 10, 0], [0, 0, 10]]  // optional
+    symbols: ['C', 'C', 'O', 'H', 'H', 'H', 'H', 'H', 'H'],
+    positions: [
+        [-0.047, 0.666, 0.000],
+        [-0.047, -0.866, 0.000],
+        [1.204, 1.144, 0.000],
+        // ... more positions
+    ]
 });
 
-// Update options
-viewer.setOptions({ style: 'glossy' });
-
-// Change style
-viewer.setStyle('neon');
-
-// Take screenshot
-const dataUrl = viewer.screenshot();
-
-// Clean up
-viewer.dispose();
+// Trajectory (array of structures)
+viewer.setData([
+    { symbols: [...], positions: [...], energy: -10.5 },
+    { symbols: [...], positions: [...], energy: -10.3 },
+    // ... more frames
+]);
 ```
 
 ### NormalModeViewer
 
 Viewer for molecular vibration animations.
 
+**Features:**
+
+- Mode selector dropdown
+- Amplitude control slider
+- Animation speed control
+- Play/Pause toggle
+- Frequency display
+
 ```javascript
-const viewer = new ASEView.NormalModeViewer('#container', {
-    style: 'cartoon',
-    amplitude: 1.0,
-    animationSpeed: 0.05
-});
+const viewer = new ASEView.NormalModeViewer('#container');
 
-viewer.setData({
-    symbols: ['O', 'H', 'H'],
-    positions: [[0, 0, 0.117], [0, 0.757, -0.469], [0, -0.757, -0.469]],
-    displacements: [[0, 0, -0.07], [0, 0.42, 0.56], [0, -0.42, 0.56]]
-});
-
-// Control animation
-viewer.play();
-viewer.pause();
-viewer.setAmplitude(2.0);
-viewer.setAnimationSpeed(0.1);
+// With vibration data
+viewer.setVibrationData(
+    // Equilibrium structure
+    {
+        symbols: ['O', 'H', 'H'],
+        positions: [[0, 0, 0.117], [0, 0.757, -0.469], [0, -0.757, -0.469]]
+    },
+    // Vibration data
+    {
+        modeVectors: [
+            [[0, 0, -0.07], [0, 0.42, 0.56], [0, -0.42, 0.56]],  // Mode 1
+            [[0, 0.58, -0.39], [0, -0.42, 0.56], [0, -0.42, 0.56]],  // Mode 2
+            // ... more modes
+        ],
+        frequencies: ["1595.32", "3657.05", "3755.93"],
+        isImaginary: [false, false, false]
+    }
+);
 ```
 
 ### OverlayViewer
 
-Compare two molecular structures by overlaying them.
+Compare multiple molecular structures by overlaying them.
+
+**Features:**
+
+- Per-structure opacity controls
+- Alignment algorithms (Kabsch, Hungarian)
+- RMSD calculation and display
+- Multi-structure visualization
 
 ```javascript
-const viewer = new ASEView.OverlayViewer('#container', {
-    style: 'cartoon',
-    opacity1: 1.0,
-    opacity2: 0.5
-});
+const viewer = new ASEView.OverlayViewer('#container');
 
-const structure1 = { symbols: ['O', 'H', 'H'], positions: [...] };
-const structure2 = { symbols: ['O', 'H', 'H'], positions: [...] };
+const structure1 = {
+    symbols: ['O', 'H', 'H'],
+    positions: [[0, 0, 0.117], [0, 0.757, -0.469], [0, -0.757, -0.469]]
+};
+
+const structure2 = {
+    symbols: ['O', 'H', 'H'],
+    positions: [[0, 0, 0.050], [0, 0.900, -0.400], [0, -0.900, -0.400]]
+};
 
 viewer.setStructures(structure1, structure2);
-viewer.setOpacity(1.0, 0.3);  // Adjust opacity
+
+// Or use setData with an array
+viewer.setData([structure1, structure2]);
 ```
 
-### InteractiveViewer
+## API Reference
 
-Full-featured viewer with sidebar controls (same experience as Python viewer).
+### Constructor Options
+
+All viewers accept an options object:
 
 ```javascript
-const viewer = new ASEView.InteractiveViewer('#container', {
-    style: 'cartoon',
-    data: {
-        symbols: ['O', 'H', 'H'],
-        positions: [[0, 0, 0.117], [0, 0.757, -0.469], [0, -0.757, -0.469]]
-    }
+const viewer = new ASEView.MolecularViewer('#container', {
+    style: 'Cartoon',           // Rendering style
+    backgroundColor: '#1f2937', // Background color
+    atomSize: 0.4,              // Atom size scale
+    bondThickness: 0.1,         // Bond thickness
+    showBond: true,             // Show bonds
+    showCell: false             // Show unit cell
 });
 ```
 
-The InteractiveViewer includes:
+### Methods
 
-- **Style selector**: cartoon, glossy, metallic, neon, bubble
-- **Display toggles**: Show/hide bonds and unit cell
-- **Size controls**: Atom size and bond thickness sliders
+| Method | Description |
+|--------|-------------|
+| `setData(data)` | Set molecular data (structure or trajectory) |
+| `setSettings(options)` | Update viewer settings |
+| `dispose()` | Clean up and remove viewer |
 
-Also available: `InteractiveNormalModeViewer` and `InteractiveOverlayViewer` with full UI controls.
+### Data Format
 
-## Jekyll / GitHub Pages Usage
+```javascript
+{
+    symbols: ['C', 'H', 'O', ...],           // Required: atom symbols
+    positions: [[x, y, z], ...],             // Required: atom positions (Å)
+    cell: [[a1, a2, a3], [b1, b2, b3], ...], // Optional: unit cell vectors
+    energy: -123.456,                        // Optional: energy value (eV)
+    forces: [[fx, fy, fz], ...],             // Optional: force vectors
+    charges: [0.1, -0.2, ...]                // Optional: atomic charges
+}
+```
 
-You can embed the viewer in Jekyll blogs (GitHub Pages):
+## Jekyll / GitHub Pages
 
-```markdown
+Embed viewers in Jekyll blogs or GitHub Pages:
+
+```html
 ---
-title: Molecule Example
+title: My Molecule
 ---
 
-# Ethanol
+<div id="viewer" style="width:100%; height:500px;"></div>
 
-<div id="viewer" style="width:100%;height:400px;"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/styles.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/aseview.js"></script>
-
 <script>
-const viewer = new ASEView.MolecularViewer('#viewer', { style: 'cartoon' });
+const viewer = new ASEView.MolecularViewer('#viewer');
 viewer.setData({
     symbols: ['C', 'C', 'O', 'H', 'H', 'H', 'H', 'H', 'H'],
     positions: [
@@ -197,8 +202,22 @@ viewer.setData({
 </script>
 ```
 
-Make sure `_config.yml` allows HTML:
-```yaml
-kramdown:
-  parse_block_html: true
+## Architecture
+
+The JavaScript module uses the **same HTML templates** as the Python package:
+
 ```
+aseview.js (thin wrapper)
+    ↓
+iframe loads template from CDN
+    ↓
+postMessage sends data to template
+    ↓
+Template renders (same code as Python viewer)
+```
+
+This ensures:
+
+- **Consistent UI**: Web and Python viewers look identical
+- **Single source of truth**: One template, no duplicate code
+- **Automatic updates**: Python template improvements apply to web
