@@ -277,10 +277,11 @@ class MolecularViewer(BaseViewer):
             with open(styles_path, 'r', encoding='utf-8') as style_file:
                 styles_js = style_file.read()
 
-            external_tag = '<script src="/static/js/styles.js"></script>'
-            if external_tag in html:
-                inline_styles_tag = f"<script>\n{styles_js}\n</script>"
-                html = html.replace(external_tag, inline_styles_tag)
+            # Replace CDN URL with inline version (templates use CDN for web compatibility)
+            cdn_tag = '<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/styles.js"></script>'
+            inline_styles_tag = f"<script>\n{styles_js}\n</script>"
+            if cdn_tag in html:
+                html = html.replace(cdn_tag, inline_styles_tag)
         
         # Inline gifshot.js for GIF export
         gifshot_path = os.path.join(vendor_dir, "gifshot.js")
@@ -556,9 +557,10 @@ class NormalViewer(BaseViewer):
         if os.path.exists(styles_path):
             with open(styles_path, 'r', encoding='utf-8') as f:
                 styles_js = f.read()
-            external_tag = '<script src="/static/js/styles.js"></script>'
-            if external_tag in html:
-                html = html.replace(external_tag, f'<script>\n{styles_js}\n</script>')
+            # Replace CDN URL with inline version (templates use CDN for web compatibility)
+            cdn_tag = '<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/styles.js"></script>'
+            if cdn_tag in html:
+                html = html.replace(cdn_tag, f'<script>\n{styles_js}\n</script>')
 
         # Inline gifshot.js for GIF export
         gifshot_path = os.path.join(vendor_dir, "gifshot.js")
@@ -768,11 +770,11 @@ class OverlayViewer(BaseViewer):
         if os.path.exists(styles_path):
             with open(styles_path, 'r', encoding='utf-8') as f:
                 styles_js = f.read()
-            # Replace external script tag with inline version
-            external_tag = '<script src="/static/js/styles.js"></script>'
-            if external_tag in html:
-                html = html.replace(external_tag, f'<script>\n{styles_js}\n</script>')
-        
+            # Replace CDN URL with inline version (templates use CDN for web compatibility)
+            cdn_tag = '<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/styles.js"></script>'
+            if cdn_tag in html:
+                html = html.replace(cdn_tag, f'<script>\n{styles_js}\n</script>')
+
         # Inject molecular data and settings
         settings_json = json.dumps(self.settings)
         script = f"""

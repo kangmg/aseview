@@ -4,6 +4,8 @@ Standalone JavaScript library for molecular visualization. Use it in any web pag
 
 The JavaScript module uses the **same templates as the Python package**, ensuring identical UI and features.
 
+[**Live Demo**](demo.html){ .md-button .md-button--primary }
+
 ## Quick Start
 
 === "Full HTML"
