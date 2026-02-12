@@ -152,7 +152,7 @@ function createAtomStyleNeon(pos, symbol, atomScale) {
     const scaledRadius = info.radius * atomScale;
     const atomColor = new THREE.Color(info.color);
     
-    // 단일 sprite로 glow 효과만 사용
+    // Use single sprite for glow effect only
     const glowCanvas = document.createElement('canvas');
     glowCanvas.width = 512;
     glowCanvas.height = 512;
@@ -161,19 +161,19 @@ function createAtomStyleNeon(pos, symbol, atomScale) {
     const center = 256;
     const maxRadius = 256;
     
-    // 자연스러운 radial gradient - 40% 지점부터 서서히 증가, 테두리에서 0
+    // Natural radial gradient - gradually increases from 40%, fades to 0 at edge
     const glowGradient = glowContext.createRadialGradient(center, center, 0, center, center, maxRadius);
     const glowColorStyle = atomColor.getStyle();
     
-	glowGradient.addColorStop(0.0, 'rgba(0,0,0,0)');                            // 중심: 완전 투명
-	glowGradient.addColorStop(0.25, 'rgba(0,0,0,0)');                           // 25%까지 투명 유지
-	glowGradient.addColorStop(0.35, `${glowColorStyle.slice(0, -1)}, 0.05)`); // 서서히 시작
-	glowGradient.addColorStop(0.45, `${glowColorStyle.slice(0, -1)}, 0.15)`); 
-	glowGradient.addColorStop(0.60, `${glowColorStyle.slice(0, -1)}, 0.35)`); 
-	glowGradient.addColorStop(0.75, `${glowColorStyle.slice(0, -1)}, 0.6)`);  
-	glowGradient.addColorStop(0.88, `${glowColorStyle.slice(0, -1)}, 0.85)`); 
-	glowGradient.addColorStop(0.95, `${glowColorStyle.slice(0, -1)}, 1.0)`);  // 가장자리 근처 최대치
-	glowGradient.addColorStop(1.0, `${glowColorStyle.slice(0, -1)}, 0.0)`);   // 부드럽게 사라지기
+	glowGradient.addColorStop(0.0, 'rgba(0,0,0,0)');                            // Center: fully transparent
+	glowGradient.addColorStop(0.25, 'rgba(0,0,0,0)');                           // Keep transparent until 25%
+	glowGradient.addColorStop(0.35, `${glowColorStyle.slice(0, -1)}, 0.05)`); // Start gradually
+	glowGradient.addColorStop(0.45, `${glowColorStyle.slice(0, -1)}, 0.15)`);
+	glowGradient.addColorStop(0.60, `${glowColorStyle.slice(0, -1)}, 0.35)`);
+	glowGradient.addColorStop(0.75, `${glowColorStyle.slice(0, -1)}, 0.6)`);
+	glowGradient.addColorStop(0.88, `${glowColorStyle.slice(0, -1)}, 0.85)`);
+	glowGradient.addColorStop(0.95, `${glowColorStyle.slice(0, -1)}, 1.0)`);  // Max intensity near edge
+	glowGradient.addColorStop(1.0, `${glowColorStyle.slice(0, -1)}, 0.0)`);   // Fade out smoothly
 
     
     glowContext.fillStyle = glowGradient;
@@ -192,10 +192,10 @@ function createAtomStyleNeon(pos, symbol, atomScale) {
     
     const glowSprite = new THREE.Sprite(glowMaterial);
     glowSprite.position.copy(pos);
-    // 원자 테두리까지 정확히 맞춤
+    // Scale to match atom edge precisely
     glowSprite.scale.set(scaledRadius * 2.2, scaledRadius * 2.2, 1);
-    
-    // 메타데이터 추가
+
+    // Add metadata
     glowSprite.userData = {
         symbol: symbol,
         radius: scaledRadius,
@@ -315,7 +315,7 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
     
-    // 3D 구체는 제거하고, 캔버스로 그린 스프라이트만 사용
+    // Remove 3D sphere, use canvas-drawn sprite only
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 256;
@@ -325,34 +325,34 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const centerY = 128;
     const circleRadius = 120;
     
-    // 검은 테두리 그리기
+    // Draw black border
     context.beginPath();
     context.arc(centerX, centerY, circleRadius, 0, 2 * Math.PI, false);
     context.fillStyle = 'black';
     context.fill();
-    
-    // 원형 배경 그리기 (구체 역할) - 테두리보다 약간 작게
+
+    // Draw circular background (sphere role) - slightly smaller than border
     context.beginPath();
     context.arc(centerX, centerY, circleRadius - 3, 0, 2 * Math.PI, false);
-    context.fillStyle = `#${color.toString(16).padStart(6, '0')}`; // color를 hex로 변환
+    context.fillStyle = `#${color.toString(16).padStart(6, '0')}`; // Convert color to hex
     context.fill();
-    
-    // 약간 더 밝은 색으로 하이라이트 효과
+
+    // Highlight effect with slightly brighter color
     context.beginPath();
     context.arc(centerX, centerY, circleRadius - 7, 0, 2 * Math.PI, false);
     const lighterColor = new THREE.Color(color).multiplyScalar(1.1);
     context.fillStyle = `#${lighterColor.getHexString()}`;
     context.fill();
     
-    // 텍스트 그리기
+    // Draw text
     context.font = 'bold 80px Arial';
-    context.fillStyle = 'white'; // 텍스트를 흰색으로
+    context.fillStyle = 'white'; // White text
     context.strokeStyle = 'black';
     context.lineWidth = 2;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    
-    // 텍스트에 외곽선 효과
+
+    // Text outline effect
     context.strokeText(symbol, centerX, centerY);
     context.fillText(symbol, centerX, centerY);
     
@@ -360,17 +360,17 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const spriteMaterial = new THREE.SpriteMaterial({
         map: texture,
         transparent: true,
-        depthTest: true,     // 깊이 테스트 활성화
-        depthWrite: false,    // 투명 객체이므로 깊이 쓰기는 비활성화
+        depthTest: true,     // Enable depth test
+        depthWrite: false,   // Disable depth write for transparent object
         alphaTest: 0.5
     });
-    
+
     const sprite = new THREE.Sprite(spriteMaterial);
-    sprite.position.copy(pos); // 주어진 위치에 직접 배치
+    sprite.position.copy(pos); // Place directly at given position
     sprite.scale.set(scaledRadius * 2.5, scaledRadius * 2.5, 1);
     sprite.center.set(0.5, 0.5);
-    
-    return sprite; // Group이 아닌 sprite 직접 반환
+
+    return sprite; // Return sprite directly, not Group
 }
 
 function createBondStyle2D(p1, p2, sym1, sym2, bondThickness, atomScale) {
@@ -450,44 +450,44 @@ function createHalfBond(start, end, color, bondThickness, style) {
 }
 
 function createBondStyleNeon(p1, p2, sym1, sym2, bondThickness, atomScale) {
-    // 원자 정보 가져오기
+    // Get atom info
     const info1 = atomInfo[sym1] || atomInfo['default'];
     const info2 = atomInfo[sym2] || atomInfo['default'];
     const radius1 = info1.radius * atomScale;
     const radius2 = info2.radius * atomScale;
-    
-    // 결합 벡터 계산
+
+    // Calculate bond vector
     const bondVector = new THREE.Vector3().subVectors(p2, p1);
     const bondLength = bondVector.length();
     const bondDirection = bondVector.clone().normalize();
-    
-    // 원자 표면에서 시작하고 끝나는 점 계산
+
+    // Calculate start/end points from atom surfaces
     const startPos = new THREE.Vector3().addVectors(p1, bondDirection.clone().multiplyScalar(radius1));
     const endPos = new THREE.Vector3().addVectors(p1, bondDirection.clone().multiplyScalar(bondLength - radius2));
-    
-    // 결합이 너무 짧으면 (원자가 겹치면) null 반환
+
+    // Return null if bond is too short (atoms overlap)
     const adjustedBondLength = bondLength - radius1 - radius2;
     if (adjustedBondLength <= 0) return null;
-    
+
     const bondGroup = new THREE.Group();
-    
-    // 다중 레이어로 원통 radial gradient 효과 생성
-    
-    // 1. 가장 바깥쪽 레이어 - 매우 투명한 glow
+
+    // Create cylindrical radial gradient effect with multiple layers
+
+    // 1. Outermost layer - very transparent glow
     const path1 = new THREE.LineCurve3(startPos, endPos);
     const outerGeometry = new THREE.TubeGeometry(path1, 2, bondThickness * 1.2, 8, false);
     const outerMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.1, // 매우 투명
+        opacity: 0.1, // Very transparent
         blending: THREE.AdditiveBlending,
         depthWrite: false
     });
     const outerTube = new THREE.Mesh(outerGeometry, outerMaterial);
     outerTube.renderOrder = -2;
     bondGroup.add(outerTube);
-    
-    // 2. 중간 레이어
+
+    // 2. Middle layer
     const path2 = new THREE.LineCurve3(startPos, endPos);
     const midGeometry = new THREE.TubeGeometry(path2, 2, bondThickness, 12, false);
     const midMaterial = new THREE.MeshBasicMaterial({
@@ -500,21 +500,21 @@ function createBondStyleNeon(p1, p2, sym1, sym2, bondThickness, atomScale) {
     const midTube = new THREE.Mesh(midGeometry, midMaterial);
     midTube.renderOrder = -1;
     bondGroup.add(midTube);
-    
-    // 3. 코어 레이어 - 중심선이 가장 밝음 (원래 코드의 오타 수정)
+
+    // 3. Core layer - center line is brightest
     const path3 = new THREE.LineCurve3(startPos, endPos);
     const coreGeometry = new THREE.TubeGeometry(path3, 2, bondThickness * 0.8, 16, false);
     const coreMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.6, // 중심이 가장 불투명
+        opacity: 0.6, // Center is most opaque
         blending: THREE.AdditiveBlending,
         depthWrite: false
     });
     const coreTube = new THREE.Mesh(coreGeometry, coreMaterial);
     coreTube.renderOrder = 0;
     bondGroup.add(coreTube);
-    
+
     return bondGroup;
 }
 
@@ -571,26 +571,26 @@ function createHalfBondBubble(start, end, color, bondThickness) {
 }
 
 function createBondStyleGrey(p1, p2, sym1, sym2, bondThickness, atomScale, colorMap) {
-    // 원자 정보 가져오기
+    // Get atom info
     const info1 = atomInfo[sym1] || atomInfo['default'];
     const info2 = atomInfo[sym2] || atomInfo['default'];
     const radius1 = info1.radius * atomScale;
     const radius2 = info2.radius * atomScale;
-    
-    // 결합 벡터 계산
+
+    // Calculate bond vector
     const bondVector = new THREE.Vector3().subVectors(p2, p1);
     const bondLength = bondVector.length();
     const bondDirection = bondVector.clone().normalize();
-    
-    // 원자 표면에서 시작하고 끝나는 점 계산
+
+    // Calculate start/end points from atom surfaces
     const startPos = new THREE.Vector3().addVectors(p1, bondDirection.clone().multiplyScalar(radius1));
     const endPos = new THREE.Vector3().addVectors(p1, bondDirection.clone().multiplyScalar(bondLength - radius2));
-    
-    // 결합이 너무 짧으면 (원자가 겹치면) null 반환
+
+    // Return null if bond is too short (atoms overlap)
     const adjustedBondLength = bondLength - radius1 - radius2;
     if (adjustedBondLength <= 0) return null;
-    
-    // 중점 계산 (원자 표면 기준)
+
+    // Calculate midpoint (based on atom surfaces)
     const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
     
     const final_color1 = colorMap[sym1];
