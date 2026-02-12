@@ -2888,6 +2888,38 @@ function drawEnergyPlotMarker() {
 
 window.setMolecularData = setMolecularData;
 window.removePeriodicity = removePeriodicity;
+
+// PostMessage API for iframe embedding
+window.addEventListener('message', function(event) {
+    const msg = event.data;
+    if (!msg || !msg.type) return;
+
+    switch (msg.type) {
+        case 'setData':
+            if (msg.data) {
+                setMolecularData(msg.data);
+            }
+            break;
+        case 'setSettings':
+            if (msg.settings) {
+                Object.assign(settings, msg.settings);
+                if (typeof updateFromSettings === 'function') {
+                    updateFromSettings();
+                }
+            }
+            break;
+        case 'ready':
+            if (event.source) {
+                event.source.postMessage({ type: 'ready', viewer: 'molecular' }, '*');
+            }
+            break;
+    }
+});
+
+// Notify parent that viewer is loaded
+if (window.parent !== window) {
+    window.parent.postMessage({ type: 'viewerLoaded', viewer: 'molecular' }, '*');
+}
 </script>
 </body>
 </html>
