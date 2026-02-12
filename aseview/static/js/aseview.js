@@ -606,10 +606,455 @@
         }
     }
 
+    /**
+     * NormalModeViewer - Viewer for molecular vibration animations
+     */
+    class NormalModeViewer extends MolecularViewer {
+        constructor(container, options = {}) {
+            super(container, options);
+            this.displacements = null;
+            this.amplitude = options.amplitude || 1.0;
+            this.animationSpeed = options.animationSpeed || 0.05;
+            this.phase = 0;
+            this.isAnimating = true;
+        }
+
+        /**
+         * Set molecular data with displacements
+         * @param {Object} data - Molecular data with displacements
+         * @param {string[]} data.symbols - Atom symbols
+         * @param {number[][]} data.positions - Equilibrium positions
+         * @param {number[][]} data.displacements - Displacement vectors for each atom
+         */
+        setData(data) {
+            this.data = {
+                symbols: data.symbols,
+                positions: data.positions,
+                cell: data.cell
+            };
+            this.equilibriumPositions = data.positions.map(p => [...p]);
+            this.displacements = data.displacements || data.positions.map(() => [0, 0, 0]);
+            this._render();
+        }
+
+        setAmplitude(amplitude) {
+            this.amplitude = amplitude;
+        }
+
+        setAnimationSpeed(speed) {
+            this.animationSpeed = speed;
+        }
+
+        play() { this.isAnimating = true; }
+        pause() { this.isAnimating = false; }
+        toggleAnimation() { this.isAnimating = !this.isAnimating; }
+
+        _animate() {
+            this._animationId = requestAnimationFrame(() => this._animate());
+
+            if (this.isAnimating && this.displacements && this.data) {
+                this.phase += this.animationSpeed;
+                const factor = Math.sin(this.phase) * this.amplitude;
+
+                // Update positions
+                this.data.positions = this.equilibriumPositions.map((pos, i) => {
+                    const disp = this.displacements[i];
+                    return [
+                        pos[0] + disp[0] * factor,
+                        pos[1] + disp[1] * factor,
+                        pos[2] + disp[2] * factor
+                    ];
+                });
+                this._render();
+            }
+
+            if (this.controls) this.controls.update();
+            this.renderer.render(this.scene, this.camera);
+        }
+    }
+
+    /**
+     * OverlayViewer - Viewer for comparing two molecular structures
+     */
+    class OverlayViewer extends MolecularViewer {
+        constructor(container, options = {}) {
+            super(container, options);
+            this.structure1 = null;
+            this.structure2 = null;
+            this.opacity1 = options.opacity1 || 1.0;
+            this.opacity2 = options.opacity2 || 0.5;
+            this.moleculeGroup2 = null;
+        }
+
+        /**
+         * Set two structures for overlay comparison
+         * @param {Object} data1 - First molecular structure
+         * @param {Object} data2 - Second molecular structure
+         */
+        setStructures(data1, data2) {
+            this.structure1 = data1;
+            this.structure2 = data2;
+            this.data = data1; // Primary structure
+            this._renderOverlay();
+        }
+
+        setOpacity(opacity1, opacity2) {
+            this.opacity1 = opacity1;
+            this.opacity2 = opacity2;
+            if (this.structure1 && this.structure2) {
+                this._renderOverlay();
+            }
+        }
+
+        _renderOverlay() {
+            // Clear previous
+            if (this.moleculeGroup) {
+                this.scene.remove(this.moleculeGroup);
+                this._disposeGroup(this.moleculeGroup);
+            }
+            if (this.moleculeGroup2) {
+                this.scene.remove(this.moleculeGroup2);
+                this._disposeGroup(this.moleculeGroup2);
+            }
+
+            // Render first structure
+            this.data = this.structure1;
+            this._render();
+            this._setGroupOpacity(this.moleculeGroup, this.opacity1);
+
+            // Render second structure
+            const savedGroup = this.moleculeGroup;
+            this.moleculeGroup = null;
+            this.data = this.structure2;
+            this._render();
+            this.moleculeGroup2 = this.moleculeGroup;
+            this.moleculeGroup = savedGroup;
+            this._setGroupOpacity(this.moleculeGroup2, this.opacity2);
+        }
+
+        _setGroupOpacity(group, opacity) {
+            if (!group) return;
+            group.traverse(child => {
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(m => {
+                            m.transparent = opacity < 1;
+                            m.opacity = opacity;
+                        });
+                    } else {
+                        child.material.transparent = opacity < 1;
+                        child.material.opacity = opacity;
+                    }
+                }
+            });
+        }
+
+        dispose() {
+            if (this.moleculeGroup2) {
+                this.scene.remove(this.moleculeGroup2);
+                this._disposeGroup(this.moleculeGroup2);
+            }
+            super.dispose();
+        }
+    }
+
+    /**
+     * InteractiveNormalModeViewer - NormalModeViewer with UI controls
+     */
+    class InteractiveNormalModeViewer {
+        constructor(container, options = {}) {
+            if (typeof container === 'string') {
+                this.container = document.querySelector(container);
+            } else {
+                this.container = container;
+            }
+
+            this.options = {
+                style: 'cartoon',
+                backgroundColor: '#1f2937',
+                atomSize: 0.4,
+                bondThickness: 0.1,
+                amplitude: 1.0,
+                animationSpeed: 0.05,
+                showBond: true,
+                ...options
+            };
+
+            this.data = options.data || null;
+            this._buildUI();
+            this._initViewer();
+            this._bindEvents();
+
+            if (this.data) {
+                this.viewer.setData(this.data);
+            }
+        }
+
+        _buildUI() {
+            this.container.innerHTML = '';
+            this.container.style.cssText = 'display:flex;position:relative;overflow:hidden;background:#111827;';
+
+            const style = document.createElement('style');
+            style.textContent = `
+                .asv-sidebar{width:260px;background:#1f2937;border-right:1px solid #374151;padding:1rem;overflow-y:auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e5e7eb;flex-shrink:0;}
+                .asv-viewer{flex:1;position:relative;min-width:0;}
+                .asv-card{background:#374151;border:1px solid #4b5563;border-radius:6px;margin-bottom:12px;overflow:hidden;}
+                .asv-card-header{padding:8px 12px;background:rgba(255,255,255,0.05);font-weight:600;font-size:12px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;}
+                .asv-card-body{padding:12px;}
+                .asv-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+                .asv-row:last-child{margin-bottom:0;}
+                .asv-label{color:#d1d5db;}
+                .asv-select{background:#1f2937;border:1px solid #4b5563;color:#e5e7eb;padding:6px 8px;border-radius:4px;width:100%;margin-top:6px;}
+                .asv-slider{width:100px;accent-color:#3b82f6;}
+                .asv-toggle{position:relative;width:40px;height:20px;}
+                .asv-toggle input{opacity:0;width:0;height:0;}
+                .asv-toggle-slider{position:absolute;cursor:pointer;inset:0;background:#4b5563;border-radius:20px;transition:.2s;}
+                .asv-toggle-slider:before{content:"";position:absolute;height:16px;width:16px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:.2s;}
+                .asv-toggle input:checked+.asv-toggle-slider{background:#3b82f6;}
+                .asv-toggle input:checked+.asv-toggle-slider:before{transform:translateX(20px);}
+                .asv-value{color:#9ca3af;font-size:11px;min-width:35px;text-align:right;}
+                .asv-btn{background:#3b82f6;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-size:13px;width:100%;}
+                .asv-btn:hover{background:#2563eb;}
+            `;
+            this.container.appendChild(style);
+
+            this.sidebar = document.createElement('div');
+            this.sidebar.className = 'asv-sidebar';
+            this.sidebar.innerHTML = `
+                <div class="asv-card">
+                    <div class="asv-card-header">Animation</div>
+                    <div class="asv-card-body">
+                        <button class="asv-btn" id="asv-playpause">Pause</button>
+                        <div class="asv-row" style="margin-top:12px;">
+                            <span class="asv-label">Amplitude</span>
+                            <input type="range" class="asv-slider" id="asv-amplitude" min="0.1" max="3.0" step="0.1" value="1.0">
+                            <span class="asv-value" id="asv-amplitude-val">1.0</span>
+                        </div>
+                        <div class="asv-row">
+                            <span class="asv-label">Speed</span>
+                            <input type="range" class="asv-slider" id="asv-speed" min="0.01" max="0.15" step="0.01" value="0.05">
+                            <span class="asv-value" id="asv-speed-val">0.05</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="asv-card">
+                    <div class="asv-card-header">Style</div>
+                    <div class="asv-card-body">
+                        <select class="asv-select" id="asv-style">
+                            <option value="cartoon">Cartoon</option>
+                            <option value="glossy">Glossy</option>
+                            <option value="metallic">Metallic</option>
+                            <option value="default">Default</option>
+                            <option value="neon">Neon</option>
+                            <option value="bubble">Bubble</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="asv-card">
+                    <div class="asv-card-header">Parameters</div>
+                    <div class="asv-card-body">
+                        <div class="asv-row">
+                            <span class="asv-label">Atom Size</span>
+                            <input type="range" class="asv-slider" id="asv-atomsize" min="0.1" max="1.0" step="0.05" value="0.4">
+                            <span class="asv-value" id="asv-atomsize-val">0.4</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            this.container.appendChild(this.sidebar);
+
+            this.viewerContainer = document.createElement('div');
+            this.viewerContainer.className = 'asv-viewer';
+            this.container.appendChild(this.viewerContainer);
+        }
+
+        _initViewer() {
+            this.viewer = new NormalModeViewer(this.viewerContainer, this.options);
+        }
+
+        _bindEvents() {
+            this.sidebar.querySelector('#asv-playpause').addEventListener('click', (e) => {
+                this.viewer.toggleAnimation();
+                e.target.textContent = this.viewer.isAnimating ? 'Pause' : 'Play';
+            });
+
+            this.sidebar.querySelector('#asv-amplitude').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                this.sidebar.querySelector('#asv-amplitude-val').textContent = val.toFixed(1);
+                this.viewer.setAmplitude(val);
+            });
+
+            this.sidebar.querySelector('#asv-speed').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                this.sidebar.querySelector('#asv-speed-val').textContent = val.toFixed(2);
+                this.viewer.setAnimationSpeed(val);
+            });
+
+            this.sidebar.querySelector('#asv-style').addEventListener('change', (e) => {
+                this.viewer.setStyle(e.target.value);
+            });
+
+            this.sidebar.querySelector('#asv-atomsize').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                this.sidebar.querySelector('#asv-atomsize-val').textContent = val.toFixed(2);
+                this.viewer.setOptions({ atomSize: val });
+            });
+        }
+
+        setData(data) {
+            this.viewer.setData(data);
+        }
+
+        dispose() {
+            this.viewer.dispose();
+            this.container.innerHTML = '';
+        }
+    }
+
+    /**
+     * InteractiveOverlayViewer - OverlayViewer with UI controls
+     */
+    class InteractiveOverlayViewer {
+        constructor(container, options = {}) {
+            if (typeof container === 'string') {
+                this.container = document.querySelector(container);
+            } else {
+                this.container = container;
+            }
+
+            this.options = {
+                style: 'cartoon',
+                backgroundColor: '#1f2937',
+                atomSize: 0.4,
+                bondThickness: 0.1,
+                opacity1: 1.0,
+                opacity2: 0.5,
+                showBond: true,
+                ...options
+            };
+
+            this._buildUI();
+            this._initViewer();
+            this._bindEvents();
+        }
+
+        _buildUI() {
+            this.container.innerHTML = '';
+            this.container.style.cssText = 'display:flex;position:relative;overflow:hidden;background:#111827;';
+
+            const style = document.createElement('style');
+            style.textContent = `
+                .asv-sidebar{width:260px;background:#1f2937;border-right:1px solid #374151;padding:1rem;overflow-y:auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e5e7eb;flex-shrink:0;}
+                .asv-viewer{flex:1;position:relative;min-width:0;}
+                .asv-card{background:#374151;border:1px solid #4b5563;border-radius:6px;margin-bottom:12px;overflow:hidden;}
+                .asv-card-header{padding:8px 12px;background:rgba(255,255,255,0.05);font-weight:600;font-size:12px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;}
+                .asv-card-body{padding:12px;}
+                .asv-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+                .asv-row:last-child{margin-bottom:0;}
+                .asv-label{color:#d1d5db;}
+                .asv-select{background:#1f2937;border:1px solid #4b5563;color:#e5e7eb;padding:6px 8px;border-radius:4px;width:100%;margin-top:6px;}
+                .asv-slider{width:100px;accent-color:#3b82f6;}
+                .asv-value{color:#9ca3af;font-size:11px;min-width:35px;text-align:right;}
+            `;
+            this.container.appendChild(style);
+
+            this.sidebar = document.createElement('div');
+            this.sidebar.className = 'asv-sidebar';
+            this.sidebar.innerHTML = `
+                <div class="asv-card">
+                    <div class="asv-card-header">Overlay</div>
+                    <div class="asv-card-body">
+                        <div class="asv-row">
+                            <span class="asv-label">Structure 1</span>
+                            <input type="range" class="asv-slider" id="asv-opacity1" min="0" max="1" step="0.1" value="1.0">
+                            <span class="asv-value" id="asv-opacity1-val">1.0</span>
+                        </div>
+                        <div class="asv-row">
+                            <span class="asv-label">Structure 2</span>
+                            <input type="range" class="asv-slider" id="asv-opacity2" min="0" max="1" step="0.1" value="0.5">
+                            <span class="asv-value" id="asv-opacity2-val">0.5</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="asv-card">
+                    <div class="asv-card-header">Style</div>
+                    <div class="asv-card-body">
+                        <select class="asv-select" id="asv-style">
+                            <option value="cartoon">Cartoon</option>
+                            <option value="glossy">Glossy</option>
+                            <option value="metallic">Metallic</option>
+                            <option value="default">Default</option>
+                            <option value="neon">Neon</option>
+                            <option value="bubble">Bubble</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="asv-card">
+                    <div class="asv-card-header">Parameters</div>
+                    <div class="asv-card-body">
+                        <div class="asv-row">
+                            <span class="asv-label">Atom Size</span>
+                            <input type="range" class="asv-slider" id="asv-atomsize" min="0.1" max="1.0" step="0.05" value="0.4">
+                            <span class="asv-value" id="asv-atomsize-val">0.4</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            this.container.appendChild(this.sidebar);
+
+            this.viewerContainer = document.createElement('div');
+            this.viewerContainer.className = 'asv-viewer';
+            this.container.appendChild(this.viewerContainer);
+        }
+
+        _initViewer() {
+            this.viewer = new OverlayViewer(this.viewerContainer, this.options);
+        }
+
+        _bindEvents() {
+            this.sidebar.querySelector('#asv-opacity1').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                this.sidebar.querySelector('#asv-opacity1-val').textContent = val.toFixed(1);
+                this.options.opacity1 = val;
+                this.viewer.setOpacity(this.options.opacity1, this.options.opacity2);
+            });
+
+            this.sidebar.querySelector('#asv-opacity2').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                this.sidebar.querySelector('#asv-opacity2-val').textContent = val.toFixed(1);
+                this.options.opacity2 = val;
+                this.viewer.setOpacity(this.options.opacity1, this.options.opacity2);
+            });
+
+            this.sidebar.querySelector('#asv-style').addEventListener('change', (e) => {
+                this.viewer.setStyle(e.target.value);
+            });
+
+            this.sidebar.querySelector('#asv-atomsize').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                this.sidebar.querySelector('#asv-atomsize-val').textContent = val.toFixed(2);
+                this.viewer.setOptions({ atomSize: val });
+            });
+        }
+
+        setStructures(data1, data2) {
+            this.viewer.setStructures(data1, data2);
+        }
+
+        dispose() {
+            this.viewer.dispose();
+            this.container.innerHTML = '';
+        }
+    }
+
     // Export to global namespace
     global.ASEView = global.ASEView || {};
     global.ASEView.MolecularViewer = MolecularViewer;
+    global.ASEView.NormalModeViewer = NormalModeViewer;
+    global.ASEView.OverlayViewer = OverlayViewer;
     global.ASEView.InteractiveViewer = InteractiveViewer;
-    global.ASEView.version = '0.3.0';
+    global.ASEView.InteractiveNormalModeViewer = InteractiveNormalModeViewer;
+    global.ASEView.InteractiveOverlayViewer = InteractiveOverlayViewer;
+    global.ASEView.version = '0.4.0';
 
 })(typeof window !== 'undefined' ? window : this);
