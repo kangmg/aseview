@@ -100,6 +100,26 @@ const dataUrl = viewer.screenshot();
 viewer.dispose();
 ```
 
+### InteractiveViewer
+
+Full-featured viewer with sidebar controls (same experience as Python viewer).
+
+```javascript
+const viewer = new ASEView.InteractiveViewer('#container', {
+    style: 'cartoon',
+    data: {
+        symbols: ['O', 'H', 'H'],
+        positions: [[0, 0, 0.117], [0, 0.757, -0.469], [0, -0.757, -0.469]]
+    }
+});
+```
+
+The InteractiveViewer includes:
+
+- **Style selector**: cartoon, glossy, metallic, neon, bubble
+- **Display toggles**: Show/hide bonds and unit cell
+- **Size controls**: Atom size and bond thickness sliders
+
 ## Jekyll / GitHub Pages Usage
 
 You can embed the viewer in Jekyll blogs (GitHub Pages):

@@ -429,9 +429,187 @@
         }
     }
 
+    /**
+     * InteractiveViewer - Full-featured viewer with UI controls
+     */
+    class InteractiveViewer {
+        constructor(container, options = {}) {
+            if (typeof container === 'string') {
+                this.container = document.querySelector(container);
+            } else {
+                this.container = container;
+            }
+
+            if (!this.container) {
+                throw new Error('ASEView: Container element not found');
+            }
+
+            this.options = {
+                style: 'cartoon',
+                backgroundColor: '#1f2937',
+                atomSize: 0.4,
+                bondThickness: 0.1,
+                bondThreshold: 1.2,
+                showBond: true,
+                showCell: false,
+                ...options
+            };
+
+            this.data = options.data || null;
+            this._buildUI();
+            this._initViewer();
+            this._bindEvents();
+
+            if (this.data) {
+                this.viewer.setData(this.data);
+            }
+        }
+
+        _buildUI() {
+            this.container.innerHTML = '';
+            this.container.style.cssText = 'display:flex;position:relative;overflow:hidden;background:#111827;';
+
+            // CSS
+            const style = document.createElement('style');
+            style.textContent = `
+                .asv-sidebar{width:260px;background:#1f2937;border-right:1px solid #374151;padding:1rem;overflow-y:auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#e5e7eb;flex-shrink:0;}
+                .asv-viewer{flex:1;position:relative;min-width:0;}
+                .asv-card{background:#374151;border:1px solid #4b5563;border-radius:6px;margin-bottom:12px;overflow:hidden;}
+                .asv-card-header{padding:8px 12px;background:rgba(255,255,255,0.05);font-weight:600;font-size:12px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;}
+                .asv-card-body{padding:12px;}
+                .asv-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+                .asv-row:last-child{margin-bottom:0;}
+                .asv-label{color:#d1d5db;}
+                .asv-select{background:#1f2937;border:1px solid #4b5563;color:#e5e7eb;padding:6px 8px;border-radius:4px;width:100%;margin-top:6px;}
+                .asv-slider{width:100px;accent-color:#3b82f6;}
+                .asv-toggle{position:relative;width:40px;height:20px;}
+                .asv-toggle input{opacity:0;width:0;height:0;}
+                .asv-toggle-slider{position:absolute;cursor:pointer;inset:0;background:#4b5563;border-radius:20px;transition:.2s;}
+                .asv-toggle-slider:before{content:"";position:absolute;height:16px;width:16px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:.2s;}
+                .asv-toggle input:checked+.asv-toggle-slider{background:#3b82f6;}
+                .asv-toggle input:checked+.asv-toggle-slider:before{transform:translateX(20px);}
+                .asv-value{color:#9ca3af;font-size:11px;min-width:35px;text-align:right;}
+            `;
+            this.container.appendChild(style);
+
+            // Sidebar
+            this.sidebar = document.createElement('div');
+            this.sidebar.className = 'asv-sidebar';
+            this.sidebar.innerHTML = `
+                <div class="asv-card">
+                    <div class="asv-card-header">Style</div>
+                    <div class="asv-card-body">
+                        <select class="asv-select" id="asv-style">
+                            <option value="cartoon">Cartoon</option>
+                            <option value="glossy">Glossy</option>
+                            <option value="metallic">Metallic</option>
+                            <option value="default">Default</option>
+                            <option value="neon">Neon</option>
+                            <option value="bubble">Bubble</option>
+                            <option value="rowan">Rowan</option>
+                            <option value="2d">2D</option>
+                            <option value="grey">Grey</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="asv-card">
+                    <div class="asv-card-header">Display</div>
+                    <div class="asv-card-body">
+                        <div class="asv-row">
+                            <span class="asv-label">Bond</span>
+                            <label class="asv-toggle">
+                                <input type="checkbox" id="asv-bond" checked>
+                                <span class="asv-toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="asv-row">
+                            <span class="asv-label">Cell</span>
+                            <label class="asv-toggle">
+                                <input type="checkbox" id="asv-cell">
+                                <span class="asv-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="asv-card">
+                    <div class="asv-card-header">Parameters</div>
+                    <div class="asv-card-body">
+                        <div class="asv-row">
+                            <span class="asv-label">Atom Size</span>
+                            <input type="range" class="asv-slider" id="asv-atomsize" min="0.1" max="1.0" step="0.05" value="0.4">
+                            <span class="asv-value" id="asv-atomsize-val">0.4</span>
+                        </div>
+                        <div class="asv-row">
+                            <span class="asv-label">Bond Width</span>
+                            <input type="range" class="asv-slider" id="asv-bondwidth" min="0.02" max="0.3" step="0.02" value="0.1">
+                            <span class="asv-value" id="asv-bondwidth-val">0.1</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            this.container.appendChild(this.sidebar);
+
+            // Viewer container
+            this.viewerContainer = document.createElement('div');
+            this.viewerContainer.className = 'asv-viewer';
+            this.container.appendChild(this.viewerContainer);
+        }
+
+        _initViewer() {
+            this.viewer = new MolecularViewer(this.viewerContainer, this.options);
+        }
+
+        _bindEvents() {
+            // Style
+            this.sidebar.querySelector('#asv-style').value = this.options.style;
+            this.sidebar.querySelector('#asv-style').addEventListener('change', (e) => {
+                this.viewer.setStyle(e.target.value);
+            });
+
+            // Bond toggle
+            this.sidebar.querySelector('#asv-bond').checked = this.options.showBond;
+            this.sidebar.querySelector('#asv-bond').addEventListener('change', (e) => {
+                this.viewer.setOptions({ showBond: e.target.checked });
+            });
+
+            // Cell toggle
+            this.sidebar.querySelector('#asv-cell').checked = this.options.showCell;
+            this.sidebar.querySelector('#asv-cell').addEventListener('change', (e) => {
+                this.viewer.setOptions({ showCell: e.target.checked });
+            });
+
+            // Atom size slider
+            this.sidebar.querySelector('#asv-atomsize').value = this.options.atomSize;
+            this.sidebar.querySelector('#asv-atomsize').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                this.sidebar.querySelector('#asv-atomsize-val').textContent = val.toFixed(2);
+                this.viewer.setOptions({ atomSize: val });
+            });
+
+            // Bond width slider
+            this.sidebar.querySelector('#asv-bondwidth').value = this.options.bondThickness;
+            this.sidebar.querySelector('#asv-bondwidth').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                this.sidebar.querySelector('#asv-bondwidth-val').textContent = val.toFixed(2);
+                this.viewer.setOptions({ bondThickness: val });
+            });
+        }
+
+        setData(data) {
+            this.data = data;
+            this.viewer.setData(data);
+        }
+
+        dispose() {
+            this.viewer.dispose();
+            this.container.innerHTML = '';
+        }
+    }
+
     // Export to global namespace
     global.ASEView = global.ASEView || {};
     global.ASEView.MolecularViewer = MolecularViewer;
-    global.ASEView.version = '0.2.0';
+    global.ASEView.InteractiveViewer = InteractiveViewer;
+    global.ASEView.version = '0.3.0';
 
 })(typeof window !== 'undefined' ? window : this);
