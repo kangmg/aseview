@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASEView.js - Usage Demo</title>
+    <title>ASEView.js - API Examples</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -14,15 +14,33 @@
             line-height: 1.6;
         }
         h1 { color: #60a5fa; margin-bottom: 0.5rem; }
+        h2 { color: #60a5fa; margin: 2rem 0 1rem; font-size: 1.25rem; }
         .subtitle { color: #94a3b8; margin-bottom: 2rem; }
-        .demo-section {
+        .example { margin-bottom: 3rem; }
+        .example-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .badge {
+            background: #3b82f6;
+            color: #fff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge.low { background: #6366f1; }
+        .badge.mid { background: #8b5cf6; }
+        .badge.high { background: #ec4899; }
+        .demo-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
+            gap: 1.5rem;
         }
         @media (max-width: 1200px) {
-            .demo-section { grid-template-columns: 1fr; }
+            .demo-grid { grid-template-columns: 1fr; }
         }
         .code-panel {
             background: #1e293b;
@@ -31,8 +49,8 @@
         }
         .code-header {
             background: #334155;
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
             color: #94a3b8;
             border-bottom: 1px solid #475569;
         }
@@ -40,15 +58,14 @@
             padding: 1rem;
             overflow-x: auto;
             font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 0.8rem;
-            line-height: 1.6;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            max-height: 350px;
         }
         .code-content pre { margin: 0; white-space: pre; }
-        .keyword { color: #c792ea; }
-        .string { color: #c3e88d; }
-        .comment { color: #546e7a; }
-        .tag { color: #f07178; }
-        .attr { color: #ffcb6b; }
+        .kw { color: #c792ea; }
+        .str { color: #c3e88d; }
+        .cmt { color: #546e7a; }
         .viewer-panel {
             background: #1e293b;
             border-radius: 8px;
@@ -56,123 +73,146 @@
         }
         .viewer-header {
             background: #334155;
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
             color: #94a3b8;
             border-bottom: 1px solid #475569;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
-        .style-buttons { display: flex; gap: 0.5rem; }
-        .style-buttons button {
-            background: #475569;
-            border: none;
-            color: #e2e8f0;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            cursor: pointer;
+        .viewer-content {
+            height: 350px;
         }
-        .style-buttons button:hover { background: #64748b; }
-        .style-buttons button.active { background: #3b82f6; }
-        #viewer-container {
-            width: 100%;
+        .viewer-content-full {
             height: 450px;
         }
-        .note {
-            background: #1e3a5f;
-            border-left: 4px solid #3b82f6;
-            padding: 1rem;
-            margin-top: 1rem;
-            border-radius: 0 8px 8px 0;
+        .desc {
+            color: #94a3b8;
             font-size: 0.9rem;
+            margin-bottom: 1rem;
         }
-        .note strong { color: #60a5fa; }
     </style>
 </head>
 <body>
-    <h1>ASEView.js Usage Demo</h1>
-    <p class="subtitle">High-level JavaScript API for molecular visualization</p>
+    <h1>ASEView.js API Examples</h1>
+    <p class="subtitle">Three levels of API for different use cases</p>
 
-    <div class="demo-section">
-        <div class="code-panel">
-            <div class="code-header">HTML Code</div>
-            <div class="code-content">
-<pre><span class="comment">&lt;!-- 1. Load dependencies --&gt;</span>
-<span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="string">"three.min.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
-<span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="string">"TrackballControls.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
-<span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="string">"styles.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
-<span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="string">"aseview.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
+    <!-- Example 1: Low-level API -->
+    <div class="example">
+        <div class="example-header">
+            <h2>1. Low-level API</h2>
+            <span class="badge low">styles.js</span>
+        </div>
+        <p class="desc">Direct access to atom/bond creation functions. Full control over Three.js scene.</p>
+        <div class="demo-grid">
+            <div class="code-panel">
+                <div class="code-header">Code</div>
+                <div class="code-content">
+<pre><span class="cmt">// Use styles.js functions directly</span>
+<span class="kw">const</span> scene = <span class="kw">new</span> THREE.Scene();
+<span class="kw">const</span> pos = <span class="kw">new</span> THREE.Vector3(0, 0, 0);
 
-<span class="comment">&lt;!-- 2. Create container --&gt;</span>
-<span class="tag">&lt;div</span> <span class="attr">id</span>=<span class="string">"viewer"</span> <span class="attr">style</span>=<span class="string">"width:600px;height:400px"</span><span class="tag">&gt;&lt;/div&gt;</span>
+<span class="cmt">// Create atom with specific style</span>
+<span class="kw">const</span> atom = createAtomStyleCartoon(pos, <span class="str">'C'</span>, 0.4);
+scene.add(atom);
 
-<span class="comment">&lt;!-- 3. Initialize viewer --&gt;</span>
-<span class="tag">&lt;script&gt;</span>
-<span class="keyword">const</span> viewer = <span class="keyword">new</span> ASEView.MolecularViewer(<span class="string">'#viewer'</span>, {
-    style: <span class="string">'cartoon'</span>,
-    backgroundColor: <span class="string">'#1f2937'</span>
+<span class="cmt">// Create bond between atoms</span>
+<span class="kw">const</span> p1 = <span class="kw">new</span> THREE.Vector3(0, 0, 0);
+<span class="kw">const</span> p2 = <span class="kw">new</span> THREE.Vector3(1.5, 0, 0);
+<span class="kw">const</span> bond = createBondStyleCartoon(
+    p1, p2, <span class="str">'C'</span>, <span class="str">'C'</span>, 0.1, 0.4
+);
+scene.add(bond);
+
+<span class="cmt">// Available functions:</span>
+<span class="cmt">// createAtomStyleCartoon/Glossy/Neon/...</span>
+<span class="cmt">// createBondStyleCartoon/Default/Neon/...</span></pre>
+                </div>
+            </div>
+            <div class="viewer-panel">
+                <div class="viewer-header">Result</div>
+                <div class="viewer-content" id="viewer1"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Example 2: MolecularViewer -->
+    <div class="example">
+        <div class="example-header">
+            <h2>2. MolecularViewer</h2>
+            <span class="badge mid">Simple API</span>
+        </div>
+        <p class="desc">Clean API for embedding molecules. Automatic scene setup and bond detection.</p>
+        <div class="demo-grid">
+            <div class="code-panel">
+                <div class="code-header">Code</div>
+                <div class="code-content">
+<pre><span class="cmt">// Simple high-level API</span>
+<span class="kw">const</span> viewer = <span class="kw">new</span> ASEView.MolecularViewer(<span class="str">'#viewer'</span>, {
+    style: <span class="str">'cartoon'</span>,
+    backgroundColor: <span class="str">'#1f2937'</span>,
+    atomSize: 0.4,
+    bondThickness: 0.1
 });
 
+<span class="cmt">// Set molecule data</span>
 viewer.setData({
-    symbols: [<span class="string">'C'</span>, <span class="string">'C'</span>, <span class="string">'O'</span>, <span class="string">'H'</span>, <span class="string">'H'</span>, <span class="string">'H'</span>, <span class="string">'H'</span>, <span class="string">'H'</span>, <span class="string">'H'</span>],
+    symbols: [<span class="str">'C'</span>, <span class="str">'C'</span>, <span class="str">'O'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>],
     positions: [
         [-0.047, 0.666, 0.000],
         [-0.047, -0.866, 0.000],
         [1.204, 1.144, 0.000],
-        [1.869, 0.485, 0.000],
-        [-0.570, 1.035, 0.889],
-        [-0.570, 1.035, -0.889],
-        [0.982, -1.162, 0.000],
-        [-0.557, -1.222, 0.889],
-        [-0.557, -1.222, -0.889]
+        <span class="cmt">// ...</span>
     ]
 });
 
-<span class="comment">// Change style dynamically</span>
-viewer.setStyle(<span class="string">'glossy'</span>);
-<span class="tag">&lt;/script&gt;</span></pre>
-            </div>
-        </div>
-
-        <div class="viewer-panel">
-            <div class="viewer-header">
-                <span>Result (Ethanol - C₂H₅OH)</span>
-                <div class="style-buttons">
-                    <button class="active" onclick="setStyle('cartoon')">Cartoon</button>
-                    <button onclick="setStyle('glossy')">Glossy</button>
-                    <button onclick="setStyle('neon')">Neon</button>
-                    <button onclick="setStyle('bubble')">Bubble</button>
+<span class="cmt">// Change style dynamically</span>
+viewer.setStyle(<span class="str">'glossy'</span>);
+viewer.setOptions({ showBond: false });</pre>
                 </div>
             </div>
-            <div id="viewer-container"></div>
+            <div class="viewer-panel">
+                <div class="viewer-header">Result (Ethanol)</div>
+                <div class="viewer-content" id="viewer2"></div>
+            </div>
         </div>
     </div>
 
-    <div class="note">
-        <strong>API:</strong>
-        <code>new ASEView.MolecularViewer(selector, options)</code> -
-        styles: cartoon, glossy, metallic, neon, bubble, rowan, 2d, grey
+    <!-- Example 3: InteractiveViewer -->
+    <div class="example">
+        <div class="example-header">
+            <h2>3. InteractiveViewer</h2>
+            <span class="badge high">Full UI</span>
+        </div>
+        <p class="desc">Complete viewer with sidebar controls. Same experience as Python viewer.</p>
+        <div class="demo-grid" style="grid-template-columns: 1fr;">
+            <div class="code-panel">
+                <div class="code-header">Code</div>
+                <div class="code-content">
+<pre><span class="cmt">// Full interactive viewer with UI controls</span>
+<span class="kw">const</span> viewer = <span class="kw">new</span> ASEView.InteractiveViewer(<span class="str">'#viewer'</span>, {
+    style: <span class="str">'cartoon'</span>,
+    data: {
+        symbols: [<span class="str">'C'</span>, <span class="str">'C'</span>, <span class="str">'O'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>],
+        positions: [[...], [...], ...]
+    }
+});</pre>
+                </div>
+            </div>
+            <div class="viewer-panel">
+                <div class="viewer-header">Result (Interactive Controls)</div>
+                <div class="viewer-content-full" id="viewer3"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
-
-    <!-- ASEView (styles.js + aseview.js) -->
     <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/styles.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/aseview.js"></script>
 
     <script>
-        // Initialize viewer with high-level API
-        const viewer = new ASEView.MolecularViewer('#viewer-container', {
-            style: 'cartoon',
-            backgroundColor: '#1f2937'
-        });
-
-        // Ethanol molecule
-        viewer.setData({
+        // Molecule data
+        const ethanol = {
             symbols: ['C', 'C', 'O', 'H', 'H', 'H', 'H', 'H', 'H'],
             positions: [
                 [-0.047, 0.666, 0.000],
@@ -185,15 +225,71 @@ viewer.setStyle(<span class="string">'glossy'</span>);
                 [-0.557, -1.222, 0.889],
                 [-0.557, -1.222, -0.889]
             ]
-        });
+        };
 
-        // Style change function
-        function setStyle(style) {
-            viewer.setStyle(style);
-            document.querySelectorAll('.style-buttons button').forEach(btn => {
-                btn.classList.toggle('active', btn.textContent.toLowerCase() === style);
+        // Example 1: Low-level API
+        (function() {
+            const container = document.getElementById('viewer1');
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1f2937);
+
+            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 0, 8);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            const controls = new THREE.TrackballControls(camera, renderer.domElement);
+
+            // Lighting
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const light = new THREE.DirectionalLight(0xffffff, 0.8);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+
+            // Create atoms using styles.js
+            ethanol.positions.forEach((pos, i) => {
+                const p = new THREE.Vector3(...pos);
+                const atom = createAtomStyleCartoon(p, ethanol.symbols[i], 0.4);
+                scene.add(atom);
             });
-        }
+
+            // Create bonds
+            const bondThreshold = 1.2;
+            for (let i = 0; i < ethanol.positions.length; i++) {
+                for (let j = i + 1; j < ethanol.positions.length; j++) {
+                    const p1 = new THREE.Vector3(...ethanol.positions[i]);
+                    const p2 = new THREE.Vector3(...ethanol.positions[j]);
+                    const info1 = atomInfo[ethanol.symbols[i]] || atomInfo.default;
+                    const info2 = atomInfo[ethanol.symbols[j]] || atomInfo.default;
+                    if (p1.distanceTo(p2) < (info1.radius + info2.radius) * bondThreshold) {
+                        const bond = createBondStyleCartoon(p1, p2, ethanol.symbols[i], ethanol.symbols[j], 0.1, 0.4);
+                        if (bond) scene.add(bond);
+                    }
+                }
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+        })();
+
+        // Example 2: MolecularViewer
+        const viewer2 = new ASEView.MolecularViewer('#viewer2', {
+            style: 'cartoon',
+            backgroundColor: '#1f2937'
+        });
+        viewer2.setData(ethanol);
+
+        // Example 3: InteractiveViewer
+        const viewer3 = new ASEView.InteractiveViewer('#viewer3', {
+            style: 'cartoon',
+            data: ethanol
+        });
     </script>
 </body>
 </html>
