@@ -23,7 +23,7 @@ The JavaScript module uses the **same templates as the Python package**, ensurin
     <body>
         <div id="viewer"></div>
 
-        <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/aseview.js"></script>
+        <script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/aseview.js"></script>
         <script>
             const viewer = new ASEView.MolecularViewer('#viewer');
             viewer.setData({
@@ -83,7 +83,7 @@ Full-featured molecular structure viewer with sidebar controls.
     <body>
         <div id="viewer"></div>
 
-        <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/aseview.js"></script>
+        <script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/aseview.js"></script>
         <script>
             const viewer = new ASEView.MolecularViewer('#viewer');
 
@@ -158,7 +158,7 @@ Viewer for molecular vibration animations.
     <body>
         <div id="viewer"></div>
 
-        <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/aseview.js"></script>
+        <script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/aseview.js"></script>
         <script>
             const viewer = new ASEView.NormalModeViewer('#viewer');
 
@@ -238,7 +238,7 @@ Compare multiple molecular structures by overlaying them.
     <body>
         <div id="viewer"></div>
 
-        <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/aseview.js"></script>
+        <script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/aseview.js"></script>
         <script>
             const viewer = new ASEView.OverlayViewer('#viewer');
 
@@ -345,7 +345,7 @@ const viewer = new ASEView.MolecularViewer('#container', {
     <body>
         <div id="viewer"></div>
 
-        <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/aseview.js"></script>
+        <script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/aseview.js"></script>
         <script>
             const viewer = new ASEView.MolecularViewer('#viewer');
             viewer.setData({
@@ -376,7 +376,7 @@ const viewer = new ASEView.MolecularViewer('#container', {
 
     <div id="viewer" style="width:100%; height:500px;"></div>
 
-    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/aseview.js"></script>
+    <script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/aseview.js"></script>
     <script>
     const viewer = new ASEView.MolecularViewer('#viewer');
     viewer.setData({

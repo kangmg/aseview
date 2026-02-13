@@ -278,7 +278,7 @@ class MolecularViewer(BaseViewer):
                 styles_js = style_file.read()
 
             # Replace CDN URL with inline version (templates use CDN for web compatibility)
-            cdn_tag = '<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/styles.js"></script>'
+            cdn_tag = '<script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/styles.js"></script>'
             inline_styles_tag = f"<script>\n{styles_js}\n</script>"
             if cdn_tag in html:
                 html = html.replace(cdn_tag, inline_styles_tag)
@@ -558,7 +558,7 @@ class NormalViewer(BaseViewer):
             with open(styles_path, 'r', encoding='utf-8') as f:
                 styles_js = f.read()
             # Replace CDN URL with inline version (templates use CDN for web compatibility)
-            cdn_tag = '<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/styles.js"></script>'
+            cdn_tag = '<script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/styles.js"></script>'
             if cdn_tag in html:
                 html = html.replace(cdn_tag, f'<script>\n{styles_js}\n</script>')
 
@@ -771,7 +771,7 @@ class OverlayViewer(BaseViewer):
             with open(styles_path, 'r', encoding='utf-8') as f:
                 styles_js = f.read()
             # Replace CDN URL with inline version (templates use CDN for web compatibility)
-            cdn_tag = '<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@main/aseview/static/js/styles.js"></script>'
+            cdn_tag = '<script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/styles.js"></script>'
             if cdn_tag in html:
                 html = html.replace(cdn_tag, f'<script>\n{styles_js}\n</script>')
 

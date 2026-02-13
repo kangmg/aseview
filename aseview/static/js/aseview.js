@@ -12,8 +12,9 @@
 (function(global) {
     'use strict';
 
-    // CDN base URL for templates (using commit hash until merged to main)
-    const CDN_BASE = 'https://cdn.jsdelivr.net/gh/kangmg/aseview_v2_dev@3ee0ef8/aseview/templates';
+    // CDN base URL for templates (using raw.githack.com which properly serves HTML with correct content-type)
+    // raw.githack.com serves files with correct MIME types, unlike jsDelivr which serves HTML as text
+    const CDN_BASE = 'https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/templates';
 
     /**
      * Base class for all viewers
