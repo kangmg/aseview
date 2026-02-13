@@ -64,3 +64,6 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/kangmg/aseview_v2_dev
+
+extra_css:
+  - stylesheets/extra.css

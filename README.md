@@ -228,6 +228,29 @@ viewer.save_html('output.html')
 | NormalViewer | Normal mode vibration visualization |
 | OverlayViewer | Compare multiple structures overlaid |
 
+## JavaScript Module
+
+Use aseview in any web page without Python:
+
+```html
+<div id="viewer" style="width:100%; height:500px;"></div>
+
+<script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/aseview.js"></script>
+<script>
+    const viewer = new ASEView.MolecularViewer('#viewer');
+    viewer.setData({
+        symbols: ['O', 'H', 'H'],
+        positions: [
+            [0.0, 0.0, 0.117],
+            [0.0, 0.757, -0.469],
+            [0.0, -0.757, -0.469]
+        ]
+    });
+</script>
+```
+
+See the [JavaScript Module documentation](https://kangmg.github.io/aseview_v2_dev/js-module/) for full API reference.
+
 ## Supported Formats
 
 All formats supported by ASE: xyz, cif, pdb, POSCAR, extxyz, etc.
