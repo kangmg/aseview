@@ -1,0 +1,13 @@
+/* Fix tabbed content to auto-adjust height to content instead of matching tallest tab */
+.md-typeset .tabbed-set > input:checked + label + .tabbed-content {
+    height: auto !important;
+}
+
+.md-typeset .tabbed-content {
+    height: auto !important;
+}
+
+/* Ensure code blocks within tabs don't have excessive height */
+.md-typeset .tabbed-content pre {
+    max-height: none;
+}
