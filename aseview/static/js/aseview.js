@@ -14,8 +14,7 @@
 
     // CDN base URL for templates (using raw.githack.com which properly serves HTML with correct content-type)
     // raw.githack.com serves files with correct MIME types, unlike jsDelivr which serves HTML as text
-    // NOTE: Update to 'main' after merging feature branch
-    const CDN_BASE = 'https://raw.githack.com/kangmg/aseview_v2_dev/claude/cleanup-and-review-rZVmX/aseview/templates';
+    const CDN_BASE = 'https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/templates';
 
     /**
      * Base class for all viewers
