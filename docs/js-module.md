@@ -291,41 +291,137 @@ Compare multiple molecular structures by overlaying them.
 
 ## API Reference
 
-### Constructor Options
-
-All viewers accept an options object:
-
-```javascript
-const viewer = new ASEView.MolecularViewer('#container', {
-    style: 'Cartoon',           // Rendering style
-    backgroundColor: '#1f2937', // Background color
-    atomSize: 0.4,              // Atom size scale
-    bondThickness: 0.1,         // Bond thickness
-    showBond: true,             // Show bonds
-    showCell: false             // Show unit cell
-});
-```
-
 ### Methods
+
+**All Viewers**
 
 | Method | Description |
 |--------|-------------|
-| `setData(data)` | Set molecular data (structure or trajectory) |
-| `setSettings(options)` | Update viewer settings |
+| `setData(data)` | Set molecular data (single structure or array of structures) |
+| `setSettings(options)` | Update viewer settings at runtime |
 | `dispose()` | Clean up and remove viewer |
+
+**NormalModeViewer Only**
+
+| Method | Description |
+|--------|-------------|
+| `setVibrationData(atoms, vibrationData)` | Set equilibrium structure and vibration modes |
+
+**OverlayViewer Only**
+
+| Method | Description |
+|--------|-------------|
+| `setStructures(...structures)` | Set two or more structures for overlay comparison |
 
 ### Data Format
 
 ```javascript
+// Single structure
 {
     symbols: ['C', 'H', 'O', ...],           // Required: atom symbols
     positions: [[x, y, z], ...],             // Required: atom positions (Å)
-    cell: [[a1, a2, a3], [b1, b2, b3], ...], // Optional: unit cell vectors
+    cell: [[a1, a2, a3], [b1, b2, b3], ...], // Optional: unit cell vectors (3x3)
     energy: -123.456,                        // Optional: energy value (eV)
     forces: [[fx, fy, fz], ...],             // Optional: force vectors
-    charges: [0.1, -0.2, ...]                // Optional: atomic charges
+    charges: [0.1, -0.2, ...],               // Optional: atomic charges
+    name: "Molecule 1"                       // Optional: display name
 }
+
+// Trajectory (array of structures)
+viewer.setData([
+    { symbols: [...], positions: [...], energy: -10.5 },
+    { symbols: [...], positions: [...], energy: -10.3 },
+    // ... more frames
+]);
 ```
+
+**NormalModeViewer vibration data:**
+
+```javascript
+viewer.setVibrationData(atoms, {
+    modeVectors: [                 // Displacement vectors per mode [nModes][nAtoms][3]
+        [[dx, dy, dz], ...],      //   Mode 0
+        [[dx, dy, dz], ...],      //   Mode 1
+        // ...
+    ],
+    frequencies: ["1595.32", "3657.05", ...],  // Frequency labels (cm⁻¹)
+    isImaginary: [false, false, ...],          // Imaginary mode flags
+    nFrames: 30                                // Animation frames per cycle (default: 30)
+});
+```
+
+### Settings (Constructor Options)
+
+All viewers accept an options object as the second argument:
+
+```javascript
+const viewer = new ASEView.MolecularViewer('#container', { style: 'neon', showBond: true });
+```
+
+Settings can also be updated at runtime:
+
+```javascript
+viewer.setSettings({ style: 'glossy', atomSize: 0.6 });
+```
+
+#### Common Settings (All Viewers)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `style` | string | `'cartoon'` | Rendering style |
+| `backgroundColor` | string | `'#1f2937'` | Background color (hex) |
+| `atomSize` | float | `0.4` | Atom radius scale |
+| `bondThreshold` | float | `1.0` | Bond cutoff (multiple of covalent radii) |
+| `bondThickness` | float | `0.1` | Bond cylinder radius |
+| `showBond` | boolean | `true` | Show bonds |
+| `showCell` | boolean | `true` | Show unit cell box |
+| `showShading` | boolean | `true` | Enable directional lighting |
+| `showAxis` | boolean | `true` | Show XYZ axis helper |
+| `showForces` | boolean | `false` | Show force vectors |
+| `showEnergyPlot` | boolean | `false` | Show energy vs frame plot |
+| `animationSpeed` | int | `30` | Frames per second |
+| `forceScale` | float | `0.5` | Force vector scale |
+| `viewMode` | string | `'Perspective'` | `'Perspective'` or `'Orthographic'` |
+| `rotationMode` | string | `'TrackBall'` | `'TrackBall'` or `'Orbit'` |
+
+**Available styles:** `default`, `2d`, `cartoon`, `neon`, `glossy`, `metallic`, `rowan`, `bubble`, `grey`
+
+#### MolecularViewer Settings
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `cellColor` | string | `'#808080'` | Unit cell line color (hex) |
+| `colorBy` | string | `'Element'` | `'Element'` or `'Charge'` |
+| `chargeColormap` | string | `'coolwarm'` | Colormap for charge coloring |
+| `normalizeCharges` | boolean | `false` | Normalize charge color range |
+| `showChargeLabels` | boolean | `false` | Display charge values on atoms |
+
+#### NormalModeViewer Settings
+
+Inherits all common settings, plus:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `showModeVector` | boolean | `false` | Display vibration displacement arrows |
+| `showShadow` | boolean | `false` | Show shadow beneath molecule |
+
+Vibration playback parameters (set via `setVibrationData`):
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `amplitude` | float | `0.75` | Displacement amplitude scale |
+| `nFrames` | int | `30` | Animation frames per cycle |
+
+#### OverlayViewer Settings
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `colorBy` | string | `'Atom'` | `'Atom'`, `'Molecule'`, or `'Colormap'` |
+| `colormap` | string | `'viridis'` | Colormap name (when `colorBy: 'Colormap'`) |
+| `alignMolecules` | boolean | `false` | Kabsch rotation + Hungarian atom reordering |
+| `showShading` | boolean | `false` | Shading (default differs from other viewers) |
+
+**Available colormaps:** `viridis`, `plasma`, `coolwarm`, `jet`, `rainbow`, `grayscale`
 
 ## Jekyll / GitHub Pages
 
