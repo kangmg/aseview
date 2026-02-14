@@ -778,6 +778,71 @@ let settings = {
     rotationMode: 'TrackBall'
 };
 
+// Update UI and rendering from settings (called via postMessage API)
+function updateFromSettings() {
+    // Update select elements
+    const styleSelect = document.getElementById('style');
+    if (styleSelect) styleSelect.value = settings.style || 'cartoon';
+
+    // Update checkboxes
+    const checkboxMappings = {
+        'show-cell': 'showCell',
+        'show-bond': 'showBond',
+        'show-shading': 'showShading',
+        'show-axis': 'showAxis',
+        'show-shadow': 'showShadow',
+        'show-mode-vector': 'showModeVector'
+    };
+
+    for (const [elemId, settingKey] of Object.entries(checkboxMappings)) {
+        const elem = document.getElementById(elemId);
+        if (elem) elem.checked = !!settings[settingKey];
+    }
+
+    // Update sliders
+    const atomSizeSlider = document.getElementById('atom-size');
+    if (atomSizeSlider) {
+        atomSizeSlider.value = settings.atomSize || 0.4;
+        const valueEl = document.getElementById('atom-size-value');
+        if (valueEl) valueEl.textContent = atomSizeSlider.value;
+    }
+
+    const bondThresholdSlider = document.getElementById('bond-threshold');
+    if (bondThresholdSlider) {
+        bondThresholdSlider.value = settings.bondThreshold || 1.0;
+        const valueEl = document.getElementById('bond-threshold-value');
+        if (valueEl) valueEl.textContent = bondThresholdSlider.value;
+    }
+
+    const bondThicknessSlider = document.getElementById('bond-thickness');
+    if (bondThicknessSlider) {
+        bondThicknessSlider.value = settings.bondThickness || 0.1;
+        const valueEl = document.getElementById('bond-thickness-value');
+        if (valueEl) valueEl.textContent = bondThicknessSlider.value;
+    }
+
+    const animSpeedSlider = document.getElementById('animation-speed');
+    if (animSpeedSlider) {
+        animSpeedSlider.value = settings.animationSpeed || 30;
+        const valueEl = document.getElementById('animation-speed-value');
+        if (valueEl) valueEl.textContent = animSpeedSlider.value;
+    }
+
+    // Update color picker
+    const bgColorPicker = document.getElementById('background-color');
+    if (bgColorPicker && settings.backgroundColor) {
+        bgColorPicker.value = settings.backgroundColor;
+        const viewerContainer = document.querySelector('.viewer-container');
+        if (viewerContainer) {
+            viewerContainer.style.background = `linear-gradient(135deg, ${settings.backgroundColor}, ${darkenColorHex(settings.backgroundColor, 20)})`;
+        }
+    }
+
+    // Apply rendering changes
+    if (typeof updateShading === 'function') updateShading();
+    if (typeof renderMolecule === 'function') renderMolecule();
+}
+
 // Check if styles.js is loaded
 if (typeof atomInfo === 'undefined') {
     console.error('styles.js not loaded! atomInfo is undefined');
