@@ -1,6 +1,7 @@
 """
 Wrapper module for molecular visualization
 """
+import glob as glob_module
 import json
 import os
 from typing import Dict, Any, List, Union
@@ -101,9 +102,30 @@ class BaseViewer:
     def _process_data(self, data):
         """Process input data into a standardized format."""
         if isinstance(data, str):
-            # Assume it's a path to a JSON file
-            with open(data, 'r') as f:
-                return json.load(f)
+            from ase.io import read as ase_read
+            # Check if it's a glob pattern
+            is_glob = any(c in data for c in ('*', '?', '['))
+            if is_glob:
+                files = sorted(glob_module.glob(data))
+                if not files:
+                    raise ValueError(f"No files matched glob pattern: {data}")
+                all_atoms = []
+                for f in files:
+                    frames = ase_read(f, index=':')
+                    if isinstance(frames, Atoms):
+                        frames = [frames]
+                    all_atoms.extend(frames)
+                return [MolecularData.from_atoms(a) for a in all_atoms]
+            elif os.path.exists(data):
+                # File path: read all frames by default
+                frames = ase_read(data, index=':')
+                if isinstance(frames, Atoms):
+                    frames = [frames]
+                return [MolecularData.from_atoms(a) for a in frames]
+            else:
+                # Fall back to JSON
+                with open(data, 'r') as f:
+                    return json.load(f)
         elif isinstance(data, Atoms):
             return MolecularData.from_atoms(data)
         elif isinstance(data, list):
