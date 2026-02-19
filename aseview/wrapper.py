@@ -221,7 +221,7 @@ class MolecularViewer(BaseViewer):
             "animationSpeed": 30,
             "forceScale": 1.0,
             "backgroundColor": "#1f2937",
-            "style": "Cartoon",
+            "style": "cartoon",
             "showCell": True,
             "showBond": True,
             "showShadow": False,
@@ -326,21 +326,21 @@ class MolecularViewer(BaseViewer):
     (function() {{
         var MAX_RETRIES = 100;  // 5 seconds max (100 * 50ms)
         var retryCount = 0;
+        var pythonSettings = {settings_json};
 
         function initData() {{
-            console.log('Initializing molecular data...');
-
-            // Apply settings from Python (ensure settings exists)
-            if (typeof settings === 'undefined') {{
-                window.settings = {{}};
-            }}
-            const pythonSettings = {settings_json};
-            Object.assign(settings, pythonSettings);
-
-            // Wait for renderer to be initialized with timeout
             function trySetData() {{
                 retryCount++;
                 if (typeof renderer !== 'undefined' && renderer !== null) {{
+                    // Apply Python settings to the settings object
+                    if (typeof settings === 'undefined') {{
+                        window.settings = {{}};
+                    }}
+                    Object.assign(settings, pythonSettings);
+                    // Sync UI elements to reflect the applied Python settings
+                    if (typeof updateFromSettings === 'function') {{
+                        updateFromSettings();
+                    }}
                     if (typeof setMolecularData === 'function') {{
                         setMolecularData({js_data});
                     }} else {{
@@ -598,6 +598,7 @@ class NormalViewer(BaseViewer):
     (function() {{
         var MAX_RETRIES = 100;
         var retryCount = 0;
+        var pythonSettings = {settings_json};
 
         // Inject data from Python
         window.equilibriumAtoms = {atoms_json};
@@ -605,15 +606,18 @@ class NormalViewer(BaseViewer):
         window.hasVibrations = {has_vibrations};
 
         function initData() {{
-            if (typeof settings === 'undefined') {{
-                window.settings = {{}};
-            }}
-            const pythonSettings = {settings_json};
-            Object.assign(settings, pythonSettings);
-
             function trySetData() {{
                 retryCount++;
                 if (typeof renderer !== 'undefined' && renderer !== null) {{
+                    // Apply Python settings to the settings object
+                    if (typeof settings === 'undefined') {{
+                        window.settings = {{}};
+                    }}
+                    Object.assign(settings, pythonSettings);
+                    // Sync UI elements to reflect the applied Python settings
+                    if (typeof updateFromSettings === 'function') {{
+                        updateFromSettings();
+                    }}
                     if (typeof initNormalModeViewer === 'function') {{
                         initNormalModeViewer(window.equilibriumAtoms, window.vibrationData);
                     }} else if (typeof setMolecularData === 'function') {{
@@ -804,17 +808,21 @@ class OverlayViewer(BaseViewer):
     (function() {{
         var MAX_RETRIES = 100;
         var retryCount = 0;
+        var pythonSettings = {settings_json};
 
         function initData() {{
-            if (typeof settings === 'undefined') {{
-                window.settings = {{}};
-            }}
-            const pythonSettings = {settings_json};
-            Object.assign(settings, pythonSettings);
-
             function trySetData() {{
                 retryCount++;
                 if (typeof renderer !== 'undefined' && renderer !== null) {{
+                    // Apply Python settings to the settings object
+                    if (typeof settings === 'undefined') {{
+                        window.settings = {{}};
+                    }}
+                    Object.assign(settings, pythonSettings);
+                    // Sync UI elements to reflect the applied Python settings
+                    if (typeof updateFromSettings === 'function') {{
+                        updateFromSettings();
+                    }}
                     if (typeof setMolecularData === 'function') {{
                         setMolecularData({js_data});
                     }}
