@@ -2,10 +2,11 @@
 Command-line interface for aseview molecular viewer.
 
 Usage:
-    aseview2 molecule.xyz
-    aseview2 trajectory.xyz -i 0:10
-    aseview2 structure.cif -p 8888
+    aseview molecule.xyz
+    aseview trajectory.xyz -i 0:10
+    aseview structure.cif -p 8888
 """
+
 import http.server
 import socketserver
 import threading
@@ -22,7 +23,7 @@ from rich.text import Text
 from rich import print as rprint
 
 app = typer.Typer(
-    name="aseview2",
+    name="aseview",
     help="Molecular structure viewer for ASE-supported file formats",
     add_completion=False,
     rich_markup_mode="rich",
@@ -42,7 +43,7 @@ def kill_port(port: int) -> bool:
     # Check if port is in use first
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.bind(('', port))
+        sock.bind(("", port))
         sock.close()
         return False  # Port is free
     except OSError:
@@ -53,7 +54,7 @@ def kill_port(port: int) -> bool:
 
     try:
         # Read /proc/net/tcp to find socket inode
-        with open('/proc/net/tcp', 'r') as f:
+        with open("/proc/net/tcp", "r") as f:
             lines = f.readlines()[1:]  # Skip header
 
         target_inodes = set()
@@ -62,7 +63,7 @@ def kill_port(port: int) -> bool:
             if len(parts) >= 10:
                 local_addr = parts[1]
                 # local_addr format: IP:PORT (hex)
-                local_port = int(local_addr.split(':')[1], 16)
+                local_port = int(local_addr.split(":")[1], 16)
                 if local_port == port:
                     inode = parts[9]
                     target_inodes.add(inode)
@@ -71,16 +72,16 @@ def kill_port(port: int) -> bool:
             return False
 
         # Find PIDs that have these inodes
-        for pid in os.listdir('/proc'):
+        for pid in os.listdir("/proc"):
             if not pid.isdigit():
                 continue
 
-            fd_dir = f'/proc/{pid}/fd'
+            fd_dir = f"/proc/{pid}/fd"
             try:
                 for fd in os.listdir(fd_dir):
                     try:
-                        link = os.readlink(f'{fd_dir}/{fd}')
-                        if link.startswith('socket:['):
+                        link = os.readlink(f"{fd_dir}/{fd}")
+                        if link.startswith("socket:["):
                             inode = link[8:-1]
                             if inode in target_inodes:
                                 pids_to_kill.add(int(pid))
@@ -159,7 +160,7 @@ def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -
     temp_dir = tempfile.mkdtemp()
     html_path = os.path.join(temp_dir, "index.html")
 
-    with open(html_path, 'w', encoding='utf-8') as f:
+    with open(html_path, "w", encoding="utf-8") as f:
         f.write(html_content)
 
     # Find available port
@@ -175,7 +176,9 @@ def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -
         except OSError:
             port += 1
             if attempt == max_attempts - 1:
-                console.print(f"[red]Error: Could not find available port (tried {original_port}-{port})[/red]")
+                console.print(
+                    f"[red]Error: Could not find available port (tried {original_port}-{port})[/red]"
+                )
                 sys.exit(1)
 
     url = f"http://localhost:{port}"
@@ -190,7 +193,7 @@ def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -
 
     panel = Panel(
         link_text,
-        title="[bold green]aseview2 server running[/bold green]",
+        title="[bold green]aseview server running[/bold green]",
         subtitle="[dim]Press Ctrl+C to stop[/dim]",
         border_style="green",
         padding=(1, 2),
@@ -201,7 +204,7 @@ def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -
     console.print()
 
     # Open browser if requested and not in SSH session
-    if open_browser and not os.environ.get('SSH_CONNECTION'):
+    if open_browser and not os.environ.get("SSH_CONNECTION"):
         threading.Timer(0.5, lambda: webbrowser.open(url)).start()
 
     # Run server
@@ -227,43 +230,61 @@ def main(
         help="Input file(s) in any ASE-supported format (xyz, cif, pdb, etc.)",
     ),
     index: Optional[str] = typer.Option(
-        None, "-i", "--index",
+        None,
+        "-i",
+        "--index",
         help="Index or slice for trajectory (e.g., 0, -1, :, 0:10, ::2)",
     ),
     format: Optional[str] = typer.Option(
-        None, "-f", "--format",
+        None,
+        "-f",
+        "--format",
         help="File format (auto-detected if not specified)",
     ),
     port: int = typer.Option(
-        8080, "-p", "--port",
+        8080,
+        "-p",
+        "--port",
         help="Port for HTTP server",
     ),
     no_browser: bool = typer.Option(
-        False, "--no-browser",
+        False,
+        "--no-browser",
         help="Don't open browser automatically",
     ),
     output: Optional[str] = typer.Option(
-        None, "-o", "--output",
+        None,
+        "-o",
+        "--output",
         help="Save HTML to file instead of serving",
     ),
     viewer: Optional[str] = typer.Option(
-        None, "-v", "--viewer",
+        None,
+        "-v",
+        "--viewer",
         help="Viewer type: molecular, normal, overlay (auto-selected)",
     ),
     style: str = typer.Option(
-        "cartoon", "--style",
+        "cartoon",
+        "--style",
         help="Visual style: default, cartoon, neon, glossy, metallic, rowan, grey",
     ),
     cmap: Optional[str] = typer.Option(
-        None, "--cmap", "--colormap",
+        None,
+        "--cmap",
+        "--colormap",
         help="Colormap for overlay (viridis, plasma, coolwarm, jet, rainbow, grayscale)",
     ),
     hess: Optional[str] = typer.Option(
-        None, "--hess", "--hessian",
+        None,
+        "--hess",
+        "--hessian",
         help="Hessian file for normal mode viewer (ORCA .hess format)",
     ),
     kill: bool = typer.Option(
-        False, "-k", "--kill",
+        False,
+        "-k",
+        "--kill",
         help="Kill existing process on the port before starting",
     ),
 ):
@@ -272,74 +293,75 @@ def main(
 
     \b
     Basic Usage:
-      aseview2 molecule.xyz              # View single structure
-      aseview2 trajectory.xyz            # View trajectory (animation)
-      aseview2 structure.cif             # View crystal structure
+      aseview molecule.xyz              # View single structure
+      aseview trajectory.xyz            # View trajectory (animation)
+      aseview structure.cif             # View crystal structure
 
     \b
     Indexing (ASE-style slicing):
-      aseview2 traj.xyz -i :             # All frames
-      aseview2 traj.xyz -i 0             # First frame only
-      aseview2 traj.xyz -i -1            # Last frame only
-      aseview2 traj.xyz -i 0:10          # Frames 0-9
-      aseview2 traj.xyz -i ::2           # Every 2nd frame
-      aseview2 traj.xyz -i 10:20:2       # Frames 10-19, step 2
+      aseview traj.xyz -i :             # All frames
+      aseview traj.xyz -i 0             # First frame only
+      aseview traj.xyz -i -1            # Last frame only
+      aseview traj.xyz -i 0:10          # Frames 0-9
+      aseview traj.xyz -i ::2           # Every 2nd frame
+      aseview traj.xyz -i 10:20:2       # Frames 10-19, step 2
 
     \b
     Viewer Types (-v/--viewer):
-      aseview2 mol.xyz -v molecular      # Standard viewer (default)
-      aseview2 mol.xyz -v overlay        # Overlay multiple structures
-      aseview2 mol.xyz -v normal         # Normal mode viewer
+      aseview mol.xyz -v molecular      # Standard viewer (default)
+      aseview mol.xyz -v overlay        # Overlay multiple structures
+      aseview mol.xyz -v normal         # Normal mode viewer
 
     \b
     Overlay Mode (comparing structures):
-      aseview2 a.xyz b.xyz               # Overlay two files (auto-detected)
-      aseview2 a.xyz b.xyz c.xyz         # Overlay multiple files
-      aseview2 traj.xyz -v overlay       # Overlay all frames from trajectory
+      aseview a.xyz b.xyz               # Overlay two files (auto-detected)
+      aseview a.xyz b.xyz c.xyz         # Overlay multiple files
+      aseview traj.xyz -v overlay       # Overlay all frames from trajectory
 
     \b
     Colormap for Overlay (--cmap):
-      aseview2 traj.xyz -v overlay --cmap viridis   # Viridis gradient
-      aseview2 traj.xyz -v overlay --cmap plasma    # Plasma gradient
-      aseview2 traj.xyz -v overlay --cmap coolwarm  # Blue-Red diverging
-      aseview2 traj.xyz -v overlay --cmap jet       # Rainbow (classic)
-      aseview2 traj.xyz -v overlay --cmap grayscale # Black to white
+      aseview traj.xyz -v overlay --cmap viridis   # Viridis gradient
+      aseview traj.xyz -v overlay --cmap plasma    # Plasma gradient
+      aseview traj.xyz -v overlay --cmap coolwarm  # Blue-Red diverging
+      aseview traj.xyz -v overlay --cmap jet       # Rainbow (classic)
+      aseview traj.xyz -v overlay --cmap grayscale # Black to white
 
     \b
     Normal Mode Viewer (--hess):
-      aseview2 mol.xyz --hess orca.hess             # ORCA Hessian file
-      aseview2 mol.xyz --hess orca.hess -v normal   # Explicit normal viewer
+      aseview mol.xyz --hess orca.hess             # ORCA Hessian file
+      aseview mol.xyz --hess orca.hess -v normal   # Explicit normal viewer
 
     \b
     Visual Styles (--style):
-      aseview2 mol.xyz --style cartoon   # Cartoon style (default)
-      aseview2 mol.xyz --style default   # CPK coloring
-      aseview2 mol.xyz --style neon      # Neon glow effect
-      aseview2 mol.xyz --style glossy    # Shiny surface
-      aseview2 mol.xyz --style metallic  # Metallic appearance
-      aseview2 mol.xyz --style rowan     # Rowan style
+      aseview mol.xyz --style cartoon   # Cartoon style (default)
+      aseview mol.xyz --style default   # CPK coloring
+      aseview mol.xyz --style neon      # Neon glow effect
+      aseview mol.xyz --style glossy    # Shiny surface
+      aseview mol.xyz --style metallic  # Metallic appearance
+      aseview mol.xyz --style rowan     # Rowan style
 
     \b
     Output Options:
-      aseview2 mol.xyz -o viewer.html    # Save as HTML file
-      aseview2 mol.xyz -p 9000           # Use port 9000
-      aseview2 mol.xyz --no-browser      # Don't open browser
+      aseview mol.xyz -o viewer.html    # Save as HTML file
+      aseview mol.xyz -p 9000           # Use port 9000
+      aseview mol.xyz --no-browser      # Don't open browser
 
     \b
     SSH Port Forwarding:
-      Server:  aseview2 molecule.xyz -p 8080
+      Server:  aseview molecule.xyz -p 8080
       Local:   ssh -L 8080:localhost:8080 user@remote
       Browser: http://localhost:8080
 
     \b
     Other Options:
-      aseview2 mol.xyz -k                # Kill existing server on port
-      aseview2 mol.xyz -f xyz            # Force file format
+      aseview mol.xyz -k                # Kill existing server on port
+      aseview mol.xyz -f xyz            # Force file format
     """
     # Kill existing process on port if requested
     if kill:
         if kill_port(port):
             import time
+
             time.sleep(0.5)  # Wait for port to be released
 
     # Import ASE for reading files
@@ -379,7 +401,9 @@ def main(
     # Show loading info
     n_atoms = len(all_atoms[0]) if all_atoms else 0
     n_frames = len(all_atoms)
-    console.print(f"  [green]✓[/green] Loaded [bold]{n_frames}[/bold] frame(s), [bold]{n_atoms}[/bold] atoms")
+    console.print(
+        f"  [green]✓[/green] Loaded [bold]{n_frames}[/bold] frame(s), [bold]{n_atoms}[/bold] atoms"
+    )
 
     # Determine viewer type
     viewer_type = viewer
@@ -428,7 +452,7 @@ def main(
 
     # Output
     if output:
-        with open(output, 'w', encoding='utf-8') as f:
+        with open(output, "w", encoding="utf-8") as f:
             f.write(html_content)
         console.print(f"  [green]✓[/green] Saved to [bold]{output}[/bold]")
     else:

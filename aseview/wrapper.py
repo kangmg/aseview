@@ -1,6 +1,7 @@
 """
 Wrapper module for molecular visualization
 """
+
 import glob as glob_module
 import json
 import os
@@ -10,17 +11,14 @@ from ase import Atoms
 
 class MolecularData:
     """Class to handle molecular data conversion between ASE Atoms and JSON format."""
-    
+
     @staticmethod
     def from_atoms(atoms: Atoms) -> Dict[str, Any]:
         """Convert ASE Atoms object to JSON-serializable dictionary."""
         positions = atoms.get_positions().tolist()
         symbols = atoms.get_chemical_symbols()
 
-        data = {
-            "positions": positions,
-            "symbols": symbols
-        }
+        data = {"positions": positions, "symbols": symbols}
 
         # Add cell information if present
         if atoms.pbc.any():
@@ -35,8 +33,8 @@ class MolecularData:
             pass
 
         # Fallback to arrays if not from calculator
-        if "forces" not in data and hasattr(atoms, 'arrays') and 'forces' in atoms.arrays:
-            data["forces"] = atoms.arrays['forces'].tolist()
+        if "forces" not in data and hasattr(atoms, "arrays") and "forces" in atoms.arrays:
+            data["forces"] = atoms.arrays["forces"].tolist()
 
         # Add energy if available (from calculator or info dict)
         try:
@@ -46,26 +44,27 @@ class MolecularData:
             pass
 
         # Check info dict for energy (common in trajectory files)
-        if "energy" not in data and hasattr(atoms, 'info'):
-            for key in ['energy', 'Energy', 'E', 'total_energy']:
+        if "energy" not in data and hasattr(atoms, "info"):
+            for key in ["energy", "Energy", "E", "total_energy"]:
                 if key in atoms.info:
                     data["energy"] = float(atoms.info[key])
                     break
 
         # Add name if available in info dict
-        if hasattr(atoms, 'info') and 'name' in atoms.info:
-            data["name"] = str(atoms.info['name'])
+        if hasattr(atoms, "info") and "name" in atoms.info:
+            data["name"] = str(atoms.info["name"])
 
         # Add charges if available (from arrays or info dict)
         charges = None
-        if hasattr(atoms, 'arrays') and 'charges' in atoms.arrays:
-            charges = atoms.arrays['charges']
-        elif hasattr(atoms, 'info') and 'charges' in atoms.info:
-            charges = atoms.info['charges']
+        if hasattr(atoms, "arrays") and "charges" in atoms.arrays:
+            charges = atoms.arrays["charges"]
+        elif hasattr(atoms, "info") and "charges" in atoms.info:
+            charges = atoms.info["charges"]
 
         if charges is not None:
             try:
                 import numpy as np
+
                 charges_array = np.asarray(charges, dtype=float).flatten()
                 if len(charges_array) == len(symbols):
                     data["charges"] = charges_array.tolist()
@@ -73,58 +72,59 @@ class MolecularData:
                 pass
 
         return data
-    
+
     @staticmethod
     def to_atoms(data: Dict[str, Any]) -> Atoms:
         """Convert JSON-serializable dictionary to ASE Atoms object."""
         atoms = Atoms(symbols=data["symbols"], positions=data["positions"])
-        
+
         if "cell" in data:
             atoms.set_cell(data["cell"])
             atoms.pbc = [True, True, True]
-            
+
         return atoms
 
 
 class BaseViewer:
     """Base class for all molecular viewers."""
-    
+
     def __init__(self, data: Union[Atoms, Dict[str, Any], str, List]):
         """
         Initialize the viewer with molecular data.
-        
+
         Args:
             data: Can be an ASE Atoms object, a dictionary with molecular data,
                   a path to a JSON file containing molecular data, or a list of any of these.
         """
         self.data = self._process_data(data)
-    
+
     def _process_data(self, data):
         """Process input data into a standardized format."""
         if isinstance(data, str):
             from ase.io import read as ase_read
+
             # Check if it's a glob pattern
-            is_glob = any(c in data for c in ('*', '?', '['))
+            is_glob = any(c in data for c in ("*", "?", "["))
             if is_glob:
                 files = sorted(glob_module.glob(data))
                 if not files:
                     raise ValueError(f"No files matched glob pattern: {data}")
                 all_atoms = []
                 for f in files:
-                    frames = ase_read(f, index=':')
+                    frames = ase_read(f, index=":")
                     if isinstance(frames, Atoms):
                         frames = [frames]
                     all_atoms.extend(frames)
                 return [MolecularData.from_atoms(a) for a in all_atoms]
             elif os.path.exists(data):
                 # File path: read all frames by default
-                frames = ase_read(data, index=':')
+                frames = ase_read(data, index=":")
                 if isinstance(frames, Atoms):
                     frames = [frames]
                 return [MolecularData.from_atoms(a) for a in frames]
             else:
                 # Fall back to JSON
-                with open(data, 'r') as f:
+                with open(data, "r") as f:
                     return json.load(f)
         elif isinstance(data, Atoms):
             return MolecularData.from_atoms(data)
@@ -141,12 +141,12 @@ class BaseViewer:
             return processed_list
         elif isinstance(data, dict):
             return data
-        elif hasattr(data, '__iter__') and not isinstance(data, (str, dict)):
+        elif hasattr(data, "__iter__") and not isinstance(data, (str, dict)):
             # Handle iterables like ASE Trajectory - convert to list and process
             return self._process_data(list(data))
         else:
             raise ValueError(f"Unsupported data type: {type(data)}")
-    
+
     def _get_js_data(self) -> str:
         """Convert molecular data to JavaScript-compatible JSON string."""
         # Ensure data is a list for consistency
@@ -154,10 +154,10 @@ class BaseViewer:
             data_to_convert = [self.data]
         else:
             data_to_convert = self.data
-            
+
         return json.dumps(data_to_convert)
-    
-    def show(self, width='100%', height=600):
+
+    def show(self, width="100%", height=600):
         """Display the viewer in a Jupyter notebook."""
         try:
             from IPython.display import display, HTML
@@ -166,17 +166,17 @@ class BaseViewer:
 
             # Escape HTML for srcdoc attribute (handles quotes and special chars)
             # This avoids data: URI size limits that cause failures with large molecules
-            escaped_html = (html
-                .replace('&', '&amp;')
-                .replace('"', '&quot;')
-                .replace('<', '&lt;')
-                .replace('>', '&gt;')
+            escaped_html = (
+                html.replace("&", "&amp;")
+                .replace('"', "&quot;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
             )
 
             # Use srcdoc instead of data: URI to avoid size limits
             # srcdoc supports much larger content than data: URIs
-            width_style = width if isinstance(width, str) else f'{width}px'
-            iframe_html = f'''
+            width_style = width if isinstance(width, str) else f"{width}px"
+            iframe_html = f"""
 <div style="width: {width_style}; height: {height}px; position: relative;">
     <iframe
         srcdoc="{escaped_html}"
@@ -187,22 +187,22 @@ class BaseViewer:
         scrolling="no">
     </iframe>
 </div>
-'''
+"""
             display(HTML(iframe_html))
         except ImportError:
             print("IPython is not available. Use get_html() to get the HTML content.")
-    
+
     def get_html(self) -> str:
         """Get the HTML content for the viewer."""
         return self._generate_html()
-    
+
     def save_html(self, filename: str) -> None:
         """Save the viewer as an HTML file."""
         html = self.get_html()
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             f.write(html)
         print(f"Saved viewer to {filename}")
-    
+
     def _generate_html(self) -> str:
         """Generate the HTML content for the viewer."""
         # This will be implemented by subclasses
@@ -211,7 +211,7 @@ class BaseViewer:
 
 class MolecularViewer(BaseViewer):
     """Molecular viewer with advanced settings and controls."""
-    
+
     def __init__(self, data: Union[Atoms, Dict[str, Any], str, List], **kwargs):
         super().__init__(data)
         self.settings = {
@@ -234,9 +234,9 @@ class MolecularViewer(BaseViewer):
             "viewMode": "Perspective",
             "rotationMode": "TrackBall",
             "selectionMode": "Lasso",
-            **kwargs
+            **kwargs,
         }
-    
+
     def _generate_html(self) -> str:
         """Generate the HTML content for the molecular viewer."""
         js_data = self._get_js_data()
@@ -251,7 +251,7 @@ class MolecularViewer(BaseViewer):
             html = None
             for candidate in template_candidates:
                 if os.path.exists(candidate):
-                    with open(candidate, 'r', encoding='utf-8') as f:
+                    with open(candidate, "r", encoding="utf-8") as f:
                         html = f.read()
                     break
 
@@ -262,60 +262,60 @@ class MolecularViewer(BaseViewer):
 
         # Inline all JavaScript dependencies for Jupyter compatibility
         vendor_dir = os.path.join(os.path.dirname(__file__), "static", "js", "vendor")
-        
+
         # Inline Three.js
         three_path = os.path.join(vendor_dir, "three.min.js")
         if os.path.exists(three_path):
-            with open(three_path, 'r', encoding='utf-8') as f:
+            with open(three_path, "r", encoding="utf-8") as f:
                 three_js = f.read()
             html = html.replace(
                 '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>',
-                f'<script>{three_js}</script>'
+                f"<script>{three_js}</script>",
             )
-        
+
         # Inline OrbitControls
         orbit_path = os.path.join(vendor_dir, "OrbitControls.js")
         if os.path.exists(orbit_path):
-            with open(orbit_path, 'r', encoding='utf-8') as f:
+            with open(orbit_path, "r", encoding="utf-8") as f:
                 orbit_js = f.read()
             html = html.replace(
                 '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>',
-                f'<script>{orbit_js}</script>'
+                f"<script>{orbit_js}</script>",
             )
-        
+
         # Inline TrackballControls
         trackball_path = os.path.join(vendor_dir, "TrackballControls.js")
         if os.path.exists(trackball_path):
-            with open(trackball_path, 'r', encoding='utf-8') as f:
+            with open(trackball_path, "r", encoding="utf-8") as f:
                 trackball_js = f.read()
             html = html.replace(
                 '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>',
-                f'<script>{trackball_js}</script>'
+                f"<script>{trackball_js}</script>",
             )
-        
+
         # Inline styles.js
         styles_path = os.path.join(os.path.dirname(__file__), "static", "js", "styles.js")
         if os.path.exists(styles_path):
-            with open(styles_path, 'r', encoding='utf-8') as style_file:
+            with open(styles_path, "r", encoding="utf-8") as style_file:
                 styles_js = style_file.read()
 
             # Replace CDN URL with inline version (templates use CDN for web compatibility)
-            cdn_tag = '<script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/styles.js"></script>'
+            cdn_tag = '<script src="https://raw.githack.com/kangmg/aseview/main/aseview/static/js/styles.js"></script>'
             inline_styles_tag = f"<script>\n{styles_js}\n</script>"
             if cdn_tag in html:
                 html = html.replace(cdn_tag, inline_styles_tag)
-        
+
         # Inline gifshot.js for GIF export
         gifshot_path = os.path.join(vendor_dir, "gifshot.js")
         if os.path.exists(gifshot_path):
-            with open(gifshot_path, 'r', encoding='utf-8') as f:
+            with open(gifshot_path, "r", encoding="utf-8") as f:
                 gifshot_js = f.read()
             # Add gifshot.js before closing </head> tag
-            html = html.replace('</head>', f'<script>{gifshot_js}</script>\n</head>')
+            html = html.replace("</head>", f"<script>{gifshot_js}</script>\n</head>")
 
         # Inject molecular data
-        if '{{molecular_data}}' in html:
-            html = html.replace('{{molecular_data}}', js_data)
+        if "{{molecular_data}}" in html:
+            html = html.replace("{{molecular_data}}", js_data)
             return html
 
         # If template does not expose placeholder, call setMolecularData at load
@@ -365,8 +365,8 @@ class MolecularViewer(BaseViewer):
 </script>
 </body>
 """
-        return html.replace('</body>', script)
-    
+        return html.replace("</body>", script)
+
     def _generate_simple_html(self) -> str:
         """Generate a simple HTML fallback."""
         return f"""
@@ -411,7 +411,7 @@ class NormalViewer(BaseViewer):
         mode_vectors: List = None,
         frequencies: List = None,
         n_frames: int = 30,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize NormalViewer for visualizing vibrational modes.
@@ -443,7 +443,9 @@ class NormalViewer(BaseViewer):
         if vibrations is not None:
             self._extract_vibration_data(vibrations)
         elif mode_vectors is not None and frequencies is not None:
-            self.mode_vectors = mode_vectors if isinstance(mode_vectors, list) else mode_vectors.tolist()
+            self.mode_vectors = (
+                mode_vectors if isinstance(mode_vectors, list) else mode_vectors.tolist()
+            )
             self.frequencies, self.is_imaginary = self._format_frequencies(frequencies)
 
         self.n_frames = n_frames
@@ -462,7 +464,7 @@ class NormalViewer(BaseViewer):
             "showModeVector": False,
             "initialModeIndex": 0,
             "nFrames": n_frames,
-            **kwargs
+            **kwargs,
         }
 
     def _extract_vibration_data(self, vib):
@@ -476,7 +478,7 @@ class NormalViewer(BaseViewer):
         except ImportError:
             raise ImportError("ASE vibrations module is required")
 
-        if hasattr(vib, 'get_vibrations'):
+        if hasattr(vib, "get_vibrations"):
             vib_data = vib.get_vibrations()
         else:
             vib_data = vib
@@ -517,7 +519,7 @@ class NormalViewer(BaseViewer):
             "modeVectors": self.mode_vectors,
             "frequencies": self.frequencies,
             "isImaginary": self.is_imaginary,
-            "nFrames": self.n_frames
+            "nFrames": self.n_frames,
         }
 
     def _generate_html(self) -> str:
@@ -535,8 +537,10 @@ class NormalViewer(BaseViewer):
 
         # Load normal_viewer template
         try:
-            template_path = os.path.join(os.path.dirname(__file__), "templates", "normal_viewer.html")
-            with open(template_path, 'r', encoding='utf-8') as f:
+            template_path = os.path.join(
+                os.path.dirname(__file__), "templates", "normal_viewer.html"
+            )
+            with open(template_path, "r", encoding="utf-8") as f:
                 html = f.read()
         except FileNotFoundError:
             return self._generate_simple_html("Normal Mode Viewer")
@@ -547,49 +551,49 @@ class NormalViewer(BaseViewer):
         # Inline Three.js
         three_path = os.path.join(vendor_dir, "three.min.js")
         if os.path.exists(three_path):
-            with open(three_path, 'r', encoding='utf-8') as f:
+            with open(three_path, "r", encoding="utf-8") as f:
                 three_js = f.read()
             html = html.replace(
                 '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>',
-                f'<script>{three_js}</script>'
+                f"<script>{three_js}</script>",
             )
 
         # Inline OrbitControls
         orbit_path = os.path.join(vendor_dir, "OrbitControls.js")
         if os.path.exists(orbit_path):
-            with open(orbit_path, 'r', encoding='utf-8') as f:
+            with open(orbit_path, "r", encoding="utf-8") as f:
                 orbit_js = f.read()
             html = html.replace(
                 '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>',
-                f'<script>{orbit_js}</script>'
+                f"<script>{orbit_js}</script>",
             )
 
         # Inline TrackballControls
         trackball_path = os.path.join(vendor_dir, "TrackballControls.js")
         if os.path.exists(trackball_path):
-            with open(trackball_path, 'r', encoding='utf-8') as f:
+            with open(trackball_path, "r", encoding="utf-8") as f:
                 trackball_js = f.read()
             html = html.replace(
                 '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>',
-                f'<script>{trackball_js}</script>'
+                f"<script>{trackball_js}</script>",
             )
 
         # Inline styles.js
         styles_path = os.path.join(os.path.dirname(__file__), "static", "js", "styles.js")
         if os.path.exists(styles_path):
-            with open(styles_path, 'r', encoding='utf-8') as f:
+            with open(styles_path, "r", encoding="utf-8") as f:
                 styles_js = f.read()
             # Replace CDN URL with inline version (templates use CDN for web compatibility)
-            cdn_tag = '<script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/styles.js"></script>'
+            cdn_tag = '<script src="https://raw.githack.com/kangmg/aseview/main/aseview/static/js/styles.js"></script>'
             if cdn_tag in html:
-                html = html.replace(cdn_tag, f'<script>\n{styles_js}\n</script>')
+                html = html.replace(cdn_tag, f"<script>\n{styles_js}\n</script>")
 
         # Inline gifshot.js for GIF export
         gifshot_path = os.path.join(vendor_dir, "gifshot.js")
         if os.path.exists(gifshot_path):
-            with open(gifshot_path, 'r', encoding='utf-8') as f:
+            with open(gifshot_path, "r", encoding="utf-8") as f:
                 gifshot_js = f.read()
-            html = html.replace('</head>', f'<script>{gifshot_js}</script>\n</head>')
+            html = html.replace("</head>", f"<script>{gifshot_js}</script>\n</head>")
 
         # Inject data and settings
         settings_json = json.dumps(self.settings)
@@ -641,7 +645,7 @@ class NormalViewer(BaseViewer):
 </script>
 </body>
 """
-        return html.replace('</body>', script)
+        return html.replace("</body>", script)
 
     def _generate_simple_html(self, title: str) -> str:
         """Generate a simple HTML fallback."""
@@ -695,7 +699,7 @@ class NormalViewer(BaseViewer):
         if isinstance(atoms, Atoms):
             n_atoms = len(atoms)
         else:
-            n_atoms = len(atoms.get('symbols', []))
+            n_atoms = len(atoms.get("symbols", []))
 
         if n_atoms != n_atoms_hess:
             raise ValueError(
@@ -715,22 +719,22 @@ class NormalViewer(BaseViewer):
 
 class OverlayViewer(BaseViewer):
     """Overlay viewer for comparing multiple molecules simultaneously."""
-    
+
     def __init__(self, data: Union[Atoms, List[Atoms], Dict[str, Any], str, List], **kwargs):
         """
         Initialize the overlay viewer with one or more molecules.
-        
+
         Args:
             data: Can be a single Atoms object, a list of Atoms objects,
                   or any format supported by BaseViewer
             **kwargs: Additional settings for visualization
         """
         super().__init__(data)
-        
+
         # Ensure data is always a list for overlay viewer
         if not isinstance(self.data, list):
             self.data = [self.data]
-        
+
         self.settings = {
             "bondThreshold": 1.2,  # Scale factor for covalent radii sum
             "bondThickness": 0.1,
@@ -743,63 +747,65 @@ class OverlayViewer(BaseViewer):
             "viewMode": "Perspective",
             "rotationMode": "TrackBall",
             "colorBy": "Atom",
-            **kwargs
+            **kwargs,
         }
-    
+
     def _generate_html(self) -> str:
         """Generate the HTML content for the overlay viewer."""
         js_data = self._get_js_data()
-        
+
         # Load overlay_viewer template
         try:
-            template_path = os.path.join(os.path.dirname(__file__), "templates", "overlay_viewer.html")
-            with open(template_path, 'r', encoding='utf-8') as f:
+            template_path = os.path.join(
+                os.path.dirname(__file__), "templates", "overlay_viewer.html"
+            )
+            with open(template_path, "r", encoding="utf-8") as f:
                 html = f.read()
         except FileNotFoundError:
             return self._generate_simple_html("Overlay Viewer")
-        
+
         # Inline JavaScript dependencies
         vendor_dir = os.path.join(os.path.dirname(__file__), "static", "js", "vendor")
-        
+
         # Inline Three.js
         three_path = os.path.join(vendor_dir, "three.min.js")
         if os.path.exists(three_path):
-            with open(three_path, 'r', encoding='utf-8') as f:
+            with open(three_path, "r", encoding="utf-8") as f:
                 three_js = f.read()
             html = html.replace(
                 '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>',
-                f'<script>{three_js}</script>'
+                f"<script>{three_js}</script>",
             )
-        
+
         # Inline OrbitControls
         orbit_path = os.path.join(vendor_dir, "OrbitControls.js")
         if os.path.exists(orbit_path):
-            with open(orbit_path, 'r', encoding='utf-8') as f:
+            with open(orbit_path, "r", encoding="utf-8") as f:
                 orbit_js = f.read()
             html = html.replace(
                 '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>',
-                f'<script>{orbit_js}</script>'
+                f"<script>{orbit_js}</script>",
             )
-        
+
         # Inline TrackballControls
         trackball_path = os.path.join(vendor_dir, "TrackballControls.js")
         if os.path.exists(trackball_path):
-            with open(trackball_path, 'r', encoding='utf-8') as f:
+            with open(trackball_path, "r", encoding="utf-8") as f:
                 trackball_js = f.read()
             html = html.replace(
                 '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>',
-                f'<script>{trackball_js}</script>'
+                f"<script>{trackball_js}</script>",
             )
-        
+
         # Inline styles.js
         styles_path = os.path.join(os.path.dirname(__file__), "static", "js", "styles.js")
         if os.path.exists(styles_path):
-            with open(styles_path, 'r', encoding='utf-8') as f:
+            with open(styles_path, "r", encoding="utf-8") as f:
                 styles_js = f.read()
             # Replace CDN URL with inline version (templates use CDN for web compatibility)
-            cdn_tag = '<script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/styles.js"></script>'
+            cdn_tag = '<script src="https://raw.githack.com/kangmg/aseview/main/aseview/static/js/styles.js"></script>'
             if cdn_tag in html:
-                html = html.replace(cdn_tag, f'<script>\n{styles_js}\n</script>')
+                html = html.replace(cdn_tag, f"<script>\n{styles_js}\n</script>")
 
         # Inject molecular data and settings
         settings_json = json.dumps(self.settings)
@@ -843,8 +849,8 @@ class OverlayViewer(BaseViewer):
 </script>
 </body>
 """
-        return html.replace('</body>', script)
-    
+        return html.replace("</body>", script)
+
     def _generate_simple_html(self, title: str) -> str:
         """Generate a simple HTML fallback."""
         num_molecules = len(self.data) if isinstance(self.data, list) else 1

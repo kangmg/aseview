@@ -5,6 +5,7 @@ Supported formats:
 - ORCA: .hess files
 - More formats can be added (VASP, Gaussian, xTB, etc.)
 """
+
 import numpy as np
 from typing import Tuple, List, Optional
 from pathlib import Path
@@ -27,7 +28,7 @@ def parse_orca_hess(filepath: str) -> Tuple[np.ndarray, np.ndarray, int]:
     if not filepath.exists():
         raise FileNotFoundError(f"Hessian file not found: {filepath}")
 
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         content = f.read()
 
     # Parse $vibrational_frequencies section
@@ -63,7 +64,7 @@ def _parse_orca_frequencies(content: str) -> np.ndarray:
             section_end = next_section
 
     section = content[section_start:section_end].strip()
-    lines = section.split('\n')
+    lines = section.split("\n")
 
     # First line is the number of frequencies
     n_freqs = int(lines[0].strip())
@@ -104,7 +105,7 @@ def _parse_orca_normal_modes(content: str) -> np.ndarray:
             section_end = next_section
 
     section = content[section_start:section_end].strip()
-    lines = section.split('\n')
+    lines = section.split("\n")
 
     # First line contains dimensions: n_coords n_modes
     dims = lines[0].strip().split()
@@ -144,7 +145,7 @@ def _parse_orca_normal_modes(content: str) -> np.ndarray:
 
             parts = line.split()
             # First part is coordinate index, rest are mode values
-            for col_offset, value in enumerate(parts[1:1+n_cols_in_block]):
+            for col_offset, value in enumerate(parts[1 : 1 + n_cols_in_block]):
                 mode_idx = mode_col_start + col_offset
                 if mode_idx < n_modes:
                     normal_modes[mode_idx, coord_idx] = float(value)
@@ -184,8 +185,9 @@ def reshape_modes_to_atoms(normal_modes: np.ndarray, n_atoms: int) -> List[List[
     return reshaped
 
 
-def get_real_vibrations(frequencies: np.ndarray, normal_modes: np.ndarray,
-                        skip_translations_rotations: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+def get_real_vibrations(
+    frequencies: np.ndarray, normal_modes: np.ndarray, skip_translations_rotations: bool = True
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Filter out translational and rotational modes (first 5-6 modes with ~0 frequency).
 

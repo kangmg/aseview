@@ -25,14 +25,14 @@ class JupyterViewer(widgets.VBox):
         html_content = self.viewer.get_html()
 
         # Escape HTML for srcdoc attribute to handle large molecules
-        escaped_html = (html_content
-            .replace('&', '&amp;')
-            .replace('"', '&quot;')
-            .replace('<', '&lt;')
-            .replace('>', '&gt;')
+        escaped_html = (
+            html_content.replace("&", "&amp;")
+            .replace('"', "&quot;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
         )
 
-        iframe_html = f'''
+        iframe_html = f"""
 <div style="width: 100%; height: {height}px; position: relative;">
     <iframe
         srcdoc="{escaped_html}"
@@ -43,24 +43,24 @@ class JupyterViewer(widgets.VBox):
         scrolling="no">
     </iframe>
 </div>
-'''
+"""
         self.html_output = widgets.HTML(value=iframe_html)
 
         # Create control widgets
         self.save_button = widgets.Button(
-            description='Save HTML',
+            description="Save HTML",
             disabled=False,
-            button_style='success',
-            tooltip='Save as HTML file',
-            icon='download'
+            button_style="success",
+            tooltip="Save as HTML file",
+            icon="download",
         )
 
         self.filename_input = widgets.Text(
-            value='molecule_viewer.html',
-            placeholder='Filename',
-            description='Filename:',
+            value="molecule_viewer.html",
+            placeholder="Filename",
+            description="Filename:",
             disabled=False,
-            layout=widgets.Layout(width='250px')
+            layout=widgets.Layout(width="250px"),
         )
 
         # Set up event handlers
@@ -78,7 +78,7 @@ class JupyterViewer(widgets.VBox):
         html_content = self.viewer.get_html()
 
         # Use base64 to safely encode the HTML content
-        html_b64 = base64.b64encode(html_content.encode('utf-8')).decode('ascii')
+        html_b64 = base64.b64encode(html_content.encode("utf-8")).decode("ascii")
 
         # Create download link using data URI
         # Escape filename for safe JS string insertion
@@ -94,7 +94,7 @@ class JupyterViewer(widgets.VBox):
         }})();
         """
 
-        display(HTML(f'<script>{js_code}</script>'))
+        display(HTML(f"<script>{js_code}</script>"))
         print(f"Downloading {filename}...")
 
 
@@ -102,7 +102,7 @@ def view_molecule(
     data: Union[Atoms, Dict[str, Any], str, List],
     viewer_type: str = "molecular",
     height: int = 600,
-    **kwargs
+    **kwargs,
 ):
     """
     Create and display a molecular viewer in Jupyter.
