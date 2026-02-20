@@ -47,6 +47,12 @@ aseview = [
     "static/js/vendor/*.js",
 ]
 
+[project.urls]
+Homepage = "https://github.com/kangmg/aseview"
+Repository = "https://github.com/kangmg/aseview"
+Documentation = "https://kangmg.github.io/aseview"
+"Bug Tracker" = "https://github.com/kangmg/aseview/issues"
+
 [project.scripts]
 aseview = "aseview.cli:cli"
 aseview2 = "aseview.cli:cli"

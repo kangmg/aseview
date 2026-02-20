@@ -1,8 +1,8 @@
-# aseview2
+# aseview
 
 **Interactive molecular visualization for ASE (Atomic Simulation Environment)**
 
-aseview2 is a powerful, browser-based molecular viewer that integrates seamlessly with ASE. It provides interactive 3D visualization for molecules, crystals, and trajectories with support for normal mode animations.
+aseview is a powerful, browser-based molecular viewer that integrates seamlessly with ASE. It provides interactive 3D visualization for molecules, crystals, and trajectories with support for normal mode animations.
 
 ## Features
 
@@ -29,7 +29,7 @@ aseview2 is a powerful, browser-based molecular viewer that integrates seamlessl
 === "CLI"
 
     ```bash
-    aseview2 molecule.xyz
+    aseview molecule.xyz
     ```
 
 ## Viewer Types
@@ -43,13 +43,13 @@ aseview2 is a powerful, browser-based molecular viewer that integrates seamlessl
 ## Installation
 
 ```bash
-pip install aseview2
+pip install aseview
 ```
 
 Or install from source:
 
 ```bash
-git clone https://github.com/kangmg/aseview_v2_dev.git
-cd aseview_v2_dev
+git clone https://github.com/kangmg/aseview.git
+cd aseview
 pip install -e .
 ```

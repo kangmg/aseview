@@ -16,7 +16,7 @@
 === "CLI"
 
     ```bash
-    aseview2 molecule.xyz --style cartoon
+    aseview molecule.xyz --style cartoon
     ```
 
 <iframe src="../../assets/viewers/water.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>

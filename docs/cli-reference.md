@@ -3,7 +3,7 @@
 ## Synopsis
 
 ```bash
-aseview2 [OPTIONS] FILES...
+aseview [OPTIONS] FILES...
 ```
 
 ## Arguments
@@ -107,69 +107,69 @@ aseview2 [OPTIONS] FILES...
 
 ```bash
 # Single structure
-aseview2 molecule.xyz
+aseview molecule.xyz
 
 # Crystal structure
-aseview2 structure.cif
+aseview structure.cif
 
 # Specific style
-aseview2 molecule.xyz --style neon
+aseview molecule.xyz --style neon
 ```
 
 ### Trajectory
 
 ```bash
 # All frames with animation
-aseview2 trajectory.xyz
+aseview trajectory.xyz
 
 # Subset of frames
-aseview2 trajectory.xyz -i 0:100:5
+aseview trajectory.xyz -i 0:100:5
 
 # Save as HTML
-aseview2 trajectory.xyz -o trajectory.html
+aseview trajectory.xyz -o trajectory.html
 ```
 
 ### Overlay Comparison
 
 ```bash
 # Compare two structures
-aseview2 reactant.xyz product.xyz
+aseview reactant.xyz product.xyz
 
 # Trajectory overlay with colormap
-aseview2 optimization.xyz -v overlay --cmap viridis
+aseview optimization.xyz -v overlay --cmap viridis
 
 # Multiple files
-aseview2 conf1.xyz conf2.xyz conf3.xyz --cmap plasma
+aseview conf1.xyz conf2.xyz conf3.xyz --cmap plasma
 ```
 
 ### Normal Modes
 
 ```bash
 # ORCA Hessian
-aseview2 molecule.xyz --hess orca.hess
+aseview molecule.xyz --hess orca.hess
 
 # Explicit viewer type
-aseview2 molecule.xyz --hess orca.hess -v normal
+aseview molecule.xyz --hess orca.hess -v normal
 ```
 
 ### Server Options
 
 ```bash
 # Custom port
-aseview2 molecule.xyz -p 9000
+aseview molecule.xyz -p 9000
 
 # Kill existing server first
-aseview2 molecule.xyz -k -p 8080
+aseview molecule.xyz -k -p 8080
 
 # No auto-open browser
-aseview2 molecule.xyz --no-browser
+aseview molecule.xyz --no-browser
 ```
 
 ### SSH Forwarding
 
 ```bash
 # Server side
-aseview2 molecule.xyz -p 8080 --no-browser
+aseview molecule.xyz -p 8080 --no-browser
 
 # Client side
 ssh -L 8080:localhost:8080 user@server

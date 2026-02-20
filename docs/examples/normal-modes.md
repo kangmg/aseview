@@ -24,7 +24,7 @@ Visualize molecular vibrations from frequency calculations.
 === "CLI"
 
     ```bash
-    aseview2 molecule.xyz --hess orca.hess
+    aseview molecule.xyz --hess orca.hess
     ```
 
 ---
