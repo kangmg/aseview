@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aseview"
-version = "0.1.0"
+version = "0.0.1"
 description = "A molecular viewer for ASE (Atomic Simulation Environment) data"
 readme = "README.md"
 authors = [{name = "Mingi Kang", email = "kangmg@kentech.ac.kr"}]
