@@ -7,7 +7,7 @@ name = "aseview"
 version = "0.1.0"
 description = "A molecular viewer for ASE (Atomic Simulation Environment) data"
 readme = "README.md"
-authors = [{name = "Mingi Kang"}]
+authors = [{name = "Mingi Kang", email = "kangmg@kentech.ac.kr"}]
 license = {file = "LICENSE"}
 classifiers = [
     "Development Status :: 3 - Alpha",
