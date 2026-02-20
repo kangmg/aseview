@@ -183,7 +183,7 @@ class BaseViewer:
         width="100%"
         height="100%"
         style="border: 1px solid #ddd; border-radius: 4px; display: block;"
-        sandbox="allow-scripts allow-same-origin"
+        sandbox="allow-scripts allow-same-origin allow-downloads allow-modals"
         scrolling="no">
     </iframe>
 </div>
