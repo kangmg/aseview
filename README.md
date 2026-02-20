@@ -7,6 +7,14 @@ Molecular structure viewer for ASE (Atomic Simulation Environment).
 ## Installation
 
 ```bash
+pip install aseview
+```
+
+For development:
+
+```bash
+git clone https://github.com/kangmg/aseview.git
+cd aseview
 pip install -e .
 ```
 
@@ -14,39 +22,39 @@ pip install -e .
 
 ```bash
 # Basic usage
-aseview2 molecule.xyz
+aseview molecule.xyz
 
 # View trajectory (all frames)
-aseview2 trajectory.xyz -i :
+aseview trajectory.xyz -i :
 
 # View specific frames
-aseview2 trajectory.xyz -i 0:10    # frames 0-9
-aseview2 trajectory.xyz -i -1      # last frame
-aseview2 trajectory.xyz -i ::2     # every 2nd frame
+aseview trajectory.xyz -i 0:10    # frames 0-9
+aseview trajectory.xyz -i -1      # last frame
+aseview trajectory.xyz -i ::2     # every 2nd frame
 
 # Specify file format
-aseview2 POSCAR -f vasp
+aseview POSCAR -f vasp
 
 # Custom port
-aseview2 molecule.xyz -p 9000
+aseview molecule.xyz -p 9000
 
 # Overlay multiple structures
-aseview2 reactant.xyz product.xyz
+aseview reactant.xyz product.xyz
 
 # Overlay with colormap
-aseview2 trajectory.xyz -v overlay --cmap viridis
+aseview trajectory.xyz -v overlay --cmap viridis
 
 # Normal mode visualization with ORCA Hessian
-aseview2 molecule.xyz --hess orca.hess
+aseview molecule.xyz --hess orca.hess
 
 # Save as HTML file
-aseview2 molecule.xyz -o output.html
+aseview molecule.xyz -o output.html
 
 # Kill existing server on port
-aseview2 molecule.xyz -k
+aseview molecule.xyz -k
 
 # Help
-aseview2 -h
+aseview -h
 ```
 
 ## SSH Port Forwarding
@@ -55,7 +63,7 @@ When running on a remote server (e.g., HPC cluster, Docker container):
 
 ```bash
 # 1. On remote server
-aseview2 molecule.xyz -p 8080
+aseview molecule.xyz -p 8080
 
 # 2. On local machine (separate terminal)
 ssh -L 8080:localhost:8080 user@remote-server
@@ -70,8 +78,8 @@ For Docker with custom SSH port:
 # Connect with port forwarding
 ssh user@localhost -p 10011 -L 8080:localhost:8080
 
-# Then run aseview2 inside container
-aseview2 molecule.xyz -p 8080
+# Then run aseview inside container
+aseview molecule.xyz -p 8080
 ```
 
 ## Jupyter Notebook

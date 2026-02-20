@@ -5,7 +5,7 @@
 ### View a Single Structure
 
 ```bash
-aseview2 molecule.xyz
+aseview molecule.xyz
 ```
 
 This opens your default browser with an interactive 3D viewer.
@@ -14,29 +14,29 @@ This opens your default browser with an interactive 3D viewer.
 
 ```bash
 # View all frames
-aseview2 trajectory.xyz
+aseview trajectory.xyz
 
 # View specific frames
-aseview2 trajectory.xyz -i 0:10    # First 10 frames
-aseview2 trajectory.xyz -i -1      # Last frame only
-aseview2 trajectory.xyz -i ::2     # Every 2nd frame
+aseview trajectory.xyz -i 0:10    # First 10 frames
+aseview trajectory.xyz -i -1      # Last frame only
+aseview trajectory.xyz -i ::2     # Every 2nd frame
 ```
 
 ### Compare Structures (Overlay)
 
 ```bash
 # Overlay multiple files
-aseview2 reactant.xyz product.xyz
+aseview reactant.xyz product.xyz
 
 # Overlay with colormap
-aseview2 trajectory.xyz -v overlay --cmap viridis
+aseview trajectory.xyz -v overlay --cmap viridis
 ```
 
 ### Normal Mode Visualization
 
 ```bash
 # With ORCA Hessian file
-aseview2 molecule.xyz --hess orca.hess
+aseview molecule.xyz --hess orca.hess
 ```
 
 ## Python API Usage
@@ -81,7 +81,7 @@ When running on a remote server:
 
 ```bash
 # On server
-aseview2 molecule.xyz -p 8080
+aseview molecule.xyz -p 8080
 
 # On local machine
 ssh -L 8080:localhost:8080 user@remote

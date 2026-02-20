@@ -71,8 +71,8 @@ Copper FCC crystal (3x3x3 supercell):
 === "CLI"
 
     ```bash
-    aseview2 POSCAR --style metallic
-    aseview2 structure.cif
+    aseview POSCAR --style metallic
+    aseview structure.cif
     ```
 
 ### Common Crystal Structures
@@ -282,8 +282,8 @@ viewer.show()
 ```
 
 ```bash
-aseview2 POSCAR
-aseview2 CONTCAR
+aseview POSCAR
+aseview CONTCAR
 ```
 
 ### CIF Files
@@ -295,18 +295,18 @@ viewer.show()
 ```
 
 ```bash
-aseview2 crystal.cif
+aseview crystal.cif
 ```
 
 ### Other Formats
 
 | Format | Extension | Example |
 |--------|-----------|---------|
-| VASP | POSCAR, CONTCAR | `aseview2 POSCAR` |
-| CIF | .cif | `aseview2 structure.cif` |
-| XSF | .xsf | `aseview2 charge.xsf` |
-| Quantum ESPRESSO | .in | `aseview2 pw.in -f espresso-in` |
-| LAMMPS | .data | `aseview2 system.data -f lammps-data` |
+| VASP | POSCAR, CONTCAR | `aseview POSCAR` |
+| CIF | .cif | `aseview structure.cif` |
+| XSF | .xsf | `aseview charge.xsf` |
+| Quantum ESPRESSO | .in | `aseview pw.in -f espresso-in` |
+| LAMMPS | .data | `aseview system.data -f lammps-data` |
 
 ## Trajectory for Solid-State
 
@@ -325,10 +325,10 @@ viewer.show()
 
 ```bash
 # VASP MD trajectory
-aseview2 XDATCAR -i :
+aseview XDATCAR -i :
 
 # ASE trajectory format
-aseview2 md.traj -i :
+aseview md.traj -i :
 ```
 
 ### Relaxation Trajectory

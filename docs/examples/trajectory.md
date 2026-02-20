@@ -24,7 +24,7 @@ Visualize molecular dynamics trajectories with animation and energy plots.
 === "CLI"
 
     ```bash
-    aseview2 md_trajectory.xyz
+    aseview md_trajectory.xyz
     ```
 
 ---

@@ -4,22 +4,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aseview"
-version = "0.1.0"
+version = "0.0.1"
 description = "A molecular viewer for ASE (Atomic Simulation Environment) data"
 readme = "README.md"
-authors = [{name = "aseview"}]
-license = {text = "MIT"}
+authors = [{name = "Mingi Kang", email = "kangmg@kentech.ac.kr"}]
+license = {file = "LICENSE"}
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 dependencies = [
     "numpy",
     "ase",
@@ -47,5 +47,12 @@ aseview = [
     "static/js/vendor/*.js",
 ]
 
+[project.urls]
+Homepage = "https://github.com/kangmg/aseview"
+Repository = "https://github.com/kangmg/aseview"
+Documentation = "https://kangmg.github.io/aseview"
+"Bug Tracker" = "https://github.com/kangmg/aseview/issues"
+
 [project.scripts]
+aseview = "aseview.cli:cli"
 aseview2 = "aseview.cli:cli"

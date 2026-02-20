@@ -2,26 +2,26 @@
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.9+
 - ASE (Atomic Simulation Environment)
 
 ## Install from PyPI
 
 ```bash
-pip install aseview2
+pip install aseview
 ```
 
 ## Install from Source
 
 ```bash
-git clone https://github.com/kangmg/aseview_v2_dev.git
-cd aseview_v2_dev
+git clone https://github.com/kangmg/aseview.git
+cd aseview
 pip install -e .
 ```
 
 ## Dependencies
 
-aseview2 will automatically install the following dependencies:
+aseview will automatically install the following dependencies:
 
 | Package | Purpose |
 |---------|---------|
@@ -34,8 +34,17 @@ aseview2 will automatically install the following dependencies:
 
 ```bash
 # Check CLI
-aseview2 --help
+aseview --help
 
 # Check Python import
 python -c "from aseview import MolecularViewer; print('OK')"
+```
+
+## Note on aseview2
+
+`aseview2` is kept as a backward-compatible alias for `aseview`. Both commands are identical:
+
+```bash
+aseview molecule.xyz   # recommended
+aseview2 molecule.xyz  # alias (backward compatibility)
 ```

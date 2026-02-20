@@ -1,8 +1,8 @@
-site_name: aseview2 Documentation
+site_name: aseview Documentation
 site_description: Interactive molecular visualization for ASE
-site_url: https://kangmg.github.io/aseview_v2_dev
-repo_url: https://github.com/kangmg/aseview_v2_dev
-repo_name: kangmg/aseview_v2_dev
+site_url: https://kangmg.github.io/aseview
+repo_url: https://github.com/kangmg/aseview
+repo_name: kangmg/aseview
 
 theme:
   name: material
@@ -63,7 +63,7 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/kangmg/aseview_v2_dev
+      link: https://github.com/kangmg/aseview
 
 extra_css:
   - stylesheets/extra.css

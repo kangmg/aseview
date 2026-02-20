@@ -26,7 +26,7 @@ Compare multiple molecular structures by overlaying them in a single view.
 === "CLI"
 
     ```bash
-    aseview2 reactant.xyz product.xyz
+    aseview reactant.xyz product.xyz
     ```
 
 ---
@@ -93,8 +93,8 @@ This performs:
 
 ```bash
 # With colormap
-aseview2 trajectory.xyz -v overlay --cmap viridis
+aseview trajectory.xyz -v overlay --cmap viridis
 
 # Multiple files
-aseview2 *.xyz --cmap plasma
+aseview *.xyz --cmap plasma
 ```
