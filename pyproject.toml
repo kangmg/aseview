@@ -48,4 +48,5 @@ aseview = [
 ]
 
 [project.scripts]
+aseview = "aseview.cli:cli"
 aseview2 = "aseview.cli:cli"
