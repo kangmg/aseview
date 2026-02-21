@@ -720,13 +720,24 @@ class NormalViewer(BaseViewer):
 class OverlayViewer(BaseViewer):
     """Overlay viewer for comparing multiple molecules simultaneously."""
 
-    def __init__(self, data: Union[Atoms, List[Atoms], Dict[str, Any], str, List], **kwargs):
+    def __init__(
+        self,
+        data: Union[Atoms, List[Atoms], Dict[str, Any], str, List],
+        index_list=None,
+        **kwargs,
+    ):
         """
         Initialize the overlay viewer with one or more molecules.
 
         Args:
             data: Can be a single Atoms object, a list of Atoms objects,
                   or any format supported by BaseViewer
+            index_list: Controls which atoms to include in the overlay.
+                - None          → "all"     : use all atoms from every structure
+                - list          → "same"    : apply the same indices to every structure
+                                  e.g. [0, 1, 2]
+                - list[list]    → "indices" : apply different indices per structure
+                                  e.g. [[0, 1], [2, 3], [0, 2]]
             **kwargs: Additional settings for visualization
         """
         super().__init__(data)
@@ -734,6 +745,10 @@ class OverlayViewer(BaseViewer):
         # Ensure data is always a list for overlay viewer
         if not isinstance(self.data, list):
             self.data = [self.data]
+
+        # Apply atom index filtering
+        if index_list is not None:
+            self.data = self._apply_index_list(self.data, index_list)
 
         self.settings = {
             "bondThreshold": 1.2,  # Scale factor for covalent radii sum
@@ -749,6 +764,47 @@ class OverlayViewer(BaseViewer):
             "colorBy": "Atom",
             **kwargs,
         }
+
+    @staticmethod
+    def _filter_structure(structure: Dict[str, Any], indices: List[int]) -> Dict[str, Any]:
+        """Return a copy of *structure* keeping only the atoms at *indices*."""
+        filtered = {}
+        per_atom_keys = {"symbols", "positions", "forces", "charges"}
+        for key, value in structure.items():
+            if key in per_atom_keys and isinstance(value, list):
+                filtered[key] = [value[i] for i in indices]
+            else:
+                filtered[key] = value
+        return filtered
+
+    def _apply_index_list(
+        self, structures: List[Dict[str, Any]], index_list
+    ) -> List[Dict[str, Any]]:
+        """Filter *structures* according to *index_list*.
+
+        Mode detection (automatic, based on index_list type):
+          - list[int]        → "same"    – identical indices applied to every structure
+          - list[list[int]]  → "indices" – per-structure index lists
+        """
+        if not index_list:
+            return structures
+
+        # Determine mode from the type of the first element
+        if isinstance(index_list[0], (list, tuple)):
+            # "indices" mode – one sub-list per structure
+            if len(index_list) != len(structures):
+                raise ValueError(
+                    f"index_list has {len(index_list)} entries but there are "
+                    f"{len(structures)} structures. Lengths must match for "
+                    f"per-structure index selection."
+                )
+            return [
+                self._filter_structure(s, idxs)
+                for s, idxs in zip(structures, index_list)
+            ]
+        else:
+            # "same" mode – same indices for every structure
+            return [self._filter_structure(s, index_list) for s in structures]
 
     def _generate_html(self) -> str:
         """Generate the HTML content for the overlay viewer."""
