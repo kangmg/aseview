@@ -243,7 +243,7 @@ Use aseview in any web page without Python:
 ```html
 <div id="viewer" style="width:100%; height:500px;"></div>
 
-<script src="https://raw.githack.com/kangmg/aseview_v2_dev/main/aseview/static/js/aseview.js"></script>
+<script src="https://raw.githack.com/kangmg/aseview/main/aseview/static/js/aseview.js"></script>
 <script>
     const viewer = new ASEView.MolecularViewer('#viewer');
     viewer.setData({
@@ -257,7 +257,7 @@ Use aseview in any web page without Python:
 </script>
 ```
 
-See the [JavaScript Module documentation](https://kangmg.github.io/aseview_v2_dev/js-module/) for full API reference.
+See the [JavaScript Module documentation](https://kangmg.github.io/aseview/js-module/) for full API reference.
 
 ## Supported Formats
 
