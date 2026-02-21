@@ -5,7 +5,7 @@ Overlay viewer for comparing multiple molecular structures simultaneously.
 ## Constructor
 
 ```python
-OverlayViewer(data, **kwargs)
+OverlayViewer(data, index_list=None, **kwargs)
 ```
 
 ### Parameters
@@ -13,6 +13,17 @@ OverlayViewer(data, **kwargs)
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `data` | `Atoms`, `List[Atoms]`, `Dict`, `str` | One or more molecular structures | Required |
+| `index_list` | `None`, `list[int]`, `list[list[int]]` | Atom selection — see table below | `None` |
+
+#### index_list Modes
+
+The mode is inferred automatically from the type of `index_list`:
+
+| Value | Mode | Behaviour |
+|-------|------|-----------|
+| `None` | **all** | All atoms from every structure are used (default) |
+| `[0, 1, 2]` | **same** | Same atom indices applied to every structure |
+| `[[0, 1], [2, 3], [0, 2]]` | **indices** | Different atom indices per structure (length must equal number of structures) |
 
 ### Keyword Arguments (Settings)
 
@@ -142,6 +153,23 @@ reactant = read("reactant.xyz")
 product = read("product.xyz")
 
 viewer = OverlayViewer([reactant, product])
+viewer.show()
+```
+
+### Atom Selection with index_list
+
+```python
+# all (default) – show every atom
+viewer = OverlayViewer([mol1, mol2, mol3])
+
+# same – show atoms 0, 1, 2 from every structure
+viewer = OverlayViewer([mol1, mol2, mol3], index_list=[0, 1, 2])
+
+# indices – different atoms per structure
+viewer = OverlayViewer(
+    [mol1, mol2, mol3],
+    index_list=[[0, 1, 2], [0, 1, 3], [1, 2, 3]]
+)
 viewer.show()
 ```
 
