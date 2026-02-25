@@ -2322,7 +2322,7 @@ function createAtomStyleNeon(pos, symbol, atomScale) {
     const scaledRadius = info.radius * atomScale;
     const atomColor = new THREE.Color(info.color);
     
-    // 단일 sprite로 glow 효과만 사용
+    // Use single sprite for glow effect only
     const glowCanvas = document.createElement('canvas');
     glowCanvas.width = 512;
     glowCanvas.height = 512;
@@ -2331,19 +2331,19 @@ function createAtomStyleNeon(pos, symbol, atomScale) {
     const center = 256;
     const maxRadius = 256;
     
-    // 자연스러운 radial gradient - 40% 지점부터 서서히 증가, 테두리에서 0
+    // Natural radial gradient - gradually increases from 40%, fades to 0 at edge
     const glowGradient = glowContext.createRadialGradient(center, center, 0, center, center, maxRadius);
     const glowColorStyle = atomColor.getStyle();
     
-	glowGradient.addColorStop(0.0, 'rgba(0,0,0,0)');                            // 중심: 완전 투명
-	glowGradient.addColorStop(0.25, 'rgba(0,0,0,0)');                           // 25%까지 투명 유지
-	glowGradient.addColorStop(0.35, `${glowColorStyle.slice(0, -1)}, 0.05)`); // 서서히 시작
-	glowGradient.addColorStop(0.45, `${glowColorStyle.slice(0, -1)}, 0.15)`); 
-	glowGradient.addColorStop(0.60, `${glowColorStyle.slice(0, -1)}, 0.35)`); 
-	glowGradient.addColorStop(0.75, `${glowColorStyle.slice(0, -1)}, 0.6)`);  
-	glowGradient.addColorStop(0.88, `${glowColorStyle.slice(0, -1)}, 0.85)`); 
-	glowGradient.addColorStop(0.95, `${glowColorStyle.slice(0, -1)}, 1.0)`);  // 가장자리 근처 최대치
-	glowGradient.addColorStop(1.0, `${glowColorStyle.slice(0, -1)}, 0.0)`);   // 부드럽게 사라지기
+	glowGradient.addColorStop(0.0, 'rgba(0,0,0,0)');                            // Center: fully transparent
+	glowGradient.addColorStop(0.25, 'rgba(0,0,0,0)');                           // Keep transparent until 25%
+	glowGradient.addColorStop(0.35, `${glowColorStyle.slice(0, -1)}, 0.05)`); // Start gradually
+	glowGradient.addColorStop(0.45, `${glowColorStyle.slice(0, -1)}, 0.15)`);
+	glowGradient.addColorStop(0.60, `${glowColorStyle.slice(0, -1)}, 0.35)`);
+	glowGradient.addColorStop(0.75, `${glowColorStyle.slice(0, -1)}, 0.6)`);
+	glowGradient.addColorStop(0.88, `${glowColorStyle.slice(0, -1)}, 0.85)`);
+	glowGradient.addColorStop(0.95, `${glowColorStyle.slice(0, -1)}, 1.0)`);  // Max intensity near edge
+	glowGradient.addColorStop(1.0, `${glowColorStyle.slice(0, -1)}, 0.0)`);   // Fade out smoothly
 
     
     glowContext.fillStyle = glowGradient;
@@ -2362,10 +2362,10 @@ function createAtomStyleNeon(pos, symbol, atomScale) {
     
     const glowSprite = new THREE.Sprite(glowMaterial);
     glowSprite.position.copy(pos);
-    // 원자 테두리까지 정확히 맞춤
+    // Scale to match atom edge precisely
     glowSprite.scale.set(scaledRadius * 2.2, scaledRadius * 2.2, 1);
-    
-    // 메타데이터 추가
+
+    // Add metadata
     glowSprite.userData = {
         symbol: symbol,
         radius: scaledRadius,
@@ -2485,7 +2485,7 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
     
-    // 3D 구체는 제거하고, 캔버스로 그린 스프라이트만 사용
+    // Remove 3D sphere, use canvas-drawn sprite only
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 256;
@@ -2495,34 +2495,34 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const centerY = 128;
     const circleRadius = 120;
     
-    // 검은 테두리 그리기
+    // Draw black border
     context.beginPath();
     context.arc(centerX, centerY, circleRadius, 0, 2 * Math.PI, false);
     context.fillStyle = 'black';
     context.fill();
-    
-    // 원형 배경 그리기 (구체 역할) - 테두리보다 약간 작게
+
+    // Draw circular background (sphere role) - slightly smaller than border
     context.beginPath();
     context.arc(centerX, centerY, circleRadius - 3, 0, 2 * Math.PI, false);
-    context.fillStyle = `#${color.toString(16).padStart(6, '0')}`; // color를 hex로 변환
+    context.fillStyle = `#${color.toString(16).padStart(6, '0')}`; // Convert color to hex
     context.fill();
-    
-    // 약간 더 밝은 색으로 하이라이트 효과
+
+    // Highlight effect with slightly brighter color
     context.beginPath();
     context.arc(centerX, centerY, circleRadius - 7, 0, 2 * Math.PI, false);
     const lighterColor = new THREE.Color(color).multiplyScalar(1.1);
     context.fillStyle = `#${lighterColor.getHexString()}`;
     context.fill();
     
-    // 텍스트 그리기
+    // Draw text
     context.font = 'bold 80px Arial';
-    context.fillStyle = 'white'; // 텍스트를 흰색으로
+    context.fillStyle = 'white'; // White text
     context.strokeStyle = 'black';
     context.lineWidth = 2;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    
-    // 텍스트에 외곽선 효과
+
+    // Text outline effect
     context.strokeText(symbol, centerX, centerY);
     context.fillText(symbol, centerX, centerY);
     
@@ -2530,17 +2530,17 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const spriteMaterial = new THREE.SpriteMaterial({
         map: texture,
         transparent: true,
-        depthTest: true,     // 깊이 테스트 활성화
-        depthWrite: false,    // 투명 객체이므로 깊이 쓰기는 비활성화
+        depthTest: true,     // Enable depth test
+        depthWrite: false,   // Disable depth write for transparent object
         alphaTest: 0.5
     });
-    
+
     const sprite = new THREE.Sprite(spriteMaterial);
-    sprite.position.copy(pos); // 주어진 위치에 직접 배치
+    sprite.position.copy(pos); // Place directly at given position
     sprite.scale.set(scaledRadius * 2.5, scaledRadius * 2.5, 1);
     sprite.center.set(0.5, 0.5);
-    
-    return sprite; // Group이 아닌 sprite 직접 반환
+
+    return sprite; // Return sprite directly, not Group
 }
 
 function createBondStyle2D(p1, p2, sym1, sym2, bondThickness, atomScale) {
@@ -2620,44 +2620,44 @@ function createHalfBond(start, end, color, bondThickness, style) {
 }
 
 function createBondStyleNeon(p1, p2, sym1, sym2, bondThickness, atomScale) {
-    // 원자 정보 가져오기
+    // Get atom info
     const info1 = atomInfo[sym1] || atomInfo['default'];
     const info2 = atomInfo[sym2] || atomInfo['default'];
     const radius1 = info1.radius * atomScale;
     const radius2 = info2.radius * atomScale;
-    
-    // 결합 벡터 계산
+
+    // Calculate bond vector
     const bondVector = new THREE.Vector3().subVectors(p2, p1);
     const bondLength = bondVector.length();
     const bondDirection = bondVector.clone().normalize();
-    
-    // 원자 표면에서 시작하고 끝나는 점 계산
+
+    // Calculate start/end points from atom surfaces
     const startPos = new THREE.Vector3().addVectors(p1, bondDirection.clone().multiplyScalar(radius1));
     const endPos = new THREE.Vector3().addVectors(p1, bondDirection.clone().multiplyScalar(bondLength - radius2));
-    
-    // 결합이 너무 짧으면 (원자가 겹치면) null 반환
+
+    // Return null if bond is too short (atoms overlap)
     const adjustedBondLength = bondLength - radius1 - radius2;
     if (adjustedBondLength <= 0) return null;
-    
+
     const bondGroup = new THREE.Group();
-    
-    // 다중 레이어로 원통 radial gradient 효과 생성
-    
-    // 1. 가장 바깥쪽 레이어 - 매우 투명한 glow
+
+    // Create cylindrical radial gradient effect with multiple layers
+
+    // 1. Outermost layer - very transparent glow
     const path1 = new THREE.LineCurve3(startPos, endPos);
     const outerGeometry = new THREE.TubeGeometry(path1, 2, bondThickness * 1.2, 8, false);
     const outerMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.1, // 매우 투명
+        opacity: 0.1, // Very transparent
         blending: THREE.AdditiveBlending,
         depthWrite: false
     });
     const outerTube = new THREE.Mesh(outerGeometry, outerMaterial);
     outerTube.renderOrder = -2;
     bondGroup.add(outerTube);
-    
-    // 2. 중간 레이어
+
+    // 2. Middle layer
     const path2 = new THREE.LineCurve3(startPos, endPos);
     const midGeometry = new THREE.TubeGeometry(path2, 2, bondThickness, 12, false);
     const midMaterial = new THREE.MeshBasicMaterial({
@@ -2670,21 +2670,21 @@ function createBondStyleNeon(p1, p2, sym1, sym2, bondThickness, atomScale) {
     const midTube = new THREE.Mesh(midGeometry, midMaterial);
     midTube.renderOrder = -1;
     bondGroup.add(midTube);
-    
-    // 3. 코어 레이어 - 중심선이 가장 밝음 (원래 코드의 오타 수정)
+
+    // 3. Core layer - center line is brightest
     const path3 = new THREE.LineCurve3(startPos, endPos);
     const coreGeometry = new THREE.TubeGeometry(path3, 2, bondThickness * 0.8, 16, false);
     const coreMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.6, // 중심이 가장 불투명
+        opacity: 0.6, // Center is most opaque
         blending: THREE.AdditiveBlending,
         depthWrite: false
     });
     const coreTube = new THREE.Mesh(coreGeometry, coreMaterial);
     coreTube.renderOrder = 0;
     bondGroup.add(coreTube);
-    
+
     return bondGroup;
 }
 
@@ -2741,26 +2741,26 @@ function createHalfBondBubble(start, end, color, bondThickness) {
 }
 
 function createBondStyleGrey(p1, p2, sym1, sym2, bondThickness, atomScale, colorMap) {
-    // 원자 정보 가져오기
+    // Get atom info
     const info1 = atomInfo[sym1] || atomInfo['default'];
     const info2 = atomInfo[sym2] || atomInfo['default'];
     const radius1 = info1.radius * atomScale;
     const radius2 = info2.radius * atomScale;
-    
-    // 결합 벡터 계산
+
+    // Calculate bond vector
     const bondVector = new THREE.Vector3().subVectors(p2, p1);
     const bondLength = bondVector.length();
     const bondDirection = bondVector.clone().normalize();
-    
-    // 원자 표면에서 시작하고 끝나는 점 계산
+
+    // Calculate start/end points from atom surfaces
     const startPos = new THREE.Vector3().addVectors(p1, bondDirection.clone().multiplyScalar(radius1));
     const endPos = new THREE.Vector3().addVectors(p1, bondDirection.clone().multiplyScalar(bondLength - radius2));
-    
-    // 결합이 너무 짧으면 (원자가 겹치면) null 반환
+
+    // Return null if bond is too short (atoms overlap)
     const adjustedBondLength = bondLength - radius1 - radius2;
     if (adjustedBondLength <= 0) return null;
-    
-    // 중점 계산 (원자 표면 기준)
+
+    // Calculate midpoint (based on atom surfaces)
     const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
     
     const final_color1 = colorMap[sym1];
@@ -2796,6 +2796,274 @@ function createHalfBondGrey(start, end, color, bondThickness) {
     bond.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
     
     return bond;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Convex Hull helper (incremental / gift-wrapping in 3D)
+// Returns { vertices: Float32Array, indices: Uint32Array } for the hull.
+// ─────────────────────────────────────────────────────────────
+function _computeConvexHull(points) {
+    // points: array of THREE.Vector3
+    // Simplified incremental convex hull that works for common polyhedra (4-12 vertices)
+    const n = points.length;
+    if (n < 3) return null;
+    if (n === 3) {
+        // Single triangle
+        return {
+            faceVertexIndices: [[0, 1, 2]],
+            faceColors: null
+        };
+    }
+
+    // Gift-wrapping (Jarvis March) in 3D — find initial face, then expand
+    // Step 1: Find two extreme points (min X, then min Y)
+    let a = 0;
+    for (let i = 1; i < n; i++) {
+        if (points[i].x < points[a].x || 
+           (points[i].x === points[a].x && points[i].y < points[a].y)) a = i;
+    }
+
+    // Step 2: Build faces using a BFS-based gift wrapping
+    const faces = [];      // each face = [i, j, k] indices
+    const edgeQueue = [];  // edges to process: { i, j, oppositeFace }
+    const processedEdges = new Set();
+
+    const edgeKey = (i, j) => i < j ? `${i}_${j}` : `${j}_${i}`;
+
+    // Find initial triangle: pick point a, find b and c forming first face
+    // b = point that makes smallest positive angle from (a, down-direction)
+    let b = -1;
+    for (let i = 0; i < n; i++) {
+        if (i === a) continue;
+        if (b === -1) { b = i; continue; }
+        const ab = points[b].clone().sub(points[a]);
+        const ac = points[i].clone().sub(points[a]);
+        // prefer c over b if the cross product points "outward" (downward Z or smallest angle)
+        if (ab.cross(ac).z < 0) b = i;
+    }
+
+    // c = point that makes a valid triangle with normals pointing "outward"
+    let c = -1;
+    for (let i = 0; i < n; i++) {
+        if (i === a || i === b) continue;
+        if (c === -1) { c = i; continue; }
+        const ab = points[b].clone().sub(points[a]);
+        const ac = points[c].clone().sub(points[a]);
+        const ai = points[i].clone().sub(points[a]);
+        const normal = ab.clone().cross(ac);
+        // prefer i if it's more "extreme"
+        if (normal.dot(ai) < 0) c = i;
+    }
+
+    if (c === -1) return null;
+
+    // Ensure consistent winding (normal points away from centroid)
+    const centroid = new THREE.Vector3();
+    points.forEach(p => centroid.add(p));
+    centroid.divideScalar(n);
+
+    const faceNormal = (i, j, k) => {
+        const ab = points[j].clone().sub(points[i]);
+        const ac = points[k].clone().sub(points[i]);
+        return ab.cross(ac);
+    };
+
+    let normal0 = faceNormal(a, b, c);
+    const toCenter = centroid.clone().sub(points[a]);
+    if (normal0.dot(toCenter) > 0) {
+        // flip winding
+        [b, c] = [c, b];
+    }
+
+    faces.push([a, b, c]);
+    edgeQueue.push({ i: b, j: a, faceIdx: 0 });
+    edgeQueue.push({ i: c, j: b, faceIdx: 0 });
+    edgeQueue.push({ i: a, j: c, faceIdx: 0 });
+
+    const maxIter = n * n * 3;
+    let iter = 0;
+
+    while (edgeQueue.length > 0 && iter++ < maxIter) {
+        const { i, j } = edgeQueue.shift();
+        const key = edgeKey(i, j);
+        if (processedEdges.has(key)) continue;
+        processedEdges.add(key);
+
+        // Find the best k (visible from outside, minimum angle)
+        const edge = points[j].clone().sub(points[i]);
+        let bestK = -1;
+        let bestAngle = Infinity;
+        // Reference normal: (i -> j) x (i -> any existing face point on this edge's face)
+        let refDir = null;
+        // Find a point already in a face containing edge i-j (reversed: j-i)
+        for (const f of faces) {
+            const hasI = f.includes(i), hasJ = f.includes(j);
+            if (hasI && hasJ) {
+                const other = f.find(v => v !== i && v !== j);
+                if (other !== undefined) {
+                    refDir = points[other].clone().sub(points[i]);
+                    break;
+                }
+            }
+        }
+        if (!refDir) continue;
+
+        const refNormal = edge.clone().cross(refDir);
+
+        for (let k = 0; k < n; k++) {
+            if (k === i || k === j) continue;
+            // skip if face i,j,k or j,i,k already exists
+            const alreadyExists = faces.some(f => {
+                const s = new Set(f);
+                return s.has(i) && s.has(j) && s.has(k);
+            });
+            if (alreadyExists) continue;
+
+            const toK = points[k].clone().sub(points[i]);
+            const candidateNormal = edge.clone().cross(toK);
+            // Angle from refNormal
+            const dot = refNormal.dot(candidateNormal) / (refNormal.length() * candidateNormal.length() + 1e-10);
+            const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
+            // We want the face that "wraps" — smallest positive angle (most "outward")
+            if (angle < bestAngle) {
+                // Check that centroid is on the inside
+                const n_ = faceNormal(i, j, k);
+                const toCentroid = centroid.clone().sub(points[i]);
+                // Allow if normal points away from centroid
+                if (n_.dot(toCentroid) < 0) {
+                    bestAngle = angle;
+                    bestK = k;
+                }
+            }
+        }
+
+        if (bestK === -1) continue;
+
+        // Determine winding for new face
+        let ni = i, nj = j, nk = bestK;
+        const n_ = faceNormal(ni, nj, nk);
+        const toCentroid = centroid.clone().sub(points[ni]);
+        if (n_.dot(toCentroid) > 0) {
+            [nj, nk] = [nk, nj];
+        }
+
+        const alreadyExists = faces.some(f => {
+            const s = new Set(f);
+            return s.has(ni) && s.has(nj) && s.has(nk);
+        });
+        if (!alreadyExists) {
+            faces.push([ni, nj, nk]);
+            edgeQueue.push({ i: nj, j: ni, faceIdx: faces.length - 1 });
+            edgeQueue.push({ i: nk, j: nj, faceIdx: faces.length - 1 });
+            edgeQueue.push({ i: ni, j: nk, faceIdx: faces.length - 1 });
+        }
+    }
+
+    return faces.length >= 1 ? { faceVertexIndices: faces } : null;
+}
+
+/**
+ * Create a convex polyhedron from neighbor atom positions around a center atom.
+ * @param {THREE.Vector3} centerPos - Position of center atom (not a vertex)
+ * @param {THREE.Vector3[]} neighborPositions - Positions of neighbor atoms (vertices)
+ * @param {number[]} neighborColors - Colors (hex int) of neighbor atoms
+ * @param {number} opacity - Face transparency (0-1)
+ * @returns {THREE.Mesh|null}
+ */
+function createPolyhedronFaces(centerPos, neighborPositions, neighborColors, opacity = 0.25) {
+    if (!neighborPositions || neighborPositions.length < 4) return null;
+
+    const hull = _computeConvexHull(neighborPositions);
+    if (!hull || !hull.faceVertexIndices || hull.faceVertexIndices.length === 0) return null;
+
+    const faces = hull.faceVertexIndices;
+
+    // Build BufferGeometry with vertex colors (each face gets averaged color of its 3 vertices)
+    const vertexCount = faces.length * 3;
+    const positions = new Float32Array(vertexCount * 3);
+    const colors = new Float32Array(vertexCount * 3);
+
+    let idx = 0;
+    for (const [i, j, k] of faces) {
+        const verts = [neighborPositions[i], neighborPositions[j], neighborPositions[k]];
+        const cols = [neighborColors[i], neighborColors[j], neighborColors[k]];
+
+        // Average color of 3 vertices
+        const avgColor = new THREE.Color(
+            ((cols[0] >> 16 & 0xff) + (cols[1] >> 16 & 0xff) + (cols[2] >> 16 & 0xff)) / (3 * 255),
+            ((cols[0] >> 8  & 0xff) + (cols[1] >> 8  & 0xff) + (cols[2] >> 8  & 0xff)) / (3 * 255),
+            ((cols[0]       & 0xff) + (cols[1]       & 0xff) + (cols[2]       & 0xff)) / (3 * 255)
+        );
+
+        for (const v of verts) {
+            positions[idx * 3]     = v.x;
+            positions[idx * 3 + 1] = v.y;
+            positions[idx * 3 + 2] = v.z;
+            colors[idx * 3]     = avgColor.r;
+            colors[idx * 3 + 1] = avgColor.g;
+            colors[idx * 3 + 2] = avgColor.b;
+            idx++;
+        }
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.computeVertexNormals();
+
+    const material = new THREE.MeshBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: opacity,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+    });
+
+    return new THREE.Mesh(geometry, material);
+}
+
+/**
+ * Create a filled ring face (fan triangulation from centroid).
+ * @param {THREE.Vector3[]} ringPositions - Ordered ring atom positions
+ * @param {number} faceColor - Hex color int
+ * @param {number} opacity - Transparency (0-1)
+ * @returns {THREE.Mesh|null}
+ */
+function createRingFace(ringPositions, faceColor, opacity = 0.3) {
+    if (!ringPositions || ringPositions.length < 3) return null;
+
+    const n = ringPositions.length;
+    // Centroid of ring
+    const centroid = new THREE.Vector3();
+    ringPositions.forEach(p => centroid.add(p));
+    centroid.divideScalar(n);
+
+    // Fan triangulation: centroid -> (p[i], p[i+1])
+    const vertCount = n * 3;
+    const positions = new Float32Array(vertCount * 3);
+    let idx = 0;
+
+    for (let i = 0; i < n; i++) {
+        const p1 = ringPositions[i];
+        const p2 = ringPositions[(i + 1) % n];
+        positions[idx++] = centroid.x; positions[idx++] = centroid.y; positions[idx++] = centroid.z;
+        positions[idx++] = p1.x;       positions[idx++] = p1.y;       positions[idx++] = p1.z;
+        positions[idx++] = p2.x;       positions[idx++] = p2.y;       positions[idx++] = p2.z;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.computeVertexNormals();
+
+    const material = new THREE.MeshBasicMaterial({
+        color: faceColor,
+        transparent: true,
+        opacity: opacity,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+    });
+
+    return new THREE.Mesh(geometry, material);
 }
 </script>
 </head>
@@ -2956,9 +3224,9 @@ function createHalfBondGrey(start, end, color, bondThickness) {
 
                         <div class="control-group">
                             <div class="control-label">
-                                <span>Center Molecules</span>
+                                <span>Align Molecules (Kabsch)</span>
                                 <label class="switch">
-                                    <input type="checkbox" id="center-molecules">
+                                    <input type="checkbox" id="align-molecules">
                                     <span class="slider-switch"></span>
                                 </label>
                             </div>
@@ -2966,9 +3234,9 @@ function createHalfBondGrey(start, end, color, bondThickness) {
 
                         <div class="control-group">
                             <div class="control-label">
-                                <span>Align Molecules (Kabsch)</span>
+                                <span>Axis</span>
                                 <label class="switch">
-                                    <input type="checkbox" id="align-molecules">
+                                    <input type="checkbox" id="show-axis" checked>
                                     <span class="slider-switch"></span>
                                 </label>
                             </div>
@@ -3152,7 +3420,6 @@ function createHalfBondGrey(start, end, color, bondThickness) {
             <div class="viewer-container">
                 <div class="viewer" id="viewer">
                     <canvas id="molecule-canvas"></canvas>
-                    <div class="help-text" id="help-text">Drag to rotate • Scroll to zoom</div>
                 </div>
             </div>
         </div>
@@ -3188,13 +3455,76 @@ function createHalfBondGrey(start, end, color, bondThickness) {
             showShading: false,
             showEnergyPlot: false,
             showForces: false,
+            showAxis: true,
             viewMode: 'Perspective',
             rotationMode: 'TrackBall',
             colorBy: 'Atom',
             colormap: 'viridis',
-            centerMolecules: false,
             alignMolecules: false  // Kabsch rotation + Hungarian reordering
         };
+
+        // Update UI and rendering from settings (called via postMessage API)
+        function updateFromSettings() {
+            // Update select elements
+            const styleSelect = document.getElementById('style');
+            if (styleSelect) styleSelect.value = settings.style || 'cartoon';
+
+            const colorBySelect = document.getElementById('color-by');
+            if (colorBySelect) colorBySelect.value = settings.colorBy || 'Atom';
+
+            const colormapSelect = document.getElementById('colormap-select');
+            if (colormapSelect) colormapSelect.value = settings.colormap || 'viridis';
+
+            // Update checkboxes
+            const checkboxMappings = {
+                'show-cell': 'showCell',
+                'show-bond': 'showBond',
+                'show-shading': 'showShading',
+                'show-axis': 'showAxis',
+                'align-molecules': 'alignMolecules'
+            };
+
+            for (const [elemId, settingKey] of Object.entries(checkboxMappings)) {
+                const elem = document.getElementById(elemId);
+                if (elem) elem.checked = !!settings[settingKey];
+            }
+
+            // Update sliders
+            const atomSizeSlider = document.getElementById('atom-size');
+            if (atomSizeSlider) {
+                atomSizeSlider.value = settings.atomSize || 0.4;
+                const valueEl = document.getElementById('atom-size-value');
+                if (valueEl) valueEl.textContent = atomSizeSlider.value;
+            }
+
+            const bondThresholdSlider = document.getElementById('bond-threshold');
+            if (bondThresholdSlider) {
+                bondThresholdSlider.value = settings.bondThreshold || 1.0;
+                const valueEl = document.getElementById('bond-threshold-value');
+                if (valueEl) valueEl.textContent = bondThresholdSlider.value;
+            }
+
+            const bondThicknessSlider = document.getElementById('bond-thickness');
+            if (bondThicknessSlider) {
+                bondThicknessSlider.value = settings.bondThickness || 0.1;
+                const valueEl = document.getElementById('bond-thickness-value');
+                if (valueEl) valueEl.textContent = bondThicknessSlider.value;
+            }
+
+            // Update color picker
+            const bgColorPicker = document.getElementById('background-color');
+            if (bgColorPicker && settings.backgroundColor) {
+                bgColorPicker.value = settings.backgroundColor;
+                const viewerContainer = document.querySelector('.viewer-container');
+                if (viewerContainer) {
+                    viewerContainer.style.background = `linear-gradient(135deg, ${settings.backgroundColor}, ${darkenColorHex(settings.backgroundColor, 20)})`;
+                }
+            }
+
+            // Apply rendering changes
+            if (typeof updateShading === 'function') updateShading();
+            if (typeof renderMolecule === 'function') renderMolecule();
+        }
 
         // Check if styles.js is loaded
         if (typeof atomInfo === 'undefined') {
@@ -3452,18 +3782,20 @@ function createHalfBondGrey(start, end, color, bondThickness) {
                 renderer.render(scene, camera);
 
                 // Render axis helper in bottom-left corner (transparent overlay)
-                if (axisScene && axisCamera && axisGroup) {
-                    // Rotate the axis group to match camera view (origin stays fixed)
-                    axisGroup.quaternion.copy(camera.quaternion);
+                if (settings.showAxis && axisScene && axisCamera && axisGroup) {
+                    // Rotate axis group inversely to camera - shows world axes from camera's view
+                    axisGroup.quaternion.copy(camera.quaternion).invert();
 
                     // Save current state
                     const currentViewport = renderer.getViewport(new THREE.Vector4());
                     const currentAutoClear = renderer.autoClear;
 
-                    // Set viewport for axis helper (bottom-left corner, 1.5x bigger, slight margin)
-                    const axisViewportSize = 120;
-                    renderer.setViewport(8, 8, axisViewportSize, axisViewportSize);
-                    renderer.setScissor(8, 8, axisViewportSize, axisViewportSize);
+                    // Set viewport for axis helper (bottom-left corner)
+                    const axisViewportSize = 150;
+                    const axisMarginX = 15;
+                    const axisMarginY = 20;
+                    renderer.setViewport(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
+                    renderer.setScissor(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
                     renderer.setScissorTest(true);
 
                     // Disable auto clear to preserve main scene, only clear depth
@@ -3486,11 +3818,10 @@ function createHalfBondGrey(start, end, color, bondThickness) {
             axisScene = new THREE.Scene();
             axisScene.background = null;  // Transparent background
 
-            // Create orthographic camera for axis helper (fixed position)
-            // Size 1.5x bigger: viewport 120px, slight offset for margin
-            const axisSize = 120;
-            axisCamera = new THREE.OrthographicCamera(-15, axisSize * 2 - 15, axisSize * 2 - 15, -15, -100, 100);
-            axisCamera.position.set(0, 0, 50);
+            // Create orthographic camera for axis helper (centered on origin)
+            const axisViewSize = 100;
+            axisCamera = new THREE.OrthographicCamera(-axisViewSize, axisViewSize, axisViewSize, -axisViewSize, -200, 200);
+            axisCamera.position.set(0, 0, 100);
 
             // Create a group to hold all axis objects (will be rotated)
             axisGroup = new THREE.Group();
@@ -3502,9 +3833,9 @@ function createHalfBondGrey(start, end, color, bondThickness) {
                 z: 0x4488ff   // Blue
             };
 
-            const axisLength = 70;  // 1.5x bigger
-            const arrowHeadLength = 16;
-            const arrowHeadWidth = 8;
+            const axisLength = 50;
+            const arrowHeadLength = 12;
+            const arrowHeadWidth = 6;
 
             // Create arrows for each axis starting from origin
             const xDir = new THREE.Vector3(1, 0, 0);
@@ -3544,7 +3875,7 @@ function createHalfBondGrey(start, end, color, bondThickness) {
                 const texture = new THREE.CanvasTexture(canvas);
                 const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
                 const sprite = new THREE.Sprite(material);
-                sprite.scale.set(18, 18, 1);  // 1.5x bigger
+                sprite.scale.set(14, 14, 1);
                 return sprite;
             };
 
@@ -3552,9 +3883,9 @@ function createHalfBondGrey(start, end, color, bondThickness) {
             const yLabel = createTextSprite('Y', colors.y);
             const zLabel = createTextSprite('Z', colors.z);
 
-            xLabel.position.set(axisLength + 12, 0, 0);
-            yLabel.position.set(0, axisLength + 12, 0);
-            zLabel.position.set(0, 0, axisLength + 12);
+            xLabel.position.set(axisLength + 10, 0, 0);
+            yLabel.position.set(0, axisLength + 10, 0);
+            zLabel.position.set(0, 0, axisLength + 10);
 
             axisGroup.add(xLabel);
             axisGroup.add(yLabel);
@@ -3624,13 +3955,6 @@ function createHalfBondGrey(start, end, color, bondThickness) {
                 }
                 // Center first molecule if alignment is enabled
                 else if (settings.alignMolecules && molIndex === 0 && positions.length > 0) {
-                    const center = new THREE.Vector3();
-                    positions.forEach(p => center.add(p));
-                    center.divideScalar(positions.length);
-                    positions = positions.map(p => p.clone().sub(center));
-                }
-                // Center molecules at origin if centering (without alignment) is enabled
-                else if (settings.centerMolecules && positions.length > 0) {
                     const center = new THREE.Vector3();
                     positions.forEach(p => center.add(p));
                     center.divideScalar(positions.length);
@@ -4255,25 +4579,19 @@ function createHalfBondGrey(start, end, color, bondThickness) {
                 renderMolecule();
             });
 
-            safeAddListener('center-molecules', 'change', function () {
-                settings.centerMolecules = this.checked;
-                renderMolecule();
-            });
-
             safeAddListener('align-molecules', 'change', function () {
                 settings.alignMolecules = this.checked;
-                // Disable centerMolecules when alignment is enabled (alignment includes centering)
-                if (this.checked) {
-                    settings.centerMolecules = false;
-                    const centerCheckbox = document.getElementById('center-molecules');
-                    if (centerCheckbox) centerCheckbox.checked = false;
-                }
                 renderMolecule();
             });
 
             safeAddListener('show-shading', 'change', function () {
                 settings.showShading = this.checked;
                 updateShading();
+            });
+
+            safeAddListener('show-axis', 'change', function () {
+                settings.showAxis = this.checked;
+                render();
             });
 
             safeAddListener('show-energy-plot', 'change', function () {
@@ -4729,25 +5047,62 @@ function createHalfBondGrey(start, end, color, bondThickness) {
 
         window.setMolecularData = setMolecularData;
         window.removePeriodicity = removePeriodicity;
+
+        // PostMessage API for iframe embedding
+        window.addEventListener('message', function(event) {
+            const msg = event.data;
+            if (!msg || !msg.type) return;
+
+            switch (msg.type) {
+                case 'setData':
+                    if (msg.data) {
+                        setMolecularData(msg.data);
+                    }
+                    break;
+                case 'setSettings':
+                    if (msg.settings) {
+                        Object.assign(settings, msg.settings);
+                        if (typeof updateFromSettings === 'function') {
+                            updateFromSettings();
+                        }
+                    }
+                    break;
+                case 'ready':
+                    // Respond that viewer is ready
+                    if (event.source) {
+                        event.source.postMessage({ type: 'ready', viewer: 'overlay' }, '*');
+                    }
+                    break;
+            }
+        });
+
+        // Notify parent that viewer is loaded
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'viewerLoaded', viewer: 'overlay' }, '*');
+        }
     </script>
 
 <script>
     (function() {
         var MAX_RETRIES = 100;
         var retryCount = 0;
+        var pythonSettings = {"bondThreshold": 1.2, "bondThickness": 0.1, "atomSize": 0.4, "backgroundColor": "#1f2937", "style": "cartoon", "showCell": true, "showBond": true, "showShadow": false, "viewMode": "Perspective", "rotationMode": "TrackBall", "colorBy": "Molecule", "centerMolecules": true};
 
         function initData() {
-            if (typeof settings === 'undefined') {
-                window.settings = {};
-            }
-            const pythonSettings = {"bondThreshold": 1.2, "bondThickness": 0.1, "atomSize": 0.4, "backgroundColor": "#1f2937", "style": "cartoon", "showCell": true, "showBond": true, "showShadow": false, "viewMode": "Perspective", "rotationMode": "TrackBall", "colorBy": "Molecule", "centerMolecules": true};
-            Object.assign(settings, pythonSettings);
-
             function trySetData() {
                 retryCount++;
                 if (typeof renderer !== 'undefined' && renderer !== null) {
+                    // Apply Python settings to the settings object
+                    if (typeof settings === 'undefined') {
+                        window.settings = {};
+                    }
+                    Object.assign(settings, pythonSettings);
+                    // Sync UI elements to reflect the applied Python settings
+                    if (typeof updateFromSettings === 'function') {
+                        updateFromSettings();
+                    }
                     if (typeof setMolecularData === 'function') {
-                        setMolecularData([{"positions": [[1.168181, -0.400382, 0.0], [0.0, 0.559462, 0.0], [-1.190083, -0.227669, 0.0], [-1.946623, 0.381525, 0.0], [0.042557, 1.207508, 0.886933], [0.042557, 1.207508, -0.886933], [2.115891, 0.1448, 0.0], [1.128599, -1.037234, 0.885881], [1.128599, -1.037234, -0.885881]], "symbols": ["C", "C", "O", "H", "H", "H", "H", "H", "H"], "name": "Conformer A (reference)"}, {"positions": [[1.2320026845964276, -0.084391823254362, 0.0], [-0.14479942061114645, 0.5403987946273348, 0.0], [-1.0906068319481275, -0.5279275125981491, 0.0], [-1.9790393659310441, -0.13529825515966742, 0.0], [-0.27141916212427075, 1.1773777247530883, 0.886933], [-0.27141916212427075, 1.1773777247530883, -0.886933], [2.006316764781758, 0.6874989478076748, 0.0], [1.358598835051884, -0.7097881930214557, 0.885881], [1.358598835051884, -0.7097881930214557, -0.885881]], "symbols": ["C", "C", "O", "H", "H", "H", "H", "H", "H"], "name": "Conformer B (+15\u00b0)"}, {"positions": [[1.0247497107639525, -0.6890868051081775, 0.0], [0.14479942061114645, 0.5403987946273348, 0.0], [-1.208456978307019, 0.08810477870733731, 0.0], [-1.7815474935655657, 0.872347956909541, 0.0], [0.3536329729030385, 1.1553486005482323, 0.886933], [0.3536329729030385, 1.1553486005482323, -0.886933], [2.0812707602434477, -0.40776682851436064, 0.0], [0.8216870081961481, -1.2939940239887753, 0.885881], [0.8216870081961481, -1.2939940239887753, -0.885881]], "symbols": ["C", "C", "O", "H", "H", "H", "H", "H", "H"], "name": "Conformer C (-15\u00b0)"}]);
+                        setMolecularData([{"positions": [[1.168181, -0.400382, 0.0], [0.0, 0.559462, 0.0], [-1.190083, -0.227669, 0.0], [-1.946623, 0.381525, 0.0], [0.042557, 1.207508, 0.886933], [0.042557, 1.207508, -0.886933], [2.115891, 0.1448, 0.0], [1.128599, -1.037234, 0.885881], [1.128599, -1.037234, -0.885881]], "symbols": ["C", "C", "O", "H", "H", "H", "H", "H", "H"], "name": "Conformer A (reference)"}, {"positions": [[1.2320026845964276, -0.084391823254362, 0.0], [-0.14479942061114645, 0.5403987946273348, 0.0], [-1.0906068319481275, -0.5279275125981491, 0.0], [-1.9790393659310441, -0.13529825515966742, 0.0], [-0.27141916212427075, 1.1773777247530883, 0.886933], [-0.27141916212427075, 1.1773777247530883, -0.886933], [2.006316764781758, 0.6874989478076748, 0.0], [1.358598835051884, -0.7097881930214557, 0.885881], [1.3585988350518843, -0.7097881930214556, -0.885881]], "symbols": ["C", "C", "O", "H", "H", "H", "H", "H", "H"], "name": "Conformer B (+15\u00b0)"}, {"positions": [[1.0247497107639525, -0.6890868051081775, 0.0], [0.14479942061114645, 0.5403987946273348, 0.0], [-1.208456978307019, 0.08810477870733731, 0.0], [-1.7815474935655657, 0.872347956909541, 0.0], [0.3536329729030385, 1.1553486005482323, 0.886933], [0.3536329729030385, 1.1553486005482323, -0.886933], [2.0812707602434477, -0.40776682851436064, 0.0], [0.8216870081961481, -1.2939940239887753, 0.885881], [0.8216870081961481, -1.2939940239887753, -0.885881]], "symbols": ["C", "C", "O", "H", "H", "H", "H", "H", "H"], "name": "Conformer C (-15\u00b0)"}]);
                     }
                 } else if (retryCount < MAX_RETRIES) {
                     setTimeout(trySetData, 50);

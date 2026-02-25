@@ -2,7 +2,7 @@
 
 Molecular structure viewer for ASE (Atomic Simulation Environment).
 
-**Status: pre-alpha**
+**Status: pre-alpha** &nbsp;·&nbsp; [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kangmg/aseview) &nbsp;·&nbsp; [📚 Documentation](https://kangmg.github.io/aseview)
 
 ## Installation
 
@@ -217,7 +217,11 @@ viewer = MolecularViewer(
     bondThreshold=1.2,      # bond detection scale factor
     atomSize=0.5,
     showCell=False,
-    backgroundColor='#000000'
+    backgroundColor='#000000',
+    showPolyhedron=True,    # coordination polyhedra (solid-state, CN >= 4)
+    polyhedronOpacity=0.25,
+    showRings=True,         # ring face highlighting (molecules, 4-8 atom rings)
+    ringOpacity=0.35,
 )
 viewer.show(width='100%', height=800)
 ```

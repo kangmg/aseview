@@ -490,6 +490,46 @@ def create_ethanol_charge_viewer():
     print("Created ethanol_charges.html (partial charge visualization)")
 
 
+def create_casio3_polyhedron_viewer():
+    """Create CaSiO3 perovskite viewer with polyhedron visualization."""
+    from ase.io import read
+    import os
+    cif_path = os.path.join(os.path.dirname(__file__), "assets", "CaSiO3.cif")
+    atoms = read(cif_path)
+    # 2x2x2 supercell for better visualization
+    atoms = atoms * (2, 2, 2)
+    viewer = MolecularViewer(
+        atoms,
+        style="default",
+        showCell=True,
+        showBond=True,
+        showPolyhedron=True,
+        polyhedronOpacity=0.25,
+        atomSize=0.35,
+        bondThreshold=1.1
+    )
+    viewer.save_html(os.path.join(OUTPUT_DIR, "casio3_polyhedron.html"))
+    print("Created casio3_polyhedron.html")
+
+
+def create_carbazole_ring_viewer():
+    """Create carbazole molecule viewer with ring highlighting."""
+    from ase.io import read
+    import os
+    xyz_path = os.path.join(os.path.dirname(__file__), "assets", "carbazole.xyz")
+    atoms = read(xyz_path)
+    viewer = MolecularViewer(
+        atoms,
+        style="cartoon",
+        showRings=True,
+        ringOpacity=0.35,
+        showBond=True,
+        bondThreshold=1.15
+    )
+    viewer.save_html(os.path.join(OUTPUT_DIR, "carbazole_rings.html"))
+    print("Created carbazole_rings.html")
+
+
 if __name__ == "__main__":
     print("Generating example viewer HTML files...")
     # Molecules
@@ -514,4 +554,7 @@ if __name__ == "__main__":
     # Charge visualization
     create_phosphine_charge_viewer()
     create_ethanol_charge_viewer()
+    # Polyhedron & Ring highlight
+    create_casio3_polyhedron_viewer()
+    create_carbazole_ring_viewer()
     print("Done!")

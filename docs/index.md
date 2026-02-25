@@ -2,6 +2,8 @@
 
 **Interactive molecular visualization for ASE (Atomic Simulation Environment)**
 
+[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kangmg/aseview)
+
 aseview is a powerful, browser-based molecular viewer that integrates seamlessly with ASE. It provides interactive 3D visualization for molecules, crystals, and trajectories with support for normal mode animations.
 
 ## Features
@@ -10,6 +12,8 @@ aseview is a powerful, browser-based molecular viewer that integrates seamlessly
 - **Rich Styling**: Multiple visual styles including Cartoon, Neon, Glossy, Metallic, and more
 - **Trajectory Support**: Animate molecular dynamics trajectories with energy plot synchronization
 - **Normal Modes**: Visualize vibrational modes from ORCA Hessian files
+- **Polyhedron**: Render coordination polyhedra for solid-state structures (CN ≥ 4)
+- **Ring Highlight**: Fill aromatic and aliphatic rings with semi-transparent color
 - **CLI & Python API**: Use from command line or Jupyter notebooks
 - **Export**: Save as PNG, GIF, or standalone HTML files
 

@@ -58,6 +58,7 @@ nav:
     - Overlay Comparison: examples/overlay.md
     - Normal Modes: examples/normal-modes.md
     - Solid-State Structures: examples/solid-state.md
+    - Polyhedron & Ring Highlight: examples/polyhedron-rings.md
   - File Formats: file-formats.md
 
 extra:
