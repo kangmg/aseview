@@ -1808,7 +1808,8 @@
             if (!molecularData || molecularData.length === 0) return;
 
             // Collect unique symbols from current frame
-            const molecule = molecularData[currentFrame] || molecularData[0];
+            const frameIdx = (animationState && animationState.currentFrame) || 0;
+            const molecule = molecularData[frameIdx] || molecularData[0];
             const rawSymbols = molecule.symbols || [];
             const uniqueSymbols = [...new Set(rawSymbols)].sort();
 
