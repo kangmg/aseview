@@ -621,11 +621,25 @@
                                     id="polyhedron-edge-opacity">
                             </div>
                         </div>
-                        <div class="control-group" id="polyhedron-exclude-group" style="display:none;">
-                            <div class="control-label" style="margin-bottom:4px;">
-                                <span>Exclude Elements</span>
+                        <div class="control-group" id="polyhedron-pairs-group" style="display:none;">
+                            <div class="control-label" style="margin-bottom:6px;">
+                                <span>Polyhedron Pairs</span>
                             </div>
-                            <div id="polyhedron-element-chips" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+                            <div id="polyhedron-pairs-list" style="display:flex;flex-direction:column;gap:5px;"></div>
+                            <button id="add-polyhedron-pair-btn" style="margin-top:6px;display:flex;align-items:center;gap:4px;
+                                       background:transparent;border:1px dashed #4b5563;
+                                       color:#9ca3af;border-radius:6px;padding:3px 10px;
+                                       font-size:11px;cursor:pointer;width:100%;justify-content:center;
+                                       transition:border-color 0.15s,color 0.15s;"
+                                onmouseover="this.style.borderColor='#6b7280';this.style.color='#d1d5db';"
+                                onmouseout="this.style.borderColor='#4b5563';this.style.color='#9ca3af';">
+                                <svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                        d="M12 6v12M6 12h12" />
+                                </svg>
+                                Add Pair
+                            </button>
                         </div>
 
                         <!-- Ring Highlight (molecule) -->
@@ -877,7 +891,7 @@
             polyhedronOpacity: 0.25,
             showPolyhedronEdge: true,
             polyhedronEdgeOpacity: 0.70,
-            polyhedronExcludeElements: [],
+            polyhedronPairs: [],
             showRings: false,
             ringOpacity: 0.30,
             showModeVector: false,
@@ -1297,58 +1311,93 @@
         }
 
 
-        function updatePolyhedronElementChips() {
-            const container = document.getElementById('polyhedron-element-chips');
-            if (!container) return;
-            if (!molecularData || molecularData.length === 0) return;
-
+        function getUniqueSymbols() {
+            if (!molecularData || molecularData.length === 0) return [];
             const frameIdx = (animationState && animationState.currentFrame) || 0;
             const molecule = molecularData[frameIdx] || molecularData[0];
-            const rawSymbols = molecule.symbols || [];
-            const uniqueSymbols = [...new Set(rawSymbols)].sort();
-            const excluded = new Set(settings.polyhedronExcludeElements || []);
+            return [...new Set(molecule.symbols || [])].sort();
+        }
 
-            container.innerHTML = '';
-            uniqueSymbols.forEach(sym => {
-                const info = atomInfo[sym] || atomInfo['default'];
-                const hexColor = '#' + info.color.toString(16).padStart(6, '0');
-                const r = (info.color >> 16) & 0xff;
-                const g = (info.color >> 8) & 0xff;
-                const b = info.color & 0xff;
-                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                const textColor = luminance > 0.55 ? '#111827' : '#ffffff';
-                const isExcluded = excluded.has(sym);
+        function makeElemChip(sym, onCycle) {
+            const info = atomInfo[sym] || atomInfo['default'];
+            const hex = '#' + info.color.toString(16).padStart(6, '0');
+            const r = (info.color >> 16) & 0xff;
+            const g = (info.color >> 8) & 0xff;
+            const b = info.color & 0xff;
+            const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            const txtColor = lum > 0.55 ? '#111827' : '#ffffff';
 
-                const chip = document.createElement('button');
-                chip.textContent = sym;
-                chip.dataset.symbol = sym;
-                chip.style.cssText = `
-                    padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;
-                    cursor: pointer; border: 2px solid ${hexColor}; transition: all 0.15s;
-                    background: ${isExcluded ? 'transparent' : hexColor};
-                    color: ${isExcluded ? hexColor : textColor};
-                    opacity: ${isExcluded ? '0.5' : '1'};
-                `;
+            const chip = document.createElement('button');
+            chip.textContent = sym;
+            chip.dataset.symbol = sym;
+            chip.style.cssText = `
+                padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;
+                cursor: pointer; border: 2px solid ${hex}; transition: all 0.15s;
+                background: ${hex}; color: ${txtColor};
+            `;
+            chip.addEventListener('click', () => {
+                const syms = getUniqueSymbols();
+                const cur = chip.dataset.symbol;
+                const next = syms[(syms.indexOf(cur) + 1) % syms.length] || cur;
+                const ni = atomInfo[next] || atomInfo['default'];
+                const nh = '#' + ni.color.toString(16).padStart(6, '0');
+                const nr2 = (ni.color >> 16) & 0xff;
+                const ng = (ni.color >> 8) & 0xff;
+                const nb = ni.color & 0xff;
+                const nl = (0.299 * nr2 + 0.587 * ng + 0.114 * nb) / 255;
+                chip.dataset.symbol = next;
+                chip.textContent = next;
+                chip.style.borderColor = nh;
+                chip.style.background = nh;
+                chip.style.color = nl > 0.55 ? '#111827' : '#ffffff';
+                onCycle(next);
+            });
+            return chip;
+        }
 
-                chip.addEventListener('click', () => {
-                    const s = chip.dataset.symbol;
-                    const excl = new Set(settings.polyhedronExcludeElements || []);
-                    if (excl.has(s)) {
-                        excl.delete(s);
-                        chip.style.background = hexColor;
-                        chip.style.color = textColor;
-                        chip.style.opacity = '1';
-                    } else {
-                        excl.add(s);
-                        chip.style.background = 'transparent';
-                        chip.style.color = hexColor;
-                        chip.style.opacity = '0.5';
-                    }
-                    settings.polyhedronExcludeElements = [...excl];
+        function updatePolyhedronPairsUI() {
+            const list = document.getElementById('polyhedron-pairs-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            settings.polyhedronPairs.forEach((pair, idx) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:5px;';
+
+                const centerChip = makeElemChip(pair.center, newSym => {
+                    settings.polyhedronPairs[idx].center = newSym;
                     renderMolecule();
                 });
 
-                container.appendChild(chip);
+                const arrow = document.createElement('span');
+                arrow.textContent = '→';
+                arrow.style.cssText = 'color:#6b7280;font-size:11px;flex-shrink:0;';
+
+                const neighborChip = makeElemChip(pair.neighbor, newSym => {
+                    settings.polyhedronPairs[idx].neighbor = newSym;
+                    renderMolecule();
+                });
+
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = '×';
+                removeBtn.style.cssText = `
+                    margin-left:auto;background:transparent;border:none;
+                    color:#6b7280;font-size:14px;cursor:pointer;padding:0 2px;
+                    line-height:1;transition:color 0.15s;
+                `;
+                removeBtn.onmouseover = () => removeBtn.style.color = '#ef4444';
+                removeBtn.onmouseout = () => removeBtn.style.color = '#6b7280';
+                removeBtn.addEventListener('click', () => {
+                    settings.polyhedronPairs.splice(idx, 1);
+                    updatePolyhedronPairsUI();
+                    renderMolecule();
+                });
+
+                row.appendChild(centerChip);
+                row.appendChild(arrow);
+                row.appendChild(neighborChip);
+                row.appendChild(removeBtn);
+                list.appendChild(row);
             });
         }
 
@@ -1588,24 +1637,33 @@
 
             // ── Polyhedron (solid) ──────────────────────────────────────
             if (settings.showPolyhedron && typeof createPolyhedronFaces === 'function') {
-                const excludeSet = new Set(settings.polyhedronExcludeElements || []);
-                for (let i = 0; i < positions.length; i++) {
-                    if (excludeSet.has(symbols[i])) continue;
-                    const neighbors = adjacency[i];
-                    if (neighbors.length < 4) continue;
-                    const neighborPositions = neighbors.map(ni => positions[ni]);
-                    const neighborColors = neighbors.map(ni =>
-                        (atomInfo[symbols[ni]] || atomInfo['default']).color
-                    );
-                    const polyMesh = createPolyhedronFaces(
-                        positions[i], neighborPositions, neighborColors,
-                        settings.polyhedronOpacity,
-                        settings.showPolyhedronEdge,
-                        settings.polyhedronEdgeOpacity
-                    );
-                    if (polyMesh) {
-                        polyMesh.renderOrder = -1;
-                        moleculeGroup.add(polyMesh);
+                const pairs = settings.polyhedronPairs || [];
+                if (pairs.length === 0) {
+                    for (let i = 0; i < positions.length; i++) {
+                        const neighbors = adjacency[i];
+                        if (neighbors.length < 4) continue;
+                        const neighborPositions = neighbors.map(ni => positions[ni]);
+                        const neighborColors = neighbors.map(ni =>
+                            (atomInfo[symbols[ni]] || atomInfo['default']).color);
+                        const polyMesh = createPolyhedronFaces(
+                            positions[i], neighborPositions, neighborColors,
+                            settings.polyhedronOpacity, settings.showPolyhedronEdge, settings.polyhedronEdgeOpacity);
+                        if (polyMesh) { polyMesh.renderOrder = -1; moleculeGroup.add(polyMesh); }
+                    }
+                } else {
+                    for (const { center, neighbor } of pairs) {
+                        for (let i = 0; i < positions.length; i++) {
+                            if (symbols[i] !== center) continue;
+                            const nbrs = adjacency[i].filter(ni => symbols[ni] === neighbor);
+                            if (nbrs.length < 4) continue;
+                            const neighborPositions = nbrs.map(ni => positions[ni]);
+                            const neighborColors = nbrs.map(ni =>
+                                (atomInfo[symbols[ni]] || atomInfo['default']).color);
+                            const polyMesh = createPolyhedronFaces(
+                                positions[i], neighborPositions, neighborColors,
+                                settings.polyhedronOpacity, settings.showPolyhedronEdge, settings.polyhedronEdgeOpacity);
+                            if (polyMesh) { polyMesh.renderOrder = -1; moleculeGroup.add(polyMesh); }
+                        }
                     }
                 }
             }
@@ -2149,9 +2207,29 @@
                 const edgeOpacityGroup = document.getElementById('polyhedron-edge-opacity-group');
                 if (edgeOpacityGroup) edgeOpacityGroup.style.display =
                     (this.checked && settings.showPolyhedronEdge) ? 'block' : 'none';
-                const excludeGroup = document.getElementById('polyhedron-exclude-group');
-                if (excludeGroup) excludeGroup.style.display = this.checked ? 'block' : 'none';
-                if (this.checked) updatePolyhedronElementChips();
+                const pairsGroup = document.getElementById('polyhedron-pairs-group');
+                if (pairsGroup) pairsGroup.style.display = this.checked ? 'block' : 'none';
+                if (this.checked) {
+                    updatePolyhedronPairsUI();
+                    if (settings.polyhedronPairs.length === 0) {
+                        const syms = getUniqueSymbols();
+                        if (syms.length >= 2) {
+                            settings.polyhedronPairs.push({ center: syms[0], neighbor: syms[1] });
+                        } else if (syms.length === 1) {
+                            settings.polyhedronPairs.push({ center: syms[0], neighbor: syms[0] });
+                        }
+                        updatePolyhedronPairsUI();
+                    }
+                }
+                renderMolecule();
+            });
+
+            safeAddListener('add-polyhedron-pair-btn', 'click', function () {
+                const syms = getUniqueSymbols();
+                const center = syms[0] || 'X';
+                const neighbor = syms[1] || center;
+                settings.polyhedronPairs.push({ center, neighbor });
+                updatePolyhedronPairsUI();
                 renderMolecule();
             });
 
