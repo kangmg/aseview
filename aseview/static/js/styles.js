@@ -53,7 +53,7 @@ const atomInfo = {
 };
 
 function getStandardMaterial(color, type) {
-    switch(type) {
+    switch (type) {
         case 'glossy': return new THREE.MeshPhongMaterial({ color: color, shininess: 100, specular: 0x222222 });
         case 'metallic': return new THREE.MeshStandardMaterial({ color: color, metalness: 0.3, roughness: 0.4 });
         default: return new THREE.MeshLambertMaterial({ color: color });
@@ -62,7 +62,7 @@ function getStandardMaterial(color, type) {
 
 function getBondPoints(p1, p2, sym1, sym2, atomScale, style) {
     const dir = p2.clone().sub(p1).normalize();
-    
+
     let offsetFactor1 = 0.75;
     let offsetFactor2 = 0.75;
 
@@ -116,7 +116,7 @@ function createAtomStyle2D(pos, symbol, atomScale) {
 function createAtomStyleCartoon(pos, symbol, atomScale) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    
+
     // Create simple 2-step gradient map for clean toon shading
     const colors = new Uint8Array(2);
     colors[0] = 0;      // Dark
@@ -125,7 +125,7 @@ function createAtomStyleCartoon(pos, symbol, atomScale) {
     gradientMap.minFilter = THREE.NearestFilter;
     gradientMap.magFilter = THREE.NearestFilter;
     gradientMap.needsUpdate = true;
-    
+
     const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);  // Increased from 32 to 64
     const toonMaterial = new THREE.MeshToonMaterial({
         color: new THREE.Color(info.color),
@@ -151,37 +151,37 @@ function createAtomStyleNeon(pos, symbol, atomScale) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
     const atomColor = new THREE.Color(info.color);
-    
+
     // Use single sprite for glow effect only
     const glowCanvas = document.createElement('canvas');
     glowCanvas.width = 512;
     glowCanvas.height = 512;
     const glowContext = glowCanvas.getContext('2d');
-    
+
     const center = 256;
     const maxRadius = 256;
-    
+
     // Natural radial gradient - gradually increases from 40%, fades to 0 at edge
     const glowGradient = glowContext.createRadialGradient(center, center, 0, center, center, maxRadius);
     const glowColorStyle = atomColor.getStyle();
-    
-	glowGradient.addColorStop(0.0, 'rgba(0,0,0,0)');                            // Center: fully transparent
-	glowGradient.addColorStop(0.25, 'rgba(0,0,0,0)');                           // Keep transparent until 25%
-	glowGradient.addColorStop(0.35, `${glowColorStyle.slice(0, -1)}, 0.05)`); // Start gradually
-	glowGradient.addColorStop(0.45, `${glowColorStyle.slice(0, -1)}, 0.15)`);
-	glowGradient.addColorStop(0.60, `${glowColorStyle.slice(0, -1)}, 0.35)`);
-	glowGradient.addColorStop(0.75, `${glowColorStyle.slice(0, -1)}, 0.6)`);
-	glowGradient.addColorStop(0.88, `${glowColorStyle.slice(0, -1)}, 0.85)`);
-	glowGradient.addColorStop(0.95, `${glowColorStyle.slice(0, -1)}, 1.0)`);  // Max intensity near edge
-	glowGradient.addColorStop(1.0, `${glowColorStyle.slice(0, -1)}, 0.0)`);   // Fade out smoothly
 
-    
+    glowGradient.addColorStop(0.0, 'rgba(0,0,0,0)');                            // Center: fully transparent
+    glowGradient.addColorStop(0.25, 'rgba(0,0,0,0)');                           // Keep transparent until 25%
+    glowGradient.addColorStop(0.35, `${glowColorStyle.slice(0, -1)}, 0.05)`); // Start gradually
+    glowGradient.addColorStop(0.45, `${glowColorStyle.slice(0, -1)}, 0.15)`);
+    glowGradient.addColorStop(0.60, `${glowColorStyle.slice(0, -1)}, 0.35)`);
+    glowGradient.addColorStop(0.75, `${glowColorStyle.slice(0, -1)}, 0.6)`);
+    glowGradient.addColorStop(0.88, `${glowColorStyle.slice(0, -1)}, 0.85)`);
+    glowGradient.addColorStop(0.95, `${glowColorStyle.slice(0, -1)}, 1.0)`);  // Max intensity near edge
+    glowGradient.addColorStop(1.0, `${glowColorStyle.slice(0, -1)}, 0.0)`);   // Fade out smoothly
+
+
     glowContext.fillStyle = glowGradient;
     glowContext.fillRect(0, 0, 512, 512);
-    
+
     const glowTexture = new THREE.CanvasTexture(glowCanvas);
     glowTexture.needsUpdate = true;
-    
+
     const glowMaterial = new THREE.SpriteMaterial({
         map: glowTexture,
         blending: THREE.AdditiveBlending,
@@ -189,7 +189,7 @@ function createAtomStyleNeon(pos, symbol, atomScale) {
         depthTest: false,
         alphaTest: 0.001
     });
-    
+
     const glowSprite = new THREE.Sprite(glowMaterial);
     glowSprite.position.copy(pos);
     // Scale to match atom edge precisely
@@ -201,7 +201,7 @@ function createAtomStyleNeon(pos, symbol, atomScale) {
         radius: scaledRadius,
         originalColor: atomColor.clone()
     };
-    
+
     return glowSprite;
 }
 
@@ -261,40 +261,40 @@ function createAtomStyleRowan(pos, symbol, atomScale) {
 function createAtomStyleBubble(pos, symbol, atomScale) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    
+
     // Create canvas with radial gradient for bubble effect
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
     const context = canvas.getContext('2d');
-    
+
     const centerX = 256;
     const centerY = 256;
     const radius = 240;
-    
+
     // Create radial gradient for bubble effect
     const gradient = context.createRadialGradient(
         centerX - radius * 0.3, centerY - radius * 0.3, 0,  // Highlight position
         centerX, centerY, radius
     );
-    
+
     const atomColor = new THREE.Color(info.color);
     const colorStyle = atomColor.getStyle();
-    
+
     // Bubble gradient: bright highlight -> main color -> darker edge
     gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');  // Bright highlight
     gradient.addColorStop(0.3, `${colorStyle.slice(0, -1)}, 0.7)`);  // Main color
     gradient.addColorStop(0.7, `${colorStyle.slice(0, -1)}, 0.5)`);  // Slightly darker
     gradient.addColorStop(1.0, `${colorStyle.slice(0, -1)}, 0.3)`);  // Transparent edge
-    
+
     context.fillStyle = gradient;
     context.beginPath();
     context.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     context.fill();
-    
+
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
-    
+
     const spriteMaterial = new THREE.SpriteMaterial({
         map: texture,
         transparent: true,
@@ -302,29 +302,29 @@ function createAtomStyleBubble(pos, symbol, atomScale) {
         depthTest: true,
         depthWrite: false
     });
-    
+
     const sprite = new THREE.Sprite(spriteMaterial);
     sprite.position.copy(pos);
     // Match size with other styles (2x radius)
     sprite.scale.set(scaledRadius * 2, scaledRadius * 2, 1);
-    
+
     return sprite;
 }
 
 function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    
+
     // Remove 3D sphere, use canvas-drawn sprite only
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 256;
     canvas.height = 256;
-    
+
     const centerX = 128;
     const centerY = 128;
     const circleRadius = 120;
-    
+
     // Draw black border
     context.beginPath();
     context.arc(centerX, centerY, circleRadius, 0, 2 * Math.PI, false);
@@ -343,7 +343,7 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const lighterColor = new THREE.Color(color).multiplyScalar(1.1);
     context.fillStyle = `#${lighterColor.getHexString()}`;
     context.fill();
-    
+
     // Draw text
     context.font = 'bold 80px Arial';
     context.fillStyle = 'white'; // White text
@@ -355,7 +355,7 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     // Text outline effect
     context.strokeText(symbol, centerX, centerY);
     context.fillText(symbol, centerX, centerY);
-    
+
     const texture = new THREE.CanvasTexture(canvas);
     const spriteMaterial = new THREE.SpriteMaterial({
         map: texture,
@@ -413,7 +413,7 @@ function createBondStyleCartoon(p1, p2, sym1, sym2, bondThickness, atomScale) {
     gradientMap.needsUpdate = true;
 
     const geometry = new THREE.CylinderGeometry(bondThickness, bondThickness, distance, 8);
-    const material = new THREE.MeshToonMaterial({ 
+    const material = new THREE.MeshToonMaterial({
         color: 0x000000,
         gradientMap: gradientMap
     });
@@ -542,23 +542,23 @@ function createBondStyleBubble(p1, p2, sym1, sym2, bondThickness, atomScale) {
     const color2 = (atomInfo[sym2] || atomInfo.default).color;
 
     const bondGroup = new THREE.Group();
-    
+
     // Create semi-transparent tubes with gradient-like appearance
     const bond1 = createHalfBondBubble(startPos, midPoint, color1, bondThickness);
     const bond2 = createHalfBondBubble(midPoint, endPos, color2, bondThickness);
-    
+
     if (bond1) bondGroup.add(bond1);
     if (bond2) bondGroup.add(bond2);
-    
+
     return bondGroup;
 }
 
 function createHalfBondBubble(start, end, color, bondThickness) {
     if (start.distanceTo(end) <= 0) return null;
-    
+
     const path = new THREE.LineCurve3(start, end);
     const geometry = new THREE.TubeGeometry(path, 2, bondThickness, 12, false);
-    const material = new THREE.MeshPhongMaterial({ 
+    const material = new THREE.MeshPhongMaterial({
         color: color,
         transparent: true,
         opacity: 0.4,  // More transparent for lighter appearance
@@ -566,7 +566,7 @@ function createHalfBondBubble(start, end, color, bondThickness) {
         specular: 0xffffff
     });
     const bond = new THREE.Mesh(geometry, material);
-    
+
     return bond;
 }
 
@@ -592,39 +592,39 @@ function createBondStyleGrey(p1, p2, sym1, sym2, bondThickness, atomScale, color
 
     // Calculate midpoint (based on atom surfaces)
     const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
-    
+
     const final_color1 = colorMap[sym1];
     const final_color2 = colorMap[sym2];
-    
+
     const bondGroup = new THREE.Group();
     const bond1 = createHalfBondGrey(startPos, midPoint, final_color1, bondThickness);
     const bond2 = createHalfBondGrey(midPoint, endPos, final_color2, bondThickness);
-    
+
     if (bond1) bondGroup.add(bond1);
     if (bond2) bondGroup.add(bond2);
-    
+
     return bondGroup;
 }
 
 function createHalfBondGrey(start, end, color, bondThickness) {
     if (start.distanceTo(end) <= 0) return null;
-    
+
     const distance = start.distanceTo(end);
     const direction = new THREE.Vector3().subVectors(end, start).normalize();
-    
+
     // Use CylinderGeometry for cleaner appearance
     const geometry = new THREE.CylinderGeometry(bondThickness, bondThickness, distance, 16, 1);
-    const material = new THREE.MeshBasicMaterial({ 
+    const material = new THREE.MeshBasicMaterial({
         color: color,
         depthWrite: true,
         depthTest: true
     });
     const bond = new THREE.Mesh(geometry, material);
-    
+
     // Position and orient the cylinder
     bond.position.copy(start).add(end).multiplyScalar(0.5);
     bond.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
-    
+
     return bond;
 }
 
@@ -649,8 +649,8 @@ function _computeConvexHull(points) {
     // Step 1: Find two extreme points (min X, then min Y)
     let a = 0;
     for (let i = 1; i < n; i++) {
-        if (points[i].x < points[a].x || 
-           (points[i].x === points[a].x && points[i].y < points[a].y)) a = i;
+        if (points[i].x < points[a].x ||
+            (points[i].x === points[a].x && points[i].y < points[a].y)) a = i;
     }
 
     // Step 2: Build faces using a BFS-based gift wrapping
@@ -798,9 +798,13 @@ function _computeConvexHull(points) {
  * @param {THREE.Vector3[]} neighborPositions - Positions of neighbor atoms (vertices)
  * @param {number[]} neighborColors - Colors (hex int) of neighbor atoms
  * @param {number} opacity - Face transparency (0-1)
- * @returns {THREE.Mesh|null}
+ * @param {boolean} showEdge - Whether to render wireframe edges
+ * @param {number} edgeOpacity - Edge line opacity (0-1)
+ * @param {number} edgeColor - Edge color (hex int, default 0x111111)
+ * @returns {THREE.Group|null}
  */
-function createPolyhedronFaces(centerPos, neighborPositions, neighborColors, opacity = 0.25) {
+function createPolyhedronFaces(centerPos, neighborPositions, neighborColors, opacity = 0.25,
+    showEdge = true, edgeOpacity = 0.7, edgeColor = 0x111111) {
     if (!neighborPositions || neighborPositions.length < 4) return null;
 
     const hull = _computeConvexHull(neighborPositions);
@@ -821,15 +825,15 @@ function createPolyhedronFaces(centerPos, neighborPositions, neighborColors, opa
         // Average color of 3 vertices
         const avgColor = new THREE.Color(
             ((cols[0] >> 16 & 0xff) + (cols[1] >> 16 & 0xff) + (cols[2] >> 16 & 0xff)) / (3 * 255),
-            ((cols[0] >> 8  & 0xff) + (cols[1] >> 8  & 0xff) + (cols[2] >> 8  & 0xff)) / (3 * 255),
-            ((cols[0]       & 0xff) + (cols[1]       & 0xff) + (cols[2]       & 0xff)) / (3 * 255)
+            ((cols[0] >> 8 & 0xff) + (cols[1] >> 8 & 0xff) + (cols[2] >> 8 & 0xff)) / (3 * 255),
+            ((cols[0] & 0xff) + (cols[1] & 0xff) + (cols[2] & 0xff)) / (3 * 255)
         );
 
         for (const v of verts) {
-            positions[idx * 3]     = v.x;
+            positions[idx * 3] = v.x;
             positions[idx * 3 + 1] = v.y;
             positions[idx * 3 + 2] = v.z;
-            colors[idx * 3]     = avgColor.r;
+            colors[idx * 3] = avgColor.r;
             colors[idx * 3 + 1] = avgColor.g;
             colors[idx * 3 + 2] = avgColor.b;
             idx++;
@@ -849,7 +853,22 @@ function createPolyhedronFaces(centerPos, neighborPositions, neighborColors, opa
         depthWrite: false,
     });
 
-    return new THREE.Mesh(geometry, material);
+    const group = new THREE.Group();
+    group.add(new THREE.Mesh(geometry, material));
+
+    // ── Wireframe edges ──────────────────────────────────────────
+    if (showEdge) {
+        const edgesGeo = new THREE.EdgesGeometry(geometry);
+        const edgeMat = new THREE.LineBasicMaterial({
+            color: edgeColor,
+            transparent: edgeOpacity < 1.0,
+            opacity: edgeOpacity,
+            depthWrite: false,
+        });
+        group.add(new THREE.LineSegments(edgesGeo, edgeMat));
+    }
+
+    return group;
 }
 
 /**
@@ -877,8 +896,8 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
         const p1 = ringPositions[i];
         const p2 = ringPositions[(i + 1) % n];
         positions[idx++] = centroid.x; positions[idx++] = centroid.y; positions[idx++] = centroid.z;
-        positions[idx++] = p1.x;       positions[idx++] = p1.y;       positions[idx++] = p1.z;
-        positions[idx++] = p2.x;       positions[idx++] = p2.y;       positions[idx++] = p2.z;
+        positions[idx++] = p1.x; positions[idx++] = p1.y; positions[idx++] = p1.z;
+        positions[idx++] = p2.x; positions[idx++] = p2.y; positions[idx++] = p2.z;
     }
 
     const geometry = new THREE.BufferGeometry();

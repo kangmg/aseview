@@ -602,6 +602,25 @@
                                     id="polyhedron-opacity">
                             </div>
                         </div>
+                        <div class="control-group" id="polyhedron-edge-group" style="display:none;">
+                            <div class="control-label">
+                                <span>Polyhedron Edge</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-polyhedron-edge" checked>
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group" id="polyhedron-edge-opacity-group" style="display:none;">
+                            <div class="control-label">
+                                <span>Edge Opacity</span>
+                                <span class="slider-value" id="polyhedron-edge-opacity-value">0.70</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.05" max="1.0" step="0.05" value="0.70" class="slider"
+                                    id="polyhedron-edge-opacity">
+                            </div>
+                        </div>
                         <div class="control-group" id="polyhedron-exclude-group" style="display:none;">
                             <div class="control-label" style="margin-bottom:4px;">
                                 <span>Exclude Elements</span>
@@ -856,6 +875,8 @@
             showAxis: true,
             showPolyhedron: false,
             polyhedronOpacity: 0.25,
+            showPolyhedronEdge: true,
+            polyhedronEdgeOpacity: 0.70,
             polyhedronExcludeElements: [],
             showRings: false,
             ringOpacity: 0.30,
@@ -1577,7 +1598,10 @@
                         (atomInfo[symbols[ni]] || atomInfo['default']).color
                     );
                     const polyMesh = createPolyhedronFaces(
-                        positions[i], neighborPositions, neighborColors, settings.polyhedronOpacity
+                        positions[i], neighborPositions, neighborColors,
+                        settings.polyhedronOpacity,
+                        settings.showPolyhedronEdge,
+                        settings.polyhedronEdgeOpacity
                     );
                     if (polyMesh) {
                         polyMesh.renderOrder = -1;
@@ -2120,9 +2144,28 @@
                 settings.showPolyhedron = this.checked;
                 const opacityGroup = document.getElementById('polyhedron-opacity-group');
                 if (opacityGroup) opacityGroup.style.display = this.checked ? 'block' : 'none';
+                const edgeGroup = document.getElementById('polyhedron-edge-group');
+                if (edgeGroup) edgeGroup.style.display = this.checked ? 'block' : 'none';
+                const edgeOpacityGroup = document.getElementById('polyhedron-edge-opacity-group');
+                if (edgeOpacityGroup) edgeOpacityGroup.style.display =
+                    (this.checked && settings.showPolyhedronEdge) ? 'block' : 'none';
                 const excludeGroup = document.getElementById('polyhedron-exclude-group');
                 if (excludeGroup) excludeGroup.style.display = this.checked ? 'block' : 'none';
                 if (this.checked) updatePolyhedronElementChips();
+                renderMolecule();
+            });
+
+            safeAddListener('show-polyhedron-edge', 'change', function () {
+                settings.showPolyhedronEdge = this.checked;
+                const edgeOpacityGroup = document.getElementById('polyhedron-edge-opacity-group');
+                if (edgeOpacityGroup) edgeOpacityGroup.style.display = this.checked ? 'block' : 'none';
+                renderMolecule();
+            });
+
+            safeAddListener('polyhedron-edge-opacity', 'input', function () {
+                settings.polyhedronEdgeOpacity = parseFloat(this.value);
+                const val = document.getElementById('polyhedron-edge-opacity-value');
+                if (val) val.textContent = parseFloat(this.value).toFixed(2);
                 renderMolecule();
             });
 
