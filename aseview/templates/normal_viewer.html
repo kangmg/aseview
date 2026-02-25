@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -224,11 +225,11 @@
             border-radius: 50%;
         }
 
-        input:checked + .slider-switch {
+        input:checked+.slider-switch {
             background-color: var(--accent-color);
         }
 
-        input:checked + .slider-switch:before {
+        input:checked+.slider-switch:before {
             transform: translateX(20px);
         }
 
@@ -383,10 +384,17 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
+
         /* Help text */
         .help-text {
             position: absolute;
@@ -399,7 +407,7 @@
             border-radius: 4px;
             z-index: 5;
         }
-        
+
         /* Animation controls */
         .animation-controls {
             position: absolute;
@@ -413,7 +421,7 @@
             border-radius: 8px;
             z-index: 5;
         }
-        
+
         .anim-btn {
             background-color: var(--hover-color);
             border: 1px solid var(--border-color);
@@ -423,7 +431,7 @@
             cursor: pointer;
             font-size: 12px;
         }
-        
+
         .anim-btn.active {
             background-color: var(--accent-color);
         }
@@ -433,6 +441,7 @@
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
     <script src="https://raw.githack.com/kangmg/aseview/main/aseview/static/js/styles.js"></script>
 </head>
+
 <body>
     <div class="app">
         <!-- Sidebar -->
@@ -443,8 +452,10 @@
                     <div class="card-header" onclick="toggleCard('advanced')">
                         <h3>
                             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                             Advanced Settings
                         </h3>
@@ -459,7 +470,8 @@
                                 <span class="slider-value" id="bond-threshold-value">1.5</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.5" max="3" step="0.1" value="1.5" class="slider" id="bond-threshold">
+                                <input type="range" min="0.5" max="3" step="0.1" value="1.5" class="slider"
+                                    id="bond-threshold">
                             </div>
                         </div>
 
@@ -469,7 +481,8 @@
                                 <span class="slider-value" id="bond-thickness-value">0.20</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.05" max="1" step="0.05" value="0.2" class="slider" id="bond-thickness">
+                                <input type="range" min="0.05" max="1" step="0.05" value="0.2" class="slider"
+                                    id="bond-thickness">
                             </div>
                         </div>
 
@@ -479,7 +492,8 @@
                                 <span class="slider-value" id="atom-size-value">1.0×</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.2" max="2" step="0.1" value="1.0" class="slider" id="atom-size">
+                                <input type="range" min="0.2" max="2" step="0.1" value="1.0" class="slider"
+                                    id="atom-size">
                             </div>
                         </div>
 
@@ -489,7 +503,8 @@
                                 <span class="slider-value" id="animation-speed-value">30</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="1" max="60" step="1" value="30" class="slider" id="animation-speed">
+                                <input type="range" min="1" max="60" step="1" value="30" class="slider"
+                                    id="animation-speed">
                             </div>
                         </div>
 
@@ -527,7 +542,8 @@
                     <div class="card-header" onclick="toggleCard('display')">
                         <h3>
                             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
                             Display Settings
                         </h3>
@@ -566,6 +582,48 @@
                             </div>
                         </div>
 
+                        <!-- Polyhedron (solid) -->
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Polyhedron</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-polyhedron">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group" id="polyhedron-opacity-group" style="display:none;">
+                            <div class="control-label">
+                                <span>Polyhedron Opacity</span>
+                                <span class="slider-value" id="polyhedron-opacity-value">0.25</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.05" max="1.0" step="0.05" value="0.25" class="slider"
+                                    id="polyhedron-opacity">
+                            </div>
+                        </div>
+
+                        <!-- Ring Highlight (molecule) -->
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Ring Highlight</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-rings">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group" id="ring-opacity-group" style="display:none;">
+                            <div class="control-label">
+                                <span>Ring Opacity</span>
+                                <span class="slider-value" id="ring-opacity-value">0.30</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.05" max="1.0" step="0.05" value="0.30" class="slider"
+                                    id="ring-opacity">
+                            </div>
+                        </div>
+
                         <div class="control-group">
                             <div class="control-label">
                                 <span>View Mode</span>
@@ -573,14 +631,17 @@
                             <div class="button-group">
                                 <button class="btn" id="orthographic-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
                                     </svg>
                                     Orthographic
                                 </button>
                                 <button class="btn active" id="perspective-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 22V12h6v10" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 22V12h6v10" />
                                     </svg>
                                     Perspective
                                 </button>
@@ -594,7 +655,8 @@
                     <div class="card-header" onclick="toggleCard('interaction')">
                         <h3>
                             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
                             </svg>
                             Interaction Settings
                         </h3>
@@ -610,14 +672,17 @@
                             <div class="button-group">
                                 <button class="btn active" id="trackball-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
                                     </svg>
                                     TrackBall
                                 </button>
                                 <button class="btn" id="orbit-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 22V12h6v10" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 22V12h6v10" />
                                     </svg>
                                     Orbit
                                 </button>
@@ -631,7 +696,8 @@
                     <div class="card-header">
                         <h3>
                             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
                             Normal Modes
                         </h3>
@@ -652,7 +718,8 @@
                                 <span class="slider-value" id="amplitude-value">0.75</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.1" max="2.0" step="0.05" value="0.75" class="slider" id="amplitude-slider">
+                                <input type="range" min="0.1" max="2.0" step="0.05" value="0.75" class="slider"
+                                    id="amplitude-slider">
                             </div>
                         </div>
 
@@ -673,8 +740,10 @@
                     <div class="card-header">
                         <h3>
                             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Animation
                         </h3>
@@ -683,17 +752,20 @@
                         <div class="animation-btn-group">
                             <button class="anim-btn" id="play-btn" title="Play/Pause">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                                 </svg>
                             </button>
                             <button class="anim-btn" id="copy-btn" title="Copy current frame">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                 </svg>
                             </button>
                             <button class="anim-btn" id="copy-all-btn" title="Copy all frames">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </button>
                         </div>
@@ -704,7 +776,8 @@
                                 <span class="slider-value" id="frame-value">1 / 100</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="1" max="100" step="1" value="1" class="slider" id="frame-slider">
+                                <input type="range" min="1" max="100" step="1" value="1" class="slider"
+                                    id="frame-slider">
                             </div>
                         </div>
                     </div>
@@ -723,12 +796,14 @@
             <div class="toolbar">
                 <button class="toolbar-btn" id="video-btn">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                 </button>
                 <button class="toolbar-btn" id="download-btn">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                 </button>
             </div>
@@ -742,954 +817,1070 @@
     </div>
 
     <script>
-        
-// Global variables
-let molecularData = [];
-let sidebarOpen = true;
-let cards = {
-    advanced: true,
-    display: true,
-    interaction: true
-};
 
-let periodicities = [];
+        // Global variables
+        let molecularData = [];
+        let sidebarOpen = true;
+        let cards = {
+            advanced: true,
+            display: true,
+            interaction: true
+        };
 
-// File naming for downloads
-let downloadBaseName = 'vibration';
-let downloadCounters = { png: 0, gif: 0 };
+        let periodicities = [];
 
-let settings = {
-    bondThreshold: 1.0,
-    bondThickness: 0.1,
-    atomSize: 0.4,
-    animationSpeed: 30,
-    forceScale: 0.5,
-    backgroundColor: '#1f2937',
-    style: 'cartoon',
-    showCell: true,
-    showBond: true,
-    showShadow: false,
-    showShading: true,
-    showEnergyPlot: false,
-    showForces: false,
-    showAxis: true,
-    showModeVector: false,
-    viewMode: 'Perspective',
-    rotationMode: 'TrackBall'
-};
+        // File naming for downloads
+        let downloadBaseName = 'vibration';
+        let downloadCounters = { png: 0, gif: 0 };
 
-// Update UI and rendering from settings (called via postMessage API)
-function updateFromSettings() {
-    // Update select elements
-    const styleSelect = document.getElementById('style');
-    if (styleSelect) styleSelect.value = settings.style || 'cartoon';
+        let settings = {
+            bondThreshold: 1.0,
+            bondThickness: 0.1,
+            atomSize: 0.4,
+            animationSpeed: 30,
+            forceScale: 0.5,
+            backgroundColor: '#1f2937',
+            style: 'cartoon',
+            showCell: true,
+            showBond: true,
+            showShadow: false,
+            showShading: true,
+            showEnergyPlot: false,
+            showForces: false,
+            showAxis: true,
+            showPolyhedron: false,
+            polyhedronOpacity: 0.25,
+            showRings: false,
+            ringOpacity: 0.30,
+            showModeVector: false,
+            viewMode: 'Perspective',
+            rotationMode: 'TrackBall'
+        };
 
-    // Update checkboxes
-    const checkboxMappings = {
-        'show-cell': 'showCell',
-        'show-bond': 'showBond',
-        'show-shading': 'showShading',
-        'show-axis': 'showAxis',
-        'show-shadow': 'showShadow',
-        'show-mode-vector': 'showModeVector'
-    };
+        // Update UI and rendering from settings (called via postMessage API)
+        function updateFromSettings() {
+            // Update select elements
+            const styleSelect = document.getElementById('style');
+            if (styleSelect) styleSelect.value = settings.style || 'cartoon';
 
-    for (const [elemId, settingKey] of Object.entries(checkboxMappings)) {
-        const elem = document.getElementById(elemId);
-        if (elem) elem.checked = !!settings[settingKey];
-    }
+            // Update checkboxes
+            const checkboxMappings = {
+                'show-cell': 'showCell',
+                'show-bond': 'showBond',
+                'show-shading': 'showShading',
+                'show-axis': 'showAxis',
+                'show-shadow': 'showShadow',
+                'show-mode-vector': 'showModeVector'
+            };
 
-    // Update sliders
-    const atomSizeSlider = document.getElementById('atom-size');
-    if (atomSizeSlider) {
-        atomSizeSlider.value = settings.atomSize || 0.4;
-        const valueEl = document.getElementById('atom-size-value');
-        if (valueEl) valueEl.textContent = atomSizeSlider.value;
-    }
+            for (const [elemId, settingKey] of Object.entries(checkboxMappings)) {
+                const elem = document.getElementById(elemId);
+                if (elem) elem.checked = !!settings[settingKey];
+            }
 
-    const bondThresholdSlider = document.getElementById('bond-threshold');
-    if (bondThresholdSlider) {
-        bondThresholdSlider.value = settings.bondThreshold || 1.0;
-        const valueEl = document.getElementById('bond-threshold-value');
-        if (valueEl) valueEl.textContent = bondThresholdSlider.value;
-    }
+            // Update sliders
+            const atomSizeSlider = document.getElementById('atom-size');
+            if (atomSizeSlider) {
+                atomSizeSlider.value = settings.atomSize || 0.4;
+                const valueEl = document.getElementById('atom-size-value');
+                if (valueEl) valueEl.textContent = atomSizeSlider.value;
+            }
 
-    const bondThicknessSlider = document.getElementById('bond-thickness');
-    if (bondThicknessSlider) {
-        bondThicknessSlider.value = settings.bondThickness || 0.1;
-        const valueEl = document.getElementById('bond-thickness-value');
-        if (valueEl) valueEl.textContent = bondThicknessSlider.value;
-    }
+            const bondThresholdSlider = document.getElementById('bond-threshold');
+            if (bondThresholdSlider) {
+                bondThresholdSlider.value = settings.bondThreshold || 1.0;
+                const valueEl = document.getElementById('bond-threshold-value');
+                if (valueEl) valueEl.textContent = bondThresholdSlider.value;
+            }
 
-    const animSpeedSlider = document.getElementById('animation-speed');
-    if (animSpeedSlider) {
-        animSpeedSlider.value = settings.animationSpeed || 30;
-        const valueEl = document.getElementById('animation-speed-value');
-        if (valueEl) valueEl.textContent = animSpeedSlider.value;
-    }
+            const bondThicknessSlider = document.getElementById('bond-thickness');
+            if (bondThicknessSlider) {
+                bondThicknessSlider.value = settings.bondThickness || 0.1;
+                const valueEl = document.getElementById('bond-thickness-value');
+                if (valueEl) valueEl.textContent = bondThicknessSlider.value;
+            }
 
-    // Update color picker
-    const bgColorPicker = document.getElementById('background-color');
-    if (bgColorPicker && settings.backgroundColor) {
-        bgColorPicker.value = settings.backgroundColor;
-        const viewerContainer = document.querySelector('.viewer-container');
-        if (viewerContainer) {
-            viewerContainer.style.background = `linear-gradient(135deg, ${settings.backgroundColor}, ${darkenColorHex(settings.backgroundColor, 20)})`;
+            const animSpeedSlider = document.getElementById('animation-speed');
+            if (animSpeedSlider) {
+                animSpeedSlider.value = settings.animationSpeed || 30;
+                const valueEl = document.getElementById('animation-speed-value');
+                if (valueEl) valueEl.textContent = animSpeedSlider.value;
+            }
+
+            // Update color picker
+            const bgColorPicker = document.getElementById('background-color');
+            if (bgColorPicker && settings.backgroundColor) {
+                bgColorPicker.value = settings.backgroundColor;
+                const viewerContainer = document.querySelector('.viewer-container');
+                if (viewerContainer) {
+                    viewerContainer.style.background = `linear-gradient(135deg, ${settings.backgroundColor}, ${darkenColorHex(settings.backgroundColor, 20)})`;
+                }
+            }
+
+            // Apply rendering changes
+            if (typeof updateShading === 'function') updateShading();
+            if (typeof renderMolecule === 'function') renderMolecule();
         }
-    }
 
-    // Apply rendering changes
-    if (typeof updateShading === 'function') updateShading();
-    if (typeof renderMolecule === 'function') renderMolecule();
-}
-
-// Check if styles.js is loaded
-if (typeof atomInfo === 'undefined') {
-    console.error('styles.js not loaded! atomInfo is undefined');
-}
-if (typeof createAtomStyleDefault === 'undefined') {
-    console.error('styles.js not loaded! createAtomStyleDefault is undefined');
-}
-
-const atomFactories = {
-    'default': (pos, symbol, atomScale) => createAtomStyleDefault(pos, symbol, atomScale),
-    '2d': (pos, symbol, atomScale) => createAtomStyle2D(pos, symbol, atomScale),
-    'cartoon': (pos, symbol, atomScale) => createAtomStyleCartoon(pos, symbol, atomScale),
-    'neon': (pos, symbol, atomScale) => createAtomStyleNeon(pos, symbol, atomScale),
-    'glossy': (pos, symbol, atomScale) => createAtomStyleGlossy(pos, symbol, atomScale),
-    'metallic': (pos, symbol, atomScale) => createAtomStyleMetallic(pos, symbol, atomScale),
-    'rowan': (pos, symbol, atomScale) => createAtomStyleRowan(pos, symbol, atomScale),
-    'bubble': (pos, symbol, atomScale) => createAtomStyleBubble(pos, symbol, atomScale),
-    'grey': (pos, symbol, atomScale, helpers) => createAtomStyleGrey(pos, symbol, atomScale, helpers.greyColorMap[symbol] ?? 0x808080)
-};
-
-const bondFactories = {
-    'default': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'default'),
-    '2d': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyle2D(p1, p2, sym1, sym2, bondRadius, atomScale),
-    'cartoon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleCartoon(p1, p2, sym1, sym2, bondRadius, atomScale),
-    'neon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale),
-    'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy'),
-    'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic'),
-    'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale),
-    'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale),
-    'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap)
-};
-
-let scene = null;
-let camera = null;
-let renderer = null;
-let controls = null;
-let moleculeGroup = null;
-let directionalLight = null;
-let cameraNeedsFit = true;
-
-// Axis helper scene
-let axisScene = null;
-let axisCamera = null;
-let axisGroup = null;
-
-// Animation state
-let animationState = {
-    isPlaying: false,
-    currentFrame: 0,
-    animationInterval: null
-};
-
-document.addEventListener('DOMContentLoaded', function() {
-    setupEventListeners();
-    initRenderer();
-});
-
-function initRenderer() {
-    const viewer = document.getElementById('viewer');
-    if (!viewer) return;
-
-    const placeholderCanvas = document.getElementById('molecule-canvas');
-    const helpText = document.getElementById('help-text');
-    if (placeholderCanvas && placeholderCanvas.parentElement === viewer) {
-        placeholderCanvas.remove();
-    }
-
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.domElement.id = 'molecule-canvas';
-    renderer.sortObjects = true;
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
-    renderer.setSize(Math.max(viewer.clientWidth, 1), Math.max(viewer.clientHeight, 1));
-    
-    // Enable shadow mapping
-    renderer.shadowMap.enabled = false;  // Will be enabled when showShadow is true
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    
-    // Enable better rendering for special effects like neon
-    renderer.outputEncoding = THREE.sRGBEncoding;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
-    if (helpText && helpText.parentElement === viewer) {
-        viewer.insertBefore(renderer.domElement, helpText);
-    } else {
-        viewer.appendChild(renderer.domElement);
-    }
-
-    scene = new THREE.Scene();
-    updateBackgroundColor();
-
-    setupCamera();
-    setupControls();
-
-    // Lighting setup - matching molecular_viewer
-    directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(10, 10, 10);
-    scene.add(directionalLight);
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-    scene.add(ambientLight);
-
-    setupAxisHelper();
-
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    animate();
-}
-
-function setupCamera() {
-    const viewer = document.getElementById('viewer');
-    if (!viewer) return;
-
-    const width = Math.max(viewer.clientWidth, 1);
-    const height = Math.max(viewer.clientHeight, 1);
-    const aspect = width / height;
-
-    let newCamera;
-    if (settings.viewMode === 'Orthographic') {
-        const frustumSize = 20;
-        newCamera = new THREE.OrthographicCamera(
-            (frustumSize * aspect) / -2,
-            (frustumSize * aspect) / 2,
-            frustumSize / 2,
-            frustumSize / -2,
-            -1000,
-            1000
-        );
-    } else {
-        newCamera = new THREE.PerspectiveCamera(55, aspect, 0.1, 2000);
-    }
-
-    if (camera) {
-        newCamera.position.copy(camera.position);
-        newCamera.zoom = camera.zoom;
-        newCamera.updateProjectionMatrix();
-    } else {
-        newCamera.position.set(0, 0, 10);
-    }
-
-    camera = newCamera;
-}
-
-function setupControls() {
-    if (!renderer || !camera) return;
-
-    const target = controls ? controls.target.clone() : new THREE.Vector3();
-    if (controls) {
-        controls.dispose();
-    }
-
-    if (settings.rotationMode === 'Orbit') {
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-    } else {
-        controls = new THREE.TrackballControls(camera, renderer.domElement);
-        controls.rotateSpeed = 5.0;
-        controls.zoomSpeed = 1.2;
-        controls.panSpeed = 0.8;
-    }
-
-    controls.target.copy(target);
-    controls.update();
-}
-
-function handleResize() {
-    if (!renderer || !camera) return;
-    const viewer = document.getElementById('viewer');
-    if (!viewer) return;
-    const width = Math.max(viewer.clientWidth, 1);
-    const height = Math.max(viewer.clientHeight, 1);
-    renderer.setSize(width, height);
-
-    if (camera.isPerspectiveCamera) {
-        camera.aspect = width / height;
-    } else {
-        const frustumSize = 20;
-        const aspect = width / height;
-        camera.left = (frustumSize * aspect) / -2;
-        camera.right = (frustumSize * aspect) / 2;
-        camera.top = frustumSize / 2;
-        camera.bottom = frustumSize / -2;
-    }
-
-    camera.updateProjectionMatrix();
-    if (controls && typeof controls.handleResize === 'function') {
-        controls.handleResize();
-    }
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-    if (controls && typeof controls.update === 'function') {
-        controls.update();
-    }
-    // Light behavior depends on shading setting (matching molecular_viewer)
-    if (directionalLight && camera) {
-        if (settings.showShading) {
-            // Light position relative to camera for consistent shading direction
-            // Light stays in camera space, so shading direction is fixed from viewer's perspective
-            const offset = new THREE.Vector3(5, 8, 5);
-            const lightPos = camera.position.clone().add(
-                offset.applyQuaternion(camera.quaternion)
-            );
-            directionalLight.position.copy(lightPos);
-        } else {
-            // Light follows camera for flat lighting (no shading)
-            directionalLight.position.copy(camera.position);
+        // Check if styles.js is loaded
+        if (typeof atomInfo === 'undefined') {
+            console.error('styles.js not loaded! atomInfo is undefined');
         }
-    }
-    if (renderer && scene && camera) {
-        renderer.render(scene, camera);
-
-        // Render axis helper in bottom-left corner (transparent overlay)
-        if (settings.showAxis && axisScene && axisCamera && axisGroup) {
-            // Rotate axis group inversely to camera - shows world axes from camera's view
-            axisGroup.quaternion.copy(camera.quaternion).invert();
-
-            // Save current state
-            const currentViewport = renderer.getViewport(new THREE.Vector4());
-            const currentAutoClear = renderer.autoClear;
-
-            // Set viewport for axis helper (bottom-left corner)
-            const axisViewportSize = 150;
-            const axisMarginX = 15;
-            const axisMarginY = 20;
-            renderer.setViewport(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
-            renderer.setScissor(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
-            renderer.setScissorTest(true);
-
-            // Disable auto clear to preserve main scene, only clear depth
-            renderer.autoClear = false;
-            renderer.clearDepth();
-
-            // Render axis scene (transparent background)
-            renderer.render(axisScene, axisCamera);
-
-            // Restore state
-            renderer.autoClear = currentAutoClear;
-            renderer.setScissorTest(false);
-            renderer.setViewport(currentViewport);
+        if (typeof createAtomStyleDefault === 'undefined') {
+            console.error('styles.js not loaded! createAtomStyleDefault is undefined');
         }
-    }
-}
 
-function setupAxisHelper() {
-    // Create a separate scene for the axis helper
-    axisScene = new THREE.Scene();
-    axisScene.background = null;  // Transparent background
+        const atomFactories = {
+            'default': (pos, symbol, atomScale) => createAtomStyleDefault(pos, symbol, atomScale),
+            '2d': (pos, symbol, atomScale) => createAtomStyle2D(pos, symbol, atomScale),
+            'cartoon': (pos, symbol, atomScale) => createAtomStyleCartoon(pos, symbol, atomScale),
+            'neon': (pos, symbol, atomScale) => createAtomStyleNeon(pos, symbol, atomScale),
+            'glossy': (pos, symbol, atomScale) => createAtomStyleGlossy(pos, symbol, atomScale),
+            'metallic': (pos, symbol, atomScale) => createAtomStyleMetallic(pos, symbol, atomScale),
+            'rowan': (pos, symbol, atomScale) => createAtomStyleRowan(pos, symbol, atomScale),
+            'bubble': (pos, symbol, atomScale) => createAtomStyleBubble(pos, symbol, atomScale),
+            'grey': (pos, symbol, atomScale, helpers) => createAtomStyleGrey(pos, symbol, atomScale, helpers.greyColorMap[symbol] ?? 0x808080)
+        };
 
-    // Create orthographic camera for axis helper (centered on origin)
-    const axisViewSize = 100;
-    axisCamera = new THREE.OrthographicCamera(-axisViewSize, axisViewSize, axisViewSize, -axisViewSize, -200, 200);
-    axisCamera.position.set(0, 0, 100);
+        const bondFactories = {
+            'default': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'default'),
+            '2d': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyle2D(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'cartoon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleCartoon(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'neon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy'),
+            'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic'),
+            'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap)
+        };
 
-    // Create a group to hold all axis objects (will be rotated)
-    axisGroup = new THREE.Group();
+        let scene = null;
+        let camera = null;
+        let renderer = null;
+        let controls = null;
+        let moleculeGroup = null;
+        let directionalLight = null;
+        let cameraNeedsFit = true;
 
-    // Axis colors
-    const colors = {
-        x: 0xff4444,  // Red
-        y: 0x44cc44,  // Green
-        z: 0x4488ff   // Blue
-    };
+        // Axis helper scene
+        let axisScene = null;
+        let axisCamera = null;
+        let axisGroup = null;
 
-    const axisLength = 50;
-    const arrowHeadLength = 12;
-    const arrowHeadWidth = 6;
+        // Animation state
+        let animationState = {
+            isPlaying: false,
+            currentFrame: 0,
+            animationInterval: null
+        };
 
-    // Create arrows for each axis starting from origin
-    const xDir = new THREE.Vector3(1, 0, 0);
-    const yDir = new THREE.Vector3(0, 1, 0);
-    const zDir = new THREE.Vector3(0, 0, 1);
-    const origin = new THREE.Vector3(0, 0, 0);
+        document.addEventListener('DOMContentLoaded', function () {
+            setupEventListeners();
+            initRenderer();
+        });
 
-    const xArrow = new THREE.ArrowHelper(xDir, origin, axisLength, colors.x, arrowHeadLength, arrowHeadWidth);
-    const yArrow = new THREE.ArrowHelper(yDir, origin, axisLength, colors.y, arrowHeadLength, arrowHeadWidth);
-    const zArrow = new THREE.ArrowHelper(zDir, origin, axisLength, colors.z, arrowHeadLength, arrowHeadWidth);
+        function initRenderer() {
+            const viewer = document.getElementById('viewer');
+            if (!viewer) return;
 
-    // Make arrows thicker
-    xArrow.line.material.linewidth = 2;
-    yArrow.line.material.linewidth = 2;
-    zArrow.line.material.linewidth = 2;
+            const placeholderCanvas = document.getElementById('molecule-canvas');
+            const helpText = document.getElementById('help-text');
+            if (placeholderCanvas && placeholderCanvas.parentElement === viewer) {
+                placeholderCanvas.remove();
+            }
 
-    axisGroup.add(xArrow);
-    axisGroup.add(yArrow);
-    axisGroup.add(zArrow);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.domElement.id = 'molecule-canvas';
+            renderer.sortObjects = true;
+            renderer.setPixelRatio(window.devicePixelRatio || 1);
+            renderer.setSize(Math.max(viewer.clientWidth, 1), Math.max(viewer.clientHeight, 1));
 
-    // Create text labels using sprites
-    const createTextSprite = (text, color) => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
-        const ctx = canvas.getContext('2d');
+            // Enable shadow mapping
+            renderer.shadowMap.enabled = false;  // Will be enabled when showShadow is true
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-        ctx.font = 'bold 48px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+            // Enable better rendering for special effects like neon
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            if (helpText && helpText.parentElement === viewer) {
+                viewer.insertBefore(renderer.domElement, helpText);
+            } else {
+                viewer.appendChild(renderer.domElement);
+            }
 
-        // Convert hex color to CSS
-        const cssColor = '#' + color.toString(16).padStart(6, '0');
-        ctx.fillStyle = cssColor;
-        ctx.fillText(text, 32, 32);
+            scene = new THREE.Scene();
+            updateBackgroundColor();
 
-        const texture = new THREE.CanvasTexture(canvas);
-        const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
-        const sprite = new THREE.Sprite(material);
-        sprite.scale.set(14, 14, 1);
-        return sprite;
-    };
+            setupCamera();
+            setupControls();
 
-    const xLabel = createTextSprite('X', colors.x);
-    const yLabel = createTextSprite('Y', colors.y);
-    const zLabel = createTextSprite('Z', colors.z);
+            // Lighting setup - matching molecular_viewer
+            directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 10);
+            scene.add(directionalLight);
 
-    xLabel.position.set(axisLength + 10, 0, 0);
-    yLabel.position.set(0, axisLength + 10, 0);
-    zLabel.position.set(0, 0, axisLength + 10);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+            scene.add(ambientLight);
 
-    axisGroup.add(xLabel);
-    axisGroup.add(yLabel);
-    axisGroup.add(zLabel);
+            setupAxisHelper();
 
-    axisScene.add(axisGroup);
-
-    // Add ambient light to axis scene
-    const axisAmbient = new THREE.AmbientLight(0xffffff, 1.0);
-    axisScene.add(axisAmbient);
-}
-
-function disposeObject3D(object) {
-    object.traverse(child => {
-        if (child.geometry) {
-            child.geometry.dispose();
+            window.addEventListener('resize', handleResize);
+            handleResize();
+            animate();
         }
-        if (child.material) {
-            if (Array.isArray(child.material)) {
-                child.material.forEach(mat => mat.dispose && mat.dispose());
-            } else if (child.material.dispose) {
-                child.material.dispose();
+
+        function setupCamera() {
+            const viewer = document.getElementById('viewer');
+            if (!viewer) return;
+
+            const width = Math.max(viewer.clientWidth, 1);
+            const height = Math.max(viewer.clientHeight, 1);
+            const aspect = width / height;
+
+            let newCamera;
+            if (settings.viewMode === 'Orthographic') {
+                const frustumSize = 20;
+                newCamera = new THREE.OrthographicCamera(
+                    (frustumSize * aspect) / -2,
+                    (frustumSize * aspect) / 2,
+                    frustumSize / 2,
+                    frustumSize / -2,
+                    -1000,
+                    1000
+                );
+            } else {
+                newCamera = new THREE.PerspectiveCamera(55, aspect, 0.1, 2000);
+            }
+
+            if (camera) {
+                newCamera.position.copy(camera.position);
+                newCamera.zoom = camera.zoom;
+                newCamera.updateProjectionMatrix();
+            } else {
+                newCamera.position.set(0, 0, 10);
+            }
+
+            camera = newCamera;
+        }
+
+        function setupControls() {
+            if (!renderer || !camera) return;
+
+            const target = controls ? controls.target.clone() : new THREE.Vector3();
+            if (controls) {
+                controls.dispose();
+            }
+
+            if (settings.rotationMode === 'Orbit') {
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+            } else {
+                controls = new THREE.TrackballControls(camera, renderer.domElement);
+                controls.rotateSpeed = 5.0;
+                controls.zoomSpeed = 1.2;
+                controls.panSpeed = 0.8;
+            }
+
+            controls.target.copy(target);
+            controls.update();
+        }
+
+        function handleResize() {
+            if (!renderer || !camera) return;
+            const viewer = document.getElementById('viewer');
+            if (!viewer) return;
+            const width = Math.max(viewer.clientWidth, 1);
+            const height = Math.max(viewer.clientHeight, 1);
+            renderer.setSize(width, height);
+
+            if (camera.isPerspectiveCamera) {
+                camera.aspect = width / height;
+            } else {
+                const frustumSize = 20;
+                const aspect = width / height;
+                camera.left = (frustumSize * aspect) / -2;
+                camera.right = (frustumSize * aspect) / 2;
+                camera.top = frustumSize / 2;
+                camera.bottom = frustumSize / -2;
+            }
+
+            camera.updateProjectionMatrix();
+            if (controls && typeof controls.handleResize === 'function') {
+                controls.handleResize();
             }
         }
-        if (child.texture && child.texture.dispose) {
-            child.texture.dispose();
-        }
-    });
-}
 
-
-function renderMolecule() {
-    if (!scene || !camera || !renderer) return;
-    if (!molecularData || molecularData.length === 0) return;
-
-    if (moleculeGroup) {
-        scene.remove(moleculeGroup);
-        disposeObject3D(moleculeGroup);
-    }
-
-    moleculeGroup = new THREE.Group();
-    
-    // Use current frame for animation
-    const frameIndex = animationState.currentFrame % molecularData.length;
-    const molecule = molecularData[frameIndex];
-    let positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
-    let symbols = molecule.symbols;
-    
-    // Apply periodic boundary conditions if requested
-    if (periodicities.length > 0 && molecule.cell) {
-        const extended = applyPeriodicBoundaries(positions, symbols, molecule.cell, periodicities);
-        positions = extended.positions;
-        symbols = extended.symbols;
-        console.log('Applied periodicities:', periodicities);
-        console.log('Extended atoms:', positions.length, 'from', molecule.positions.length);
-    }
-
-    const styleName = (settings.style || 'cartoon').toLowerCase();
-    console.log('Rendering with style:', styleName);
-    console.log('Available atom factories:', Object.keys(atomFactories));
-    console.log('Available bond factories:', Object.keys(bondFactories));
-    
-    const atomFactory = atomFactories[styleName] || atomFactories['default'];
-    const bondFactory = bondFactories[styleName] || bondFactories['default'];
-    
-    if (!atomFactory || !bondFactory) {
-        console.error('Factory not found for style:', styleName);
-        return;
-    }
-
-    const atomScale = Math.max(settings.atomSize, 0.05);
-    const bondRadius = Math.max(settings.bondThickness, 0.005);
-    const bondCutoff = settings.bondThreshold;
-
-    const uniqueSymbols = [...new Set(symbols)];
-    const greyColorMap = {};
-    if (uniqueSymbols.length > 0) {
-        uniqueSymbols.forEach((sym, idx) => {
-            const lightness = (idx + 1) / (uniqueSymbols.length + 1);
-            greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
-        });
-    }
-    const helpers = { greyColorMap };
-
-    if (settings.showCell && molecule.cell) {
-        const cellVectors = molecule.cell.map(c => new THREE.Vector3(...c));
-        const points = [
-            new THREE.Vector3(0, 0, 0), cellVectors[0],
-            new THREE.Vector3(0, 0, 0), cellVectors[1],
-            new THREE.Vector3(0, 0, 0), cellVectors[2],
-            cellVectors[0], cellVectors[0].clone().add(cellVectors[1]),
-            cellVectors[0], cellVectors[0].clone().add(cellVectors[2]),
-            cellVectors[1], cellVectors[1].clone().add(cellVectors[0]),
-            cellVectors[1], cellVectors[1].clone().add(cellVectors[2]),
-            cellVectors[2], cellVectors[2].clone().add(cellVectors[0]),
-            cellVectors[2], cellVectors[2].clone().add(cellVectors[1]),
-            cellVectors[0].clone().add(cellVectors[1]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
-            cellVectors[0].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
-            cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
-        ];
-        const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-        const cellMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });  // Red color
-        const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
-        cellMesh.renderOrder = 2;
-        moleculeGroup.add(cellMesh);
-    }
-
-    if (settings.showBond) {
-        let bondCount = 0;
-        for (let i = 0; i < positions.length; i++) {
-            for (let j = i + 1; j < positions.length; j++) {
-                const dist = positions[i].distanceTo(positions[j]);
-                
-                // Calculate bond cutoff based on covalent radii of both atoms
-                const info1 = atomInfo[symbols[i]] || atomInfo['default'];
-                const info2 = atomInfo[symbols[j]] || atomInfo['default'];
-                const covalentRadiusSum = info1.radius + info2.radius;
-                const adjustedCutoff = covalentRadiusSum * bondCutoff;
-                
-                if (dist <= adjustedCutoff) {
-                    const bond = bondFactory(
-                        positions[i],
-                        positions[j],
-                        symbols[i],
-                        symbols[j],
-                        bondRadius,
-                        atomScale,
-                        helpers
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls && typeof controls.update === 'function') {
+                controls.update();
+            }
+            // Light behavior depends on shading setting (matching molecular_viewer)
+            if (directionalLight && camera) {
+                if (settings.showShading) {
+                    // Light position relative to camera for consistent shading direction
+                    // Light stays in camera space, so shading direction is fixed from viewer's perspective
+                    const offset = new THREE.Vector3(5, 8, 5);
+                    const lightPos = camera.position.clone().add(
+                        offset.applyQuaternion(camera.quaternion)
                     );
-                    if (bond) {
-                        bond.renderOrder = 1;
-                        // Enable shadow casting and receiving for bonds
-                        bond.traverse((child) => {
-                            if (child.isMesh) {
-                                child.castShadow = settings.showShadow;
-                                child.receiveShadow = settings.showShadow;
-                            }
-                        });
-                        moleculeGroup.add(bond);
-                        bondCount++;
-                        
-                        // Debug: Log bond colors
-                        if (bondCount === 1) {
-                            console.log('Style:', styleName);
-                            console.log('Bond factory:', bondFactory.name || 'anonymous');
-                            bond.traverse((child) => {
-                                if (child.material && child.material.color) {
-                                    console.log('Bond material color:', '#' + child.material.color.getHexString());
+                    directionalLight.position.copy(lightPos);
+                } else {
+                    // Light follows camera for flat lighting (no shading)
+                    directionalLight.position.copy(camera.position);
+                }
+            }
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+
+                // Render axis helper in bottom-left corner (transparent overlay)
+                if (settings.showAxis && axisScene && axisCamera && axisGroup) {
+                    // Rotate axis group inversely to camera - shows world axes from camera's view
+                    axisGroup.quaternion.copy(camera.quaternion).invert();
+
+                    // Save current state
+                    const currentViewport = renderer.getViewport(new THREE.Vector4());
+                    const currentAutoClear = renderer.autoClear;
+
+                    // Set viewport for axis helper (bottom-left corner)
+                    const axisViewportSize = 150;
+                    const axisMarginX = 15;
+                    const axisMarginY = 20;
+                    renderer.setViewport(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
+                    renderer.setScissor(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
+                    renderer.setScissorTest(true);
+
+                    // Disable auto clear to preserve main scene, only clear depth
+                    renderer.autoClear = false;
+                    renderer.clearDepth();
+
+                    // Render axis scene (transparent background)
+                    renderer.render(axisScene, axisCamera);
+
+                    // Restore state
+                    renderer.autoClear = currentAutoClear;
+                    renderer.setScissorTest(false);
+                    renderer.setViewport(currentViewport);
+                }
+            }
+        }
+
+        function setupAxisHelper() {
+            // Create a separate scene for the axis helper
+            axisScene = new THREE.Scene();
+            axisScene.background = null;  // Transparent background
+
+            // Create orthographic camera for axis helper (centered on origin)
+            const axisViewSize = 100;
+            axisCamera = new THREE.OrthographicCamera(-axisViewSize, axisViewSize, axisViewSize, -axisViewSize, -200, 200);
+            axisCamera.position.set(0, 0, 100);
+
+            // Create a group to hold all axis objects (will be rotated)
+            axisGroup = new THREE.Group();
+
+            // Axis colors
+            const colors = {
+                x: 0xff4444,  // Red
+                y: 0x44cc44,  // Green
+                z: 0x4488ff   // Blue
+            };
+
+            const axisLength = 50;
+            const arrowHeadLength = 12;
+            const arrowHeadWidth = 6;
+
+            // Create arrows for each axis starting from origin
+            const xDir = new THREE.Vector3(1, 0, 0);
+            const yDir = new THREE.Vector3(0, 1, 0);
+            const zDir = new THREE.Vector3(0, 0, 1);
+            const origin = new THREE.Vector3(0, 0, 0);
+
+            const xArrow = new THREE.ArrowHelper(xDir, origin, axisLength, colors.x, arrowHeadLength, arrowHeadWidth);
+            const yArrow = new THREE.ArrowHelper(yDir, origin, axisLength, colors.y, arrowHeadLength, arrowHeadWidth);
+            const zArrow = new THREE.ArrowHelper(zDir, origin, axisLength, colors.z, arrowHeadLength, arrowHeadWidth);
+
+            // Make arrows thicker
+            xArrow.line.material.linewidth = 2;
+            yArrow.line.material.linewidth = 2;
+            zArrow.line.material.linewidth = 2;
+
+            axisGroup.add(xArrow);
+            axisGroup.add(yArrow);
+            axisGroup.add(zArrow);
+
+            // Create text labels using sprites
+            const createTextSprite = (text, color) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Convert hex color to CSS
+                const cssColor = '#' + color.toString(16).padStart(6, '0');
+                ctx.fillStyle = cssColor;
+                ctx.fillText(text, 32, 32);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+                const sprite = new THREE.Sprite(material);
+                sprite.scale.set(14, 14, 1);
+                return sprite;
+            };
+
+            const xLabel = createTextSprite('X', colors.x);
+            const yLabel = createTextSprite('Y', colors.y);
+            const zLabel = createTextSprite('Z', colors.z);
+
+            xLabel.position.set(axisLength + 10, 0, 0);
+            yLabel.position.set(0, axisLength + 10, 0);
+            zLabel.position.set(0, 0, axisLength + 10);
+
+            axisGroup.add(xLabel);
+            axisGroup.add(yLabel);
+            axisGroup.add(zLabel);
+
+            axisScene.add(axisGroup);
+
+            // Add ambient light to axis scene
+            const axisAmbient = new THREE.AmbientLight(0xffffff, 1.0);
+            axisScene.add(axisAmbient);
+        }
+
+        function disposeObject3D(object) {
+            object.traverse(child => {
+                if (child.geometry) {
+                    child.geometry.dispose();
+                }
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(mat => mat.dispose && mat.dispose());
+                    } else if (child.material.dispose) {
+                        child.material.dispose();
+                    }
+                }
+                if (child.texture && child.texture.dispose) {
+                    child.texture.dispose();
+                }
+            });
+        }
+
+
+        function findRings(positions, symbols, adjacency) {
+            const MIN_RING = 4;
+            const MAX_RING = 8;
+            const rings = [];
+            const ringSets = new Set();
+
+            function bfsPath(start, src, dst, adj) {
+                const queue = [[src, [src]]];
+                const visited = new Set([start, src]);
+                while (queue.length > 0) {
+                    const [node, path] = queue.shift();
+                    for (const nb of adj[node]) {
+                        if (nb === dst) return [...path, dst];
+                        if (!visited.has(nb) && path.length < MAX_RING) {
+                            visited.add(nb);
+                            queue.push([nb, [...path, nb]]);
+                        }
+                    }
+                }
+                return null;
+            }
+
+            for (let i = 0; i < adjacency.length; i++) {
+                for (const j of adjacency[i]) {
+                    if (j <= i) continue;
+
+                    const adjI = adjacency[i].filter(x => x !== j);
+                    const adjJ = adjacency[j].filter(x => x !== i);
+                    const tempAdj = adjacency.map((_, k) => {
+                        if (k === i) return adjI;
+                        if (k === j) return adjJ;
+                        return adjacency[k];
+                    });
+
+                    const path = bfsPath(-1, i, j, tempAdj);
+                    if (!path) continue;
+
+                    const ringSize = path.length;
+                    if (ringSize < MIN_RING || ringSize > MAX_RING) continue;
+
+                    const minIdx = path.indexOf(Math.min(...path));
+                    let canonical = [...path.slice(minIdx), ...path.slice(0, minIdx)];
+                    if (canonical[1] > canonical[canonical.length - 1]) {
+                        canonical = [canonical[0], ...canonical.slice(1).reverse()];
+                    }
+                    const key = canonical.join(',');
+                    if (!ringSets.has(key)) {
+                        ringSets.add(key);
+                        rings.push(canonical);
+                    }
+                }
+            }
+            return rings;
+        }
+
+        function renderMolecule() {
+
+            if (!scene || !camera || !renderer) return;
+            if (!molecularData || molecularData.length === 0) return;
+
+            if (moleculeGroup) {
+                scene.remove(moleculeGroup);
+                disposeObject3D(moleculeGroup);
+            }
+
+            moleculeGroup = new THREE.Group();
+
+            // Use current frame for animation
+            const frameIndex = animationState.currentFrame % molecularData.length;
+            const molecule = molecularData[frameIndex];
+            let positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
+            let symbols = molecule.symbols;
+
+            // Apply periodic boundary conditions if requested
+            if (periodicities.length > 0 && molecule.cell) {
+                const extended = applyPeriodicBoundaries(positions, symbols, molecule.cell, periodicities);
+                positions = extended.positions;
+                symbols = extended.symbols;
+                console.log('Applied periodicities:', periodicities);
+                console.log('Extended atoms:', positions.length, 'from', molecule.positions.length);
+            }
+
+            const styleName = (settings.style || 'cartoon').toLowerCase();
+            console.log('Rendering with style:', styleName);
+            console.log('Available atom factories:', Object.keys(atomFactories));
+            console.log('Available bond factories:', Object.keys(bondFactories));
+
+            const atomFactory = atomFactories[styleName] || atomFactories['default'];
+            const bondFactory = bondFactories[styleName] || bondFactories['default'];
+
+            if (!atomFactory || !bondFactory) {
+                console.error('Factory not found for style:', styleName);
+                return;
+            }
+
+            const atomScale = Math.max(settings.atomSize, 0.05);
+            const bondRadius = Math.max(settings.bondThickness, 0.005);
+            const bondCutoff = settings.bondThreshold;
+
+            const uniqueSymbols = [...new Set(symbols)];
+            const greyColorMap = {};
+            if (uniqueSymbols.length > 0) {
+                uniqueSymbols.forEach((sym, idx) => {
+                    const lightness = (idx + 1) / (uniqueSymbols.length + 1);
+                    greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
+                });
+            }
+            const helpers = { greyColorMap };
+
+            if (settings.showCell && molecule.cell) {
+                const cellVectors = molecule.cell.map(c => new THREE.Vector3(...c));
+                const points = [
+                    new THREE.Vector3(0, 0, 0), cellVectors[0],
+                    new THREE.Vector3(0, 0, 0), cellVectors[1],
+                    new THREE.Vector3(0, 0, 0), cellVectors[2],
+                    cellVectors[0], cellVectors[0].clone().add(cellVectors[1]),
+                    cellVectors[0], cellVectors[0].clone().add(cellVectors[2]),
+                    cellVectors[1], cellVectors[1].clone().add(cellVectors[0]),
+                    cellVectors[1], cellVectors[1].clone().add(cellVectors[2]),
+                    cellVectors[2], cellVectors[2].clone().add(cellVectors[0]),
+                    cellVectors[2], cellVectors[2].clone().add(cellVectors[1]),
+                    cellVectors[0].clone().add(cellVectors[1]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+                    cellVectors[0].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+                    cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
+                ];
+                const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
+                const cellMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });  // Red color
+                const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
+                cellMesh.renderOrder = 2;
+                moleculeGroup.add(cellMesh);
+            }
+
+            if (settings.showBond) {
+                let bondCount = 0;
+                for (let i = 0; i < positions.length; i++) {
+                    for (let j = i + 1; j < positions.length; j++) {
+                        const dist = positions[i].distanceTo(positions[j]);
+
+                        // Calculate bond cutoff based on covalent radii of both atoms
+                        const info1 = atomInfo[symbols[i]] || atomInfo['default'];
+                        const info2 = atomInfo[symbols[j]] || atomInfo['default'];
+                        const covalentRadiusSum = info1.radius + info2.radius;
+                        const adjustedCutoff = covalentRadiusSum * bondCutoff;
+
+                        if (dist <= adjustedCutoff) {
+                            const bond = bondFactory(
+                                positions[i],
+                                positions[j],
+                                symbols[i],
+                                symbols[j],
+                                bondRadius,
+                                atomScale,
+                                helpers
+                            );
+                            if (bond) {
+                                bond.renderOrder = 1;
+                                // Enable shadow casting and receiving for bonds
+                                bond.traverse((child) => {
+                                    if (child.isMesh) {
+                                        child.castShadow = settings.showShadow;
+                                        child.receiveShadow = settings.showShadow;
+                                    }
+                                });
+                                moleculeGroup.add(bond);
+                                bondCount++;
+
+                                // Debug: Log bond colors
+                                if (bondCount === 1) {
+                                    console.log('Style:', styleName);
+                                    console.log('Bond factory:', bondFactory.name || 'anonymous');
+                                    bond.traverse((child) => {
+                                        if (child.material && child.material.color) {
+                                            console.log('Bond material color:', '#' + child.material.color.getHexString());
+                                        }
+                                    });
                                 }
-                            });
+                            }
+                        }
+                    }
+                }
+                console.log('Total bonds created:', bondCount, 'for style:', styleName);
+            }
+
+            for (let i = 0; i < positions.length; i++) {
+                let atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
+                if (!atom) {
+                    atom = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
+                }
+                if (atom) {
+                    atom.renderOrder = 0;
+                    // Enable shadow casting and receiving
+                    atom.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = settings.showShadow;
+                            child.receiveShadow = settings.showShadow;
+                        }
+                    });
+                    moleculeGroup.add(atom);
+                }
+            }
+
+            if (settings.showForces && molecule.forces) {
+                const arrowColor = 0xff0000;
+                const forceScale = settings.forceScale || 0.5;
+                const headLength = 0.2;
+                const headWidth = 0.1;
+                for (let i = 0; i < positions.length; i++) {
+                    const forceVec = new THREE.Vector3(...molecule.forces[i]);
+                    if (forceVec.lengthSq() === 0) continue;
+                    const direction = forceVec.clone().normalize();
+                    const length = forceVec.length() * forceScale;
+                    const arrowHelper = new THREE.ArrowHelper(direction, positions[i], length, arrowColor, headLength, headWidth);
+                    arrowHelper.renderOrder = 3;
+                    moleculeGroup.add(arrowHelper);
+                }
+            }
+
+            // ── Polyhedron & Ring: build adjacency from bonds ──────────
+            const adjacency = Array.from({ length: positions.length }, () => []);
+            if (settings.showPolyhedron || settings.showRings) {
+                for (let i = 0; i < positions.length; i++) {
+                    for (let j = i + 1; j < positions.length; j++) {
+                        const dist = positions[i].distanceTo(positions[j]);
+                        const r1 = (atomInfo[symbols[i]] || atomInfo['default']).radius;
+                        const r2 = (atomInfo[symbols[j]] || atomInfo['default']).radius;
+                        if (dist <= (r1 + r2) * bondCutoff) {
+                            adjacency[i].push(j);
+                            adjacency[j].push(i);
                         }
                     }
                 }
             }
-        }
-        console.log('Total bonds created:', bondCount, 'for style:', styleName);
-    }
 
-    for (let i = 0; i < positions.length; i++) {
-        let atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
-        if (!atom) {
-            atom = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
-        }
-        if (atom) {
-            atom.renderOrder = 0;
-            // Enable shadow casting and receiving
-            atom.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = settings.showShadow;
-                    child.receiveShadow = settings.showShadow;
+            // ── Polyhedron (solid) ──────────────────────────────────────
+            if (settings.showPolyhedron && typeof createPolyhedronFaces === 'function') {
+                for (let i = 0; i < positions.length; i++) {
+                    const neighbors = adjacency[i];
+                    if (neighbors.length < 4) continue;
+                    const neighborPositions = neighbors.map(ni => positions[ni]);
+                    const neighborColors = neighbors.map(ni =>
+                        (atomInfo[symbols[ni]] || atomInfo['default']).color
+                    );
+                    const polyMesh = createPolyhedronFaces(
+                        positions[i], neighborPositions, neighborColors, settings.polyhedronOpacity
+                    );
+                    if (polyMesh) {
+                        polyMesh.renderOrder = -1;
+                        moleculeGroup.add(polyMesh);
+                    }
                 }
-            });
-            moleculeGroup.add(atom);
+            }
+
+            // ── Ring Highlight (molecule) ───────────────────────────────
+            if (settings.showRings && typeof createRingFace === 'function') {
+                const rings = findRings(positions, symbols, adjacency);
+                for (const ring of rings) {
+                    const symCount = {};
+                    for (const idx of ring) {
+                        const s = symbols[idx];
+                        symCount[s] = (symCount[s] || 0) + 1;
+                    }
+                    const dominantSym = Object.entries(symCount)
+                        .sort((a, b) => b[1] - a[1])[0][0];
+                    const ringColor = (atomInfo[dominantSym] || atomInfo['default']).color;
+                    const ringPositions = ring.map(idx => positions[idx]);
+                    const face = createRingFace(ringPositions, ringColor, settings.ringOpacity);
+                    if (face) {
+                        face.renderOrder = -1;
+                        moleculeGroup.add(face);
+                    }
+                }
+            }
+
+            scene.add(moleculeGroup);
+
+            if (cameraNeedsFit) {
+                fitCameraToMolecule(moleculeGroup);
+            }
         }
-    }
 
-    if (settings.showForces && molecule.forces) {
-        const arrowColor = 0xff0000;
-        const forceScale = settings.forceScale || 0.5;
-        const headLength = 0.2;
-        const headWidth = 0.1;
-        for (let i = 0; i < positions.length; i++) {
-            const forceVec = new THREE.Vector3(...molecule.forces[i]);
-            if (forceVec.lengthSq() === 0) continue;
-            const direction = forceVec.clone().normalize();
-            const length = forceVec.length() * forceScale;
-            const arrowHelper = new THREE.ArrowHelper(direction, positions[i], length, arrowColor, headLength, headWidth);
-            arrowHelper.renderOrder = 3;
-            moleculeGroup.add(arrowHelper);
+
+        function fitCameraToMolecule(group) {
+            if (!camera || !controls) return;
+            const box = new THREE.Box3().setFromObject(group);
+            if (!isFinite(box.max.x) || !isFinite(box.max.y) || !isFinite(box.max.z)) return;
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z, 1);
+
+            if (camera.isPerspectiveCamera) {
+                const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+                const distance = maxDim / (2 * Math.tan(halfFov)) + maxDim;
+                camera.position.copy(center.clone().add(new THREE.Vector3(distance, distance, distance)));
+            } else {
+                const viewer = document.getElementById('viewer');
+                const aspect = viewer ? Math.max(viewer.clientWidth, 1) / Math.max(viewer.clientHeight, 1) : 1;
+                camera.left = (-maxDim * aspect);
+                camera.right = (maxDim * aspect);
+                camera.top = maxDim;
+                camera.bottom = -maxDim;
+            }
+
+            controls.target.copy(center);
+            controls.update();
+            camera.lookAt(center);
+            camera.updateProjectionMatrix();
+            cameraNeedsFit = false;
         }
-    }
 
-    scene.add(moleculeGroup);
-
-    if (cameraNeedsFit) {
-        fitCameraToMolecule(moleculeGroup);
-    }
-}
-
-
-function fitCameraToMolecule(group) {
-    if (!camera || !controls) return;
-    const box = new THREE.Box3().setFromObject(group);
-    if (!isFinite(box.max.x) || !isFinite(box.max.y) || !isFinite(box.max.z)) return;
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z, 1);
-
-    if (camera.isPerspectiveCamera) {
-        const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
-        const distance = maxDim / (2 * Math.tan(halfFov)) + maxDim;
-        camera.position.copy(center.clone().add(new THREE.Vector3(distance, distance, distance)));
-    } else {
-        const viewer = document.getElementById('viewer');
-        const aspect = viewer ? Math.max(viewer.clientWidth, 1) / Math.max(viewer.clientHeight, 1) : 1;
-        camera.left = (-maxDim * aspect);
-        camera.right = (maxDim * aspect);
-        camera.top = maxDim;
-        camera.bottom = -maxDim;
-    }
-
-    controls.target.copy(center);
-    controls.update();
-    camera.lookAt(center);
-    camera.updateProjectionMatrix();
-    cameraNeedsFit = false;
-}
-
-function updateBackgroundColor() {
-    if (!scene || !renderer) return;
-    const color = new THREE.Color(settings.backgroundColor || '#111827');
-    scene.background = color;
-    renderer.setClearColor(color, 1);
-}
-
-function updateShadow() {
-    if (!renderer) return;
-    
-    if (settings.showShadow) {
-        // Enable shadows and add directional light
-        renderer.shadowMap.enabled = true;
-        
-        if (!directionalLight) {
-            directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-            directionalLight.position.set(50, 50, 50);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            directionalLight.shadow.camera.near = 0.5;
-            directionalLight.shadow.camera.far = 500;
-            directionalLight.shadow.camera.left = -50;
-            directionalLight.shadow.camera.right = 50;
-            directionalLight.shadow.camera.top = 50;
-            directionalLight.shadow.camera.bottom = -50;
-            directionalLight.shadow.bias = -0.0001;
-            scene.add(directionalLight);
-        } else {
-            directionalLight.castShadow = true;
+        function updateBackgroundColor() {
+            if (!scene || !renderer) return;
+            const color = new THREE.Color(settings.backgroundColor || '#111827');
+            scene.background = color;
+            renderer.setClearColor(color, 1);
         }
-    } else {
-        // Disable shadows and remove directional light
-        renderer.shadowMap.enabled = false;
-        
-        if (directionalLight) {
-            scene.remove(directionalLight);
-            directionalLight = null;
-        }
-    }
-    
-    renderMolecule();
-}
 
-function updateFrameDisplay() {
-    const frameSlider = document.getElementById('frame-slider');
-    const frameValue = document.getElementById('frame-value');
-    
-    if (frameSlider && molecularData) {
-        const totalFrames = molecularData.length;
-        frameSlider.max = totalFrames;
-        frameSlider.value = animationState.currentFrame + 1;  // 1-indexed for display
-        
-        if (frameValue) {
-            frameValue.textContent = `${animationState.currentFrame + 1} / ${totalFrames}`;
-        }
-    }
-}
+        function updateShadow() {
+            if (!renderer) return;
 
-function toggleAnimation() {
-    if (!molecularData || molecularData.length <= 1) {
-        console.log('No animation frames available');
-        return;
-    }
-    
-    const playBtn = document.getElementById('play-btn');
-    
-    if (animationState.isPlaying) {
-        // Pause
-        animationState.isPlaying = false;
-        if (animationState.animationInterval) {
-            clearInterval(animationState.animationInterval);
-            animationState.animationInterval = null;
+            if (settings.showShadow) {
+                // Enable shadows and add directional light
+                renderer.shadowMap.enabled = true;
+
+                if (!directionalLight) {
+                    directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+                    directionalLight.position.set(50, 50, 50);
+                    directionalLight.castShadow = true;
+                    directionalLight.shadow.mapSize.width = 2048;
+                    directionalLight.shadow.mapSize.height = 2048;
+                    directionalLight.shadow.camera.near = 0.5;
+                    directionalLight.shadow.camera.far = 500;
+                    directionalLight.shadow.camera.left = -50;
+                    directionalLight.shadow.camera.right = 50;
+                    directionalLight.shadow.camera.top = 50;
+                    directionalLight.shadow.camera.bottom = -50;
+                    directionalLight.shadow.bias = -0.0001;
+                    scene.add(directionalLight);
+                } else {
+                    directionalLight.castShadow = true;
+                }
+            } else {
+                // Disable shadows and remove directional light
+                renderer.shadowMap.enabled = false;
+
+                if (directionalLight) {
+                    scene.remove(directionalLight);
+                    directionalLight = null;
+                }
+            }
+
+            renderMolecule();
         }
-        
-        // Update button icon to play
-        if (playBtn) {
-            playBtn.innerHTML = `
+
+        function updateFrameDisplay() {
+            const frameSlider = document.getElementById('frame-slider');
+            const frameValue = document.getElementById('frame-value');
+
+            if (frameSlider && molecularData) {
+                const totalFrames = molecularData.length;
+                frameSlider.max = totalFrames;
+                frameSlider.value = animationState.currentFrame + 1;  // 1-indexed for display
+
+                if (frameValue) {
+                    frameValue.textContent = `${animationState.currentFrame + 1} / ${totalFrames}`;
+                }
+            }
+        }
+
+        function toggleAnimation() {
+            if (!molecularData || molecularData.length <= 1) {
+                console.log('No animation frames available');
+                return;
+            }
+
+            const playBtn = document.getElementById('play-btn');
+
+            if (animationState.isPlaying) {
+                // Pause
+                animationState.isPlaying = false;
+                if (animationState.animationInterval) {
+                    clearInterval(animationState.animationInterval);
+                    animationState.animationInterval = null;
+                }
+
+                // Update button icon to play
+                if (playBtn) {
+                    playBtn.innerHTML = `
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             `;
-        }
-    } else {
-        // Play
-        animationState.isPlaying = true;
-        const fps = settings.animationSpeed || 30;
-        const interval = 1000 / fps;
-        
-        animationState.animationInterval = setInterval(() => {
-            animationState.currentFrame = (animationState.currentFrame + 1) % molecularData.length;
-            updateFrameDisplay();
-            renderMolecule();
-        }, interval);
-        
-        // Update button icon to pause
-        if (playBtn) {
-            playBtn.innerHTML = `
+                }
+            } else {
+                // Play
+                animationState.isPlaying = true;
+                const fps = settings.animationSpeed || 30;
+                const interval = 1000 / fps;
+
+                animationState.animationInterval = setInterval(() => {
+                    animationState.currentFrame = (animationState.currentFrame + 1) % molecularData.length;
+                    updateFrameDisplay();
+                    renderMolecule();
+                }, interval);
+
+                // Update button icon to pause
+                if (playBtn) {
+                    playBtn.innerHTML = `
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             `;
+                }
+            }
         }
-    }
-}
 
-function getCurrentFrameAsXYZ() {
-    if (!molecularData || molecularData.length === 0) {
-        return '';
-    }
-    
-    const frameIndex = animationState.currentFrame % molecularData.length;
-    const molecule = molecularData[frameIndex];
-    
-    if (!molecule || !molecule.positions || !molecule.symbols) {
-        return '';
-    }
-    
-    const numAtoms = molecule.symbols.length;
-    let xyzString = `${numAtoms}\n`;
-    
-    // Comment line (can include energy, frame number, etc.)
-    xyzString += `Frame ${frameIndex + 1}`;
-    if (molecule.energy !== undefined) {
-        xyzString += ` Energy: ${molecule.energy}`;
-    }
-    xyzString += '\n';
-    
-    // Atom lines: symbol x y z
-    for (let i = 0; i < numAtoms; i++) {
-        const symbol = molecule.symbols[i];
-        const pos = molecule.positions[i];
-        xyzString += `${symbol}  ${pos[0].toFixed(6)}  ${pos[1].toFixed(6)}  ${pos[2].toFixed(6)}\n`;
-    }
-    
-    return xyzString;
-}
+        function getCurrentFrameAsXYZ() {
+            if (!molecularData || molecularData.length === 0) {
+                return '';
+            }
 
-function copyCurrentFrameToClipboard() {
-    const xyzString = getCurrentFrameAsXYZ();
-    
-    if (!xyzString) {
-        alert('No molecular data to copy');
-        return;
-    }
-    
-    // Try to copy to clipboard
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(xyzString).then(() => {
-            // Show success feedback
-            const copyBtn = document.getElementById('copy-btn');
-            if (copyBtn) {
-                const originalHTML = copyBtn.innerHTML;
-                copyBtn.innerHTML = `
+            const frameIndex = animationState.currentFrame % molecularData.length;
+            const molecule = molecularData[frameIndex];
+
+            if (!molecule || !molecule.positions || !molecule.symbols) {
+                return '';
+            }
+
+            const numAtoms = molecule.symbols.length;
+            let xyzString = `${numAtoms}\n`;
+
+            // Comment line (can include energy, frame number, etc.)
+            xyzString += `Frame ${frameIndex + 1}`;
+            if (molecule.energy !== undefined) {
+                xyzString += ` Energy: ${molecule.energy}`;
+            }
+            xyzString += '\n';
+
+            // Atom lines: symbol x y z
+            for (let i = 0; i < numAtoms; i++) {
+                const symbol = molecule.symbols[i];
+                const pos = molecule.positions[i];
+                xyzString += `${symbol}  ${pos[0].toFixed(6)}  ${pos[1].toFixed(6)}  ${pos[2].toFixed(6)}\n`;
+            }
+
+            return xyzString;
+        }
+
+        function copyCurrentFrameToClipboard() {
+            const xyzString = getCurrentFrameAsXYZ();
+
+            if (!xyzString) {
+                alert('No molecular data to copy');
+                return;
+            }
+
+            // Try to copy to clipboard
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(xyzString).then(() => {
+                    // Show success feedback
+                    const copyBtn = document.getElementById('copy-btn');
+                    if (copyBtn) {
+                        const originalHTML = copyBtn.innerHTML;
+                        copyBtn.innerHTML = `
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                 `;
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalHTML;
-                }, 1000);
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalHTML;
+                        }, 1000);
+                    }
+                    console.log('Copied XYZ to clipboard');
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    alert('Failed to copy to clipboard');
+                });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = xyzString;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('Copied to clipboard!');
+                } catch (err) {
+                    alert('Failed to copy to clipboard');
+                }
+                document.body.removeChild(textArea);
             }
-            console.log('Copied XYZ to clipboard');
-        }).catch(err => {
-            console.error('Failed to copy:', err);
-            alert('Failed to copy to clipboard');
-        });
-    } else {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = xyzString;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            alert('Copied to clipboard!');
-        } catch (err) {
-            alert('Failed to copy to clipboard');
         }
-        document.body.removeChild(textArea);
-    }
-}
 
-function getAllFramesAsXYZ() {
-    if (!molecularData || molecularData.length === 0) return '';
+        function getAllFramesAsXYZ() {
+            if (!molecularData || molecularData.length === 0) return '';
 
-    let xyzString = '';
-    for (let i = 0; i < molecularData.length; i++) {
-        const molecule = molecularData[i];
-        if (!molecule) continue;
+            let xyzString = '';
+            for (let i = 0; i < molecularData.length; i++) {
+                const molecule = molecularData[i];
+                if (!molecule) continue;
 
-        const numAtoms = molecule.positions.length;
-        xyzString += `${numAtoms}\n`;
-        xyzString += `Frame ${i + 1}`;
-        if (molecule.energy !== undefined) {
-            xyzString += ` Energy: ${molecule.energy}`;
+                const numAtoms = molecule.positions.length;
+                xyzString += `${numAtoms}\n`;
+                xyzString += `Frame ${i + 1}`;
+                if (molecule.energy !== undefined) {
+                    xyzString += ` Energy: ${molecule.energy}`;
+                }
+                xyzString += '\n';
+
+                for (let j = 0; j < numAtoms; j++) {
+                    const symbol = molecule.symbols[j];
+                    const pos = molecule.positions[j];
+                    xyzString += `${symbol}  ${pos[0].toFixed(6)}  ${pos[1].toFixed(6)}  ${pos[2].toFixed(6)}\n`;
+                }
+            }
+
+            return xyzString;
         }
-        xyzString += '\n';
 
-        for (let j = 0; j < numAtoms; j++) {
-            const symbol = molecule.symbols[j];
-            const pos = molecule.positions[j];
-            xyzString += `${symbol}  ${pos[0].toFixed(6)}  ${pos[1].toFixed(6)}  ${pos[2].toFixed(6)}\n`;
-        }
-    }
+        function copyAllFramesToClipboard() {
+            const xyzString = getAllFramesAsXYZ();
 
-    return xyzString;
-}
+            if (!xyzString) {
+                alert('No molecular data to copy');
+                return;
+            }
 
-function copyAllFramesToClipboard() {
-    const xyzString = getAllFramesAsXYZ();
-
-    if (!xyzString) {
-        alert('No molecular data to copy');
-        return;
-    }
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(xyzString).then(() => {
-            const copyAllBtn = document.getElementById('copy-all-btn');
-            if (copyAllBtn) {
-                const originalHTML = copyAllBtn.innerHTML;
-                copyAllBtn.innerHTML = `
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(xyzString).then(() => {
+                    const copyAllBtn = document.getElementById('copy-all-btn');
+                    if (copyAllBtn) {
+                        const originalHTML = copyAllBtn.innerHTML;
+                        copyAllBtn.innerHTML = `
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                 `;
-                setTimeout(() => {
-                    copyAllBtn.innerHTML = originalHTML;
-                }, 1000);
+                        setTimeout(() => {
+                            copyAllBtn.innerHTML = originalHTML;
+                        }, 1000);
+                    }
+                    console.log(`Copied ${molecularData.length} frames to clipboard`);
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    alert('Failed to copy to clipboard');
+                });
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = xyzString;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert(`Copied ${molecularData.length} frames to clipboard!`);
+                } catch (err) {
+                    alert('Failed to copy to clipboard');
+                }
+                document.body.removeChild(textArea);
             }
-            console.log(`Copied ${molecularData.length} frames to clipboard`);
-        }).catch(err => {
-            console.error('Failed to copy:', err);
-            alert('Failed to copy to clipboard');
-        });
-    } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = xyzString;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            alert(`Copied ${molecularData.length} frames to clipboard!`);
-        } catch (err) {
-            alert('Failed to copy to clipboard');
         }
-        document.body.removeChild(textArea);
-    }
-}
 
-function setMolecularData(data) {
-    molecularData = Array.isArray(data) ? data : [data];
-    cameraNeedsFit = true;
-    
-    // Reset animation state
-    animationState.currentFrame = 0;
-    animationState.isPlaying = false;
-    if (animationState.animationInterval) {
-        clearInterval(animationState.animationInterval);
-        animationState.animationInterval = null;
-    }
-    
-    // Update frame display
-    updateFrameDisplay();
-    
-    // Show/hide animation controls based on number of frames
-    const animationCard = document.querySelector('.card:has(#play-btn)');
-    if (animationCard) {
-        animationCard.style.display = molecularData.length > 1 ? 'block' : 'none';
-    }
-    
-    renderMolecule();
-}
+        function setMolecularData(data) {
+            molecularData = Array.isArray(data) ? data : [data];
+            cameraNeedsFit = true;
 
-function addPeriodicity() {
-    const select = document.getElementById('periodicity-select');
-    const value = select.value;
-    if (!periodicities.includes(value)) {
-        periodicities.push(value);
-        renderPeriodicities();
-        renderMolecule();  // Re-render with new periodicity
-    }
-}
+            // Reset animation state
+            animationState.currentFrame = 0;
+            animationState.isPlaying = false;
+            if (animationState.animationInterval) {
+                clearInterval(animationState.animationInterval);
+                animationState.animationInterval = null;
+            }
 
-function removePeriodicity(value) {
-    periodicities = periodicities.filter(p => p !== value);
-    renderPeriodicities();
-    renderMolecule();  // Re-render without periodicity
-}
+            // Update frame display
+            updateFrameDisplay();
 
-function renderPeriodicities() {
-    const container = document.getElementById('periodicities-list');
-    container.innerHTML = '';
-    periodicities.forEach(periodicity => {
-        const item = document.createElement('div');
-        item.className = 'periodicity-item';
-        item.innerHTML = `
+            // Show/hide animation controls based on number of frames
+            const animationCard = document.querySelector('.card:has(#play-btn)');
+            if (animationCard) {
+                animationCard.style.display = molecularData.length > 1 ? 'block' : 'none';
+            }
+
+            renderMolecule();
+        }
+
+        function addPeriodicity() {
+            const select = document.getElementById('periodicity-select');
+            const value = select.value;
+            if (!periodicities.includes(value)) {
+                periodicities.push(value);
+                renderPeriodicities();
+                renderMolecule();  // Re-render with new periodicity
+            }
+        }
+
+        function removePeriodicity(value) {
+            periodicities = periodicities.filter(p => p !== value);
+            renderPeriodicities();
+            renderMolecule();  // Re-render without periodicity
+        }
+
+        function renderPeriodicities() {
+            const container = document.getElementById('periodicities-list');
+            container.innerHTML = '';
+            periodicities.forEach(periodicity => {
+                const item = document.createElement('div');
+                item.className = 'periodicity-item';
+                item.innerHTML = `
             <span class="periodicity-value">${periodicity}</span>
             <button class="btn" onclick="removePeriodicity('${periodicity}')" style="padding: 0.25rem; min-width: 30px;">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -1697,833 +1888,862 @@ function renderPeriodicities() {
                 </svg>
             </button>
         `;
-        container.appendChild(item);
-    });
-}
+                container.appendChild(item);
+            });
+        }
 
-/**
- * Apply periodic boundary conditions to create replicated atoms
- * @param {Array} positions - Original atom positions
- * @param {Array} symbols - Original atom symbols
- * @param {Array} cell - Unit cell vectors
- * @param {Array} periodicities - List of periodicity directions (e.g., ['+x', '±y'])
- * @returns {Object} Extended positions and symbols
- */
-function applyPeriodicBoundaries(positions, symbols, cell, periodicities) {
-    if (!cell || periodicities.length === 0) {
-        return { positions, symbols };
-    }
-    
-    const cellVectors = cell.map(c => new THREE.Vector3(...c));
-    const extendedPositions = [...positions];
-    const extendedSymbols = [...symbols];
-    
-    periodicities.forEach(periodicity => {
-        const currentCount = extendedPositions.length;
-        
-        // Parse periodicity string (e.g., '+x', '±y', '-z')
-        const direction = periodicity.slice(-1).toLowerCase();  // 'x', 'y', or 'z'
-        const sign = periodicity.slice(0, -1);  // '+', '-', or '±'
-        
-        const axisIndex = { 'x': 0, 'y': 1, 'z': 2 }[direction];
-        const cellVector = cellVectors[axisIndex];
-        
-        // Determine which directions to replicate
-        const directions = [];
-        if (sign === '+' || sign === '±') directions.push(1);
-        if (sign === '-' || sign === '±') directions.push(-1);
-        
-        // Replicate atoms in specified directions
-        directions.forEach(dir => {
-            for (let i = 0; i < currentCount; i++) {
-                const newPos = extendedPositions[i].clone().add(cellVector.clone().multiplyScalar(dir));
-                extendedPositions.push(newPos);
-                extendedSymbols.push(extendedSymbols[i]);
+        /**
+         * Apply periodic boundary conditions to create replicated atoms
+         * @param {Array} positions - Original atom positions
+         * @param {Array} symbols - Original atom symbols
+         * @param {Array} cell - Unit cell vectors
+         * @param {Array} periodicities - List of periodicity directions (e.g., ['+x', '±y'])
+         * @returns {Object} Extended positions and symbols
+         */
+        function applyPeriodicBoundaries(positions, symbols, cell, periodicities) {
+            if (!cell || periodicities.length === 0) {
+                return { positions, symbols };
             }
-        });
-    });
-    
-    return { positions: extendedPositions, symbols: extendedSymbols };
-}
 
-function setupEventListeners() {
-    // Helper function to safely add event listener
-    function safeAddListener(id, event, handler) {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener(event, handler);
-        }
-    }
+            const cellVectors = cell.map(c => new THREE.Vector3(...c));
+            const extendedPositions = [...positions];
+            const extendedSymbols = [...symbols];
 
-    safeAddListener('sidebar-toggle', 'click', toggleSidebar);
+            periodicities.forEach(periodicity => {
+                const currentCount = extendedPositions.length;
 
-    safeAddListener('bond-threshold', 'input', function() {
-        const valueEl = document.getElementById('bond-threshold-value');
-        if (valueEl) valueEl.textContent = this.value;
-        settings.bondThreshold = parseFloat(this.value);
-        renderMolecule();
-    });
+                // Parse periodicity string (e.g., '+x', '±y', '-z')
+                const direction = periodicity.slice(-1).toLowerCase();  // 'x', 'y', or 'z'
+                const sign = periodicity.slice(0, -1);  // '+', '-', or '±'
 
-    safeAddListener('bond-thickness', 'input', function() {
-        const valueEl = document.getElementById('bond-thickness-value');
-        if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
-        settings.bondThickness = parseFloat(this.value);
-        renderMolecule();
-    });
+                const axisIndex = { 'x': 0, 'y': 1, 'z': 2 }[direction];
+                const cellVector = cellVectors[axisIndex];
 
-    safeAddListener('atom-size', 'input', function() {
-        const valueEl = document.getElementById('atom-size-value');
-        if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + '×';
-        settings.atomSize = parseFloat(this.value);
-        renderMolecule();
-    });
+                // Determine which directions to replicate
+                const directions = [];
+                if (sign === '+' || sign === '±') directions.push(1);
+                if (sign === '-' || sign === '±') directions.push(-1);
 
-    safeAddListener('animation-speed', 'input', function() {
-        const valueEl = document.getElementById('animation-speed-value');
-        if (valueEl) valueEl.textContent = this.value;
-        settings.animationSpeed = parseInt(this.value, 10);
-        
-        // If animation is playing, restart with new speed
-        if (animationState.isPlaying) {
-            toggleAnimation();  // Pause
-            toggleAnimation();  // Play with new speed
-        }
-    });
+                // Replicate atoms in specified directions
+                directions.forEach(dir => {
+                    for (let i = 0; i < currentCount; i++) {
+                        const newPos = extendedPositions[i].clone().add(cellVector.clone().multiplyScalar(dir));
+                        extendedPositions.push(newPos);
+                        extendedSymbols.push(extendedSymbols[i]);
+                    }
+                });
+            });
 
-    safeAddListener('force-scale', 'input', function() {
-        const valueEl = document.getElementById('force-scale-value');
-        if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + '×';
-        settings.forceScale = parseFloat(this.value);
-        if (settings.showForces) {
-            renderMolecule();
-        }
-    });
-
-    safeAddListener('amplitude-slider', 'input', function() {
-        const valueEl = document.getElementById('amplitude-value');
-        if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
-        vibrationData.amplitude = parseFloat(this.value);
-        if (!animationState.isPlaying) {
-            renderVibrationFrame();
-        }
-    });
-
-    safeAddListener('frame-slider', 'input', function() {
-        const frameNum = parseInt(this.value, 10);
-        animationState.currentFrame = frameNum - 1;  // 0-indexed
-        updateFrameDisplay();
-        renderMolecule();
-    });
-
-    safeAddListener('background-color', 'input', function() {
-        const valueEl = document.getElementById('background-color-value');
-        if (valueEl) valueEl.textContent = this.value;
-        const viewerContainer = document.querySelector('.viewer-container');
-        if (viewerContainer) {
-            viewerContainer.style.background = `linear-gradient(135deg, ${this.value}, ${darkenColorHex(this.value, 20)})`;
-        }
-        settings.backgroundColor = this.value;
-        updateBackgroundColor();
-    });
-
-    safeAddListener('style', 'change', function() {
-        settings.style = this.value;
-        renderMolecule();
-    });
-
-    safeAddListener('show-cell', 'change', function() {
-        settings.showCell = this.checked;
-        renderMolecule();
-    });
-
-    safeAddListener('show-bond', 'change', function() {
-        settings.showBond = this.checked;
-        renderMolecule();
-    });
-
-    safeAddListener('show-shadow', 'change', function() {
-        settings.showShadow = this.checked;
-        updateShadow();
-    });
-
-    safeAddListener('show-energy-plot', 'change', function() {
-        settings.showEnergyPlot = this.checked;
-    });
-
-    safeAddListener('show-forces', 'change', function() {
-        settings.showForces = this.checked;
-        renderMolecule();
-    });
-
-    safeAddListener('show-axis', 'change', function() {
-        settings.showAxis = this.checked;
-        render();
-    });
-
-    safeAddListener('show-vectors', 'change', function() {
-        settings.showModeVector = this.checked;
-        if (vibrationData.modeVectors) {
-            renderVibrationFrame();
-        } else {
-            renderMolecule();
-        }
-    });
-
-    if (document.getElementById('orthographic-btn') && document.getElementById('perspective-btn')) {
-        setupButtonGroup('view-mode', ['orthographic-btn', 'perspective-btn']);
-    }
-    if (document.getElementById('trackball-btn') && document.getElementById('orbit-btn')) {
-        setupButtonGroup('rotation-mode', ['trackball-btn', 'orbit-btn']);
-    }
-
-    safeAddListener('add-periodicity-btn', 'click', addPeriodicity);
-    safeAddListener('play-btn', 'click', toggleAnimation);
-    safeAddListener('copy-btn', 'click', copyCurrentFrameToClipboard);
-    safeAddListener('copy-all-btn', 'click', copyAllFramesToClipboard);
-    safeAddListener('video-btn', 'click', saveAsGIF);
-    safeAddListener('download-btn', 'click', saveAsPNG);
-}
-
-function saveAsPNG() {
-    if (!renderer || !scene || !camera) {
-        alert('Renderer not ready');
-        return;
-    }
-
-    // Store original background
-    const originalBackground = scene.background;
-
-    // Set transparent background
-    scene.background = null;
-    renderer.setClearColor(0x000000, 0);
-
-    // Render one frame
-    renderer.render(scene, camera);
-
-    // Get canvas data as PNG
-    renderer.domElement.toBlob(function(blob) {
-        // Restore original background
-        scene.background = originalBackground;
-        updateBackgroundColor();
-
-        // Generate filename
-        let filename;
-        if (downloadCounters.png === 0) {
-            filename = `${downloadBaseName}.png`;
-        } else {
-            filename = `${downloadBaseName}_${downloadCounters.png}.png`;
-        }
-        downloadCounters.png++;
-
-        // Download
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-
-        try {
-            link.click();
-            console.log('PNG download initiated:', filename);
-        } catch (e) {
-            console.error('Download failed:', e);
-            window.open(url, '_blank');
+            return { positions: extendedPositions, symbols: extendedSymbols };
         }
 
-        setTimeout(() => {
-            if (link.parentNode) document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }, 1000);
-    }, 'image/png');
-}
+        function setupEventListeners() {
+            // Helper function to safely add event listener
+            function safeAddListener(id, event, handler) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener(event, handler);
+                }
+            }
 
-function saveAsGIF() {
-    if (!vibrationData.modeVectors || vibrationData.modeVectors.length === 0) {
-        alert('No vibration data available for GIF');
-        return;
-    }
+            safeAddListener('sidebar-toggle', 'click', toggleSidebar);
 
-    if (!renderer || !scene || !camera) {
-        alert('Renderer not ready');
-        return;
-    }
+            safeAddListener('bond-threshold', 'input', function () {
+                const valueEl = document.getElementById('bond-threshold-value');
+                if (valueEl) valueEl.textContent = this.value;
+                settings.bondThreshold = parseFloat(this.value);
+                renderMolecule();
+            });
 
-    if (typeof gifshot === 'undefined') {
-        alert('GIF library not loaded');
-        return;
-    }
+            safeAddListener('bond-thickness', 'input', function () {
+                const valueEl = document.getElementById('bond-thickness-value');
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
+                settings.bondThickness = parseFloat(this.value);
+                renderMolecule();
+            });
 
-    const videoBtn = document.getElementById('video-btn');
-    const originalHTML = videoBtn ? videoBtn.innerHTML : '';
+            safeAddListener('atom-size', 'input', function () {
+                const valueEl = document.getElementById('atom-size-value');
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + '×';
+                settings.atomSize = parseFloat(this.value);
+                renderMolecule();
+            });
 
-    try {
-        const nFrames = vibrationData.nFrames;
-        const fps = settings.animationSpeed || 30;
-        const interval = 1 / fps;
+            safeAddListener('animation-speed', 'input', function () {
+                const valueEl = document.getElementById('animation-speed-value');
+                if (valueEl) valueEl.textContent = this.value;
+                settings.animationSpeed = parseInt(this.value, 10);
 
-        // Warn for large frame counts
-        if (nFrames > 60) {
-            if (!confirm(`This will capture ${nFrames} frames. This may take a while and use significant memory. Continue?`)) {
+                // If animation is playing, restart with new speed
+                if (animationState.isPlaying) {
+                    toggleAnimation();  // Pause
+                    toggleAnimation();  // Play with new speed
+                }
+            });
+
+            safeAddListener('force-scale', 'input', function () {
+                const valueEl = document.getElementById('force-scale-value');
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + '×';
+                settings.forceScale = parseFloat(this.value);
+                if (settings.showForces) {
+                    renderMolecule();
+                }
+            });
+
+            safeAddListener('amplitude-slider', 'input', function () {
+                const valueEl = document.getElementById('amplitude-value');
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
+                vibrationData.amplitude = parseFloat(this.value);
+                if (!animationState.isPlaying) {
+                    renderVibrationFrame();
+                }
+            });
+
+            safeAddListener('frame-slider', 'input', function () {
+                const frameNum = parseInt(this.value, 10);
+                animationState.currentFrame = frameNum - 1;  // 0-indexed
+                updateFrameDisplay();
+                renderMolecule();
+            });
+
+            safeAddListener('background-color', 'input', function () {
+                const valueEl = document.getElementById('background-color-value');
+                if (valueEl) valueEl.textContent = this.value;
+                const viewerContainer = document.querySelector('.viewer-container');
+                if (viewerContainer) {
+                    viewerContainer.style.background = `linear-gradient(135deg, ${this.value}, ${darkenColorHex(this.value, 20)})`;
+                }
+                settings.backgroundColor = this.value;
+                updateBackgroundColor();
+            });
+
+            safeAddListener('style', 'change', function () {
+                settings.style = this.value;
+                renderMolecule();
+            });
+
+            safeAddListener('show-cell', 'change', function () {
+                settings.showCell = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-bond', 'change', function () {
+                settings.showBond = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-shadow', 'change', function () {
+                settings.showShadow = this.checked;
+                updateShadow();
+            });
+
+            safeAddListener('show-energy-plot', 'change', function () {
+                settings.showEnergyPlot = this.checked;
+            });
+
+            safeAddListener('show-forces', 'change', function () {
+                settings.showForces = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-axis', 'change', function () {
+                settings.showAxis = this.checked;
+                render();
+            });
+
+            safeAddListener('show-polyhedron', 'change', function () {
+                settings.showPolyhedron = this.checked;
+                const group = document.getElementById('polyhedron-opacity-group');
+                if (group) group.style.display = this.checked ? 'block' : 'none';
+                renderMolecule();
+            });
+
+            safeAddListener('polyhedron-opacity', 'input', function () {
+                settings.polyhedronOpacity = parseFloat(this.value);
+                const val = document.getElementById('polyhedron-opacity-value');
+                if (val) val.textContent = parseFloat(this.value).toFixed(2);
+                renderMolecule();
+            });
+
+            safeAddListener('show-rings', 'change', function () {
+                settings.showRings = this.checked;
+                const group = document.getElementById('ring-opacity-group');
+                if (group) group.style.display = this.checked ? 'block' : 'none';
+                renderMolecule();
+            });
+
+            safeAddListener('ring-opacity', 'input', function () {
+                settings.ringOpacity = parseFloat(this.value);
+                const val = document.getElementById('ring-opacity-value');
+                if (val) val.textContent = parseFloat(this.value).toFixed(2);
+                renderMolecule();
+            });
+
+            safeAddListener('show-vectors', 'change', function () {
+                settings.showModeVector = this.checked;
+                if (vibrationData.modeVectors) {
+                    renderVibrationFrame();
+                } else {
+                    renderMolecule();
+                }
+            });
+
+            if (document.getElementById('orthographic-btn') && document.getElementById('perspective-btn')) {
+                setupButtonGroup('view-mode', ['orthographic-btn', 'perspective-btn']);
+            }
+            if (document.getElementById('trackball-btn') && document.getElementById('orbit-btn')) {
+                setupButtonGroup('rotation-mode', ['trackball-btn', 'orbit-btn']);
+            }
+
+            safeAddListener('add-periodicity-btn', 'click', addPeriodicity);
+            safeAddListener('play-btn', 'click', toggleAnimation);
+            safeAddListener('copy-btn', 'click', copyCurrentFrameToClipboard);
+            safeAddListener('copy-all-btn', 'click', copyAllFramesToClipboard);
+            safeAddListener('video-btn', 'click', saveAsGIF);
+            safeAddListener('download-btn', 'click', saveAsPNG);
+        }
+
+        function saveAsPNG() {
+            if (!renderer || !scene || !camera) {
+                alert('Renderer not ready');
                 return;
             }
-        }
 
-        if (videoBtn) {
-            videoBtn.innerHTML = '<span style="font-size: 10px;">...</span>';
-            videoBtn.disabled = true;
-        }
+            // Store original background
+            const originalBackground = scene.background;
 
-        // Store current phase
-        const originalPhase = vibrationData.phase;
+            // Set transparent background
+            scene.background = null;
+            renderer.setClearColor(0x000000, 0);
 
-        // Capture all frames
-        const images = [];
-        for (let i = 0; i < nFrames; i++) {
-            vibrationData.phase = (i / nFrames) * 2 * Math.PI;
-            renderVibrationFrame();
+            // Render one frame
             renderer.render(scene, camera);
 
-            const dataURL = renderer.domElement.toDataURL('image/png');
-            images.push(dataURL);
-        }
+            // Get canvas data as PNG
+            renderer.domElement.toBlob(function (blob) {
+                // Restore original background
+                scene.background = originalBackground;
+                updateBackgroundColor();
 
-        // Restore original phase
-        vibrationData.phase = originalPhase;
-        renderVibrationFrame();
-
-        // Create GIF
-        gifshot.createGIF({
-            images: images,
-            gifWidth: renderer.domElement.clientWidth,
-            gifHeight: renderer.domElement.clientHeight,
-            interval: interval,
-            numFrames: images.length,
-            frameDuration: 1,
-            sampleInterval: 10,
-            numWorkers: 2
-        }, function(obj) {
-            if (!obj.error) {
+                // Generate filename
                 let filename;
-                if (downloadCounters.gif === 0) {
-                    filename = `${downloadBaseName}.gif`;
+                if (downloadCounters.png === 0) {
+                    filename = `${downloadBaseName}.png`;
                 } else {
-                    filename = `${downloadBaseName}_${downloadCounters.gif}.gif`;
+                    filename = `${downloadBaseName}_${downloadCounters.png}.png`;
                 }
-                downloadCounters.gif++;
+                downloadCounters.png++;
 
+                // Download
+                const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
-                link.href = obj.image;
+                link.href = url;
                 link.download = filename;
+                link.style.display = 'none';
                 document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
 
-                console.log('GIF saved:', filename);
-            } else {
-                console.error('GIF creation error:', obj.error);
-                alert('Failed to create GIF');
-            }
+                try {
+                    link.click();
+                    console.log('PNG download initiated:', filename);
+                } catch (e) {
+                    console.error('Download failed:', e);
+                    window.open(url, '_blank');
+                }
 
-            if (videoBtn) {
-                videoBtn.innerHTML = originalHTML;
-                videoBtn.disabled = false;
-            }
-        });
-    } catch (e) {
-        console.error('GIF creation error:', e);
-        alert('Failed to create GIF: ' + e.message);
-        if (videoBtn) {
-            videoBtn.innerHTML = originalHTML;
-            videoBtn.disabled = false;
+                setTimeout(() => {
+                    if (link.parentNode) document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }, 1000);
+            }, 'image/png');
         }
-    }
-}
 
-function setupButtonGroup(groupName, buttonIds) {
-    buttonIds.forEach(id => {
-        const button = document.getElementById(id);
-        button.addEventListener('click', function() {
-            buttonIds.forEach(btnId => {
-                document.getElementById(btnId).classList.remove('active');
+        function saveAsGIF() {
+            if (!vibrationData.modeVectors || vibrationData.modeVectors.length === 0) {
+                alert('No vibration data available for GIF');
+                return;
+            }
+
+            if (!renderer || !scene || !camera) {
+                alert('Renderer not ready');
+                return;
+            }
+
+            if (typeof gifshot === 'undefined') {
+                alert('GIF library not loaded');
+                return;
+            }
+
+            const videoBtn = document.getElementById('video-btn');
+            const originalHTML = videoBtn ? videoBtn.innerHTML : '';
+
+            try {
+                const nFrames = vibrationData.nFrames;
+                const fps = settings.animationSpeed || 30;
+                const interval = 1 / fps;
+
+                // Warn for large frame counts
+                if (nFrames > 60) {
+                    if (!confirm(`This will capture ${nFrames} frames. This may take a while and use significant memory. Continue?`)) {
+                        return;
+                    }
+                }
+
+                if (videoBtn) {
+                    videoBtn.innerHTML = '<span style="font-size: 10px;">...</span>';
+                    videoBtn.disabled = true;
+                }
+
+                // Store current phase
+                const originalPhase = vibrationData.phase;
+
+                // Capture all frames
+                const images = [];
+                for (let i = 0; i < nFrames; i++) {
+                    vibrationData.phase = (i / nFrames) * 2 * Math.PI;
+                    renderVibrationFrame();
+                    renderer.render(scene, camera);
+
+                    const dataURL = renderer.domElement.toDataURL('image/png');
+                    images.push(dataURL);
+                }
+
+                // Restore original phase
+                vibrationData.phase = originalPhase;
+                renderVibrationFrame();
+
+                // Create GIF
+                gifshot.createGIF({
+                    images: images,
+                    gifWidth: renderer.domElement.clientWidth,
+                    gifHeight: renderer.domElement.clientHeight,
+                    interval: interval,
+                    numFrames: images.length,
+                    frameDuration: 1,
+                    sampleInterval: 10,
+                    numWorkers: 2
+                }, function (obj) {
+                    if (!obj.error) {
+                        let filename;
+                        if (downloadCounters.gif === 0) {
+                            filename = `${downloadBaseName}.gif`;
+                        } else {
+                            filename = `${downloadBaseName}_${downloadCounters.gif}.gif`;
+                        }
+                        downloadCounters.gif++;
+
+                        const link = document.createElement('a');
+                        link.href = obj.image;
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+
+                        console.log('GIF saved:', filename);
+                    } else {
+                        console.error('GIF creation error:', obj.error);
+                        alert('Failed to create GIF');
+                    }
+
+                    if (videoBtn) {
+                        videoBtn.innerHTML = originalHTML;
+                        videoBtn.disabled = false;
+                    }
+                });
+            } catch (e) {
+                console.error('GIF creation error:', e);
+                alert('Failed to create GIF: ' + e.message);
+                if (videoBtn) {
+                    videoBtn.innerHTML = originalHTML;
+                    videoBtn.disabled = false;
+                }
+            }
+        }
+
+        function setupButtonGroup(groupName, buttonIds) {
+            buttonIds.forEach(id => {
+                const button = document.getElementById(id);
+                button.addEventListener('click', function () {
+                    buttonIds.forEach(btnId => {
+                        document.getElementById(btnId).classList.remove('active');
+                    });
+                    this.classList.add('active');
+
+                    if (groupName === 'rotation-mode') {
+                        settings.rotationMode = (id === 'trackball-btn') ? 'TrackBall' : 'Orbit';
+                        setupControls();
+                    } else if (groupName === 'view-mode') {
+                        settings.viewMode = (id === 'orthographic-btn') ? 'Orthographic' : 'Perspective';
+                        setupCamera();
+                        setupControls();
+                        cameraNeedsFit = true;
+                        renderMolecule();
+                    }
+                });
             });
-            this.classList.add('active');
+        }
 
-            if (groupName === 'rotation-mode') {
-                settings.rotationMode = (id === 'trackball-btn') ? 'TrackBall' : 'Orbit';
-                setupControls();
-            } else if (groupName === 'view-mode') {
-                settings.viewMode = (id === 'orthographic-btn') ? 'Orthographic' : 'Perspective';
-                setupCamera();
-                setupControls();
-                cameraNeedsFit = true;
-                renderMolecule();
+        function toggleSidebar() {
+            sidebarOpen = !sidebarOpen;
+            const sidebar = document.getElementById('sidebar');
+            if (sidebarOpen) {
+                sidebar.style.width = '320px';
+                sidebar.classList.remove('collapsed');
+            } else {
+                sidebar.style.width = '0';
+                sidebar.classList.add('collapsed');
             }
-        });
-    });
-}
 
-function toggleSidebar() {
-    sidebarOpen = !sidebarOpen;
-    const sidebar = document.getElementById('sidebar');
-    if (sidebarOpen) {
-        sidebar.style.width = '320px';
-        sidebar.classList.remove('collapsed');
-    } else {
-        sidebar.style.width = '0';
-        sidebar.classList.add('collapsed');
-    }
-
-    setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
-    }, 350);
-}
-
-function toggleCard(cardId) {
-    cards[cardId] = !cards[cardId];
-    const content = document.getElementById(cardId + '-content');
-    const arrow = document.getElementById(cardId + '-arrow');
-
-    if (cards[cardId]) {
-        content.classList.remove('collapsed');
-        arrow.style.transform = 'rotate(0deg)';
-    } else {
-        content.classList.add('collapsed');
-        arrow.style.transform = 'rotate(-90deg)';
-    }
-}
-
-function darkenColorHex(color, percent) {
-    let R = parseInt(color.substring(1, 3), 16);
-    let G = parseInt(color.substring(3, 5), 16);
-    let B = parseInt(color.substring(5, 7), 16);
-
-    R = Math.floor(R * (100 - percent) / 100);
-    G = Math.floor(G * (100 - percent) / 100);
-    B = Math.floor(B * (100 - percent) / 100);
-
-    return `#${R.toString(16).padStart(2, '0')}${G.toString(16).padStart(2, '0')}${B.toString(16).padStart(2, '0')}`;
-}
-
-// ========== Normal Mode / Vibration Support ==========
-
-// Vibration state
-let vibrationData = {
-    equilibriumPositions: null,  // Original atom positions
-    modeVectors: null,           // [nModes][nAtoms][3] displacement vectors
-    frequencies: null,           // Array of frequency strings
-    isImaginary: null,           // Array of booleans
-    currentModeIndex: 0,
-    nFrames: 30,
-    phase: 0,                    // Current phase in animation cycle (0 to 2*PI)
-    amplitude: 0.75              // Displacement amplitude
-};
-
-/**
- * Initialize the normal mode viewer with vibration data
- * Called from Python after data injection
- */
-function initNormalModeViewer(atomsData, vibData) {
-    console.log('Initializing Normal Mode Viewer');
-    console.log('Atoms data:', atomsData);
-    console.log('Vibration data:', vibData);
-
-    // Store equilibrium structure
-    if (atomsData) {
-        vibrationData.equilibriumPositions = atomsData.positions.map(p => [...p]);
-        molecularData = [atomsData];
-        cameraNeedsFit = true;
-    }
-
-    // Store vibration data if available
-    if (vibData && vibData.modeVectors) {
-        vibrationData.modeVectors = vibData.modeVectors;
-        vibrationData.frequencies = vibData.frequencies || [];
-        vibrationData.isImaginary = vibData.isImaginary || [];
-        vibrationData.nFrames = vibData.nFrames || 30;
-
-        // Populate mode selector dropdown
-        populateModeSelector();
-
-        // Show normal modes card
-        const modesCard = document.querySelector('.card:has(#normal-mode)');
-        if (modesCard) {
-            modesCard.style.display = 'block';
-        }
-    } else {
-        // Hide normal modes card if no vibration data
-        const modesCard = document.querySelector('.card:has(#normal-mode)');
-        if (modesCard) {
-            modesCard.style.display = 'none';
-        }
-    }
-
-    // Update frame display
-    updateFrameDisplay();
-    renderMolecule();
-}
-
-/**
- * Populate the mode selector dropdown with frequencies
- */
-function populateModeSelector() {
-    const select = document.getElementById('normal-mode');
-    if (!select || !vibrationData.frequencies) return;
-
-    select.innerHTML = '';
-
-    vibrationData.frequencies.forEach((freq, idx) => {
-        const option = document.createElement('option');
-        option.value = idx;
-
-        // Format frequency display
-        const isImag = vibrationData.isImaginary && vibrationData.isImaginary[idx];
-        const freqStr = freq.toString().includes('i') ? freq : `${freq} cm⁻¹`;
-
-        option.textContent = `Mode ${idx + 1}: ${freqStr}`;
-        // Red for imaginary, green for real frequencies
-        option.style.color = isImag ? '#ef4444' : '#22c55e';
-        select.appendChild(option);
-    });
-
-    // Set up event listener for mode selection
-    select.addEventListener('change', function() {
-        vibrationData.currentModeIndex = parseInt(this.value, 10);
-        vibrationData.phase = 0;
-        renderMolecule();
-    });
-}
-
-/**
- * Get displaced positions for current animation frame
- */
-function getDisplacedPositions() {
-    if (!vibrationData.equilibriumPositions || !vibrationData.modeVectors) {
-        return null;
-    }
-
-    const modeIdx = vibrationData.currentModeIndex;
-    const modeVector = vibrationData.modeVectors[modeIdx];
-
-    if (!modeVector) return null;
-
-    const amplitude = vibrationData.amplitude;
-    const phase = vibrationData.phase;
-    const displacement = Math.sin(phase) * amplitude;
-
-    const displacedPositions = vibrationData.equilibriumPositions.map((pos, i) => {
-        const vec = modeVector[i] || [0, 0, 0];
-        return [
-            pos[0] + vec[0] * displacement,
-            pos[1] + vec[1] * displacement,
-            pos[2] + vec[2] * displacement
-        ];
-    });
-
-    return displacedPositions;
-}
-
-/**
- * Override toggleAnimation for vibration mode
- */
-const originalToggleAnimation = toggleAnimation;
-toggleAnimation = function() {
-    // Check if we're in vibration mode
-    if (vibrationData.modeVectors && vibrationData.modeVectors.length > 0) {
-        toggleVibrationAnimation();
-    } else {
-        // Fall back to trajectory animation
-        originalToggleAnimation();
-    }
-};
-
-/**
- * Toggle vibration animation (sinusoidal)
- */
-function toggleVibrationAnimation() {
-    const playBtn = document.getElementById('play-btn');
-
-    if (animationState.isPlaying) {
-        // Pause
-        animationState.isPlaying = false;
-        if (animationState.animationInterval) {
-            clearInterval(animationState.animationInterval);
-            animationState.animationInterval = null;
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 350);
         }
 
-        // Update button icon to play
-        if (playBtn) {
-            playBtn.innerHTML = `
+        function toggleCard(cardId) {
+            cards[cardId] = !cards[cardId];
+            const content = document.getElementById(cardId + '-content');
+            const arrow = document.getElementById(cardId + '-arrow');
+
+            if (cards[cardId]) {
+                content.classList.remove('collapsed');
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                content.classList.add('collapsed');
+                arrow.style.transform = 'rotate(-90deg)';
+            }
+        }
+
+        function darkenColorHex(color, percent) {
+            let R = parseInt(color.substring(1, 3), 16);
+            let G = parseInt(color.substring(3, 5), 16);
+            let B = parseInt(color.substring(5, 7), 16);
+
+            R = Math.floor(R * (100 - percent) / 100);
+            G = Math.floor(G * (100 - percent) / 100);
+            B = Math.floor(B * (100 - percent) / 100);
+
+            return `#${R.toString(16).padStart(2, '0')}${G.toString(16).padStart(2, '0')}${B.toString(16).padStart(2, '0')}`;
+        }
+
+        // ========== Normal Mode / Vibration Support ==========
+
+        // Vibration state
+        let vibrationData = {
+            equilibriumPositions: null,  // Original atom positions
+            modeVectors: null,           // [nModes][nAtoms][3] displacement vectors
+            frequencies: null,           // Array of frequency strings
+            isImaginary: null,           // Array of booleans
+            currentModeIndex: 0,
+            nFrames: 30,
+            phase: 0,                    // Current phase in animation cycle (0 to 2*PI)
+            amplitude: 0.75              // Displacement amplitude
+        };
+
+        /**
+         * Initialize the normal mode viewer with vibration data
+         * Called from Python after data injection
+         */
+        function initNormalModeViewer(atomsData, vibData) {
+            console.log('Initializing Normal Mode Viewer');
+            console.log('Atoms data:', atomsData);
+            console.log('Vibration data:', vibData);
+
+            // Store equilibrium structure
+            if (atomsData) {
+                vibrationData.equilibriumPositions = atomsData.positions.map(p => [...p]);
+                molecularData = [atomsData];
+                cameraNeedsFit = true;
+            }
+
+            // Store vibration data if available
+            if (vibData && vibData.modeVectors) {
+                vibrationData.modeVectors = vibData.modeVectors;
+                vibrationData.frequencies = vibData.frequencies || [];
+                vibrationData.isImaginary = vibData.isImaginary || [];
+                vibrationData.nFrames = vibData.nFrames || 30;
+
+                // Populate mode selector dropdown
+                populateModeSelector();
+
+                // Show normal modes card
+                const modesCard = document.querySelector('.card:has(#normal-mode)');
+                if (modesCard) {
+                    modesCard.style.display = 'block';
+                }
+            } else {
+                // Hide normal modes card if no vibration data
+                const modesCard = document.querySelector('.card:has(#normal-mode)');
+                if (modesCard) {
+                    modesCard.style.display = 'none';
+                }
+            }
+
+            // Update frame display
+            updateFrameDisplay();
+            renderMolecule();
+        }
+
+        /**
+         * Populate the mode selector dropdown with frequencies
+         */
+        function populateModeSelector() {
+            const select = document.getElementById('normal-mode');
+            if (!select || !vibrationData.frequencies) return;
+
+            select.innerHTML = '';
+
+            vibrationData.frequencies.forEach((freq, idx) => {
+                const option = document.createElement('option');
+                option.value = idx;
+
+                // Format frequency display
+                const isImag = vibrationData.isImaginary && vibrationData.isImaginary[idx];
+                const freqStr = freq.toString().includes('i') ? freq : `${freq} cm⁻¹`;
+
+                option.textContent = `Mode ${idx + 1}: ${freqStr}`;
+                // Red for imaginary, green for real frequencies
+                option.style.color = isImag ? '#ef4444' : '#22c55e';
+                select.appendChild(option);
+            });
+
+            // Set up event listener for mode selection
+            select.addEventListener('change', function () {
+                vibrationData.currentModeIndex = parseInt(this.value, 10);
+                vibrationData.phase = 0;
+                renderMolecule();
+            });
+        }
+
+        /**
+         * Get displaced positions for current animation frame
+         */
+        function getDisplacedPositions() {
+            if (!vibrationData.equilibriumPositions || !vibrationData.modeVectors) {
+                return null;
+            }
+
+            const modeIdx = vibrationData.currentModeIndex;
+            const modeVector = vibrationData.modeVectors[modeIdx];
+
+            if (!modeVector) return null;
+
+            const amplitude = vibrationData.amplitude;
+            const phase = vibrationData.phase;
+            const displacement = Math.sin(phase) * amplitude;
+
+            const displacedPositions = vibrationData.equilibriumPositions.map((pos, i) => {
+                const vec = modeVector[i] || [0, 0, 0];
+                return [
+                    pos[0] + vec[0] * displacement,
+                    pos[1] + vec[1] * displacement,
+                    pos[2] + vec[2] * displacement
+                ];
+            });
+
+            return displacedPositions;
+        }
+
+        /**
+         * Override toggleAnimation for vibration mode
+         */
+        const originalToggleAnimation = toggleAnimation;
+        toggleAnimation = function () {
+            // Check if we're in vibration mode
+            if (vibrationData.modeVectors && vibrationData.modeVectors.length > 0) {
+                toggleVibrationAnimation();
+            } else {
+                // Fall back to trajectory animation
+                originalToggleAnimation();
+            }
+        };
+
+        /**
+         * Toggle vibration animation (sinusoidal)
+         */
+        function toggleVibrationAnimation() {
+            const playBtn = document.getElementById('play-btn');
+
+            if (animationState.isPlaying) {
+                // Pause
+                animationState.isPlaying = false;
+                if (animationState.animationInterval) {
+                    clearInterval(animationState.animationInterval);
+                    animationState.animationInterval = null;
+                }
+
+                // Update button icon to play
+                if (playBtn) {
+                    playBtn.innerHTML = `
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             `;
-        }
-    } else {
-        // Play
-        animationState.isPlaying = true;
-        const fps = settings.animationSpeed || 30;
-        const interval = 1000 / fps;
-        const phaseStep = (2 * Math.PI) / vibrationData.nFrames;
+                }
+            } else {
+                // Play
+                animationState.isPlaying = true;
+                const fps = settings.animationSpeed || 30;
+                const interval = 1000 / fps;
+                const phaseStep = (2 * Math.PI) / vibrationData.nFrames;
 
-        animationState.animationInterval = setInterval(() => {
-            vibrationData.phase += phaseStep;
-            if (vibrationData.phase >= 2 * Math.PI) {
-                vibrationData.phase -= 2 * Math.PI;
-            }
+                animationState.animationInterval = setInterval(() => {
+                    vibrationData.phase += phaseStep;
+                    if (vibrationData.phase >= 2 * Math.PI) {
+                        vibrationData.phase -= 2 * Math.PI;
+                    }
 
-            // Update frame display (convert phase to frame number)
-            const frameNum = Math.round((vibrationData.phase / (2 * Math.PI)) * vibrationData.nFrames);
-            animationState.currentFrame = frameNum;
-            updateFrameDisplay();
+                    // Update frame display (convert phase to frame number)
+                    const frameNum = Math.round((vibrationData.phase / (2 * Math.PI)) * vibrationData.nFrames);
+                    animationState.currentFrame = frameNum;
+                    updateFrameDisplay();
 
-            renderVibrationFrame();
-        }, interval);
+                    renderVibrationFrame();
+                }, interval);
 
-        // Update button icon to pause
-        if (playBtn) {
-            playBtn.innerHTML = `
+                // Update button icon to pause
+                if (playBtn) {
+                    playBtn.innerHTML = `
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             `;
-        }
-    }
-}
-
-/**
- * Render a single vibration frame with displaced positions
- */
-function renderVibrationFrame() {
-    if (!scene || !camera || !renderer) return;
-    if (!molecularData || molecularData.length === 0) return;
-
-    const displacedPositions = getDisplacedPositions();
-    if (!displacedPositions) {
-        renderMolecule();
-        return;
-    }
-
-    // Create temporary molecule data with displaced positions
-    const molecule = { ...molecularData[0] };
-    molecule.positions = displacedPositions;
-
-    // Render with displaced positions
-    renderMoleculeWithData(molecule);
-}
-
-/**
- * Render molecule with specific data (for vibration animation)
- */
-function renderMoleculeWithData(molecule) {
-    if (!scene || !camera || !renderer) return;
-
-    if (moleculeGroup) {
-        scene.remove(moleculeGroup);
-        disposeObject3D(moleculeGroup);
-    }
-
-    moleculeGroup = new THREE.Group();
-
-    let positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
-    let symbols = molecule.symbols;
-
-    // Apply periodic boundary conditions if requested
-    if (periodicities.length > 0 && molecule.cell) {
-        const extended = applyPeriodicBoundaries(positions, symbols, molecule.cell, periodicities);
-        positions = extended.positions;
-        symbols = extended.symbols;
-    }
-
-    const styleName = (settings.style || 'cartoon').toLowerCase();
-    const atomFactory = atomFactories[styleName] || atomFactories['default'];
-    const bondFactory = bondFactories[styleName] || bondFactories['default'];
-
-    const atomScale = Math.max(settings.atomSize, 0.05);
-    const bondRadius = Math.max(settings.bondThickness, 0.005);
-    const bondCutoff = settings.bondThreshold;
-
-    const uniqueSymbols = [...new Set(symbols)];
-    const greyColorMap = {};
-    uniqueSymbols.forEach((sym, idx) => {
-        const lightness = (idx + 1) / (uniqueSymbols.length + 1);
-        greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
-    });
-    const helpers = { greyColorMap };
-
-    // Create atoms
-    positions.forEach((pos, i) => {
-        const symbol = symbols[i];
-        const atomMesh = atomFactory(pos, symbol, atomScale, helpers);
-        if (atomMesh) {
-            atomMesh.userData.atomIndex = i;
-            atomMesh.userData.symbol = symbol;
-            moleculeGroup.add(atomMesh);
-        }
-    });
-
-    // Create bonds (inline detection)
-    if (settings.showBond) {
-        for (let i = 0; i < positions.length; i++) {
-            for (let j = i + 1; j < positions.length; j++) {
-                const dist = positions[i].distanceTo(positions[j]);
-                const info1 = atomInfo[symbols[i]] || atomInfo['default'];
-                const info2 = atomInfo[symbols[j]] || atomInfo['default'];
-                const covalentRadiusSum = info1.radius + info2.radius;
-                const adjustedCutoff = covalentRadiusSum * bondCutoff;
-
-                if (dist < adjustedCutoff) {
-                    const bondMesh = bondFactory(
-                        positions[i], positions[j],
-                        symbols[i], symbols[j],
-                        bondRadius, atomScale, helpers
-                    );
-                    if (bondMesh) moleculeGroup.add(bondMesh);
                 }
             }
         }
-    }
 
-    // Add unit cell if available (inline)
-    if (settings.showCell && molecule.cell) {
-        const cellVectors = molecule.cell.map(c => new THREE.Vector3(...c));
-        const points = [
-            new THREE.Vector3(0, 0, 0), cellVectors[0],
-            new THREE.Vector3(0, 0, 0), cellVectors[1],
-            new THREE.Vector3(0, 0, 0), cellVectors[2],
-            cellVectors[0], cellVectors[0].clone().add(cellVectors[1]),
-            cellVectors[0], cellVectors[0].clone().add(cellVectors[2]),
-            cellVectors[1], cellVectors[1].clone().add(cellVectors[0]),
-            cellVectors[1], cellVectors[1].clone().add(cellVectors[2]),
-            cellVectors[2], cellVectors[2].clone().add(cellVectors[0]),
-            cellVectors[2], cellVectors[2].clone().add(cellVectors[1]),
-            cellVectors[0].clone().add(cellVectors[1]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
-            cellVectors[0].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
-            cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
-        ];
-        const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-        const cellMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
-        const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
-        cellMesh.renderOrder = 2;
-        moleculeGroup.add(cellMesh);
-    }
+        /**
+         * Render a single vibration frame with displaced positions
+         */
+        function renderVibrationFrame() {
+            if (!scene || !camera || !renderer) return;
+            if (!molecularData || molecularData.length === 0) return;
 
-    // Add mode vector arrows if enabled (bidirectional: red +, blue -)
-    if (settings.showModeVector && vibrationData.modeVectors) {
-        const modeIdx = vibrationData.currentModeIndex;
-        const modeVector = vibrationData.modeVectors[modeIdx];
+            const displacedPositions = getDisplacedPositions();
+            if (!displacedPositions) {
+                renderMolecule();
+                return;
+            }
 
-        if (modeVector && modeVector.length === positions.length) {
-            const positiveColor = 0xff0000;  // Red for positive direction
-            const negativeColor = 0x0000ff;  // Blue for negative direction
-            const arrowScale = vibrationData.amplitude * 2;
+            // Create temporary molecule data with displaced positions
+            const molecule = { ...molecularData[0] };
+            molecule.positions = displacedPositions;
 
-            for (let i = 0; i < positions.length; i++) {
-                const vec = modeVector[i];
-                if (!vec) continue;
+            // Render with displaced positions
+            renderMoleculeWithData(molecule);
+        }
 
-                const dir = new THREE.Vector3(vec[0], vec[1], vec[2]);
-                const length = dir.length() * arrowScale;
+        /**
+         * Render molecule with specific data (for vibration animation)
+         */
+        function renderMoleculeWithData(molecule) {
+            if (!scene || !camera || !renderer) return;
 
-                if (length > 0.01) {  // Skip very small vectors
-                    dir.normalize();
+            if (moleculeGroup) {
+                scene.remove(moleculeGroup);
+                disposeObject3D(moleculeGroup);
+            }
 
-                    // Positive direction arrow (red)
-                    const arrowPositive = new THREE.ArrowHelper(
-                        dir,
-                        positions[i],
-                        length,
-                        positiveColor,
-                        length * 0.3,  // Head length
-                        length * 0.15  // Head width
-                    );
-                    moleculeGroup.add(arrowPositive);
+            moleculeGroup = new THREE.Group();
 
-                    // Negative direction arrow (blue)
-                    const negDir = dir.clone().negate();
-                    const arrowNegative = new THREE.ArrowHelper(
-                        negDir,
-                        positions[i],
-                        length,
-                        negativeColor,
-                        length * 0.3,  // Head length
-                        length * 0.15  // Head width
-                    );
-                    moleculeGroup.add(arrowNegative);
+            let positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
+            let symbols = molecule.symbols;
+
+            // Apply periodic boundary conditions if requested
+            if (periodicities.length > 0 && molecule.cell) {
+                const extended = applyPeriodicBoundaries(positions, symbols, molecule.cell, periodicities);
+                positions = extended.positions;
+                symbols = extended.symbols;
+            }
+
+            const styleName = (settings.style || 'cartoon').toLowerCase();
+            const atomFactory = atomFactories[styleName] || atomFactories['default'];
+            const bondFactory = bondFactories[styleName] || bondFactories['default'];
+
+            const atomScale = Math.max(settings.atomSize, 0.05);
+            const bondRadius = Math.max(settings.bondThickness, 0.005);
+            const bondCutoff = settings.bondThreshold;
+
+            const uniqueSymbols = [...new Set(symbols)];
+            const greyColorMap = {};
+            uniqueSymbols.forEach((sym, idx) => {
+                const lightness = (idx + 1) / (uniqueSymbols.length + 1);
+                greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
+            });
+            const helpers = { greyColorMap };
+
+            // Create atoms
+            positions.forEach((pos, i) => {
+                const symbol = symbols[i];
+                const atomMesh = atomFactory(pos, symbol, atomScale, helpers);
+                if (atomMesh) {
+                    atomMesh.userData.atomIndex = i;
+                    atomMesh.userData.symbol = symbol;
+                    moleculeGroup.add(atomMesh);
+                }
+            });
+
+            // Create bonds (inline detection)
+            if (settings.showBond) {
+                for (let i = 0; i < positions.length; i++) {
+                    for (let j = i + 1; j < positions.length; j++) {
+                        const dist = positions[i].distanceTo(positions[j]);
+                        const info1 = atomInfo[symbols[i]] || atomInfo['default'];
+                        const info2 = atomInfo[symbols[j]] || atomInfo['default'];
+                        const covalentRadiusSum = info1.radius + info2.radius;
+                        const adjustedCutoff = covalentRadiusSum * bondCutoff;
+
+                        if (dist < adjustedCutoff) {
+                            const bondMesh = bondFactory(
+                                positions[i], positions[j],
+                                symbols[i], symbols[j],
+                                bondRadius, atomScale, helpers
+                            );
+                            if (bondMesh) moleculeGroup.add(bondMesh);
+                        }
+                    }
                 }
             }
-        }
-    }
 
-    scene.add(moleculeGroup);
-}
-
-// Override updateFrameDisplay for vibration mode
-const originalUpdateFrameDisplay = updateFrameDisplay;
-updateFrameDisplay = function() {
-    const frameValue = document.getElementById('frame-value');
-    const frameSlider = document.getElementById('frame-slider');
-
-    if (vibrationData.modeVectors && vibrationData.modeVectors.length > 0) {
-        // Vibration mode: show frame in cycle
-        const totalFrames = vibrationData.nFrames;
-        const currentFrame = animationState.currentFrame + 1;
-
-        if (frameValue) {
-            frameValue.textContent = `${currentFrame} / ${totalFrames}`;
-        }
-        if (frameSlider) {
-            frameSlider.max = totalFrames;
-            frameSlider.value = currentFrame;
-        }
-    } else {
-        // Trajectory mode: use original
-        originalUpdateFrameDisplay();
-    }
-};
-
-// Export functions for Python injection
-window.setMolecularData = setMolecularData;
-window.initNormalModeViewer = initNormalModeViewer;
-window.removePeriodicity = removePeriodicity;
-
-// PostMessage API for iframe embedding
-window.addEventListener('message', function(event) {
-    const msg = event.data;
-    if (!msg || !msg.type) return;
-
-    switch (msg.type) {
-        case 'setData':
-            if (msg.data) {
-                setMolecularData(msg.data);
+            // Add unit cell if available (inline)
+            if (settings.showCell && molecule.cell) {
+                const cellVectors = molecule.cell.map(c => new THREE.Vector3(...c));
+                const points = [
+                    new THREE.Vector3(0, 0, 0), cellVectors[0],
+                    new THREE.Vector3(0, 0, 0), cellVectors[1],
+                    new THREE.Vector3(0, 0, 0), cellVectors[2],
+                    cellVectors[0], cellVectors[0].clone().add(cellVectors[1]),
+                    cellVectors[0], cellVectors[0].clone().add(cellVectors[2]),
+                    cellVectors[1], cellVectors[1].clone().add(cellVectors[0]),
+                    cellVectors[1], cellVectors[1].clone().add(cellVectors[2]),
+                    cellVectors[2], cellVectors[2].clone().add(cellVectors[0]),
+                    cellVectors[2], cellVectors[2].clone().add(cellVectors[1]),
+                    cellVectors[0].clone().add(cellVectors[1]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+                    cellVectors[0].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+                    cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
+                ];
+                const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
+                const cellMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+                const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
+                cellMesh.renderOrder = 2;
+                moleculeGroup.add(cellMesh);
             }
-            break;
-        case 'initNormalMode':
-            if (msg.atoms && msg.vibrationData) {
-                initNormalModeViewer(msg.atoms, msg.vibrationData);
-            }
-            break;
-        case 'setSettings':
-            if (msg.settings) {
-                Object.assign(settings, msg.settings);
-                if (typeof updateFromSettings === 'function') {
-                    updateFromSettings();
+
+            // Add mode vector arrows if enabled (bidirectional: red +, blue -)
+            if (settings.showModeVector && vibrationData.modeVectors) {
+                const modeIdx = vibrationData.currentModeIndex;
+                const modeVector = vibrationData.modeVectors[modeIdx];
+
+                if (modeVector && modeVector.length === positions.length) {
+                    const positiveColor = 0xff0000;  // Red for positive direction
+                    const negativeColor = 0x0000ff;  // Blue for negative direction
+                    const arrowScale = vibrationData.amplitude * 2;
+
+                    for (let i = 0; i < positions.length; i++) {
+                        const vec = modeVector[i];
+                        if (!vec) continue;
+
+                        const dir = new THREE.Vector3(vec[0], vec[1], vec[2]);
+                        const length = dir.length() * arrowScale;
+
+                        if (length > 0.01) {  // Skip very small vectors
+                            dir.normalize();
+
+                            // Positive direction arrow (red)
+                            const arrowPositive = new THREE.ArrowHelper(
+                                dir,
+                                positions[i],
+                                length,
+                                positiveColor,
+                                length * 0.3,  // Head length
+                                length * 0.15  // Head width
+                            );
+                            moleculeGroup.add(arrowPositive);
+
+                            // Negative direction arrow (blue)
+                            const negDir = dir.clone().negate();
+                            const arrowNegative = new THREE.ArrowHelper(
+                                negDir,
+                                positions[i],
+                                length,
+                                negativeColor,
+                                length * 0.3,  // Head length
+                                length * 0.15  // Head width
+                            );
+                            moleculeGroup.add(arrowNegative);
+                        }
+                    }
                 }
             }
-            break;
-        case 'ready':
-            if (event.source) {
-                event.source.postMessage({ type: 'ready', viewer: 'normal' }, '*');
-            }
-            break;
-    }
-});
 
-// Notify parent that viewer is loaded
-if (window.parent !== window) {
-    window.parent.postMessage({ type: 'viewerLoaded', viewer: 'normal' }, '*');
-}
+            scene.add(moleculeGroup);
+        }
+
+        // Override updateFrameDisplay for vibration mode
+        const originalUpdateFrameDisplay = updateFrameDisplay;
+        updateFrameDisplay = function () {
+            const frameValue = document.getElementById('frame-value');
+            const frameSlider = document.getElementById('frame-slider');
+
+            if (vibrationData.modeVectors && vibrationData.modeVectors.length > 0) {
+                // Vibration mode: show frame in cycle
+                const totalFrames = vibrationData.nFrames;
+                const currentFrame = animationState.currentFrame + 1;
+
+                if (frameValue) {
+                    frameValue.textContent = `${currentFrame} / ${totalFrames}`;
+                }
+                if (frameSlider) {
+                    frameSlider.max = totalFrames;
+                    frameSlider.value = currentFrame;
+                }
+            } else {
+                // Trajectory mode: use original
+                originalUpdateFrameDisplay();
+            }
+        };
+
+        // Export functions for Python injection
+        window.setMolecularData = setMolecularData;
+        window.initNormalModeViewer = initNormalModeViewer;
+        window.removePeriodicity = removePeriodicity;
+
+        // PostMessage API for iframe embedding
+        window.addEventListener('message', function (event) {
+            const msg = event.data;
+            if (!msg || !msg.type) return;
+
+            switch (msg.type) {
+                case 'setData':
+                    if (msg.data) {
+                        setMolecularData(msg.data);
+                    }
+                    break;
+                case 'initNormalMode':
+                    if (msg.atoms && msg.vibrationData) {
+                        initNormalModeViewer(msg.atoms, msg.vibrationData);
+                    }
+                    break;
+                case 'setSettings':
+                    if (msg.settings) {
+                        Object.assign(settings, msg.settings);
+                        if (typeof updateFromSettings === 'function') {
+                            updateFromSettings();
+                        }
+                    }
+                    break;
+                case 'ready':
+                    if (event.source) {
+                        event.source.postMessage({ type: 'ready', viewer: 'normal' }, '*');
+                    }
+                    break;
+            }
+        });
+
+        // Notify parent that viewer is loaded
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'viewerLoaded', viewer: 'normal' }, '*');
+        }
     </script>
 </body>
+
 </html>

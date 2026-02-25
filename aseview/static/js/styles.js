@@ -627,3 +627,271 @@ function createHalfBondGrey(start, end, color, bondThickness) {
     
     return bond;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Convex Hull helper (incremental / gift-wrapping in 3D)
+// Returns { vertices: Float32Array, indices: Uint32Array } for the hull.
+// ─────────────────────────────────────────────────────────────
+function _computeConvexHull(points) {
+    // points: array of THREE.Vector3
+    // Simplified incremental convex hull that works for common polyhedra (4-12 vertices)
+    const n = points.length;
+    if (n < 3) return null;
+    if (n === 3) {
+        // Single triangle
+        return {
+            faceVertexIndices: [[0, 1, 2]],
+            faceColors: null
+        };
+    }
+
+    // Gift-wrapping (Jarvis March) in 3D — find initial face, then expand
+    // Step 1: Find two extreme points (min X, then min Y)
+    let a = 0;
+    for (let i = 1; i < n; i++) {
+        if (points[i].x < points[a].x || 
+           (points[i].x === points[a].x && points[i].y < points[a].y)) a = i;
+    }
+
+    // Step 2: Build faces using a BFS-based gift wrapping
+    const faces = [];      // each face = [i, j, k] indices
+    const edgeQueue = [];  // edges to process: { i, j, oppositeFace }
+    const processedEdges = new Set();
+
+    const edgeKey = (i, j) => i < j ? `${i}_${j}` : `${j}_${i}`;
+
+    // Find initial triangle: pick point a, find b and c forming first face
+    // b = point that makes smallest positive angle from (a, down-direction)
+    let b = -1;
+    for (let i = 0; i < n; i++) {
+        if (i === a) continue;
+        if (b === -1) { b = i; continue; }
+        const ab = points[b].clone().sub(points[a]);
+        const ac = points[i].clone().sub(points[a]);
+        // prefer c over b if the cross product points "outward" (downward Z or smallest angle)
+        if (ab.cross(ac).z < 0) b = i;
+    }
+
+    // c = point that makes a valid triangle with normals pointing "outward"
+    let c = -1;
+    for (let i = 0; i < n; i++) {
+        if (i === a || i === b) continue;
+        if (c === -1) { c = i; continue; }
+        const ab = points[b].clone().sub(points[a]);
+        const ac = points[c].clone().sub(points[a]);
+        const ai = points[i].clone().sub(points[a]);
+        const normal = ab.clone().cross(ac);
+        // prefer i if it's more "extreme"
+        if (normal.dot(ai) < 0) c = i;
+    }
+
+    if (c === -1) return null;
+
+    // Ensure consistent winding (normal points away from centroid)
+    const centroid = new THREE.Vector3();
+    points.forEach(p => centroid.add(p));
+    centroid.divideScalar(n);
+
+    const faceNormal = (i, j, k) => {
+        const ab = points[j].clone().sub(points[i]);
+        const ac = points[k].clone().sub(points[i]);
+        return ab.cross(ac);
+    };
+
+    let normal0 = faceNormal(a, b, c);
+    const toCenter = centroid.clone().sub(points[a]);
+    if (normal0.dot(toCenter) > 0) {
+        // flip winding
+        [b, c] = [c, b];
+    }
+
+    faces.push([a, b, c]);
+    edgeQueue.push({ i: b, j: a, faceIdx: 0 });
+    edgeQueue.push({ i: c, j: b, faceIdx: 0 });
+    edgeQueue.push({ i: a, j: c, faceIdx: 0 });
+
+    const maxIter = n * n * 3;
+    let iter = 0;
+
+    while (edgeQueue.length > 0 && iter++ < maxIter) {
+        const { i, j } = edgeQueue.shift();
+        const key = edgeKey(i, j);
+        if (processedEdges.has(key)) continue;
+        processedEdges.add(key);
+
+        // Find the best k (visible from outside, minimum angle)
+        const edge = points[j].clone().sub(points[i]);
+        let bestK = -1;
+        let bestAngle = Infinity;
+        // Reference normal: (i -> j) x (i -> any existing face point on this edge's face)
+        let refDir = null;
+        // Find a point already in a face containing edge i-j (reversed: j-i)
+        for (const f of faces) {
+            const hasI = f.includes(i), hasJ = f.includes(j);
+            if (hasI && hasJ) {
+                const other = f.find(v => v !== i && v !== j);
+                if (other !== undefined) {
+                    refDir = points[other].clone().sub(points[i]);
+                    break;
+                }
+            }
+        }
+        if (!refDir) continue;
+
+        const refNormal = edge.clone().cross(refDir);
+
+        for (let k = 0; k < n; k++) {
+            if (k === i || k === j) continue;
+            // skip if face i,j,k or j,i,k already exists
+            const alreadyExists = faces.some(f => {
+                const s = new Set(f);
+                return s.has(i) && s.has(j) && s.has(k);
+            });
+            if (alreadyExists) continue;
+
+            const toK = points[k].clone().sub(points[i]);
+            const candidateNormal = edge.clone().cross(toK);
+            // Angle from refNormal
+            const dot = refNormal.dot(candidateNormal) / (refNormal.length() * candidateNormal.length() + 1e-10);
+            const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
+            // We want the face that "wraps" — smallest positive angle (most "outward")
+            if (angle < bestAngle) {
+                // Check that centroid is on the inside
+                const n_ = faceNormal(i, j, k);
+                const toCentroid = centroid.clone().sub(points[i]);
+                // Allow if normal points away from centroid
+                if (n_.dot(toCentroid) < 0) {
+                    bestAngle = angle;
+                    bestK = k;
+                }
+            }
+        }
+
+        if (bestK === -1) continue;
+
+        // Determine winding for new face
+        let ni = i, nj = j, nk = bestK;
+        const n_ = faceNormal(ni, nj, nk);
+        const toCentroid = centroid.clone().sub(points[ni]);
+        if (n_.dot(toCentroid) > 0) {
+            [nj, nk] = [nk, nj];
+        }
+
+        const alreadyExists = faces.some(f => {
+            const s = new Set(f);
+            return s.has(ni) && s.has(nj) && s.has(nk);
+        });
+        if (!alreadyExists) {
+            faces.push([ni, nj, nk]);
+            edgeQueue.push({ i: nj, j: ni, faceIdx: faces.length - 1 });
+            edgeQueue.push({ i: nk, j: nj, faceIdx: faces.length - 1 });
+            edgeQueue.push({ i: ni, j: nk, faceIdx: faces.length - 1 });
+        }
+    }
+
+    return faces.length >= 1 ? { faceVertexIndices: faces } : null;
+}
+
+/**
+ * Create a convex polyhedron from neighbor atom positions around a center atom.
+ * @param {THREE.Vector3} centerPos - Position of center atom (not a vertex)
+ * @param {THREE.Vector3[]} neighborPositions - Positions of neighbor atoms (vertices)
+ * @param {number[]} neighborColors - Colors (hex int) of neighbor atoms
+ * @param {number} opacity - Face transparency (0-1)
+ * @returns {THREE.Mesh|null}
+ */
+function createPolyhedronFaces(centerPos, neighborPositions, neighborColors, opacity = 0.25) {
+    if (!neighborPositions || neighborPositions.length < 4) return null;
+
+    const hull = _computeConvexHull(neighborPositions);
+    if (!hull || !hull.faceVertexIndices || hull.faceVertexIndices.length === 0) return null;
+
+    const faces = hull.faceVertexIndices;
+
+    // Build BufferGeometry with vertex colors (each face gets averaged color of its 3 vertices)
+    const vertexCount = faces.length * 3;
+    const positions = new Float32Array(vertexCount * 3);
+    const colors = new Float32Array(vertexCount * 3);
+
+    let idx = 0;
+    for (const [i, j, k] of faces) {
+        const verts = [neighborPositions[i], neighborPositions[j], neighborPositions[k]];
+        const cols = [neighborColors[i], neighborColors[j], neighborColors[k]];
+
+        // Average color of 3 vertices
+        const avgColor = new THREE.Color(
+            ((cols[0] >> 16 & 0xff) + (cols[1] >> 16 & 0xff) + (cols[2] >> 16 & 0xff)) / (3 * 255),
+            ((cols[0] >> 8  & 0xff) + (cols[1] >> 8  & 0xff) + (cols[2] >> 8  & 0xff)) / (3 * 255),
+            ((cols[0]       & 0xff) + (cols[1]       & 0xff) + (cols[2]       & 0xff)) / (3 * 255)
+        );
+
+        for (const v of verts) {
+            positions[idx * 3]     = v.x;
+            positions[idx * 3 + 1] = v.y;
+            positions[idx * 3 + 2] = v.z;
+            colors[idx * 3]     = avgColor.r;
+            colors[idx * 3 + 1] = avgColor.g;
+            colors[idx * 3 + 2] = avgColor.b;
+            idx++;
+        }
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.computeVertexNormals();
+
+    const material = new THREE.MeshBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: opacity,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+    });
+
+    return new THREE.Mesh(geometry, material);
+}
+
+/**
+ * Create a filled ring face (fan triangulation from centroid).
+ * @param {THREE.Vector3[]} ringPositions - Ordered ring atom positions
+ * @param {number} faceColor - Hex color int
+ * @param {number} opacity - Transparency (0-1)
+ * @returns {THREE.Mesh|null}
+ */
+function createRingFace(ringPositions, faceColor, opacity = 0.3) {
+    if (!ringPositions || ringPositions.length < 3) return null;
+
+    const n = ringPositions.length;
+    // Centroid of ring
+    const centroid = new THREE.Vector3();
+    ringPositions.forEach(p => centroid.add(p));
+    centroid.divideScalar(n);
+
+    // Fan triangulation: centroid -> (p[i], p[i+1])
+    const vertCount = n * 3;
+    const positions = new Float32Array(vertCount * 3);
+    let idx = 0;
+
+    for (let i = 0; i < n; i++) {
+        const p1 = ringPositions[i];
+        const p2 = ringPositions[(i + 1) % n];
+        positions[idx++] = centroid.x; positions[idx++] = centroid.y; positions[idx++] = centroid.z;
+        positions[idx++] = p1.x;       positions[idx++] = p1.y;       positions[idx++] = p1.z;
+        positions[idx++] = p2.x;       positions[idx++] = p2.y;       positions[idx++] = p2.z;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.computeVertexNormals();
+
+    const material = new THREE.MeshBasicMaterial({
+        color: faceColor,
+        transparent: true,
+        opacity: opacity,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+    });
+
+    return new THREE.Mesh(geometry, material);
+}
