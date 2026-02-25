@@ -491,12 +491,89 @@ def create_ethanol_charge_viewer():
 
 
 def create_casio3_polyhedron_viewer():
-    """Create CaSiO3 perovskite viewer with polyhedron visualization."""
+    """Create CaSiO3 perovskite viewer with polyhedron visualization (inline structure)."""
+    import io
     from ase.io import read
-    import os
-    cif_path = os.path.join(os.path.dirname(__file__), "assets", "CaSiO3.cif")
-    atoms = read(cif_path)
-    # 2x2x2 supercell for better visualization
+
+    # CaSiO3 tetragonal perovskite (I4/mcm) - generated using pymatgen
+    cif_content = """\
+# generated using pymatgen
+data_CaSiO3
+_symmetry_space_group_name_H-M   I4/mcm
+_cell_length_a   5.07858400
+_cell_length_b   5.07858400
+_cell_length_c   7.28534200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   140
+_chemical_formula_structural   CaSiO3
+_chemical_formula_sum   'Ca4 Si4 O12'
+_cell_volume   187.90365339
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z'
+  4  'y, -x, -z'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z'
+  8  '-y, x, -z'
+  9  'x, -y, -z+1/2'
+  10  '-x, y, z+1/2'
+  11  '-y, -x, -z+1/2'
+  12  'y, x, z+1/2'
+  13  '-x, y, -z+1/2'
+  14  'x, -y, z+1/2'
+  15  'y, x, -z+1/2'
+  16  '-y, -x, z+1/2'
+  17  'x+1/2, y+1/2, z+1/2'
+  18  '-x+1/2, -y+1/2, -z+1/2'
+  19  '-y+1/2, x+1/2, z+1/2'
+  20  'y+1/2, -x+1/2, -z+1/2'
+  21  '-x+1/2, -y+1/2, z+1/2'
+  22  'x+1/2, y+1/2, -z+1/2'
+  23  'y+1/2, -x+1/2, z+1/2'
+  24  '-y+1/2, x+1/2, -z+1/2'
+  25  'x+1/2, -y+1/2, -z'
+  26  '-x+1/2, y+1/2, z'
+  27  '-y+1/2, -x+1/2, -z'
+  28  'y+1/2, x+1/2, z'
+  29  '-x+1/2, y+1/2, -z'
+  30  'x+1/2, -y+1/2, z'
+  31  'y+1/2, x+1/2, -z'
+  32  '-y+1/2, -x+1/2, z'
+loop_
+ _atom_type_symbol
+ _atom_type_oxidation_number
+  Ca2+  2.0
+  Si4+  4.0
+  O2-  -2.0
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ca2+  Ca0  4  0.00000000  0.50000000  0.25000000  1
+  Si4+  Si1  4  0.00000000  0.00000000  0.00000000  1
+  O2-  O2  8  0.22204050  0.27795950  0.00000000  1
+  O2-  O3  4  0.00000000  0.00000000  0.25000000  1
+"""
+    import tempfile, os
+    with tempfile.NamedTemporaryFile(suffix='.cif', mode='w', delete=False) as f:
+        f.write(cif_content)
+        tmp_path = f.name
+    try:
+        atoms = read(tmp_path)
+    finally:
+        os.unlink(tmp_path)
+
     atoms = atoms * (2, 2, 2)
     viewer = MolecularViewer(
         atoms,
@@ -513,11 +590,65 @@ def create_casio3_polyhedron_viewer():
 
 
 def create_carbazole_ring_viewer():
-    """Create carbazole molecule viewer with ring highlighting."""
-    from ase.io import read
+    """Create carbazole molecule viewer with ring highlighting (inline coordinates)."""
     import os
-    xyz_path = os.path.join(os.path.dirname(__file__), "assets", "carbazole.xyz")
-    atoms = read(xyz_path)
+    from ase import Atoms
+
+    # Carbazole (C12H9N core + phosphonate group) - 45 atoms
+    symbols = [
+        'C','C','C','C','C','C','C','N','C','C','C','C','C','C','C',
+        'C','C','C','C','P','O','O','O',
+        'H','H','H','H','H','H','H','H','H','H','H','H',
+        'H','H','H','H','H','H','H','H','H','H',
+    ]
+    positions = [
+        [-1.268587,  3.133147, 10.747185],
+        [-0.910866,  2.368808,  9.506540],
+        [-0.690901,  0.983936,  9.572118],
+        [-0.384794,  0.255745,  8.401030],
+        [-0.315087,  0.936147,  7.185078],
+        [-0.550664,  2.317767,  7.095945],
+        [-0.852236,  3.015722,  8.270608],
+        [ 0.000000,  0.000000,  6.218598],
+        [ 0.118345, -1.260468,  6.773151],
+        [-0.115645, -1.124745,  8.141747],
+        [-0.052302, -2.274078,  8.960522],
+        [ 0.226774, -3.529192,  8.397141],
+        [ 0.466183, -3.628371,  7.025164],
+        [ 0.410736, -2.505323,  6.192375],
+        [ 0.325191, -4.742434,  9.274520],
+        [ 0.188517,  0.300979,  4.805273],
+        [-1.114221,  0.173663,  4.016158],
+        [-0.970087,  0.574017,  2.547094],
+        [-0.091333, -0.375951,  1.738248],
+        [ 0.000000,  0.000000,  0.000000],
+        [ 0.846897, -0.876297, -0.857630],
+        [-1.510074,  0.075719, -0.524504],
+        [ 0.439665,  1.536509, -0.097183],
+        [-0.797589,  2.687782, 11.629830],
+        [-2.353966,  3.132756, 10.886772],
+        [-0.920085,  4.169274, 10.682103],
+        [-0.754857,  0.462445, 10.523085],
+        [-0.508846,  2.843024,  6.147438],
+        [-1.042825,  4.085461,  8.207878],
+        [-0.224754, -2.178096, 10.028901],
+        [ 0.700456, -4.595056,  6.583224],
+        [ 0.592884, -2.609213,  5.127879],
+        [-0.346025, -4.657379, 10.135616],
+        [ 1.351415, -4.860402,  9.635738],
+        [ 0.036392, -5.645590,  8.726657],
+        [ 0.598193,  1.313979,  4.727826],
+        [ 0.958922, -0.377103,  4.424704],
+        [-1.878057,  0.815466,  4.473496],
+        [-1.497217, -0.852179,  4.083605],
+        [-0.574534,  1.593850,  2.475698],
+        [-1.968957,  0.600580,  2.095905],
+        [ 0.930434, -0.364498,  2.131032],
+        [-0.465076, -1.400279,  1.846490],
+        [-1.576519,  0.092936, -1.497010],
+        [ 0.698440,  1.801183, -0.999255],
+    ]
+    atoms = Atoms(symbols=symbols, positions=positions)
     viewer = MolecularViewer(
         atoms,
         style="cartoon",

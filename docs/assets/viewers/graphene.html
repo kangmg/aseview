@@ -6100,6 +6100,12 @@ if (typeof define === 'function' && define.amd) {
                                     id="polyhedron-opacity">
                             </div>
                         </div>
+                        <div class="control-group" id="polyhedron-exclude-group" style="display:none;">
+                            <div class="control-label" style="margin-bottom:4px;">
+                                <span>Exclude Elements</span>
+                            </div>
+                            <div id="polyhedron-element-chips" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+                        </div>
 
                         <!-- Ring Highlight (molecule) -->
                         <div class="control-group">
@@ -6348,6 +6354,7 @@ if (typeof define === 'function' && define.amd) {
             showAxis: true,
             showPolyhedron: false,
             polyhedronOpacity: 0.25,
+            polyhedronExcludeElements: [],
             showRings: false,
             ringOpacity: 0.30,
             showModeVector: false,
@@ -6767,7 +6774,62 @@ if (typeof define === 'function' && define.amd) {
         }
 
 
+        function updatePolyhedronElementChips() {
+            const container = document.getElementById('polyhedron-element-chips');
+            if (!container) return;
+            if (!molecularData || molecularData.length === 0) return;
+
+            const molecule = molecularData[currentFrame] || molecularData[0];
+            const rawSymbols = molecule.symbols || [];
+            const uniqueSymbols = [...new Set(rawSymbols)].sort();
+            const excluded = new Set(settings.polyhedronExcludeElements || []);
+
+            container.innerHTML = '';
+            uniqueSymbols.forEach(sym => {
+                const info = atomInfo[sym] || atomInfo['default'];
+                const hexColor = '#' + info.color.toString(16).padStart(6, '0');
+                const r = (info.color >> 16) & 0xff;
+                const g = (info.color >> 8) & 0xff;
+                const b = info.color & 0xff;
+                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                const textColor = luminance > 0.55 ? '#111827' : '#ffffff';
+                const isExcluded = excluded.has(sym);
+
+                const chip = document.createElement('button');
+                chip.textContent = sym;
+                chip.dataset.symbol = sym;
+                chip.style.cssText = `
+                    padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;
+                    cursor: pointer; border: 2px solid ${hexColor}; transition: all 0.15s;
+                    background: ${isExcluded ? 'transparent' : hexColor};
+                    color: ${isExcluded ? hexColor : textColor};
+                    opacity: ${isExcluded ? '0.5' : '1'};
+                `;
+
+                chip.addEventListener('click', () => {
+                    const s = chip.dataset.symbol;
+                    const excl = new Set(settings.polyhedronExcludeElements || []);
+                    if (excl.has(s)) {
+                        excl.delete(s);
+                        chip.style.background = hexColor;
+                        chip.style.color = textColor;
+                        chip.style.opacity = '1';
+                    } else {
+                        excl.add(s);
+                        chip.style.background = 'transparent';
+                        chip.style.color = hexColor;
+                        chip.style.opacity = '0.5';
+                    }
+                    settings.polyhedronExcludeElements = [...excl];
+                    renderMolecule();
+                });
+
+                container.appendChild(chip);
+            });
+        }
+
         function findRings(positions, symbols, adjacency) {
+
             const MIN_RING = 4;
             const MAX_RING = 8;
             const rings = [];
@@ -7002,7 +7064,9 @@ if (typeof define === 'function' && define.amd) {
 
             // ── Polyhedron (solid) ──────────────────────────────────────
             if (settings.showPolyhedron && typeof createPolyhedronFaces === 'function') {
+                const excludeSet = new Set(settings.polyhedronExcludeElements || []);
                 for (let i = 0; i < positions.length; i++) {
+                    if (excludeSet.has(symbols[i])) continue;
                     const neighbors = adjacency[i];
                     if (neighbors.length < 4) continue;
                     const neighborPositions = neighbors.map(ni => positions[ni]);
@@ -7551,8 +7615,11 @@ if (typeof define === 'function' && define.amd) {
 
             safeAddListener('show-polyhedron', 'change', function () {
                 settings.showPolyhedron = this.checked;
-                const group = document.getElementById('polyhedron-opacity-group');
-                if (group) group.style.display = this.checked ? 'block' : 'none';
+                const opacityGroup = document.getElementById('polyhedron-opacity-group');
+                if (opacityGroup) opacityGroup.style.display = this.checked ? 'block' : 'none';
+                const excludeGroup = document.getElementById('polyhedron-exclude-group');
+                if (excludeGroup) excludeGroup.style.display = this.checked ? 'block' : 'none';
+                if (this.checked) updatePolyhedronElementChips();
                 renderMolecule();
             });
 
