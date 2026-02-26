@@ -2,7 +2,13 @@
 aseview - A molecular viewer for ASE (Atomic Simulation Environment) data
 """
 
-__version__ = "0.0.1"
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("aseview")
+except PackageNotFoundError:
+    __version__ = "unknown"
+
 __author__ = "aseview"
 
 from .wrapper import MolecularViewer, NormalViewer, OverlayViewer, MolecularData
