@@ -2,7 +2,7 @@
 
 Molecular structure viewer for ASE (Atomic Simulation Environment).
 
-**Status: pre-alpha** &nbsp;·&nbsp; [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kangmg/aseview) &nbsp;·&nbsp; [📚 Documentation](https://kangmg.github.io/aseview)
+[![Docs](https://img.shields.io/badge/docs-online-blue)](https://kangmg.github.io/aseview) &nbsp;·&nbsp; [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kangmg/aseview)
 
 ## Installation
 
