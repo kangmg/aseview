@@ -702,6 +702,16 @@
                                     id="ring-opacity">
                             </div>
                         </div>
+                        <div class="control-group" id="ring-color-group" style="display:none;">
+                            <div class="control-label">
+                                <span>Ring Color</span>
+                                <button class="btn" id="ring-color-auto-btn" style="padding:2px 8px; font-size:11px;">Auto</button>
+                            </div>
+                            <div class="color-picker">
+                                <input type="color" value="#60a5fa" class="color-input" id="ring-color">
+                                <span class="color-value" id="ring-color-value">Auto</span>
+                            </div>
+                        </div>
 
                         <!-- Color By section - only visible when charges are present -->
                         <div class="control-group" id="color-by-section" style="display: none;">
@@ -1023,6 +1033,7 @@
             polyhedronPairs: [],          // [{center:'Si', neighbor:'O'}, ...]
             showRings: false,
             ringOpacity: 0.30,
+            ringColor: null,          // null = auto (dominant-atom color)
             colorBy: 'Element',  // 'Element' or 'Charge'
             normalizeCharges: false,
             showChargeLabels: false,
@@ -2259,7 +2270,9 @@
                     }
                     const dominantSym = Object.entries(symCount)
                         .sort((a, b) => b[1] - a[1])[0][0];
-                    const ringColor = (atomInfo[dominantSym] || atomInfo['default']).color;
+                    const ringColor = settings.ringColor !== null
+                        ? parseInt(settings.ringColor.replace('#', ''), 16)
+                        : (atomInfo[dominantSym] || atomInfo['default']).color;
 
                     const ringPositions = ring.map(idx => positions[idx]);
                     const face = createRingFace(ringPositions, ringColor, settings.ringOpacity);
@@ -2862,8 +2875,10 @@
 
             safeAddListener('show-rings', 'change', function () {
                 settings.showRings = this.checked;
-                const group = document.getElementById('ring-opacity-group');
-                if (group) group.style.display = this.checked ? 'block' : 'none';
+                const opacityGroup = document.getElementById('ring-opacity-group');
+                if (opacityGroup) opacityGroup.style.display = this.checked ? 'block' : 'none';
+                const colorGroup = document.getElementById('ring-color-group');
+                if (colorGroup) colorGroup.style.display = this.checked ? 'block' : 'none';
                 renderMolecule();
             });
 
@@ -2871,6 +2886,20 @@
                 settings.ringOpacity = parseFloat(this.value);
                 const val = document.getElementById('ring-opacity-value');
                 if (val) val.textContent = parseFloat(this.value).toFixed(2);
+                renderMolecule();
+            });
+
+            safeAddListener('ring-color', 'input', function () {
+                settings.ringColor = this.value;
+                const valueEl = document.getElementById('ring-color-value');
+                if (valueEl) valueEl.textContent = this.value;
+                renderMolecule();
+            });
+
+            safeAddListener('ring-color-auto-btn', 'click', function () {
+                settings.ringColor = null;
+                const valueEl = document.getElementById('ring-color-value');
+                if (valueEl) valueEl.textContent = 'Auto';
                 renderMolecule();
             });
 
