@@ -8,12 +8,13 @@ aseview is a powerful, browser-based molecular viewer that integrates seamlessly
 
 ## Features
 
-- **Multiple Viewer Types**: Standard molecular viewer, overlay comparison, and normal mode visualization
+- **Multiple Viewer Types**: Standard molecular viewer, overlay comparison, normal mode visualization, and interactive fragment selector
 - **Rich Styling**: Multiple visual styles including Cartoon, Neon, Glossy, Metallic, and more
 - **Trajectory Support**: Animate molecular dynamics trajectories with energy plot synchronization
 - **Normal Modes**: Visualize vibrational modes from ORCA Hessian files
 - **Polyhedron**: Render coordination polyhedra for solid-state structures (CN ≥ 4)
 - **Ring Highlight**: Fill aromatic and aliphatic rings with semi-transparent color
+- **Fragment Selector**: Synchronized 2D/3D atom picker — select fragments visually, copy indices to clipboard
 - **CLI & Python API**: Use from command line or Jupyter notebooks
 - **Export**: Save as PNG, GIF, or standalone HTML files
 
@@ -43,6 +44,7 @@ aseview is a powerful, browser-based molecular viewer that integrates seamlessly
 | **MolecularViewer** | Standard 3D molecular viewer with animation | Single structures, trajectories |
 | **OverlayViewer** | Overlay multiple structures for comparison | Comparing conformers, reaction paths |
 | **NormalViewer** | Vibrational mode visualization | Frequency analysis, IR/Raman |
+| **FragSelector** | Synchronized 2D/3D interactive atom selector | Fragment picking, QM/MM region assignment |
 
 ## Installation
 

@@ -51,6 +51,7 @@ nav:
     - MolecularViewer: api/molecular-viewer.md
     - OverlayViewer: api/overlay-viewer.md
     - NormalViewer: api/normal-viewer.md
+    - FragSelector: api/frag-selector.md
   - JavaScript Module: js-module.md
   - Examples:
     - Basic Visualization: examples/basic.md
@@ -59,6 +60,7 @@ nav:
     - Normal Modes: examples/normal-modes.md
     - Solid-State Structures: examples/solid-state.md
     - Polyhedron & Ring Highlight: examples/polyhedron-rings.md
+    - Fragment Selector: examples/frag-selector.md
   - File Formats: file-formats.md
 
 extra:
