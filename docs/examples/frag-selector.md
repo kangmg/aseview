@@ -5,6 +5,14 @@ Atoms selected in either panel are kept in sync; the resulting index lists can b
 
 ---
 
+## Live Demo
+
+<iframe src="../../assets/viewers/frag_selector_basic.html" width="100%" height="550" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+
+Click any atom in either panel to toggle its selection. The **Selected** and **Unselected** index lists in the sidebar update live. Hit **Copy** to paste indices into your next cell.
+
+---
+
 ## Basic Usage
 
 ```python
@@ -15,10 +23,6 @@ atoms = molecule('CH3OH')  # methanol
 viewer = FragSelector(atoms)
 viewer.show()
 ```
-
-Click any atom in the 2D (left) or 3D (right) panel to toggle its selection.
-The **Selected** and **Unselected** index lists in the sidebar update live.
-Hit **Copy** next to either list to paste the indices into your next cell.
 
 ---
 
@@ -33,8 +37,7 @@ viewer = FragSelector(ethanol)
 viewer.show()
 ```
 
-After selecting the hydroxyl group (O + H) in the viewer the sidebar shows,
-for example:
+After selecting the hydroxyl group (O + H) in the viewer the sidebar shows, for example:
 
 ```
 Selected   2  →  [2, 8]
@@ -44,7 +47,7 @@ Unselected 7  →  [0, 1, 3, 4, 5, 6, 7]
 Use those indices directly in your code:
 
 ```python
-oh_indices   = [2, 8]              # copied from "Selected"
+oh_indices    = [2, 8]                   # copied from "Selected"
 ethyl_indices = [0, 1, 3, 4, 5, 6, 7]  # copied from "Unselected"
 
 oh_group = ethanol[oh_indices]
@@ -61,6 +64,8 @@ print(ethyl.get_chemical_formula())      # C2H5
 Disconnected components automatically appear as separate islands in the 2D panel,
 making it easy to pick an entire sub-structure with a few clicks.
 
+<iframe src="../../assets/viewers/frag_selector_multifrag.html" width="100%" height="550" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+
 ```python
 from ase.build import molecule
 from aseview import FragSelector
@@ -75,7 +80,6 @@ viewer = FragSelector(system)
 viewer.show()
 ```
 
-The 2D panel shows the two water molecules side-by-side.
 Use **Select All** then click the atoms you *don't* want, or click each molecule's atoms individually.
 
 ```python
@@ -143,7 +147,7 @@ viewer.show()
 Select the reactive OH group; the sidebar gives:
 
 ```
-Selected   2  →  [1, 5]      ← QM region (O + H)
+Selected   2  →  [1, 5]       ← QM region (O + H)
 Unselected 4  →  [0, 2, 3, 4] ← MM region (C + 3H)
 ```
 
