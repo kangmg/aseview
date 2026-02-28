@@ -3008,7 +3008,8 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
         .mode-toolbar {
             position: absolute;
             top: 8px;
-            right: 8px;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 15;
             display: flex;
             gap: 2px;
@@ -3053,6 +3054,22 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
         #lewis-svg.mode-click,
         #lewis-svg.mode-rect,
         #lewis-svg.mode-lasso { cursor: crosshair; }
+
+        /* 3D selection overlay */
+        #sel-overlay-container-3d {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 4;
+            overflow: hidden;
+        }
+
+        /* 3D canvas cursor per mode */
+        #molecule-canvas-3d.mode-navigate { cursor: default; }
+        #molecule-canvas-3d.mode-click    { cursor: default; }
+        #molecule-canvas-3d.mode-rect,
+        #molecule-canvas-3d.mode-lasso   { cursor: crosshair; }
     </style>
 </head>
 
@@ -3167,6 +3184,35 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 </svg>
             </button>
 
+            <!-- Mode toolbar (shared: controls both 2D and 3D panels) -->
+            <div class="mode-toolbar" id="mode-toolbar">
+                <button class="mode-btn active" data-mode="navigate" title="Pan / Zoom (N)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M12 12v-2M12 12v2M12 12h-2M12 12h2"/>
+                    </svg>
+                    Nav
+                </button>
+                <button class="mode-btn" data-mode="click" title="Click atoms to toggle (C)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M15 15l5 5M10 17A7 7 0 1010 3a7 7 0 000 14z"/>
+                    </svg>
+                    Click
+                </button>
+                <button class="mode-btn" data-mode="rect" title="Rectangle selection (R)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <rect x="3" y="6" width="18" height="12" rx="1"/>
+                    </svg>
+                    Rect
+                </button>
+                <button class="mode-btn" data-mode="lasso" title="Lasso selection (L)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M4 12c0-4 3-7 8-7s8 3 8 7-3 6-8 6c-3 0-5-1-6-2" stroke-linecap="round"/>
+                        <path d="M2 17l2-1" stroke-linecap="round"/>
+                    </svg>
+                    Lasso
+                </button>
+            </div>
+
             <!-- 2D panel -->
             <div class="viewer-panel" id="panel-2d">
                 <div class="panel-label">2D Structure</div>
@@ -3194,35 +3240,6 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                     </svg>
                 </div>
 
-                <!-- Mode toolbar -->
-                <div class="mode-toolbar" id="mode-toolbar">
-                    <button class="mode-btn active" data-mode="navigate" title="Pan / Zoom (N)">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M12 12v-2M12 12v2M12 12h-2M12 12h2"/>
-                        </svg>
-                        Nav
-                    </button>
-                    <button class="mode-btn" data-mode="click" title="Click atoms to toggle (C)">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <path d="M15 15l5 5M10 17A7 7 0 1010 3a7 7 0 000 14z"/>
-                        </svg>
-                        Click
-                    </button>
-                    <button class="mode-btn" data-mode="rect" title="Rectangle selection (R)">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <rect x="3" y="6" width="18" height="12" rx="1"/>
-                        </svg>
-                        Rect
-                    </button>
-                    <button class="mode-btn" data-mode="lasso" title="Lasso selection (L)">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <path d="M4 12c0-4 3-7 8-7s8 3 8 7-3 6-8 6c-3 0-5-1-6-2" stroke-linecap="round"/>
-                            <path d="M2 17l2-1" stroke-linecap="round"/>
-                        </svg>
-                        Lasso
-                    </button>
-                </div>
-
                 <div class="help-hint" id="hint-2d">scroll: zoom · drag: pan · dbl-click: fit</div>
             </div>
 
@@ -3233,7 +3250,25 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             <div class="viewer-panel" id="panel-3d">
                 <div class="panel-label">3D Structure</div>
                 <canvas id="molecule-canvas-3d"></canvas>
-                <div class="help-hint">drag: rotate · right-drag: pan · scroll: zoom</div>
+
+                <!-- Selection shape overlay (screen-space, on top of 3D canvas) -->
+                <div id="sel-overlay-container-3d">
+                    <svg id="sel-overlay-svg-3d" width="100%" height="100%">
+                        <rect id="sel-rect-3d"
+                            fill="rgba(234,179,8,0.12)" stroke="#eab308"
+                            stroke-width="1.5" stroke-dasharray="5,3" rx="1"
+                            display="none"/>
+                        <polyline id="sel-lasso-line-3d"
+                            fill="none" stroke="#eab308"
+                            stroke-width="1.5" stroke-dasharray="5,3" stroke-linejoin="round"
+                            display="none"/>
+                        <polygon id="sel-lasso-poly-3d"
+                            fill="rgba(234,179,8,0.10)" stroke="none"
+                            display="none"/>
+                    </svg>
+                </div>
+
+                <div class="help-hint" id="hint-3d">drag: rotate · right-drag: pan · scroll: zoom</div>
             </div>
         </div>
     </div>
@@ -3245,7 +3280,7 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
         // ─────────────────────────────────────────────────────────────────────
         // Injected data & settings
         // ─────────────────────────────────────────────────────────────────────
-        const _allMolData = [{"positions": [[0.094735903874837, -1.805847249479752, 0.605199821484423], [-0.102581435280022, -0.442710963320601, 0.452102665308444], [-0.387551563706657, 0.309584672883226, 1.587279137642], [-0.489636588842566, -0.339462704146416, 2.846215127789949], [-0.351686432423426, -1.714020033009223, 2.970238312132616], [-0.038323375362947, -2.444849400451126, 1.837929850867226], [-0.687840932794691, 0.603234354839872, 3.828814763617308], [-0.723442220796119, 1.856907725849926, 3.247228262066413], [-0.540505071319117, 1.720118238898628, 1.845583136696542], [-0.487590267388405, 2.862709026145825, 1.053214150064582], [-0.62774540074274, 4.106385610482424, 1.648926818713636], [-0.821798371949589, 4.22159446411279, 3.028560901564668], [-0.867464666000057, 3.101541310641128, 3.842639290657146], [-0.704361269757747, 0.306069208366979, 5.239011430524092], [-0.028968857565419, 0.029452815485953, -0.517706909478166], [-0.442243427963381, -2.205341330200412, 3.929020342394827], [0.130159628834335, -3.508174343046958, 1.918243674145048], [-0.335918496260278, 2.782981734931808, -0.015759453711383], [-0.930499708159737, 5.203740031432489, 3.469578041090847], [-0.976252988034524, 3.203105369673251, 4.912379197793596], [0.003915167055169, -0.491820697161114, 5.447047190178417], [-0.387546032786819, 1.179519193956142, 5.800355328706298], [0.715052550115774, -2.970075927854806, -1.053998818163489], [-1.69593236710169, -0.003090730412179, 5.573434513119036], [-0.590229143210261, 4.999105389370452, 1.041675080903488], [2.523674760309767, 2.576100503978004, 5.585156046736106], [2.680477785102051, 1.202211614648494, 5.521688448926096], [2.897198808001633, 0.600636599162893, 4.286059015576883], [2.954250077217493, 1.410827311329905, 3.122858644574054], [2.810942262040685, 2.788073285324039, 3.187581622894563], [2.591582373201265, 3.358557034504519, 4.429562232747635], [3.138777556064468, 0.602232527486788, 2.018832796912889], [3.209910179297256, -0.711176695638277, 2.432715913892371], [3.051726008885063, -0.762267091189214, 3.843473653569055], [3.001395650800613, -1.994908840469882, 4.485395419492305], [3.128864199751103, -3.141704974351735, 3.718161239678171], [3.306904019561383, -3.087861587853011, 2.332909601827587], [3.363897054196709, -1.868883143281974, 1.681567237426196], [3.167781240375419, 1.065724118625897, 0.654783219837369], [2.636790644143698, 0.599810304696614, 6.419896019113042], [2.840885079979461, 3.394253595892844, 2.29405994434047], [2.456514158436473, 4.428834118657502, 4.504887418179544], [2.846880072484565, -2.052694596812299, 5.553460914107443], [3.379542569820902, -3.999427751718397, 1.758178824400425], [3.496646825064732, -1.833276932063732, 0.60993775514348], [4.156925568926029, 1.437541999878249, 0.380972791650492], [2.893004264333124, 0.254512422396928, -0.012880450612614], [2.436845967355752, 1.860248141934333, 0.523199154402949], [3.017099688589606, -5.039483426210164, 4.647926832020013], [2.358749075590522, 3.052246649429933, 6.541118902668068]], "symbols": ["C", "C", "C", "C", "C", "C", "N", "C", "C", "C", "C", "C", "C", "H", "H", "H", "H", "H", "H", "H", "H", "H", "I", "H", "H", "C", "C", "C", "C", "C", "C", "N", "C", "C", "C", "C", "C", "C", "H", "H", "H", "H", "H", "H", "H", "H", "H", "I", "H", "H"]}];
+        const _allMolData = [{"positions": [[0.094735903874837, -1.805847249479752, 0.605199821484423], [-0.102581435280022, -0.442710963320601, 0.452102665308444], [-0.387551563706657, 0.309584672883226, 1.587279137642], [-0.489636588842566, -0.339462704146416, 2.846215127789949], [-0.351686432423426, -1.714020033009223, 2.970238312132616], [-0.038323375362947, -2.444849400451126, 1.837929850867226], [-0.687840932794691, 0.603234354839872, 3.828814763617308], [-0.723442220796119, 1.856907725849926, 3.247228262066413], [-0.540505071319117, 1.720118238898628, 1.845583136696542], [-0.487590267388405, 2.862709026145825, 1.053214150064582], [-0.62774540074274, 4.106385610482424, 1.648926818713636], [-0.821798371949589, 4.22159446411279, 3.028560901564668], [-0.867464666000057, 3.101541310641128, 3.842639290657146], [-0.704361269757747, 0.306069208366979, 5.239011430524092], [-0.028968857565419, 0.029452815485953, -0.517706909478166], [-0.442243427963381, -2.205341330200412, 3.929020342394827], [0.130159628834335, -3.508174343046958, 1.918243674145048], [-0.335918496260278, 2.782981734931808, -0.015759453711383], [-0.930499708159737, 5.203740031432489, 3.469578041090847], [-0.976252988034524, 3.203105369673251, 4.912379197793596], [0.003915167055169, -0.491820697161114, 5.447047190178417], [-0.387546032786819, 1.179519193956142, 5.800355328706298], [0.715052550115774, -2.970075927854806, -1.053998818163489], [-1.69593236710169, -0.003090730412179, 5.573434513119036], [-0.590229143210261, 4.999105389370452, 1.041675080903488], [2.523674760309767, 2.576100503978004, 5.585156046736106], [2.680477785102051, 1.202211614648494, 5.521688448926096], [2.897198808001633, 0.600636599162893, 4.286059015576883], [2.954250077217493, 1.410827311329905, 3.122858644574054], [2.810942262040685, 2.788073285324039, 3.187581622894563], [2.591582373201265, 3.358557034504519, 4.429562232747635], [3.138777556064468, 0.602232527486788, 2.018832796912889], [3.209910179297256, -0.711176695638277, 2.432715913892371], [3.051726008885063, -0.762267091189214, 3.843473653569055], [3.001395650800613, -1.994908840469882, 4.485395419492305], [3.128864199751103, -3.141704974351735, 3.718161239678171], [3.306904019561383, -3.087861587853011, 2.332909601827587], [3.363897054196709, -1.868883143281974, 1.681567237426196], [3.167781240375419, 1.065724118625897, 0.654783219837369], [2.636790644143698, 0.599810304696614, 6.419896019113042], [2.840885079979461, 3.394253595892844, 2.29405994434047], [2.456514158436473, 4.428834118657502, 4.504887418179544], [2.846880072484565, -2.052694596812299, 5.553460914107443], [3.379542569820902, -3.999427751718397, 1.758178824400425], [3.496646825064732, -1.833276932063732, 0.60993775514348], [4.156925568926029, 1.437541999878249, 0.380972791650492], [2.893004264333124, 0.254512422396928, -0.012880450612614], [2.436845967355752, 1.860248141934333, 0.523199154402949], [3.017099688589606, -5.039483426210164, 4.647926832020013], [2.358749075590522, 3.052246649429933, 6.541118902668068]], "symbols": ["C", "C", "C", "C", "C", "C", "N", "C", "C", "C", "C", "C", "C", "C", "H", "H", "H", "H", "H", "H", "H", "H", "I", "H", "H", "C", "C", "C", "C", "C", "C", "N", "C", "C", "C", "C", "C", "C", "C", "H", "H", "H", "H", "H", "H", "H", "H", "H", "I", "H"]}];
         const molData = Array.isArray(_allMolData) ? _allMolData[0] : _allMolData;
 
         const fragSettings = {"bondThreshold": 1.2, "atomSize": 0.4, "style": "cartoon", "showBond": true, "showShading": true, "backgroundColor": "#1f2937"};
@@ -3663,9 +3698,16 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
         // ── Mode system ──────────────────────────────────────────────────────
         // ═════════════════════════════════════════════════════════════════════
 
-        const MODE_HINTS = {
+        const MODE_HINTS_2D = {
             navigate: 'scroll: zoom · drag: pan · dbl-click: fit',
             click:    'click atom: toggle · shift+click: add · scroll: zoom',
+            rect:     'drag: rect select · shift: add to selection · scroll: zoom',
+            lasso:    'drag: lasso select · shift: add to selection · scroll: zoom',
+        };
+
+        const MODE_HINTS_3D = {
+            navigate: 'drag: rotate · right-drag: pan · scroll: zoom',
+            click:    'click atom: toggle · drag: rotate · scroll: zoom',
             rect:     'drag: rect select · shift: add to selection · scroll: zoom',
             lasso:    'drag: lasso select · shift: add to selection · scroll: zoom',
         };
@@ -3675,13 +3717,32 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             document.querySelectorAll('.mode-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.mode === mode);
             });
+
+            // 2D SVG cursor class
             const svg = document.getElementById('lewis-svg');
-            if (svg) {
-                svg.className = 'mode-' + mode;
+            if (svg) svg.className = 'mode-' + mode;
+
+            // 2D hint
+            const hint2d = document.getElementById('hint-2d');
+            if (hint2d) hint2d.textContent = MODE_HINTS_2D[mode] || '';
+
+            // 3D canvas cursor class
+            const canvas3d = document.getElementById('molecule-canvas-3d');
+            if (canvas3d) canvas3d.className = 'mode-' + mode;
+
+            // 3D controls: disable rotation/pan in rect/lasso modes
+            if (controls3D) {
+                const selMode = (mode === 'rect' || mode === 'lasso');
+                controls3D.noRotate = selMode;
+                controls3D.noPan    = selMode;
             }
-            const hint = document.getElementById('hint-2d');
-            if (hint) hint.textContent = MODE_HINTS[mode] || '';
+
+            // 3D hint
+            const hint3d = document.getElementById('hint-3d');
+            if (hint3d) hint3d.textContent = MODE_HINTS_3D[mode] || '';
+
             hideSelOverlay();
+            hide3DSelOverlay();
         }
 
         // ═════════════════════════════════════════════════════════════════════
@@ -3773,6 +3834,94 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             document.getElementById('sel-rect')?.setAttribute('display', 'none');
             document.getElementById('sel-lasso-line')?.setAttribute('display', 'none');
             document.getElementById('sel-lasso-poly')?.setAttribute('display', 'none');
+        }
+
+        // ── 3D overlay shape renderers ────────────────────────────────────────
+
+        function update3DSelRectOverlay(x1, y1, x2, y2) {
+            const panel = document.getElementById('panel-3d');
+            const r     = panel ? panel.getBoundingClientRect() : { left: 0, top: 0 };
+            const rx    = Math.min(x1, x2) - r.left;
+            const ry    = Math.min(y1, y2) - r.top;
+            const rw    = Math.abs(x2 - x1);
+            const rh    = Math.abs(y2 - y1);
+
+            const el = document.getElementById('sel-rect-3d');
+            if (el) {
+                el.setAttribute('x', rx);
+                el.setAttribute('y', ry);
+                el.setAttribute('width', rw);
+                el.setAttribute('height', rh);
+                el.removeAttribute('display');
+            }
+            document.getElementById('sel-lasso-line-3d')?.setAttribute('display', 'none');
+            document.getElementById('sel-lasso-poly-3d')?.setAttribute('display', 'none');
+        }
+
+        function update3DLassoOverlay(clientPts) {
+            const panel  = document.getElementById('panel-3d');
+            const r      = panel ? panel.getBoundingClientRect() : { left: 0, top: 0 };
+            const ptsStr = clientPts.map(([cx, cy]) => `${cx - r.left},${cy - r.top}`).join(' ');
+
+            document.getElementById('sel-rect-3d')?.setAttribute('display', 'none');
+            const line = document.getElementById('sel-lasso-line-3d');
+            if (line) { line.setAttribute('points', ptsStr); line.removeAttribute('display'); }
+            const poly = document.getElementById('sel-lasso-poly-3d');
+            if (poly) { poly.setAttribute('points', ptsStr); poly.removeAttribute('display'); }
+        }
+
+        function hide3DSelOverlay() {
+            document.getElementById('sel-rect-3d')?.setAttribute('display', 'none');
+            document.getElementById('sel-lasso-line-3d')?.setAttribute('display', 'none');
+            document.getElementById('sel-lasso-poly-3d')?.setAttribute('display', 'none');
+        }
+
+        /** Project atom 3D positions to canvas-local pixel coordinates.
+         *  Returns array of [px, py] for each atom (may be behind camera). */
+        function projectAtoms3D() {
+            if (!camera3D || !renderer3D) return [];
+            const canvas = renderer3D.domElement;
+            const w = canvas.clientWidth  || canvas.width;
+            const h = canvas.clientHeight || canvas.height;
+            return cachedPos3D.map(pos3d => {
+                const v = pos3d.clone().project(camera3D);
+                const px = ( v.x + 1) / 2 * w;
+                const py = (-v.y + 1) / 2 * h;
+                return [px, py, v.z];  // z > 1 means behind camera
+            });
+        }
+
+        /** Apply area selection in 3D using screen-space client coordinates.
+         *  mode: 'rect' | 'lasso'
+         *  clientPts: for rect – [[x1,y1],[x2,y2]]; for lasso – polygon vertices in client coords */
+        function applyArea3DSelection(mode, clientPts, additive) {
+            if (!renderer3D) return;
+            if (!additive) selectedAtoms.clear();
+
+            const canvas = renderer3D.domElement;
+            const canvasRect = canvas.getBoundingClientRect();
+
+            // Convert client coords to canvas-local pixel coords
+            const localPts = clientPts.map(([cx, cy]) => [
+                cx - canvasRect.left,
+                cy - canvasRect.top,
+            ]);
+
+            const projected = projectAtoms3D();
+            projected.forEach(([px, py, pz], i) => {
+                if (pz > 1) return;  // behind camera — skip
+                if (mode === 'rect') {
+                    const xs   = localPts.map(p => p[0]);
+                    const ys   = localPts.map(p => p[1]);
+                    const minX = Math.min(...xs), maxX = Math.max(...xs);
+                    const minY = Math.min(...ys), maxY = Math.max(...ys);
+                    if (px >= minX && px <= maxX && py >= minY && py <= maxY)
+                        selectedAtoms.add(i);
+                } else {
+                    if (pointInPolygon(px, py, localPts)) selectedAtoms.add(i);
+                }
+            });
+            updateSelectionVisuals();
         }
 
         // ═════════════════════════════════════════════════════════════════════
@@ -3939,12 +4088,64 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             handle3DResize();
             animate3D();
 
-            // Atom picking: fire on click (mouse didn't move between down/up)
+            // ── Mode-aware 3D interaction ─────────────────────────────────────
             let md3 = null;
+            let sel3DDragging   = false;
+            let sel3DStartX     = 0, sel3DStartY = 0;
+            let lasso3DClientPts = [];
+
             renderer3D.domElement.addEventListener('mousedown', e => {
+                if (e.button !== 0) return;
                 md3 = { x: e.clientX, y: e.clientY };
+
+                if (currentMode === 'rect') {
+                    sel3DDragging = true;
+                    sel3DStartX   = e.clientX;
+                    sel3DStartY   = e.clientY;
+                    update3DSelRectOverlay(sel3DStartX, sel3DStartY, sel3DStartX, sel3DStartY);
+                } else if (currentMode === 'lasso') {
+                    sel3DDragging    = true;
+                    lasso3DClientPts = [[e.clientX, e.clientY]];
+                    update3DLassoOverlay(lasso3DClientPts);
+                }
             });
+
+            window.addEventListener('mousemove', e => {
+                if (sel3DDragging && currentMode === 'rect') {
+                    update3DSelRectOverlay(sel3DStartX, sel3DStartY, e.clientX, e.clientY);
+                } else if (sel3DDragging && currentMode === 'lasso') {
+                    lasso3DClientPts.push([e.clientX, e.clientY]);
+                    if (lasso3DClientPts.length % 3 === 0)
+                        update3DLassoOverlay(lasso3DClientPts);
+                }
+            });
+
+            window.addEventListener('mouseup', e => {
+                if (!sel3DDragging) return;
+                sel3DDragging = false;
+                const additive = e.shiftKey;
+
+                if (currentMode === 'rect') {
+                    const dx = e.clientX - sel3DStartX;
+                    const dy = e.clientY - sel3DStartY;
+                    if (Math.hypot(dx, dy) > 4) {
+                        applyArea3DSelection('rect',
+                            [[sel3DStartX, sel3DStartY], [e.clientX, e.clientY]],
+                            additive);
+                    }
+                } else if (currentMode === 'lasso') {
+                    if (lasso3DClientPts.length > 4) {
+                        applyArea3DSelection('lasso', lasso3DClientPts, additive);
+                    }
+                    lasso3DClientPts = [];
+                }
+                hide3DSelOverlay();
+                md3 = null;
+            });
+
+            // Atom picking (click mode only — navigate has no picking)
             renderer3D.domElement.addEventListener('mouseup', e => {
+                if (currentMode !== 'click') { md3 = null; return; }
                 if (!md3) return;
                 if (Math.hypot(e.clientX - md3.x, e.clientY - md3.y) < 5) {
                     const rect  = renderer3D.domElement.getBoundingClientRect();

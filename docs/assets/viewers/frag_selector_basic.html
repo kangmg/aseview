@@ -2965,8 +2965,6 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             -webkit-user-select: none;
         }
 
-        #lewis-svg:active { cursor: grabbing; }
-
         /* ── 3D canvas ── */
         #molecule-canvas-3d {
             width: 100%;
@@ -3005,6 +3003,73 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             line-height: 1.5;
             text-align: right;
         }
+
+        /* ── Mode toolbar ── */
+        .mode-toolbar {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            display: flex;
+            gap: 2px;
+            background: rgba(17, 24, 39, 0.90);
+            padding: 3px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .mode-btn {
+            background: none;
+            border: none;
+            border-radius: 4px;
+            color: #9ca3af;
+            padding: 4px 9px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background-color 0.15s, color 0.15s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            letter-spacing: 0.02em;
+        }
+
+        .mode-btn:hover { background: rgba(255,255,255,0.08); color: #f9fafb; }
+        .mode-btn.active { background: #374151; color: #f9fafb; }
+
+        /* ── Selection overlay ── */
+        #sel-overlay-container {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 4;
+            overflow: hidden;
+        }
+
+        /* Navigate mode: cursor for SVG */
+        #lewis-svg.mode-navigate { cursor: grab; }
+        #lewis-svg.mode-navigate.panning { cursor: grabbing; }
+        #lewis-svg.mode-click,
+        #lewis-svg.mode-rect,
+        #lewis-svg.mode-lasso { cursor: crosshair; }
+
+        /* 3D selection overlay */
+        #sel-overlay-container-3d {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 4;
+            overflow: hidden;
+        }
+
+        /* 3D canvas cursor per mode */
+        #molecule-canvas-3d.mode-navigate { cursor: default; }
+        #molecule-canvas-3d.mode-click    { cursor: default; }
+        #molecule-canvas-3d.mode-rect,
+        #molecule-canvas-3d.mode-lasso   { cursor: crosshair; }
     </style>
 </head>
 
@@ -3119,16 +3184,63 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 </svg>
             </button>
 
+            <!-- Mode toolbar (shared: controls both 2D and 3D panels) -->
+            <div class="mode-toolbar" id="mode-toolbar">
+                <button class="mode-btn active" data-mode="navigate" title="Pan / Zoom (N)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M12 12v-2M12 12v2M12 12h-2M12 12h2"/>
+                    </svg>
+                    Nav
+                </button>
+                <button class="mode-btn" data-mode="click" title="Click atoms to toggle (C)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M15 15l5 5M10 17A7 7 0 1010 3a7 7 0 000 14z"/>
+                    </svg>
+                    Click
+                </button>
+                <button class="mode-btn" data-mode="rect" title="Rectangle selection (R)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <rect x="3" y="6" width="18" height="12" rx="1"/>
+                    </svg>
+                    Rect
+                </button>
+                <button class="mode-btn" data-mode="lasso" title="Lasso selection (L)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M4 12c0-4 3-7 8-7s8 3 8 7-3 6-8 6c-3 0-5-1-6-2" stroke-linecap="round"/>
+                        <path d="M2 17l2-1" stroke-linecap="round"/>
+                    </svg>
+                    Lasso
+                </button>
+            </div>
+
             <!-- 2D panel -->
             <div class="viewer-panel" id="panel-2d">
                 <div class="panel-label">2D Structure</div>
-                <svg id="lewis-svg" xmlns="http://www.w3.org/2000/svg">
+                <svg id="lewis-svg" xmlns="http://www.w3.org/2000/svg" class="mode-navigate" style="overflow:visible;">
                     <g id="svg-content">
                         <g id="bonds-layer"></g>
                         <g id="atoms-layer"></g>
                     </g>
                 </svg>
-                <div class="help-hint">scroll: zoom · drag: pan · dbl-click: fit</div>
+
+                <!-- Selection shape overlay (screen-space, on top of SVG) -->
+                <div id="sel-overlay-container">
+                    <svg id="sel-overlay-svg" width="100%" height="100%">
+                        <rect id="sel-rect"
+                            fill="rgba(234,179,8,0.12)" stroke="#eab308"
+                            stroke-width="1.5" stroke-dasharray="5,3" rx="1"
+                            display="none"/>
+                        <polyline id="sel-lasso-line"
+                            fill="none" stroke="#eab308"
+                            stroke-width="1.5" stroke-dasharray="5,3" stroke-linejoin="round"
+                            display="none"/>
+                        <polygon id="sel-lasso-poly"
+                            fill="rgba(234,179,8,0.10)" stroke="none"
+                            display="none"/>
+                    </svg>
+                </div>
+
+                <div class="help-hint" id="hint-2d">scroll: zoom · drag: pan · dbl-click: fit</div>
             </div>
 
             <!-- Splitter -->
@@ -3138,7 +3250,25 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             <div class="viewer-panel" id="panel-3d">
                 <div class="panel-label">3D Structure</div>
                 <canvas id="molecule-canvas-3d"></canvas>
-                <div class="help-hint">drag: rotate · right-drag: pan · scroll: zoom</div>
+
+                <!-- Selection shape overlay (screen-space, on top of 3D canvas) -->
+                <div id="sel-overlay-container-3d">
+                    <svg id="sel-overlay-svg-3d" width="100%" height="100%">
+                        <rect id="sel-rect-3d"
+                            fill="rgba(234,179,8,0.12)" stroke="#eab308"
+                            stroke-width="1.5" stroke-dasharray="5,3" rx="1"
+                            display="none"/>
+                        <polyline id="sel-lasso-line-3d"
+                            fill="none" stroke="#eab308"
+                            stroke-width="1.5" stroke-dasharray="5,3" stroke-linejoin="round"
+                            display="none"/>
+                        <polygon id="sel-lasso-poly-3d"
+                            fill="rgba(234,179,8,0.10)" stroke="none"
+                            display="none"/>
+                    </svg>
+                </div>
+
+                <div class="help-hint" id="hint-3d">drag: rotate · right-drag: pan · scroll: zoom</div>
             </div>
         </div>
     </div>
@@ -3150,7 +3280,7 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
         // ─────────────────────────────────────────────────────────────────────
         // Injected data & settings
         // ─────────────────────────────────────────────────────────────────────
-        const _allMolData = [{"positions": [[1.168181, -0.400382, 0.0], [0.0, 0.559462, 0.0], [-1.190083, -0.227669, 0.0], [-1.946623, 0.381525, 0.0], [0.042557, 1.207508, 0.886933], [0.042557, 1.207508, -0.886933], [2.115891, 0.1448, 0.0], [1.128599, -1.037234, 0.885881], [1.128599, -1.037234, -0.885881]], "symbols": ["C", "C", "O", "H", "H", "H", "H", "H", "H"]}];
+        const _allMolData = [{"positions": [[-0.047131, 0.664389, 0.0], [-0.047131, -0.758551, 0.0], [-1.092995, 0.969785, 0.0], [0.878534, -1.048458, 0.0], [0.437145, 1.080376, 0.891772], [0.437145, 1.080376, -0.891772]], "symbols": ["C", "O", "H", "H", "H", "H"]}];
         const molData = Array.isArray(_allMolData) ? _allMolData[0] : _allMolData;
 
         const fragSettings = {"bondThreshold": 1.2, "atomSize": 0.4, "style": "cartoon", "showBond": true, "showShading": true, "backgroundColor": "#1f2937"};
@@ -3179,6 +3309,11 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             'neon':     (p1, p2, s1, s2, r, as)          => createBondStyleNeon(p1, p2, s1, s2, r, as),
             'grey':     (p1, p2, s1, s2, r, as, helpers) => createBondStyleGrey(p1, p2, s1, s2, r, as, helpers.greyColorMap),
         };
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Interaction mode  ('navigate' | 'click' | 'rect' | 'lasso')
+        // ─────────────────────────────────────────────────────────────────────
+        let currentMode = 'navigate';
 
         // ─────────────────────────────────────────────────────────────────────
         // Selection state
@@ -3353,8 +3488,23 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 } else if (comp.length === 2) {
                     local2d = [[-0.75, 0], [0.75, 0]];
                 } else {
-                    local2d = fruchtermanReingold(pca3Dto2D(pts3d), localBonds);
+                    // Project to 2D with PCA, then normalise to unit scale before FR
+                    const pca2d = pca3Dto2D(pts3d);
+                    const allX  = pca2d.map(p => p[0]), allY = pca2d.map(p => p[1]);
+                    const span  = Math.max(
+                        Math.max(...allX) - Math.min(...allX),
+                        Math.max(...allY) - Math.min(...allY),
+                        1e-9,
+                    );
+                    const scaled = pca2d.map(p => [p[0] / span, p[1] / span]);
+                    local2d = fruchtermanReingold(scaled, localBonds);
                 }
+
+                // Centre this component's Y around 0
+                const ys = local2d.map(p => p[1]);
+                const cY = (Math.min(...ys) + Math.max(...ys)) / 2;
+                local2d  = local2d.map(p => [p[0], p[1] - cY]);
+
                 comp.forEach((gi, li) => { coords2d[gi] = local2d[li]; });
             }
 
@@ -3473,13 +3623,13 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 grp.setAttribute('data-atom-idx', i);
                 grp.style.cursor = 'pointer';
 
-                // Selection ring (hidden by default)
+                // Selection ring (hidden by default) — yellow highlight
                 const ring = document.createElementNS(SVG_NS, 'circle');
                 ring.setAttribute('class', 'selection-ring');
                 ring.setAttribute('cx', cx); ring.setAttribute('cy', cy);
                 ring.setAttribute('r', SEL_R);
-                ring.setAttribute('fill', 'none');
-                ring.setAttribute('stroke', '#3b82f6');
+                ring.setAttribute('fill', 'rgba(234,179,8,0.20)');
+                ring.setAttribute('stroke', '#eab308');
                 ring.setAttribute('stroke-width', '0.15');
                 ring.setAttribute('display', 'none');
                 grp.appendChild(ring);
@@ -3508,9 +3658,16 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 txt.textContent = sym;
                 grp.appendChild(txt);
 
-                // ── Events ──
-                grp.addEventListener('mousedown', e => e.stopPropagation());
-                grp.addEventListener('click', e => { e.stopPropagation(); toggleAtom(i); });
+                // ── Events (mode-aware) ──
+                grp.addEventListener('mousedown', e => {
+                    // In navigate/click mode: stop propagation so SVG pan doesn't trigger.
+                    // In rect/lasso mode: let propagate so SVG sees mousedown for selection drag.
+                    if (currentMode === 'navigate' || currentMode === 'click') e.stopPropagation();
+                });
+                grp.addEventListener('click', e => {
+                    e.stopPropagation();
+                    if (currentMode === 'click') toggleAtom(i);
+                });
                 grp.addEventListener('mouseenter', e => {
                     const tip = document.getElementById('atom-tooltip');
                     if (tip) { tip.style.display = 'block'; tip.textContent = `${sym} #${i}`; }
@@ -3537,28 +3694,254 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             });
         }
 
-        /** Initialise SVG pan/zoom interaction. */
+        // ═════════════════════════════════════════════════════════════════════
+        // ── Mode system ──────────────────────────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
+        const MODE_HINTS_2D = {
+            navigate: 'scroll: zoom · drag: pan · dbl-click: fit',
+            click:    'click atom: toggle · shift+click: add · scroll: zoom',
+            rect:     'drag: rect select · shift: add to selection · scroll: zoom',
+            lasso:    'drag: lasso select · shift: add to selection · scroll: zoom',
+        };
+
+        const MODE_HINTS_3D = {
+            navigate: 'drag: rotate · right-drag: pan · scroll: zoom',
+            click:    'click atom: toggle · drag: rotate · scroll: zoom',
+            rect:     'drag: rect select · shift: add to selection · scroll: zoom',
+            lasso:    'drag: lasso select · shift: add to selection · scroll: zoom',
+        };
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+
+            // 2D SVG cursor class
+            const svg = document.getElementById('lewis-svg');
+            if (svg) svg.className = 'mode-' + mode;
+
+            // 2D hint
+            const hint2d = document.getElementById('hint-2d');
+            if (hint2d) hint2d.textContent = MODE_HINTS_2D[mode] || '';
+
+            // 3D canvas cursor class
+            const canvas3d = document.getElementById('molecule-canvas-3d');
+            if (canvas3d) canvas3d.className = 'mode-' + mode;
+
+            // 3D controls: disable rotation/pan in rect/lasso modes
+            if (controls3D) {
+                const selMode = (mode === 'rect' || mode === 'lasso');
+                controls3D.noRotate = selMode;
+                controls3D.noPan    = selMode;
+            }
+
+            // 3D hint
+            const hint3d = document.getElementById('hint-3d');
+            if (hint3d) hint3d.textContent = MODE_HINTS_3D[mode] || '';
+
+            hideSelOverlay();
+            hide3DSelOverlay();
+        }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // ── 2D selection helpers ─────────────────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
+        /** Convert client coordinates to layout (SVG content) coordinates. */
+        function svgToLayout(clientX, clientY) {
+            const svg  = document.getElementById('lewis-svg');
+            const rect = svg.getBoundingClientRect();
+            const px   = clientX - rect.left;
+            const py   = clientY - rect.top;
+            return [(px - svgTx) / svgScale, (py - svgTy) / svgScale];
+        }
+
+        /** Ray-casting point-in-polygon test (layout coordinates). */
+        function pointInPolygon(px, py, pts) {
+            let inside = false;
+            for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+                const xi = pts[i][0], yi = pts[i][1];
+                const xj = pts[j][0], yj = pts[j][1];
+                if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi)
+                    inside = !inside;
+            }
+            return inside;
+        }
+
+        /** Apply area selection from layout-space points.
+         *  mode: 'rect' — pts is [[minCorner], [maxCorner]]
+         *  mode: 'lasso' — pts is the polygon vertices
+         *  additive: if true, add to existing selection; else replace. */
+        function applyAreaSelection(mode, layoutPts, additive) {
+            if (!layout2D) return;
+            if (!additive) selectedAtoms.clear();
+
+            if (mode === 'rect') {
+                const xs   = layoutPts.map(p => p[0]);
+                const ys   = layoutPts.map(p => p[1]);
+                const minX = Math.min(...xs), maxX = Math.max(...xs);
+                const minY = Math.min(...ys), maxY = Math.max(...ys);
+                layout2D.coords2d.forEach(([ax, ay], i) => {
+                    if (ax >= minX && ax <= maxX && ay >= minY && ay <= maxY)
+                        selectedAtoms.add(i);
+                });
+            } else {
+                // lasso
+                layout2D.coords2d.forEach(([ax, ay], i) => {
+                    if (pointInPolygon(ax, ay, layoutPts)) selectedAtoms.add(i);
+                });
+            }
+            updateSelectionVisuals();
+        }
+
+        // ── Overlay shape renderers ──────────────────────────────────────────
+
+        function updateSelRectOverlay(x1, y1, x2, y2) {
+            const panel = document.getElementById('panel-2d');
+            const r     = panel ? panel.getBoundingClientRect() : { left: 0, top: 0 };
+            const rx    = Math.min(x1, x2) - r.left;
+            const ry    = Math.min(y1, y2) - r.top;
+            const rw    = Math.abs(x2 - x1);
+            const rh    = Math.abs(y2 - y1);
+
+            const el = document.getElementById('sel-rect');
+            if (el) {
+                el.setAttribute('x', rx);
+                el.setAttribute('y', ry);
+                el.setAttribute('width', rw);
+                el.setAttribute('height', rh);
+                el.removeAttribute('display');
+            }
+            document.getElementById('sel-lasso-line')?.setAttribute('display', 'none');
+            document.getElementById('sel-lasso-poly')?.setAttribute('display', 'none');
+        }
+
+        function updateLassoOverlay(clientPts) {
+            const panel  = document.getElementById('panel-2d');
+            const r      = panel ? panel.getBoundingClientRect() : { left: 0, top: 0 };
+            const ptsStr = clientPts.map(([cx, cy]) => `${cx - r.left},${cy - r.top}`).join(' ');
+
+            document.getElementById('sel-rect')?.setAttribute('display', 'none');
+            const line = document.getElementById('sel-lasso-line');
+            if (line) { line.setAttribute('points', ptsStr); line.removeAttribute('display'); }
+            const poly = document.getElementById('sel-lasso-poly');
+            if (poly) { poly.setAttribute('points', ptsStr); poly.removeAttribute('display'); }
+        }
+
+        function hideSelOverlay() {
+            document.getElementById('sel-rect')?.setAttribute('display', 'none');
+            document.getElementById('sel-lasso-line')?.setAttribute('display', 'none');
+            document.getElementById('sel-lasso-poly')?.setAttribute('display', 'none');
+        }
+
+        // ── 3D overlay shape renderers ────────────────────────────────────────
+
+        function update3DSelRectOverlay(x1, y1, x2, y2) {
+            const panel = document.getElementById('panel-3d');
+            const r     = panel ? panel.getBoundingClientRect() : { left: 0, top: 0 };
+            const rx    = Math.min(x1, x2) - r.left;
+            const ry    = Math.min(y1, y2) - r.top;
+            const rw    = Math.abs(x2 - x1);
+            const rh    = Math.abs(y2 - y1);
+
+            const el = document.getElementById('sel-rect-3d');
+            if (el) {
+                el.setAttribute('x', rx);
+                el.setAttribute('y', ry);
+                el.setAttribute('width', rw);
+                el.setAttribute('height', rh);
+                el.removeAttribute('display');
+            }
+            document.getElementById('sel-lasso-line-3d')?.setAttribute('display', 'none');
+            document.getElementById('sel-lasso-poly-3d')?.setAttribute('display', 'none');
+        }
+
+        function update3DLassoOverlay(clientPts) {
+            const panel  = document.getElementById('panel-3d');
+            const r      = panel ? panel.getBoundingClientRect() : { left: 0, top: 0 };
+            const ptsStr = clientPts.map(([cx, cy]) => `${cx - r.left},${cy - r.top}`).join(' ');
+
+            document.getElementById('sel-rect-3d')?.setAttribute('display', 'none');
+            const line = document.getElementById('sel-lasso-line-3d');
+            if (line) { line.setAttribute('points', ptsStr); line.removeAttribute('display'); }
+            const poly = document.getElementById('sel-lasso-poly-3d');
+            if (poly) { poly.setAttribute('points', ptsStr); poly.removeAttribute('display'); }
+        }
+
+        function hide3DSelOverlay() {
+            document.getElementById('sel-rect-3d')?.setAttribute('display', 'none');
+            document.getElementById('sel-lasso-line-3d')?.setAttribute('display', 'none');
+            document.getElementById('sel-lasso-poly-3d')?.setAttribute('display', 'none');
+        }
+
+        /** Project atom 3D positions to canvas-local pixel coordinates.
+         *  Returns array of [px, py] for each atom (may be behind camera). */
+        function projectAtoms3D() {
+            if (!camera3D || !renderer3D) return [];
+            const canvas = renderer3D.domElement;
+            const w = canvas.clientWidth  || canvas.width;
+            const h = canvas.clientHeight || canvas.height;
+            return cachedPos3D.map(pos3d => {
+                const v = pos3d.clone().project(camera3D);
+                const px = ( v.x + 1) / 2 * w;
+                const py = (-v.y + 1) / 2 * h;
+                return [px, py, v.z];  // z > 1 means behind camera
+            });
+        }
+
+        /** Apply area selection in 3D using screen-space client coordinates.
+         *  mode: 'rect' | 'lasso'
+         *  clientPts: for rect – [[x1,y1],[x2,y2]]; for lasso – polygon vertices in client coords */
+        function applyArea3DSelection(mode, clientPts, additive) {
+            if (!renderer3D) return;
+            if (!additive) selectedAtoms.clear();
+
+            const canvas = renderer3D.domElement;
+            const canvasRect = canvas.getBoundingClientRect();
+
+            // Convert client coords to canvas-local pixel coords
+            const localPts = clientPts.map(([cx, cy]) => [
+                cx - canvasRect.left,
+                cy - canvasRect.top,
+            ]);
+
+            const projected = projectAtoms3D();
+            projected.forEach(([px, py, pz], i) => {
+                if (pz > 1) return;  // behind camera — skip
+                if (mode === 'rect') {
+                    const xs   = localPts.map(p => p[0]);
+                    const ys   = localPts.map(p => p[1]);
+                    const minX = Math.min(...xs), maxX = Math.max(...xs);
+                    const minY = Math.min(...ys), maxY = Math.max(...ys);
+                    if (px >= minX && px <= maxX && py >= minY && py <= maxY)
+                        selectedAtoms.add(i);
+                } else {
+                    if (pointInPolygon(px, py, localPts)) selectedAtoms.add(i);
+                }
+            });
+            updateSelectionVisuals();
+        }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // ── SVG / 2D interaction (mode-aware) ────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
         function initSVGInteraction() {
             const svg = document.getElementById('lewis-svg');
             if (!svg) return;
-            let panning = false, panSX = 0, panSY = 0, panTX0 = 0, panTY0 = 0;
 
-            svg.addEventListener('mousedown', e => {
-                if (e.button === 0 || e.button === 1) {
-                    panning = true;
-                    panSX = e.clientX; panSY = e.clientY;
-                    panTX0 = svgTx;    panTY0 = svgTy;
-                    e.preventDefault();
-                }
-            });
-            window.addEventListener('mousemove', e => {
-                if (!panning) return;
-                svgTx = panTX0 + (e.clientX - panSX);
-                svgTy = panTY0 + (e.clientY - panSY);
-                applySVGTransform();
-            });
-            window.addEventListener('mouseup', () => { panning = false; });
+            // Pan state
+            let panning  = false;
+            let panSX = 0, panSY = 0, panTX0 = 0, panTY0 = 0;
 
+            // Selection drag state
+            let selDragging  = false;
+            let selStartX    = 0, selStartY = 0;
+            let lassoClientPts = [];
+
+            // ── Scroll zoom (active in all modes) ────────────────────────────
             svg.addEventListener('wheel', e => {
                 e.preventDefault();
                 const factor = e.deltaY > 0 ? 0.88 : 1 / 0.88;
@@ -3571,8 +3954,94 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 applySVGTransform();
             }, { passive: false });
 
+            // ── Double-click: fit view ────────────────────────────────────────
             svg.addEventListener('dblclick', e => {
                 if (!e.target.closest('.atom-group')) fitSVG();
+            });
+
+            // ── Mouse down ───────────────────────────────────────────────────
+            svg.addEventListener('mousedown', e => {
+                if (e.button !== 0) return;
+                e.preventDefault();
+
+                if (currentMode === 'navigate') {
+                    panning = true;
+                    panSX   = e.clientX; panSY = e.clientY;
+                    panTX0  = svgTx;     panTY0 = svgTy;
+                    svg.classList.add('panning');
+
+                } else if (currentMode === 'rect') {
+                    selDragging = true;
+                    selStartX   = e.clientX;
+                    selStartY   = e.clientY;
+                    updateSelRectOverlay(selStartX, selStartY, selStartX, selStartY);
+
+                } else if (currentMode === 'lasso') {
+                    selDragging    = true;
+                    lassoClientPts = [[e.clientX, e.clientY]];
+                    updateLassoOverlay(lassoClientPts);
+                }
+                // 'click' mode: atom groups handle their own click events
+            });
+
+            // ── Mouse move ───────────────────────────────────────────────────
+            window.addEventListener('mousemove', e => {
+                if (panning && currentMode === 'navigate') {
+                    svgTx = panTX0 + (e.clientX - panSX);
+                    svgTy = panTY0 + (e.clientY - panSY);
+                    applySVGTransform();
+
+                } else if (selDragging && currentMode === 'rect') {
+                    updateSelRectOverlay(selStartX, selStartY, e.clientX, e.clientY);
+
+                } else if (selDragging && currentMode === 'lasso') {
+                    lassoClientPts.push([e.clientX, e.clientY]);
+                    if (lassoClientPts.length % 3 === 0)   // throttle overlay updates
+                        updateLassoOverlay(lassoClientPts);
+                }
+            });
+
+            // ── Mouse up ────────────────────────────────────────────────────
+            window.addEventListener('mouseup', e => {
+                if (panning) {
+                    panning = false;
+                    svg.classList.remove('panning');
+                }
+
+                if (selDragging) {
+                    selDragging = false;
+                    const additive = e.shiftKey;
+
+                    if (currentMode === 'rect') {
+                        const dx = e.clientX - selStartX;
+                        const dy = e.clientY - selStartY;
+                        if (Math.hypot(dx, dy) > 4) {
+                            applyAreaSelection('rect',
+                                [svgToLayout(selStartX, selStartY),
+                                 svgToLayout(e.clientX,  e.clientY)],
+                                additive);
+                        }
+
+                    } else if (currentMode === 'lasso') {
+                        if (lassoClientPts.length > 4) {
+                            applyAreaSelection('lasso',
+                                lassoClientPts.map(([cx, cy]) => svgToLayout(cx, cy)),
+                                additive);
+                        }
+                        lassoClientPts = [];
+                    }
+                    hideSelOverlay();
+                }
+            });
+
+            // ── Keyboard shortcuts ───────────────────────────────────────────
+            window.addEventListener('keydown', e => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                if (e.key === 'n' || e.key === 'N') setMode('navigate');
+                if (e.key === 'c' || e.key === 'C') setMode('click');
+                if (e.key === 'r' || e.key === 'R') setMode('rect');
+                if (e.key === 'l' || e.key === 'L') setMode('lasso');
+                if (e.key === 'Escape') { hideSelOverlay(); selDragging = false; }
             });
         }
 
@@ -3619,12 +4088,64 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             handle3DResize();
             animate3D();
 
-            // Atom picking: fire on click (mouse didn't move between down/up)
+            // ── Mode-aware 3D interaction ─────────────────────────────────────
             let md3 = null;
+            let sel3DDragging   = false;
+            let sel3DStartX     = 0, sel3DStartY = 0;
+            let lasso3DClientPts = [];
+
             renderer3D.domElement.addEventListener('mousedown', e => {
+                if (e.button !== 0) return;
                 md3 = { x: e.clientX, y: e.clientY };
+
+                if (currentMode === 'rect') {
+                    sel3DDragging = true;
+                    sel3DStartX   = e.clientX;
+                    sel3DStartY   = e.clientY;
+                    update3DSelRectOverlay(sel3DStartX, sel3DStartY, sel3DStartX, sel3DStartY);
+                } else if (currentMode === 'lasso') {
+                    sel3DDragging    = true;
+                    lasso3DClientPts = [[e.clientX, e.clientY]];
+                    update3DLassoOverlay(lasso3DClientPts);
+                }
             });
+
+            window.addEventListener('mousemove', e => {
+                if (sel3DDragging && currentMode === 'rect') {
+                    update3DSelRectOverlay(sel3DStartX, sel3DStartY, e.clientX, e.clientY);
+                } else if (sel3DDragging && currentMode === 'lasso') {
+                    lasso3DClientPts.push([e.clientX, e.clientY]);
+                    if (lasso3DClientPts.length % 3 === 0)
+                        update3DLassoOverlay(lasso3DClientPts);
+                }
+            });
+
+            window.addEventListener('mouseup', e => {
+                if (!sel3DDragging) return;
+                sel3DDragging = false;
+                const additive = e.shiftKey;
+
+                if (currentMode === 'rect') {
+                    const dx = e.clientX - sel3DStartX;
+                    const dy = e.clientY - sel3DStartY;
+                    if (Math.hypot(dx, dy) > 4) {
+                        applyArea3DSelection('rect',
+                            [[sel3DStartX, sel3DStartY], [e.clientX, e.clientY]],
+                            additive);
+                    }
+                } else if (currentMode === 'lasso') {
+                    if (lasso3DClientPts.length > 4) {
+                        applyArea3DSelection('lasso', lasso3DClientPts, additive);
+                    }
+                    lasso3DClientPts = [];
+                }
+                hide3DSelOverlay();
+                md3 = null;
+            });
+
+            // Atom picking (click mode only — navigate has no picking)
             renderer3D.domElement.addEventListener('mouseup', e => {
+                if (currentMode !== 'click') { md3 = null; return; }
                 if (!md3) return;
                 if (Math.hypot(e.clientX - md3.x, e.clientY - md3.y) < 5) {
                     const rect  = renderer3D.domElement.getBoundingClientRect();
@@ -3761,7 +4282,7 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             renderSelOverlay3D();
         }
 
-        /** Rebuild the transparent blue selection-sphere overlay. */
+        /** Rebuild the transparent yellow selection-sphere overlay. */
         function renderSelOverlay3D() {
             if (!scene3D) return;
             if (selOverlayGroup) { scene3D.remove(selOverlayGroup); disposeObj3D(selOverlayGroup); }
@@ -3775,7 +4296,7 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 const r     = info.radius * atomScale * 1.50;
                 const geom  = new THREE.SphereGeometry(r, 16, 12);
                 const mat   = new THREE.MeshBasicMaterial({
-                    color: 0x3b82f6, transparent: true, opacity: 0.40, depthWrite: false,
+                    color: 0xeab308, transparent: true, opacity: 0.45, depthWrite: false,
                 });
                 const mesh  = new THREE.Mesh(geom, mat);
                 mesh.position.copy(cachedPos3D[idx]);
@@ -3938,6 +4459,17 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
 
             // Window resize
             window.addEventListener('resize', () => { fitSVG(); handle3DResize(); });
+
+            // Mode toolbar buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => setMode(btn.dataset.mode));
+            });
+
+            // ResizeObserver: re-fit SVG whenever the panel size changes
+            if (typeof ResizeObserver !== 'undefined') {
+                new ResizeObserver(() => { fitSVG(); handle3DResize(); })
+                    .observe(document.getElementById('panel-2d'));
+            }
         }
 
         // ═════════════════════════════════════════════════════════════════════
