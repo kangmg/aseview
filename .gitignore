@@ -84,6 +84,7 @@ venv.bak/
 *.html
 !aseview/templates/*.html
 !docs/*.html
+!docs/assets/viewers/*.html
 *.xyz
 *.cif
 *.json
