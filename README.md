@@ -232,6 +232,39 @@ viewer.show(width='100%', height=800)
 viewer.save_html('output.html')
 ```
 
+### Fragment Selector (Interactive Atom Selection)
+
+```python
+from ase.build import molecule
+from aseview import FragSelector
+
+atoms = molecule('CH3OH')  # or read('molecule.xyz')
+FragSelector(atoms).show()
+```
+
+The Fragment Selector shows a **synchronized 2D + 3D view** for picking atom subsets.
+Selected atoms are highlighted in yellow in both panels.
+
+Interaction modes (keyboard shortcuts: **N** / **C** / **R** / **L**):
+
+| Mode | How to activate | 2D action |
+|------|----------------|-----------|
+| **Navigate** | N key | drag to pan, scroll to zoom |
+| **Click** | C key | click individual atoms to toggle |
+| **Rect** | R key | drag a rectangle to select atoms |
+| **Lasso** | L key | draw a freeform region to select atoms |
+
+Hold **Shift** while releasing to *add* to the existing selection instead of replacing it.
+
+```python
+# Save selected indices after interactive picking:
+viewer = FragSelector(atoms, bondThreshold=1.2, style='cartoon')
+viewer.save_html('selector.html')
+
+# CLI usage (opens in browser):
+# aseview molecule.xyz -v frag
+```
+
 ## Viewer Types
 
 | Viewer | Description |
@@ -239,6 +272,7 @@ viewer.save_html('output.html')
 | MolecularViewer | Single structure or trajectory animation |
 | NormalViewer | Normal mode vibration visualization |
 | OverlayViewer | Compare multiple structures overlaid |
+| FragSelector | Interactive 2D+3D atom selection with rect/lasso |
 
 ## JavaScript Module
 

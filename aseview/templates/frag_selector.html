@@ -274,8 +274,6 @@
             -webkit-user-select: none;
         }
 
-        #lewis-svg:active { cursor: grabbing; }
-
         /* ── 3D canvas ── */
         #molecule-canvas-3d {
             width: 100%;
@@ -314,6 +312,56 @@
             line-height: 1.5;
             text-align: right;
         }
+
+        /* ── Mode toolbar ── */
+        .mode-toolbar {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 15;
+            display: flex;
+            gap: 2px;
+            background: rgba(17, 24, 39, 0.90);
+            padding: 3px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .mode-btn {
+            background: none;
+            border: none;
+            border-radius: 4px;
+            color: #9ca3af;
+            padding: 4px 9px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background-color 0.15s, color 0.15s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            letter-spacing: 0.02em;
+        }
+
+        .mode-btn:hover { background: rgba(255,255,255,0.08); color: #f9fafb; }
+        .mode-btn.active { background: #374151; color: #f9fafb; }
+
+        /* ── Selection overlay ── */
+        #sel-overlay-container {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 4;
+            overflow: hidden;
+        }
+
+        /* Navigate mode: cursor for SVG */
+        #lewis-svg.mode-navigate { cursor: grab; }
+        #lewis-svg.mode-navigate.panning { cursor: grabbing; }
+        #lewis-svg.mode-click,
+        #lewis-svg.mode-rect,
+        #lewis-svg.mode-lasso { cursor: crosshair; }
     </style>
 </head>
 
@@ -431,13 +479,60 @@
             <!-- 2D panel -->
             <div class="viewer-panel" id="panel-2d">
                 <div class="panel-label">2D Structure</div>
-                <svg id="lewis-svg" xmlns="http://www.w3.org/2000/svg">
+                <svg id="lewis-svg" xmlns="http://www.w3.org/2000/svg" class="mode-navigate" style="overflow:visible;">
                     <g id="svg-content">
                         <g id="bonds-layer"></g>
                         <g id="atoms-layer"></g>
                     </g>
                 </svg>
-                <div class="help-hint">scroll: zoom · drag: pan · dbl-click: fit</div>
+
+                <!-- Selection shape overlay (screen-space, on top of SVG) -->
+                <div id="sel-overlay-container">
+                    <svg id="sel-overlay-svg" width="100%" height="100%">
+                        <rect id="sel-rect"
+                            fill="rgba(234,179,8,0.12)" stroke="#eab308"
+                            stroke-width="1.5" stroke-dasharray="5,3" rx="1"
+                            display="none"/>
+                        <polyline id="sel-lasso-line"
+                            fill="none" stroke="#eab308"
+                            stroke-width="1.5" stroke-dasharray="5,3" stroke-linejoin="round"
+                            display="none"/>
+                        <polygon id="sel-lasso-poly"
+                            fill="rgba(234,179,8,0.10)" stroke="none"
+                            display="none"/>
+                    </svg>
+                </div>
+
+                <!-- Mode toolbar -->
+                <div class="mode-toolbar" id="mode-toolbar">
+                    <button class="mode-btn active" data-mode="navigate" title="Pan / Zoom (N)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M12 12v-2M12 12v2M12 12h-2M12 12h2"/>
+                        </svg>
+                        Nav
+                    </button>
+                    <button class="mode-btn" data-mode="click" title="Click atoms to toggle (C)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M15 15l5 5M10 17A7 7 0 1010 3a7 7 0 000 14z"/>
+                        </svg>
+                        Click
+                    </button>
+                    <button class="mode-btn" data-mode="rect" title="Rectangle selection (R)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <rect x="3" y="6" width="18" height="12" rx="1"/>
+                        </svg>
+                        Rect
+                    </button>
+                    <button class="mode-btn" data-mode="lasso" title="Lasso selection (L)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M4 12c0-4 3-7 8-7s8 3 8 7-3 6-8 6c-3 0-5-1-6-2" stroke-linecap="round"/>
+                            <path d="M2 17l2-1" stroke-linecap="round"/>
+                        </svg>
+                        Lasso
+                    </button>
+                </div>
+
+                <div class="help-hint" id="hint-2d">scroll: zoom · drag: pan · dbl-click: fit</div>
             </div>
 
             <!-- Splitter -->
@@ -488,6 +583,11 @@
             'neon':     (p1, p2, s1, s2, r, as)          => createBondStyleNeon(p1, p2, s1, s2, r, as),
             'grey':     (p1, p2, s1, s2, r, as, helpers) => createBondStyleGrey(p1, p2, s1, s2, r, as, helpers.greyColorMap),
         };
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Interaction mode  ('navigate' | 'click' | 'rect' | 'lasso')
+        // ─────────────────────────────────────────────────────────────────────
+        let currentMode = 'navigate';
 
         // ─────────────────────────────────────────────────────────────────────
         // Selection state
@@ -662,8 +762,23 @@
                 } else if (comp.length === 2) {
                     local2d = [[-0.75, 0], [0.75, 0]];
                 } else {
-                    local2d = fruchtermanReingold(pca3Dto2D(pts3d), localBonds);
+                    // Project to 2D with PCA, then normalise to unit scale before FR
+                    const pca2d = pca3Dto2D(pts3d);
+                    const allX  = pca2d.map(p => p[0]), allY = pca2d.map(p => p[1]);
+                    const span  = Math.max(
+                        Math.max(...allX) - Math.min(...allX),
+                        Math.max(...allY) - Math.min(...allY),
+                        1e-9,
+                    );
+                    const scaled = pca2d.map(p => [p[0] / span, p[1] / span]);
+                    local2d = fruchtermanReingold(scaled, localBonds);
                 }
+
+                // Centre this component's Y around 0
+                const ys = local2d.map(p => p[1]);
+                const cY = (Math.min(...ys) + Math.max(...ys)) / 2;
+                local2d  = local2d.map(p => [p[0], p[1] - cY]);
+
                 comp.forEach((gi, li) => { coords2d[gi] = local2d[li]; });
             }
 
@@ -782,13 +897,13 @@
                 grp.setAttribute('data-atom-idx', i);
                 grp.style.cursor = 'pointer';
 
-                // Selection ring (hidden by default)
+                // Selection ring (hidden by default) — yellow highlight
                 const ring = document.createElementNS(SVG_NS, 'circle');
                 ring.setAttribute('class', 'selection-ring');
                 ring.setAttribute('cx', cx); ring.setAttribute('cy', cy);
                 ring.setAttribute('r', SEL_R);
-                ring.setAttribute('fill', 'none');
-                ring.setAttribute('stroke', '#3b82f6');
+                ring.setAttribute('fill', 'rgba(234,179,8,0.20)');
+                ring.setAttribute('stroke', '#eab308');
                 ring.setAttribute('stroke-width', '0.15');
                 ring.setAttribute('display', 'none');
                 grp.appendChild(ring);
@@ -817,9 +932,16 @@
                 txt.textContent = sym;
                 grp.appendChild(txt);
 
-                // ── Events ──
-                grp.addEventListener('mousedown', e => e.stopPropagation());
-                grp.addEventListener('click', e => { e.stopPropagation(); toggleAtom(i); });
+                // ── Events (mode-aware) ──
+                grp.addEventListener('mousedown', e => {
+                    // In navigate/click mode: stop propagation so SVG pan doesn't trigger.
+                    // In rect/lasso mode: let propagate so SVG sees mousedown for selection drag.
+                    if (currentMode === 'navigate' || currentMode === 'click') e.stopPropagation();
+                });
+                grp.addEventListener('click', e => {
+                    e.stopPropagation();
+                    if (currentMode === 'click') toggleAtom(i);
+                });
                 grp.addEventListener('mouseenter', e => {
                     const tip = document.getElementById('atom-tooltip');
                     if (tip) { tip.style.display = 'block'; tip.textContent = `${sym} #${i}`; }
@@ -846,28 +968,140 @@
             });
         }
 
-        /** Initialise SVG pan/zoom interaction. */
+        // ═════════════════════════════════════════════════════════════════════
+        // ── Mode system ──────────────────────────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
+        const MODE_HINTS = {
+            navigate: 'scroll: zoom · drag: pan · dbl-click: fit',
+            click:    'click atom: toggle · shift+click: add · scroll: zoom',
+            rect:     'drag: rect select · shift: add to selection · scroll: zoom',
+            lasso:    'drag: lasso select · shift: add to selection · scroll: zoom',
+        };
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+            const svg = document.getElementById('lewis-svg');
+            if (svg) {
+                svg.className = 'mode-' + mode;
+            }
+            const hint = document.getElementById('hint-2d');
+            if (hint) hint.textContent = MODE_HINTS[mode] || '';
+            hideSelOverlay();
+        }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // ── 2D selection helpers ─────────────────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
+        /** Convert client coordinates to layout (SVG content) coordinates. */
+        function svgToLayout(clientX, clientY) {
+            const svg  = document.getElementById('lewis-svg');
+            const rect = svg.getBoundingClientRect();
+            const px   = clientX - rect.left;
+            const py   = clientY - rect.top;
+            return [(px - svgTx) / svgScale, (py - svgTy) / svgScale];
+        }
+
+        /** Ray-casting point-in-polygon test (layout coordinates). */
+        function pointInPolygon(px, py, pts) {
+            let inside = false;
+            for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+                const xi = pts[i][0], yi = pts[i][1];
+                const xj = pts[j][0], yj = pts[j][1];
+                if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi)
+                    inside = !inside;
+            }
+            return inside;
+        }
+
+        /** Apply area selection from layout-space points.
+         *  mode: 'rect' — pts is [[minCorner], [maxCorner]]
+         *  mode: 'lasso' — pts is the polygon vertices
+         *  additive: if true, add to existing selection; else replace. */
+        function applyAreaSelection(mode, layoutPts, additive) {
+            if (!layout2D) return;
+            if (!additive) selectedAtoms.clear();
+
+            if (mode === 'rect') {
+                const xs   = layoutPts.map(p => p[0]);
+                const ys   = layoutPts.map(p => p[1]);
+                const minX = Math.min(...xs), maxX = Math.max(...xs);
+                const minY = Math.min(...ys), maxY = Math.max(...ys);
+                layout2D.coords2d.forEach(([ax, ay], i) => {
+                    if (ax >= minX && ax <= maxX && ay >= minY && ay <= maxY)
+                        selectedAtoms.add(i);
+                });
+            } else {
+                // lasso
+                layout2D.coords2d.forEach(([ax, ay], i) => {
+                    if (pointInPolygon(ax, ay, layoutPts)) selectedAtoms.add(i);
+                });
+            }
+            updateSelectionVisuals();
+        }
+
+        // ── Overlay shape renderers ──────────────────────────────────────────
+
+        function updateSelRectOverlay(x1, y1, x2, y2) {
+            const panel = document.getElementById('panel-2d');
+            const r     = panel ? panel.getBoundingClientRect() : { left: 0, top: 0 };
+            const rx    = Math.min(x1, x2) - r.left;
+            const ry    = Math.min(y1, y2) - r.top;
+            const rw    = Math.abs(x2 - x1);
+            const rh    = Math.abs(y2 - y1);
+
+            const el = document.getElementById('sel-rect');
+            if (el) {
+                el.setAttribute('x', rx);
+                el.setAttribute('y', ry);
+                el.setAttribute('width', rw);
+                el.setAttribute('height', rh);
+                el.removeAttribute('display');
+            }
+            document.getElementById('sel-lasso-line')?.setAttribute('display', 'none');
+            document.getElementById('sel-lasso-poly')?.setAttribute('display', 'none');
+        }
+
+        function updateLassoOverlay(clientPts) {
+            const panel  = document.getElementById('panel-2d');
+            const r      = panel ? panel.getBoundingClientRect() : { left: 0, top: 0 };
+            const ptsStr = clientPts.map(([cx, cy]) => `${cx - r.left},${cy - r.top}`).join(' ');
+
+            document.getElementById('sel-rect')?.setAttribute('display', 'none');
+            const line = document.getElementById('sel-lasso-line');
+            if (line) { line.setAttribute('points', ptsStr); line.removeAttribute('display'); }
+            const poly = document.getElementById('sel-lasso-poly');
+            if (poly) { poly.setAttribute('points', ptsStr); poly.removeAttribute('display'); }
+        }
+
+        function hideSelOverlay() {
+            document.getElementById('sel-rect')?.setAttribute('display', 'none');
+            document.getElementById('sel-lasso-line')?.setAttribute('display', 'none');
+            document.getElementById('sel-lasso-poly')?.setAttribute('display', 'none');
+        }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // ── SVG / 2D interaction (mode-aware) ────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
         function initSVGInteraction() {
             const svg = document.getElementById('lewis-svg');
             if (!svg) return;
-            let panning = false, panSX = 0, panSY = 0, panTX0 = 0, panTY0 = 0;
 
-            svg.addEventListener('mousedown', e => {
-                if (e.button === 0 || e.button === 1) {
-                    panning = true;
-                    panSX = e.clientX; panSY = e.clientY;
-                    panTX0 = svgTx;    panTY0 = svgTy;
-                    e.preventDefault();
-                }
-            });
-            window.addEventListener('mousemove', e => {
-                if (!panning) return;
-                svgTx = panTX0 + (e.clientX - panSX);
-                svgTy = panTY0 + (e.clientY - panSY);
-                applySVGTransform();
-            });
-            window.addEventListener('mouseup', () => { panning = false; });
+            // Pan state
+            let panning  = false;
+            let panSX = 0, panSY = 0, panTX0 = 0, panTY0 = 0;
 
+            // Selection drag state
+            let selDragging  = false;
+            let selStartX    = 0, selStartY = 0;
+            let lassoClientPts = [];
+
+            // ── Scroll zoom (active in all modes) ────────────────────────────
             svg.addEventListener('wheel', e => {
                 e.preventDefault();
                 const factor = e.deltaY > 0 ? 0.88 : 1 / 0.88;
@@ -880,8 +1114,94 @@
                 applySVGTransform();
             }, { passive: false });
 
+            // ── Double-click: fit view ────────────────────────────────────────
             svg.addEventListener('dblclick', e => {
                 if (!e.target.closest('.atom-group')) fitSVG();
+            });
+
+            // ── Mouse down ───────────────────────────────────────────────────
+            svg.addEventListener('mousedown', e => {
+                if (e.button !== 0) return;
+                e.preventDefault();
+
+                if (currentMode === 'navigate') {
+                    panning = true;
+                    panSX   = e.clientX; panSY = e.clientY;
+                    panTX0  = svgTx;     panTY0 = svgTy;
+                    svg.classList.add('panning');
+
+                } else if (currentMode === 'rect') {
+                    selDragging = true;
+                    selStartX   = e.clientX;
+                    selStartY   = e.clientY;
+                    updateSelRectOverlay(selStartX, selStartY, selStartX, selStartY);
+
+                } else if (currentMode === 'lasso') {
+                    selDragging    = true;
+                    lassoClientPts = [[e.clientX, e.clientY]];
+                    updateLassoOverlay(lassoClientPts);
+                }
+                // 'click' mode: atom groups handle their own click events
+            });
+
+            // ── Mouse move ───────────────────────────────────────────────────
+            window.addEventListener('mousemove', e => {
+                if (panning && currentMode === 'navigate') {
+                    svgTx = panTX0 + (e.clientX - panSX);
+                    svgTy = panTY0 + (e.clientY - panSY);
+                    applySVGTransform();
+
+                } else if (selDragging && currentMode === 'rect') {
+                    updateSelRectOverlay(selStartX, selStartY, e.clientX, e.clientY);
+
+                } else if (selDragging && currentMode === 'lasso') {
+                    lassoClientPts.push([e.clientX, e.clientY]);
+                    if (lassoClientPts.length % 3 === 0)   // throttle overlay updates
+                        updateLassoOverlay(lassoClientPts);
+                }
+            });
+
+            // ── Mouse up ────────────────────────────────────────────────────
+            window.addEventListener('mouseup', e => {
+                if (panning) {
+                    panning = false;
+                    svg.classList.remove('panning');
+                }
+
+                if (selDragging) {
+                    selDragging = false;
+                    const additive = e.shiftKey;
+
+                    if (currentMode === 'rect') {
+                        const dx = e.clientX - selStartX;
+                        const dy = e.clientY - selStartY;
+                        if (Math.hypot(dx, dy) > 4) {
+                            applyAreaSelection('rect',
+                                [svgToLayout(selStartX, selStartY),
+                                 svgToLayout(e.clientX,  e.clientY)],
+                                additive);
+                        }
+
+                    } else if (currentMode === 'lasso') {
+                        if (lassoClientPts.length > 4) {
+                            applyAreaSelection('lasso',
+                                lassoClientPts.map(([cx, cy]) => svgToLayout(cx, cy)),
+                                additive);
+                        }
+                        lassoClientPts = [];
+                    }
+                    hideSelOverlay();
+                }
+            });
+
+            // ── Keyboard shortcuts ───────────────────────────────────────────
+            window.addEventListener('keydown', e => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                if (e.key === 'n' || e.key === 'N') setMode('navigate');
+                if (e.key === 'c' || e.key === 'C') setMode('click');
+                if (e.key === 'r' || e.key === 'R') setMode('rect');
+                if (e.key === 'l' || e.key === 'L') setMode('lasso');
+                if (e.key === 'Escape') { hideSelOverlay(); selDragging = false; }
             });
         }
 
@@ -1070,7 +1390,7 @@
             renderSelOverlay3D();
         }
 
-        /** Rebuild the transparent blue selection-sphere overlay. */
+        /** Rebuild the transparent yellow selection-sphere overlay. */
         function renderSelOverlay3D() {
             if (!scene3D) return;
             if (selOverlayGroup) { scene3D.remove(selOverlayGroup); disposeObj3D(selOverlayGroup); }
@@ -1084,7 +1404,7 @@
                 const r     = info.radius * atomScale * 1.50;
                 const geom  = new THREE.SphereGeometry(r, 16, 12);
                 const mat   = new THREE.MeshBasicMaterial({
-                    color: 0x3b82f6, transparent: true, opacity: 0.40, depthWrite: false,
+                    color: 0xeab308, transparent: true, opacity: 0.45, depthWrite: false,
                 });
                 const mesh  = new THREE.Mesh(geom, mat);
                 mesh.position.copy(cachedPos3D[idx]);
@@ -1247,6 +1567,17 @@
 
             // Window resize
             window.addEventListener('resize', () => { fitSVG(); handle3DResize(); });
+
+            // Mode toolbar buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => setMode(btn.dataset.mode));
+            });
+
+            // ResizeObserver: re-fit SVG whenever the panel size changes
+            if (typeof ResizeObserver !== 'undefined') {
+                new ResizeObserver(() => { fitSVG(); handle3DResize(); })
+                    .observe(document.getElementById('panel-2d'));
+            }
         }
 
         // ═════════════════════════════════════════════════════════════════════
