@@ -96,17 +96,32 @@ viewer.save_html("selector.html")
 
 ## UI Overview
 
-The viewer has a **sidebar** on the left, a **2D SVG panel** in the centre-left, a draggable splitter, and a **3D panel** on the right. Selecting an atom in either panel immediately highlights it in the other and updates the index lists in the sidebar.
+The viewer has a **sidebar** on the left, a **2D SVG panel** in the centre-left, a draggable splitter, and a **3D panel** on the right. A **mode toolbar** centred at the top controls interaction in both panels simultaneously. Selecting an atom in either panel immediately highlights it in the other and updates the index lists in the sidebar.
+
+### Mode Toolbar
+
+Switch between four interaction modes using the toolbar buttons or keyboard shortcuts:
+
+| Mode | Key | Description |
+|------|-----|-------------|
+| **Navigate** | <kbd>N</kbd> | Navigate the view without selecting |
+| **Click** | <kbd>C</kbd> | Click individual atoms to toggle selection |
+| **Rect** | <kbd>R</kbd> | Drag a rectangle to select all enclosed atoms |
+| **Lasso** | <kbd>L</kbd> | Draw a freeform region to select all enclosed atoms |
+
+Hold **Shift** while releasing to *add* to the existing selection instead of replacing it.
 
 ### 2D Panel (SVG)
 
-| Action | Effect |
-|--------|--------|
-| **Click** atom | Toggle selection |
-| **Drag** background | Pan view |
-| **Scroll** | Zoom in / out |
-| **Double-click** background | Reset fit |
-| **Hover** atom | Show element + index tooltip |
+| Mode | Action | Effect |
+|------|--------|--------|
+| Navigate | **Drag** background | Pan view |
+| Navigate | **Scroll** | Zoom in / out |
+| Navigate | **Double-click** background | Reset fit |
+| Click | **Click** atom | Toggle selection |
+| Rect | **Drag** | Draw selection rectangle |
+| Lasso | **Drag** | Draw freeform selection region |
+| Any | **Hover** atom | Show element + index tooltip |
 
 The 2D layout is computed automatically from the 3D coordinates using a **PCA → Fruchterman-Reingold** pipeline:
 
@@ -120,14 +135,17 @@ Bond lines use split colours (each half inherits the endpoint atom's CPK colour)
 
 ### 3D Panel (THREE.js)
 
-| Action | Effect |
-|--------|--------|
-| **Click** atom | Toggle selection |
-| **Left-drag** | Rotate (TrackballControls) |
-| **Right-drag** | Pan |
-| **Scroll** | Zoom |
+| Mode | Action | Effect |
+|------|--------|--------|
+| Navigate | **Left-drag** | Rotate (TrackballControls) |
+| Navigate | **Right-drag** | Pan |
+| Navigate | **Scroll** | Zoom |
+| Click | **Click** atom | Toggle selection |
+| Click | **Left-drag** | Rotate |
+| Rect | **Drag** | Draw selection rectangle (projects atoms to screen) |
+| Lasso | **Drag** | Draw freeform selection region (projects atoms to screen) |
 
-Selected atoms are highlighted with a semi-transparent blue sphere overlay (no re-render of the full molecule required).
+Selected atoms are highlighted with a semi-transparent yellow sphere overlay (no re-render of the full molecule required).
 
 ### Splitter
 

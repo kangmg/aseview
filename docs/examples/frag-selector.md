@@ -103,69 +103,34 @@ second_water = system[mol2_indices]
 
 ## Selection Modes
 
-The 2D panel has four interaction modes switchable via the toolbar (top-right of the panel) or keyboard shortcuts:
+Both the **2D** and **3D** panels share a single mode toolbar (centred at the top). Switch modes via the toolbar buttons or keyboard shortcuts:
 
-| Mode | Shortcut | Description |
-|------|----------|-------------|
-| **Navigate** | <kbd>N</kbd> | Drag to pan, scroll to zoom, double-click to fit |
-| **Click** | <kbd>C</kbd> | Click individual atoms to toggle selection |
-| **Rect** | <kbd>R</kbd> | Drag a rectangle — all atoms inside are selected |
-| **Lasso** | <kbd>L</kbd> | Draw a freeform region — all enclosed atoms are selected |
+| Mode | Shortcut | 2D behaviour | 3D behaviour |
+|------|----------|--------------|--------------|
+| **Navigate** | <kbd>N</kbd> | Drag to pan, scroll to zoom, double-click to fit | Drag to rotate, right-drag to pan, scroll to zoom |
+| **Click** | <kbd>C</kbd> | Click atom to toggle selection | Click atom to toggle selection, drag still rotates |
+| **Rect** | <kbd>R</kbd> | Drag a rectangle — all enclosed atoms selected | Drag a rectangle on-screen — all atoms whose 3D position projects inside are selected |
+| **Lasso** | <kbd>L</kbd> | Draw a freeform region — all enclosed atoms selected | Draw a freeform region on-screen — all atoms whose 3D position projects inside are selected |
 
 Hold **Shift** while releasing the mouse to *add* the new atoms to the existing selection.
 
 ### Large Conjugated System — Bis-iodo Heterocycles
 
 The viewer below shows two disconnected iodo-substituted benzimidazole ring systems (50 atoms total).
-Try switching to **Rect** or **Lasso** mode to select one ring system at a time.
+Try switching to **Rect** or **Lasso** mode and drawing a box around one ring system in either the 2D or 3D panel.
 
 <iframe src="../../assets/viewers/frag_selector_bis_iodo.html" width="100%" height="550" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
 
 ```python
-from ase import Atoms
+from ase.io import read
 from aseview import FragSelector
 
-symbols = [
-    'C','C','C','C','C','C','N','C','C','C','C','C','C',
-    'H','H','H','H','H','H','H','H','H','I','H','H',
-    'C','C','C','C','C','C','N','C','C','C','C','C','C',
-    'H','H','H','H','H','H','H','H','H','I','H','H',
-]
-positions = [
-    [ 0.0947,-1.8058, 0.6052], [-0.1026,-0.4427, 0.4521],
-    [-0.3876, 0.3096, 1.5873], [-0.4896,-0.3395, 2.8462],
-    [-0.3517,-1.7140, 2.9702], [-0.0383,-2.4448, 1.8379],
-    [-0.6878, 0.6032, 3.8288], [-0.7234, 1.8569, 3.2472],
-    [-0.5405, 1.7201, 1.8456], [-0.4876, 2.8627, 1.0532],
-    [-0.6277, 4.1064, 1.6489], [-0.8218, 4.2216, 3.0286],
-    [-0.8675, 3.1015, 3.8426], [-0.7044, 0.3061, 5.2390],
-    [-0.0290, 0.0295,-0.5177], [-0.4422,-2.2053, 3.9290],
-    [ 0.1302,-3.5082, 1.9182], [-0.3359, 2.7830,-0.0158],
-    [-0.9305, 5.2037, 3.4696], [-0.9763, 3.2031, 4.9124],
-    [ 0.0039,-0.4918, 5.4470], [-0.3875, 1.1795, 5.8004],
-    [ 0.7151,-2.9701,-1.0540], [-1.6959,-0.0031, 5.5734],
-    [-0.5902, 4.9991, 1.0417],
-    [ 2.5237, 2.5761, 5.5852], [ 2.6805, 1.2022, 5.5217],
-    [ 2.8972, 0.6006, 4.2861], [ 2.9543, 1.4108, 3.1229],
-    [ 2.8109, 2.7881, 3.1876], [ 2.5916, 3.3586, 4.4296],
-    [ 3.1388, 0.6022, 2.0188], [ 3.2099,-0.7112, 2.4327],
-    [ 3.0517,-0.7623, 3.8435], [ 3.0014,-1.9949, 4.4854],
-    [ 3.1289,-3.1417, 3.7182], [ 3.3069,-3.0879, 2.3329],
-    [ 3.3639,-1.8689, 1.6816], [ 3.1678, 1.0657, 0.6548],
-    [ 2.6368, 0.5998, 6.4199], [ 2.8409, 3.3943, 2.2941],
-    [ 2.4565, 4.4288, 4.5049], [ 2.8469,-2.0527, 5.5535],
-    [ 3.3795,-3.9994, 1.7582], [ 3.4966,-1.8333, 0.6099],
-    [ 4.1569, 1.4375, 0.3810], [ 2.8930, 0.2545,-0.0129],
-    [ 2.4368, 1.8602, 0.5232], [ 3.0171,-5.0395, 4.6479],
-    [ 2.3587, 3.0522, 6.5411],
-]
-
-atoms = Atoms(symbols=symbols, positions=positions)
+atoms = read("dimer.xyz")   # two iodo-benzimidazole units, 50 atoms
 viewer = FragSelector(atoms, style='cartoon')
 viewer.show()
 ```
 
-Select one ring system using **Lasso** mode, then copy the indices to use them in further computations.
+Select one ring system using **Lasso** mode in the 2D or 3D panel, then copy the indices to use them in further computations.
 
 ---
 
