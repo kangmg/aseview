@@ -85,16 +85,7 @@ viewer.save_html("selector.html")
 
 ## UI Overview
 
-The viewer is divided into three areas:
-
-```
-┌──────────┬──────────────────┬───┬──────────────────┐
-│ Sidebar  │   2D Structure   │ ║ │   3D Structure   │
-│          │   (SVG panel)    │   │  (THREE.js panel) │
-│Selection │                  │   │                   │
-│Display   │  click to select │   │  click to select  │
-└──────────┴──────────────────┴───┴──────────────────┘
-```
+The viewer has a **sidebar** on the left, a **2D SVG panel** in the centre-left, a draggable splitter, and a **3D panel** on the right. Selecting an atom in either panel immediately highlights it in the other and updates the index lists in the sidebar.
 
 ### 2D Panel (SVG)
 
