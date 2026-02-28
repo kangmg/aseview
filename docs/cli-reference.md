@@ -37,13 +37,17 @@ aseview [OPTIONS] FILES...
 
 | Option | Short | Description | Default |
 |--------|-------|-------------|---------|
-| `--viewer` | `-v` | Viewer type: `molecular`, `overlay`, `normal` | Auto-selected |
+| `--viewer` | `-v` | Viewer type: `molecular`, `overlay`, `normal`, `frag` | Auto-selected |
 
 #### Viewer Auto-Selection
 
 - Multiple files → `overlay`
 - Single file with `--hess` → `normal`
 - Otherwise → `molecular`
+
+!!! note "FragSelector (`-v frag`)"
+    `frag` is never auto-selected and must be requested explicitly.
+    When a multi-frame file is provided only the **first frame** is used.
 
 ### Style Options
 
@@ -85,6 +89,12 @@ aseview [OPTIONS] FILES...
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--hess` | Path to Hessian file (ORCA .hess format) | None |
+
+### Fragment Selector Options
+
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--bond-threshold` | `-bt` | Bond detection scale factor (covalent-radii sum multiplier) | `1.2` |
 
 ### Output Options
 
@@ -150,6 +160,19 @@ aseview molecule.xyz --hess orca.hess
 
 # Explicit viewer type
 aseview molecule.xyz --hess orca.hess -v normal
+```
+
+### Fragment Selector
+
+```bash
+# Open interactive 2D+3D fragment selector
+aseview molecule.xyz -v frag
+
+# Adjust bond detection threshold
+aseview molecule.xyz -v frag --bond-threshold 1.4
+
+# Save as standalone HTML (open in browser later)
+aseview molecule.xyz -v frag -o selector.html
 ```
 
 ### Server Options

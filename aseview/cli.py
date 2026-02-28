@@ -281,6 +281,12 @@ def main(
         "--hessian",
         help="Hessian file for normal mode viewer (ORCA .hess format)",
     ),
+    bond_threshold: Optional[float] = typer.Option(
+        None,
+        "--bond-threshold",
+        "-bt",
+        help="Bond detection threshold for fragment selector (scale factor on covalent radii sum)",
+    ),
     kill: bool = typer.Option(
         False,
         "-k",
@@ -311,6 +317,7 @@ def main(
       aseview mol.xyz -v molecular      # Standard viewer (default)
       aseview mol.xyz -v overlay        # Overlay multiple structures
       aseview mol.xyz -v normal         # Normal mode viewer
+      aseview mol.xyz -v frag           # Fragment selector (2D+3D, Python-API style)
 
     \b
     Overlay Mode (comparing structures):
@@ -330,6 +337,12 @@ def main(
     Normal Mode Viewer (--hess):
       aseview mol.xyz --hess orca.hess             # ORCA Hessian file
       aseview mol.xyz --hess orca.hess -v normal   # Explicit normal viewer
+
+    \b
+    Fragment Selector (-v frag):
+      aseview mol.xyz -v frag                      # Open fragment selector
+      aseview mol.xyz -v frag --bond-threshold 1.4 # Adjust bond detection
+      aseview mol.xyz -v frag -o selector.html     # Save as HTML
 
     \b
     Visual Styles (--style):
@@ -372,7 +385,7 @@ def main(
         raise typer.Exit(1)
 
     # Import viewer classes
-    from .wrapper import MolecularViewer, NormalViewer, OverlayViewer
+    from .wrapper import MolecularViewer, NormalViewer, OverlayViewer, FragSelector
 
     # Parse index
     idx = parse_index(index)
@@ -443,8 +456,19 @@ def main(
             viewer_obj = NormalViewer(all_atoms[0], **viewer_kwargs)
     elif viewer_type == "overlay":
         viewer_obj = OverlayViewer(all_atoms, **viewer_kwargs)
+    elif viewer_type in ("frag", "fragment", "fragselector"):
+        frag_kwargs = {"style": style}
+        if bond_threshold is not None:
+            frag_kwargs["bondThreshold"] = bond_threshold
+        if n_frames > 1:
+            console.print(
+                f"  [yellow]Note:[/yellow] FragSelector uses only the first frame "
+                f"({n_frames} frames loaded)"
+            )
+        viewer_obj = FragSelector(all_atoms[0], **frag_kwargs)
     else:
         console.print(f"[red]Error: Unknown viewer type: {viewer_type}[/red]")
+        console.print("  Valid types: molecular, overlay, normal, frag")
         raise typer.Exit(1)
 
     # Get HTML content

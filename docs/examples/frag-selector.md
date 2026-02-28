@@ -15,14 +15,22 @@ Click any atom in either panel to toggle its selection. The **Selected** and **U
 
 ## Basic Usage
 
-```python
-from ase.build import molecule
-from aseview import FragSelector
+=== "Python"
 
-atoms = molecule('CH3OH')  # methanol
-viewer = FragSelector(atoms)
-viewer.show()
-```
+    ```python
+    from ase.build import molecule
+    from aseview import FragSelector
+
+    atoms = molecule('CH3OH')  # methanol
+    viewer = FragSelector(atoms)
+    viewer.show()
+    ```
+
+=== "CLI"
+
+    ```bash
+    aseview molecule.xyz -v frag
+    ```
 
 ---
 
@@ -166,18 +174,32 @@ mm_atoms = atoms[mm_indices]
 Increase or decrease `bondThreshold` if bonds are missing or spurious.
 The slider in the **Display** card applies the change instantly — both the 2D layout and 3D bonds rebuild live.
 
-```python
-from ase.io import read
-from aseview import FragSelector
+=== "Python"
 
-# Loose threshold: include weak / elongated bonds
-viewer = FragSelector(read("structure.xyz"), bondThreshold=1.4)
-viewer.show()
+    ```python
+    from ase.io import read
+    from aseview import FragSelector
 
-# Tight threshold: only very short covalent bonds
-viewer = FragSelector(read("structure.xyz"), bondThreshold=1.0)
-viewer.show()
-```
+    # Loose threshold: include weak / elongated bonds
+    viewer = FragSelector(read("structure.xyz"), bondThreshold=1.4)
+    viewer.show()
+
+    # Tight threshold: only very short covalent bonds
+    viewer = FragSelector(read("structure.xyz"), bondThreshold=1.0)
+    viewer.show()
+    ```
+
+=== "CLI"
+
+    ```bash
+    # Loose threshold
+    aseview structure.xyz -v frag --bond-threshold 1.4
+
+    # Tight threshold
+    aseview structure.xyz -v frag --bond-threshold 1.0
+    # short form: -bt
+    aseview structure.xyz -v frag -bt 1.0
+    ```
 
 ---
 
@@ -203,13 +225,21 @@ viewer.show()
 
 The generated file bundles all JavaScript inline and works in any browser without Python.
 
-```python
-from ase.build import molecule
-from aseview import FragSelector
+=== "Python"
 
-viewer = FragSelector(molecule('CH3OH'))
-viewer.save_html("selector.html")
-```
+    ```python
+    from ase.build import molecule
+    from aseview import FragSelector
+
+    viewer = FragSelector(molecule('CH3OH'))
+    viewer.save_html("selector.html")
+    ```
+
+=== "CLI"
+
+    ```bash
+    aseview molecule.xyz -v frag -o selector.html
+    ```
 
 ---
 
