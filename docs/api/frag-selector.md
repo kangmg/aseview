@@ -4,6 +4,17 @@ Interactive fragment selector with synchronized 2D (SVG) and 3D (THREE.js) views
 Click any atom in either panel to toggle its selection.
 Selected and unselected atom indices are displayed live in the sidebar and can be copied to the clipboard with one click.
 
+## CLI
+
+```bash
+aseview molecule.xyz -v frag
+aseview molecule.xyz -v frag --bond-threshold 1.4
+aseview molecule.xyz -v frag -o selector.html
+```
+
+`frag` is never auto-selected — it must be specified explicitly with `-v frag`.
+When a multi-frame file is given, only the first frame is used.
+
 ## Constructor
 
 ```python
