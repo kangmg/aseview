@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragment Selector</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
+    <script src="https://raw.githack.com/kangmg/aseview/main/aseview/static/js/styles.js"></script>
+    <style>
+        :root {
+            --sidebar-bg: #1f2937;
+            --card-bg: #374151;
+            --border-color: #4b5563;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --accent-color: #3b82f6;
+            --hover-color: #4b5563;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #111827;
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .sidebar.collapsed { width: 0; border-right: none; }
+
+        .sidebar-content {
+            padding: 1rem;
+            overflow-y: auto;
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 100;
+            background-color: rgba(31, 41, 55, 0.9);
+            border: none;
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-toggle:hover { background-color: rgba(59, 130, 246, 0.3); }
+
+        /* ── Cards ── */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 0.75rem 1rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .card-header:hover { background-color: rgba(255, 255, 255, 0.08); }
+
+        .card-header h3 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-content { padding: 1rem; }
+        .card-content.collapsed { display: none; }
+
+        .card-arrow { transition: transform 0.2s; }
+        .card-arrow.rotated { transform: rotate(-90deg); }
+
+        /* ── Controls ── */
+        .control-group { margin-bottom: 1rem; }
+        .control-group:last-child { margin-bottom: 0; }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .slider-value {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .slider {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: var(--border-color);
+            border-radius: 3px;
+            outline: none;
+            width: 100%;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .select {
+            width: 100%;
+            background-color: var(--hover-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            color: var(--text-primary);
+            padding: 0.375rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .color-picker { display: flex; align-items: center; gap: 0.5rem; }
+
+        .color-input {
+            width: 40px;
+            height: 30px;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            padding: 2px;
+            background: none;
+        }
+
+        .color-value { font-size: 0.75rem; color: var(--text-secondary); }
+
+        /* ── Buttons ── */
+        .btn {
+            background-color: var(--hover-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            color: var(--text-secondary);
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.15s, color 0.15s;
+        }
+
+        .btn:hover { background-color: rgba(59, 130, 246, 0.25); color: var(--text-primary); }
+
+        .btn-row {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        /* ── Index display ── */
+        .index-box {
+            font-family: 'Courier New', monospace;
+            font-size: 0.72rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            padding: 0.4rem 0.5rem;
+            min-height: 44px;
+            max-height: 80px;
+            overflow-y: auto;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-break: break-all;
+            resize: none;
+            width: 100%;
+        }
+
+        .icon { width: 16px; height: 16px; display: inline-block; flex-shrink: 0; }
+
+        /* ── Main content area ── */
+        .main-content {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        /* ── Viewer panels ── */
+        .viewer-panel {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        #panel-2d { background: #111827; }
+        #panel-3d { background: #111827; }
+
+        .panel-label {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #6b7280;
+            background: rgba(0, 0, 0, 0.45);
+            padding: 2px 10px;
+            border-radius: 10px;
+            z-index: 10;
+            pointer-events: none;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+        }
+
+        /* ── Splitter ── */
+        #splitter {
+            width: 5px;
+            background: var(--border-color);
+            cursor: col-resize;
+            flex-shrink: 0;
+            transition: background 0.15s;
+            z-index: 20;
+        }
+
+        #splitter:hover, #splitter.active { background: var(--accent-color); }
+
+        /* ── SVG 2D ── */
+        #lewis-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #lewis-svg:active { cursor: grabbing; }
+
+        /* ── 3D canvas ── */
+        #molecule-canvas-3d {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: grab;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #molecule-canvas-3d:active { cursor: grabbing; }
+
+        /* ── Tooltip ── */
+        #atom-tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.85);
+            color: #f3f4f6;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+            white-space: nowrap;
+        }
+
+        /* ── Help hint ── */
+        .help-hint {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            font-size: 10px;
+            color: #4b5563;
+            pointer-events: none;
+            line-height: 1.5;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <!-- ── Sidebar ── -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-content">
+
+                <!-- Selection Info -->
+                <div class="card">
+                    <div class="card-header" onclick="toggleCard('selection')">
+                        <h3>
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            Selection
+                        </h3>
+                        <svg class="icon card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" id="selection-arrow">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    <div class="card-content" id="selection-content">
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Selected <span id="selected-count"
+                                        style="color:var(--accent-color);font-weight:600">0</span></span>
+                                <button class="btn" id="copy-selected-btn">Copy</button>
+                            </div>
+                            <textarea id="selected-indices" class="index-box" readonly>[]</textarea>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Unselected <span id="unselected-count"
+                                        style="color:var(--text-secondary);font-weight:600">0</span></span>
+                                <button class="btn" id="copy-unselected-btn">Copy</button>
+                            </div>
+                            <textarea id="unselected-indices" class="index-box" readonly>[]</textarea>
+                        </div>
+                        <div class="btn-row">
+                            <button class="btn" id="select-all-btn">Select All</button>
+                            <button class="btn" id="clear-btn">Clear</button>
+                            <button class="btn" id="invert-btn">Invert</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Display Settings -->
+                <div class="card">
+                    <div class="card-header" onclick="toggleCard('display')">
+                        <h3>
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Display
+                        </h3>
+                        <svg class="icon card-arrow rotated" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            id="display-arrow">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    <div class="card-content collapsed" id="display-content">
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Bond Threshold</span>
+                                <span class="slider-value" id="bond-threshold-value">1.20</span>
+                            </div>
+                            <input type="range" min="0.5" max="2.0" step="0.05" value="1.2" class="slider"
+                                id="bond-threshold">
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Atom Size</span>
+                                <span class="slider-value" id="atom-size-value">0.40</span>
+                            </div>
+                            <input type="range" min="0.1" max="1.0" step="0.05" value="0.4" class="slider"
+                                id="atom-size">
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label"><span>3D Style</span></div>
+                            <select class="select" id="style-select">
+                                <option value="cartoon">Cartoon</option>
+                                <option value="glossy">Glossy</option>
+                                <option value="default">Default</option>
+                                <option value="bubble">Bubble</option>
+                                <option value="metallic">Metallic</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label"><span>Background</span></div>
+                            <div class="color-picker">
+                                <input type="color" value="#1f2937" class="color-input" id="bg-color">
+                                <span class="color-value" id="bg-color-value">#1f2937</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── Main content: 2D | splitter | 3D ── -->
+        <div class="main-content">
+            <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+
+            <!-- 2D panel -->
+            <div class="viewer-panel" id="panel-2d">
+                <div class="panel-label">2D Structure</div>
+                <svg id="lewis-svg" xmlns="http://www.w3.org/2000/svg">
+                    <g id="svg-content">
+                        <g id="bonds-layer"></g>
+                        <g id="atoms-layer"></g>
+                    </g>
+                </svg>
+                <div class="help-hint">scroll: zoom · drag: pan · dbl-click: fit</div>
+            </div>
+
+            <!-- Splitter -->
+            <div id="splitter"></div>
+
+            <!-- 3D panel -->
+            <div class="viewer-panel" id="panel-3d">
+                <div class="panel-label">3D Structure</div>
+                <canvas id="molecule-canvas-3d"></canvas>
+                <div class="help-hint">drag: rotate · right-drag: pan · scroll: zoom</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div id="atom-tooltip"></div>
+
+    <script>
+        // ─────────────────────────────────────────────────────────────────────
+        // Injected data & settings
+        // ─────────────────────────────────────────────────────────────────────
+        const _allMolData = {{molecular_data}};
+        const molData = Array.isArray(_allMolData) ? _allMolData[0] : _allMolData;
+
+        const fragSettings = {{settings}};
+
+        // ─────────────────────────────────────────────────────────────────────
+        // atom/bond factory tables  (mirrors molecular_viewer.html)
+        // ─────────────────────────────────────────────────────────────────────
+        const atomFactories = {
+            'default':  (pos, sym, s)          => createAtomStyleDefault(pos, sym, s),
+            'cartoon':  (pos, sym, s)          => createAtomStyleCartoon(pos, sym, s),
+            'glossy':   (pos, sym, s)          => createAtomStyleGlossy(pos, sym, s),
+            'metallic': (pos, sym, s)          => createAtomStyleMetallic(pos, sym, s),
+            'bubble':   (pos, sym, s)          => createAtomStyleBubble(pos, sym, s),
+            'rowan':    (pos, sym, s)          => createAtomStyleRowan(pos, sym, s),
+            'neon':     (pos, sym, s)          => createAtomStyleNeon(pos, sym, s),
+            'grey':     (pos, sym, s, helpers) => createAtomStyleGrey(pos, sym, s, helpers.greyColorMap[sym] ?? 0x808080),
+        };
+
+        const bondFactories = {
+            'default':  (p1, p2, s1, s2, r, as)          => createBondStyleDefault(p1, p2, s1, s2, r, as, 'default'),
+            'cartoon':  (p1, p2, s1, s2, r, as)          => createBondStyleCartoon(p1, p2, s1, s2, r, as),
+            'glossy':   (p1, p2, s1, s2, r, as)          => createBondStyleDefault(p1, p2, s1, s2, r, as, 'glossy'),
+            'metallic': (p1, p2, s1, s2, r, as)          => createBondStyleDefault(p1, p2, s1, s2, r, as, 'metallic'),
+            'bubble':   (p1, p2, s1, s2, r, as)          => createBondStyleBubble(p1, p2, s1, s2, r, as),
+            'rowan':    (p1, p2, s1, s2, r, as)          => createBondStyleRowan(p1, p2, s1, s2, r, as),
+            'neon':     (p1, p2, s1, s2, r, as)          => createBondStyleNeon(p1, p2, s1, s2, r, as),
+            'grey':     (p1, p2, s1, s2, r, as, helpers) => createBondStyleGrey(p1, p2, s1, s2, r, as, helpers.greyColorMap),
+        };
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Selection state
+        // ─────────────────────────────────────────────────────────────────────
+        const selectedAtoms = new Set();
+
+        // ─────────────────────────────────────────────────────────────────────
+        // THREE.js state
+        // ─────────────────────────────────────────────────────────────────────
+        let renderer3D = null, scene3D = null, camera3D = null;
+        let controls3D = null, dirLight3D = null;
+        let moleculeGroup3D = null, selOverlayGroup = null;
+        let atomMeshes3D = [];
+        let cachedPos3D = [];       // THREE.Vector3[]
+        let cachedSymbols = [];
+        let fitOnNextRender = true;
+        const raycaster = new THREE.Raycaster();
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 2D layout state
+        // ─────────────────────────────────────────────────────────────────────
+        let svgTx = 0, svgTy = 0, svgScale = 1;
+        let layout2D = null;   // { coords2d: [[x,y]...], bonds: [[i,j]...] }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // ── 2D Layout: math helpers ──────────────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
+        function matvec3(M, v) {
+            return [
+                M[0][0]*v[0] + M[0][1]*v[1] + M[0][2]*v[2],
+                M[1][0]*v[0] + M[1][1]*v[1] + M[1][2]*v[2],
+                M[2][0]*v[0] + M[2][1]*v[1] + M[2][2]*v[2],
+            ];
+        }
+        function dot3(a, b)  { return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]; }
+        function norm3(v)    { return Math.sqrt(dot3(v, v)); }
+
+        /** Power-iteration for largest eigenvector of 3×3 symmetric matrix. */
+        function powerIter(M, init, iters = 60) {
+            let v = [...init];
+            for (let t = 0; t < iters; t++) {
+                const w = matvec3(M, v);
+                const n = norm3(w);
+                if (n < 1e-12) break;
+                v = w.map(x => x / n);
+            }
+            return v;
+        }
+
+        /** Project 3-D point cloud onto its first two principal components. */
+        function pca3Dto2D(pts3d) {
+            const n = pts3d.length;
+            if (n < 2) return pts3d.map(() => [0, 0]);
+            const mean = [0, 0, 0];
+            pts3d.forEach(p => { mean[0] += p[0]; mean[1] += p[1]; mean[2] += p[2]; });
+            mean[0] /= n; mean[1] /= n; mean[2] /= n;
+            const C = pts3d.map(p => [p[0]-mean[0], p[1]-mean[1], p[2]-mean[2]]);
+            const cov = [[0,0,0],[0,0,0],[0,0,0]];
+            C.forEach(p => {
+                for (let i = 0; i < 3; i++)
+                    for (let j = 0; j < 3; j++)
+                        cov[i][j] += p[i] * p[j];
+            });
+            const v1   = powerIter(cov, [1, 0, 0]);
+            const lam1 = dot3(v1, matvec3(cov, v1));
+            const def  = cov.map((row, i) => row.map((val, j) => val - lam1 * v1[i] * v1[j]));
+            let v2     = powerIter(def, [0, 1, 0]);
+            // Gram-Schmidt orthogonalization
+            const proj = dot3(v2, v1);
+            v2 = v2.map((x, i) => x - proj * v1[i]);
+            const n2 = norm3(v2);
+            if (n2 > 1e-12) v2 = v2.map(x => x / n2);
+            return C.map(p => [dot3(p, v1), dot3(p, v2)]);
+        }
+
+        /** Fruchterman-Reingold force-directed layout in 2-D. */
+        function fruchtermanReingold(coords, bonds, iters) {
+            const n = coords.length;
+            if (n <= 1) return coords.map(c => [...c]);
+            iters = iters || Math.min(120, Math.max(40, Math.floor(3000 / n)));
+            const k   = Math.sqrt(1.0 / n);
+            const pos = coords.map(p => [p[0], p[1]]);
+            for (let it = 0; it < iters; it++) {
+                const temp = k * (1 - it / iters);
+                const disp = Array.from({ length: n }, () => [0, 0]);
+                for (let i = 0; i < n; i++) {
+                    for (let j = i + 1; j < n; j++) {
+                        let dx = pos[i][0] - pos[j][0];
+                        let dy = pos[i][1] - pos[j][1];
+                        const d = Math.hypot(dx, dy) || 0.001;
+                        const f = k * k / d;
+                        disp[i][0] += dx/d * f;  disp[i][1] += dy/d * f;
+                        disp[j][0] -= dx/d * f;  disp[j][1] -= dy/d * f;
+                    }
+                }
+                for (const [a, b] of bonds) {
+                    let dx = pos[a][0] - pos[b][0];
+                    let dy = pos[a][1] - pos[b][1];
+                    const d = Math.hypot(dx, dy) || 0.001;
+                    const f = d * d / k;
+                    disp[a][0] -= dx/d * f;  disp[a][1] -= dy/d * f;
+                    disp[b][0] += dx/d * f;  disp[b][1] += dy/d * f;
+                }
+                for (let i = 0; i < n; i++) {
+                    const d = Math.hypot(disp[i][0], disp[i][1]) || 0.001;
+                    const s = Math.min(d, temp) / d;
+                    pos[i][0] += disp[i][0] * s;
+                    pos[i][1] += disp[i][1] * s;
+                }
+            }
+            return pos;
+        }
+
+        /** BFS-based connected components. */
+        function findComponents(nAtoms, bonds) {
+            const adj = Array.from({ length: nAtoms }, () => []);
+            for (const [i, j] of bonds) { adj[i].push(j); adj[j].push(i); }
+            const visited = new Uint8Array(nAtoms);
+            const comps = [];
+            for (let s = 0; s < nAtoms; s++) {
+                if (visited[s]) continue;
+                const comp = [], q = [s];
+                visited[s] = 1;
+                while (q.length) {
+                    const v = q.shift();
+                    comp.push(v);
+                    for (const nb of adj[v]) if (!visited[nb]) { visited[nb] = 1; q.push(nb); }
+                }
+                comps.push(comp);
+            }
+            return comps;
+        }
+
+        /**
+         * Full 2-D layout pipeline:
+         *   1. Detect bonds (covalent radii × threshold)
+         *   2. BFS → connected components
+         *   3. Per-component PCA + Fruchterman-Reingold
+         *   4. Normalise bond lengths → target 1.5 units
+         *   5. Arrange fragments left-to-right with a gap
+         */
+        function computeLayout(positions3d, symbols, bondThreshold) {
+            const n = positions3d.length;
+            const bonds = [];
+            for (let i = 0; i < n; i++) {
+                for (let j = i + 1; j < n; j++) {
+                    const r1 = (atomInfo[symbols[i]] || atomInfo['default']).radius;
+                    const r2 = (atomInfo[symbols[j]] || atomInfo['default']).radius;
+                    const p1 = positions3d[i], p2 = positions3d[j];
+                    const dx = p1[0]-p2[0], dy = p1[1]-p2[1], dz = p1[2]-p2[2];
+                    if (Math.sqrt(dx*dx + dy*dy + dz*dz) <= (r1 + r2) * bondThreshold)
+                        bonds.push([i, j]);
+                }
+            }
+
+            const comps   = findComponents(n, bonds);
+            const coords2d = new Array(n);
+
+            for (const comp of comps) {
+                const compSet        = new Set(comp);
+                const pts3d          = comp.map(i => positions3d[i]);
+                const globalToLocal  = new Map();
+                comp.forEach((gi, li) => globalToLocal.set(gi, li));
+                const localBonds = bonds
+                    .filter(([a, b]) => compSet.has(a) && compSet.has(b))
+                    .map(([a, b])    => [globalToLocal.get(a), globalToLocal.get(b)]);
+
+                let local2d;
+                if (comp.length === 1) {
+                    local2d = [[0, 0]];
+                } else if (comp.length === 2) {
+                    local2d = [[-0.75, 0], [0.75, 0]];
+                } else {
+                    local2d = fruchtermanReingold(pca3Dto2D(pts3d), localBonds);
+                }
+                comp.forEach((gi, li) => { coords2d[gi] = local2d[li]; });
+            }
+
+            // Normalise average bond length → 1.5 layout units
+            if (bonds.length > 0) {
+                let total = 0;
+                for (const [a, b] of bonds) {
+                    const dx = coords2d[a][0] - coords2d[b][0];
+                    const dy = coords2d[a][1] - coords2d[b][1];
+                    total += Math.hypot(dx, dy);
+                }
+                const avg = total / bonds.length;
+                if (avg > 0.001) {
+                    const s = 1.5 / avg;
+                    for (let i = 0; i < n; i++) { coords2d[i][0] *= s; coords2d[i][1] *= s; }
+                }
+            }
+
+            // Arrange fragments: largest first, left-to-right with gap
+            const GAP    = 3.0;
+            let cursorX  = 0;
+            const sorted = [...comps].sort((a, b) => b.length - a.length);
+            for (const comp of sorted) {
+                const xs   = comp.map(i => coords2d[i][0]);
+                const minX = Math.min(...xs), maxX = Math.max(...xs);
+                const shift = cursorX - minX;
+                comp.forEach(i => { coords2d[i][0] += shift; });
+                cursorX += (maxX - minX) + GAP;
+            }
+
+            return { coords2d, bonds };
+        }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // ── SVG / 2D rendering ───────────────────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
+        function applySVGTransform() {
+            const g = document.getElementById('svg-content');
+            if (g) g.setAttribute('transform', `translate(${svgTx},${svgTy}) scale(${svgScale})`);
+        }
+
+        function fitSVG() {
+            if (!layout2D) return;
+            const svg = document.getElementById('lewis-svg');
+            if (!svg) return;
+            const W = svg.clientWidth  || 400;
+            const H = svg.clientHeight || 400;
+            const { coords2d } = layout2D;
+            if (!coords2d || coords2d.length === 0) return;
+
+            const xs = coords2d.map(c => c[0]), ys = coords2d.map(c => c[1]);
+            const minX = Math.min(...xs), maxX = Math.max(...xs);
+            const minY = Math.min(...ys), maxY = Math.max(...ys);
+            const molW = (maxX - minX) || 2, molH = (maxY - minY) || 2;
+            const PAD  = 1.8;
+            svgScale = Math.min(W / (molW + 2*PAD), H / (molH + 2*PAD)) * 0.90;
+            svgTx    = W/2 - ((minX + maxX) / 2) * svgScale;
+            svgTy    = H/2 - ((minY + maxY) / 2) * svgScale;
+            applySVGTransform();
+        }
+
+        function intToHex(c) { return '#' + c.toString(16).padStart(6, '0'); }
+
+        /** Rebuild entire SVG from current layout2D. */
+        function buildSVG() {
+            if (!layout2D || !molData) return;
+            const { coords2d, bonds } = layout2D;
+            const { symbols } = molData;
+            const SVG_NS   = 'http://www.w3.org/2000/svg';
+            const ATOM_R   = 0.38;   // in layout units
+            const BOND_W   = 0.11;
+            const SEL_R    = ATOM_R + 0.20;
+
+            document.getElementById('bonds-layer').innerHTML = '';
+            document.getElementById('atoms-layer').innerHTML = '';
+            const bondsLayer = document.getElementById('bonds-layer');
+            const atomsLayer = document.getElementById('atoms-layer');
+
+            // ── Bonds (split-colour, each half atom's colour) ──
+            for (const [a, b] of bonds) {
+                const [x1, y1] = coords2d[a];
+                const [x2, y2] = coords2d[b];
+                const mx = (x1+x2)/2, my = (y1+y2)/2;
+                const cA = intToHex((atomInfo[symbols[a]] || atomInfo['default']).color);
+                const cB = intToHex((atomInfo[symbols[b]] || atomInfo['default']).color);
+
+                for (const [sx, sy, ex, ey, col] of [
+                    [x1, y1, mx, my, cA],
+                    [mx, my, x2, y2, cB],
+                ]) {
+                    const l = document.createElementNS(SVG_NS, 'line');
+                    l.setAttribute('x1', sx); l.setAttribute('y1', sy);
+                    l.setAttribute('x2', ex); l.setAttribute('y2', ey);
+                    l.setAttribute('stroke', col);
+                    l.setAttribute('stroke-width', BOND_W);
+                    l.setAttribute('stroke-linecap', 'round');
+                    bondsLayer.appendChild(l);
+                }
+            }
+
+            // ── Atoms ──
+            for (let i = 0; i < symbols.length; i++) {
+                const [cx, cy] = coords2d[i];
+                const sym  = symbols[i];
+                const info = atomInfo[sym] || atomInfo['default'];
+                const fill = intToHex(info.color);
+                const r    = (info.color >> 16) & 0xff;
+                const g    = (info.color >>  8) & 0xff;
+                const bl   = info.color & 0xff;
+                const lum  = (0.299*r + 0.587*g + 0.114*bl) / 255;
+                const textColor = lum > 0.60 ? '#111827' : '#ffffff';
+
+                const grp = document.createElementNS(SVG_NS, 'g');
+                grp.setAttribute('class', 'atom-group');
+                grp.setAttribute('data-atom-idx', i);
+                grp.style.cursor = 'pointer';
+
+                // Selection ring (hidden by default)
+                const ring = document.createElementNS(SVG_NS, 'circle');
+                ring.setAttribute('class', 'selection-ring');
+                ring.setAttribute('cx', cx); ring.setAttribute('cy', cy);
+                ring.setAttribute('r', SEL_R);
+                ring.setAttribute('fill', 'none');
+                ring.setAttribute('stroke', '#3b82f6');
+                ring.setAttribute('stroke-width', '0.15');
+                ring.setAttribute('display', 'none');
+                grp.appendChild(ring);
+
+                // Atom body
+                const circle = document.createElementNS(SVG_NS, 'circle');
+                circle.setAttribute('cx', cx); circle.setAttribute('cy', cy);
+                circle.setAttribute('r', ATOM_R);
+                circle.setAttribute('fill', fill);
+                if (lum > 0.72) {  // light-coloured atoms (H, S, etc.)
+                    circle.setAttribute('stroke', '#4b5563');
+                    circle.setAttribute('stroke-width', '0.04');
+                }
+                grp.appendChild(circle);
+
+                // Element label
+                const txt = document.createElementNS(SVG_NS, 'text');
+                txt.setAttribute('x', cx); txt.setAttribute('y', cy);
+                txt.setAttribute('text-anchor', 'middle');
+                txt.setAttribute('dominant-baseline', 'central');
+                txt.setAttribute('font-size', sym.length > 1 ? '0.27' : '0.31');
+                txt.setAttribute('font-weight', 'bold');
+                txt.setAttribute('font-family', 'sans-serif');
+                txt.setAttribute('fill', textColor);
+                txt.setAttribute('pointer-events', 'none');
+                txt.textContent = sym;
+                grp.appendChild(txt);
+
+                // ── Events ──
+                grp.addEventListener('mousedown', e => e.stopPropagation());
+                grp.addEventListener('click', e => { e.stopPropagation(); toggleAtom(i); });
+                grp.addEventListener('mouseenter', e => {
+                    const tip = document.getElementById('atom-tooltip');
+                    if (tip) { tip.style.display = 'block'; tip.textContent = `${sym} #${i}`; }
+                });
+                grp.addEventListener('mousemove', e => {
+                    const tip = document.getElementById('atom-tooltip');
+                    if (tip) { tip.style.left = (e.clientX+14)+'px'; tip.style.top = (e.clientY-8)+'px'; }
+                });
+                grp.addEventListener('mouseleave', () => {
+                    const tip = document.getElementById('atom-tooltip');
+                    if (tip) tip.style.display = 'none';
+                });
+
+                atomsLayer.appendChild(grp);
+            }
+        }
+
+        /** Update SVG highlight rings to match current selection. */
+        function updateSVGSelection() {
+            document.querySelectorAll('.atom-group').forEach(grp => {
+                const idx  = parseInt(grp.dataset.atomIdx);
+                const ring = grp.querySelector('.selection-ring');
+                if (ring) ring.setAttribute('display', selectedAtoms.has(idx) ? '' : 'none');
+            });
+        }
+
+        /** Initialise SVG pan/zoom interaction. */
+        function initSVGInteraction() {
+            const svg = document.getElementById('lewis-svg');
+            if (!svg) return;
+            let panning = false, panSX = 0, panSY = 0, panTX0 = 0, panTY0 = 0;
+
+            svg.addEventListener('mousedown', e => {
+                if (e.button === 0 || e.button === 1) {
+                    panning = true;
+                    panSX = e.clientX; panSY = e.clientY;
+                    panTX0 = svgTx;    panTY0 = svgTy;
+                    e.preventDefault();
+                }
+            });
+            window.addEventListener('mousemove', e => {
+                if (!panning) return;
+                svgTx = panTX0 + (e.clientX - panSX);
+                svgTy = panTY0 + (e.clientY - panSY);
+                applySVGTransform();
+            });
+            window.addEventListener('mouseup', () => { panning = false; });
+
+            svg.addEventListener('wheel', e => {
+                e.preventDefault();
+                const factor = e.deltaY > 0 ? 0.88 : 1 / 0.88;
+                const rect   = svg.getBoundingClientRect();
+                const mx     = e.clientX - rect.left;
+                const my     = e.clientY - rect.top;
+                svgTx = mx - (mx - svgTx) * factor;
+                svgTy = my - (my - svgTy) * factor;
+                svgScale *= factor;
+                applySVGTransform();
+            }, { passive: false });
+
+            svg.addEventListener('dblclick', e => {
+                if (!e.target.closest('.atom-group')) fitSVG();
+            });
+        }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // ── 3D rendering ─────────────────────────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
+        function init3D() {
+            const panel  = document.getElementById('panel-3d');
+            const canvas = document.getElementById('molecule-canvas-3d');
+            if (!panel || !canvas) return;
+
+            renderer3D = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true,
+                preserveDrawingBuffer: true,
+                canvas: canvas,
+            });
+            renderer3D.outputEncoding    = THREE.sRGBEncoding;
+            renderer3D.toneMapping       = THREE.ACESFilmicToneMapping;
+            renderer3D.toneMappingExposure = 1.0;
+            renderer3D.setPixelRatio(window.devicePixelRatio || 1);
+
+            const w = Math.max(panel.clientWidth,  1);
+            const h = Math.max(panel.clientHeight, 1);
+            renderer3D.setSize(w, h);
+
+            scene3D  = new THREE.Scene();
+            camera3D = new THREE.PerspectiveCamera(55, w / h, 0.1, 2000);
+            camera3D.position.set(0, 0, 10);
+            updateBgColor3D();
+
+            controls3D = new THREE.TrackballControls(camera3D, renderer3D.domElement);
+            controls3D.rotateSpeed = 5.0;
+            controls3D.zoomSpeed   = 1.2;
+            controls3D.panSpeed    = 0.8;
+
+            dirLight3D = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight3D.position.set(10, 10, 10);
+            scene3D.add(dirLight3D);
+            scene3D.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+            window.addEventListener('resize', handle3DResize);
+            handle3DResize();
+            animate3D();
+
+            // Atom picking: fire on click (mouse didn't move between down/up)
+            let md3 = null;
+            renderer3D.domElement.addEventListener('mousedown', e => {
+                md3 = { x: e.clientX, y: e.clientY };
+            });
+            renderer3D.domElement.addEventListener('mouseup', e => {
+                if (!md3) return;
+                if (Math.hypot(e.clientX - md3.x, e.clientY - md3.y) < 5) {
+                    const rect  = renderer3D.domElement.getBoundingClientRect();
+                    const mouse = new THREE.Vector2(
+                        ((e.clientX - rect.left)  / rect.width)  *  2 - 1,
+                        ((e.clientY - rect.top)   / rect.height) * -2 + 1,
+                    );
+                    raycaster.setFromCamera(mouse, camera3D);
+                    const hits = raycaster.intersectObjects(atomMeshes3D, false);
+                    if (hits.length > 0) {
+                        const idx = hits[0].object.userData.atomIndex;
+                        if (idx !== undefined) toggleAtom(idx);
+                    }
+                }
+                md3 = null;
+            });
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            if (controls3D) controls3D.update();
+            if (dirLight3D && camera3D) {
+                if (fragSettings.showShading) {
+                    const off = new THREE.Vector3(5, 8, 5);
+                    dirLight3D.position.copy(
+                        camera3D.position.clone().add(off.applyQuaternion(camera3D.quaternion))
+                    );
+                } else {
+                    dirLight3D.position.copy(camera3D.position);
+                }
+            }
+            if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
+        }
+
+        function handle3DResize() {
+            const panel = document.getElementById('panel-3d');
+            if (!panel || !renderer3D || !camera3D) return;
+            const w = Math.max(panel.clientWidth,  1);
+            const h = Math.max(panel.clientHeight, 1);
+            renderer3D.setSize(w, h);
+            camera3D.aspect = w / h;
+            camera3D.updateProjectionMatrix();
+            if (controls3D && typeof controls3D.handleResize === 'function')
+                controls3D.handleResize();
+        }
+
+        function updateBgColor3D() {
+            if (!scene3D || !renderer3D) return;
+            const col = new THREE.Color(fragSettings.backgroundColor);
+            scene3D.background = col;
+            renderer3D.setClearColor(col, 1);
+        }
+
+        function disposeObj3D(obj) {
+            obj.traverse(child => {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) child.material.forEach(m => m.dispose && m.dispose());
+                    else if (child.material.dispose) child.material.dispose();
+                }
+            });
+        }
+
+        function fitCamera3D(group) {
+            if (!camera3D || !controls3D) return;
+            const box = new THREE.Box3().setFromObject(group);
+            if (!isFinite(box.max.x)) return;
+            const center  = box.getCenter(new THREE.Vector3());
+            const size    = box.getSize(new THREE.Vector3());
+            const maxDim  = Math.max(size.x, size.y, size.z, 1);
+            const halfFov = THREE.MathUtils.degToRad(camera3D.fov / 2);
+            const dist    = maxDim / (2 * Math.tan(halfFov)) + maxDim;
+            camera3D.position.copy(center.clone().add(new THREE.Vector3(dist, dist * 0.5, dist)));
+            controls3D.target.copy(center);
+            controls3D.update();
+            camera3D.lookAt(center);
+            camera3D.updateProjectionMatrix();
+        }
+
+        /** Full 3-D molecule re-render (atoms + bonds). */
+        function renderMolecule3D() {
+            if (!scene3D || !molData) return;
+            if (moleculeGroup3D) { scene3D.remove(moleculeGroup3D); disposeObj3D(moleculeGroup3D); }
+            moleculeGroup3D = new THREE.Group();
+            atomMeshes3D    = [];
+
+            const positions  = molData.positions.map(p => new THREE.Vector3(...p));
+            const symbols    = molData.symbols;
+            cachedPos3D      = positions;
+            cachedSymbols    = symbols;
+
+            const atomScale  = Math.max(fragSettings.atomSize, 0.05);
+            const bondRadius = 0.1;
+            const cutoff     = fragSettings.bondThreshold;
+            const style      = (fragSettings.style || 'cartoon').toLowerCase();
+            const af         = atomFactories[style]  || atomFactories['default'];
+            const bf         = bondFactories[style]  || bondFactories['default'];
+
+            const uniq = [...new Set(symbols)];
+            const grey = {};
+            uniq.forEach((s, i) => {
+                grey[s] = new THREE.Color().setHSL(0, 0, (i+1) / (uniq.length+1)).getHex();
+            });
+            const helpers = { greyColorMap: grey };
+
+            // Bonds
+            if (fragSettings.showBond) {
+                for (let i = 0; i < positions.length; i++) {
+                    for (let j = i + 1; j < positions.length; j++) {
+                        const r1 = (atomInfo[symbols[i]] || atomInfo['default']).radius;
+                        const r2 = (atomInfo[symbols[j]] || atomInfo['default']).radius;
+                        if (positions[i].distanceTo(positions[j]) <= (r1 + r2) * cutoff) {
+                            const bond = bf(positions[i], positions[j], symbols[i], symbols[j], bondRadius, atomScale, helpers);
+                            if (bond) { bond.renderOrder = 1; moleculeGroup3D.add(bond); }
+                        }
+                    }
+                }
+            }
+
+            // Atoms (tag each mesh for raycasting)
+            for (let i = 0; i < positions.length; i++) {
+                const atom = af(positions[i], symbols[i], atomScale, helpers);
+                if (atom) {
+                    atom.traverse(child => {
+                        if (child.isMesh) { child.userData.atomIndex = i; atomMeshes3D.push(child); }
+                    });
+                    atom.renderOrder = 0;
+                    moleculeGroup3D.add(atom);
+                }
+            }
+
+            scene3D.add(moleculeGroup3D);
+            if (fitOnNextRender) { fitCamera3D(moleculeGroup3D); fitOnNextRender = false; }
+            renderSelOverlay3D();
+        }
+
+        /** Rebuild the transparent blue selection-sphere overlay. */
+        function renderSelOverlay3D() {
+            if (!scene3D) return;
+            if (selOverlayGroup) { scene3D.remove(selOverlayGroup); disposeObj3D(selOverlayGroup); }
+            selOverlayGroup = new THREE.Group();
+            const atomScale  = Math.max(fragSettings.atomSize, 0.05);
+
+            for (const idx of selectedAtoms) {
+                if (idx >= cachedPos3D.length) continue;
+                const sym   = cachedSymbols[idx] || 'C';
+                const info  = atomInfo[sym] || atomInfo['default'];
+                const r     = info.radius * atomScale * 1.50;
+                const geom  = new THREE.SphereGeometry(r, 16, 12);
+                const mat   = new THREE.MeshBasicMaterial({
+                    color: 0x3b82f6, transparent: true, opacity: 0.40, depthWrite: false,
+                });
+                const mesh  = new THREE.Mesh(geom, mat);
+                mesh.position.copy(cachedPos3D[idx]);
+                mesh.renderOrder = 5;
+                selOverlayGroup.add(mesh);
+            }
+            scene3D.add(selOverlayGroup);
+        }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // ── Selection logic ──────────────────────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
+        function toggleAtom(idx) {
+            if (selectedAtoms.has(idx)) selectedAtoms.delete(idx);
+            else                        selectedAtoms.add(idx);
+            updateSelectionVisuals();
+        }
+
+        function updateSelectionVisuals() {
+            updateSVGSelection();
+            renderSelOverlay3D();
+            updateIndexPanel();
+        }
+
+        function updateIndexPanel() {
+            if (!molData) return;
+            const n          = molData.symbols.length;
+            const selected   = [...selectedAtoms].sort((a, b) => a - b);
+            const unselected = Array.from({ length: n }, (_, i) => i).filter(i => !selectedAtoms.has(i));
+
+            document.getElementById('selected-count').textContent   = selected.length;
+            document.getElementById('unselected-count').textContent = unselected.length;
+            document.getElementById('selected-indices').value   = '[' + selected.join(', ') + ']';
+            document.getElementById('unselected-indices').value = '[' + unselected.join(', ') + ']';
+        }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // ── UI controls ──────────────────────────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
+        function toggleCard(id) {
+            const content = document.getElementById(id + '-content');
+            const arrow   = document.getElementById(id + '-arrow');
+            if (!content) return;
+            const collapsed = content.classList.toggle('collapsed');
+            if (arrow) arrow.classList.toggle('rotated', collapsed);
+        }
+
+        function initSplitter() {
+            const splitter    = document.getElementById('splitter');
+            const panel2d     = document.getElementById('panel-2d');
+            const mainContent = document.querySelector('.main-content');
+            let dragging = false, startX = 0, startW = 0;
+
+            splitter.addEventListener('mousedown', e => {
+                dragging = true;
+                startX   = e.clientX;
+                startW   = panel2d.offsetWidth;
+                splitter.classList.add('active');
+                e.preventDefault();
+            });
+            window.addEventListener('mousemove', e => {
+                if (!dragging) return;
+                const totalW = mainContent.offsetWidth - 5;  // minus splitter
+                const newW   = Math.max(150, Math.min(startW + (e.clientX - startX), totalW - 150));
+                panel2d.style.flex  = 'none';
+                panel2d.style.width = newW + 'px';
+                fitSVG();
+                handle3DResize();
+            });
+            window.addEventListener('mouseup', () => {
+                if (dragging) { dragging = false; splitter.classList.remove('active'); }
+            });
+        }
+
+        /** Recompute layout + rebuild both panels when bond threshold changes. */
+        function recompute() {
+            if (!molData) return;
+            layout2D = computeLayout(molData.positions, molData.symbols, fragSettings.bondThreshold);
+            buildSVG();
+            fitSVG();
+            renderMolecule3D();
+        }
+
+        function initUIEvents() {
+            // Sidebar toggle
+            document.getElementById('sidebar-toggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+                setTimeout(() => { fitSVG(); handle3DResize(); }, 320);
+            });
+
+            // Bond threshold
+            const btSlider = document.getElementById('bond-threshold');
+            btSlider.value = fragSettings.bondThreshold;
+            document.getElementById('bond-threshold-value').textContent = parseFloat(btSlider.value).toFixed(2);
+            btSlider.addEventListener('input', function () {
+                fragSettings.bondThreshold = parseFloat(this.value);
+                document.getElementById('bond-threshold-value').textContent = parseFloat(this.value).toFixed(2);
+                recompute();
+            });
+
+            // Atom size
+            const asSlider = document.getElementById('atom-size');
+            asSlider.value = fragSettings.atomSize;
+            document.getElementById('atom-size-value').textContent = parseFloat(asSlider.value).toFixed(2);
+            asSlider.addEventListener('input', function () {
+                fragSettings.atomSize = parseFloat(this.value);
+                document.getElementById('atom-size-value').textContent = parseFloat(this.value).toFixed(2);
+                renderMolecule3D();
+            });
+
+            // 3D style
+            const styleSelect = document.getElementById('style-select');
+            styleSelect.value = fragSettings.style || 'cartoon';
+            styleSelect.addEventListener('change', function () {
+                fragSettings.style = this.value;
+                renderMolecule3D();
+            });
+
+            // Background colour
+            const bgInput = document.getElementById('bg-color');
+            bgInput.value = fragSettings.backgroundColor || '#1f2937';
+            document.getElementById('bg-color-value').textContent = bgInput.value;
+            bgInput.addEventListener('input', function () {
+                fragSettings.backgroundColor = this.value;
+                document.getElementById('bg-color-value').textContent = this.value;
+                updateBgColor3D();
+            });
+
+            // Selection buttons
+            document.getElementById('select-all-btn').addEventListener('click', () => {
+                if (molData) molData.symbols.forEach((_, i) => selectedAtoms.add(i));
+                updateSelectionVisuals();
+            });
+            document.getElementById('clear-btn').addEventListener('click', () => {
+                selectedAtoms.clear();
+                updateSelectionVisuals();
+            });
+            document.getElementById('invert-btn').addEventListener('click', () => {
+                if (!molData) return;
+                molData.symbols.forEach((_, i) => {
+                    if (selectedAtoms.has(i)) selectedAtoms.delete(i);
+                    else                      selectedAtoms.add(i);
+                });
+                updateSelectionVisuals();
+            });
+
+            // Copy buttons
+            document.getElementById('copy-selected-btn').addEventListener('click', () => {
+                navigator.clipboard.writeText(
+                    document.getElementById('selected-indices').value
+                ).catch(() => {});
+            });
+            document.getElementById('copy-unselected-btn').addEventListener('click', () => {
+                navigator.clipboard.writeText(
+                    document.getElementById('unselected-indices').value
+                ).catch(() => {});
+            });
+
+            // Window resize
+            window.addEventListener('resize', () => { fitSVG(); handle3DResize(); });
+        }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // ── Entry point ──────────────────────────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
+        document.addEventListener('DOMContentLoaded', () => {
+            init3D();
+            initSVGInteraction();
+            initSplitter();
+            initUIEvents();
+
+            if (molData) {
+                layout2D = computeLayout(
+                    molData.positions, molData.symbols, fragSettings.bondThreshold
+                );
+                buildSVG();
+                renderMolecule3D();
+                updateIndexPanel();
+                // Fit SVG after first paint
+                requestAnimationFrame(() => { requestAnimationFrame(fitSVG); });
+            }
+        });
+    </script>
+</body>
+
+</html>

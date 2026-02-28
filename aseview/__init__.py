@@ -11,6 +11,6 @@ except PackageNotFoundError:
 
 __author__ = "aseview"
 
-from .wrapper import MolecularViewer, NormalViewer, OverlayViewer, MolecularData
+from .wrapper import MolecularViewer, NormalViewer, OverlayViewer, FragSelector, MolecularData
 
-__all__ = ["MolecularViewer", "NormalViewer", "OverlayViewer", "MolecularData"]
+__all__ = ["MolecularViewer", "NormalViewer", "OverlayViewer", "FragSelector", "MolecularData"]

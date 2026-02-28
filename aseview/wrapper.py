@@ -917,7 +917,7 @@ class OverlayViewer(BaseViewer):
     <title>{title}</title>
     <meta charset="UTF-8">
     <style>
-        body {{ font-family: Arial, sans-serif; background: #111827; color: #f9fafb; 
+        body {{ font-family: Arial, sans-serif; background: #111827; color: #f9fafb;
                 display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }}
         .container {{ text-align: center; }}
     </style>
@@ -930,3 +930,117 @@ class OverlayViewer(BaseViewer):
 </body>
 </html>
 """
+
+
+class FragSelector(BaseViewer):
+    """
+    Interactive fragment selector with synchronized 2D (SVG) and 3D (THREE.js) views.
+
+    Click atoms in either panel to toggle selection.
+    Selected / unselected atom indices are shown in the sidebar and can be copied
+    to the clipboard.
+
+    Parameters
+    ----------
+    data : Atoms or str
+        A single ASE Atoms object or a path to a structure file.
+        Only the first frame is used if a multi-frame file is given.
+    bondThreshold : float
+        Scale factor applied to the sum of covalent radii for bond detection (default 1.2).
+    atomSize : float
+        Relative atom sphere size (default 0.4).
+    style : str
+        3-D rendering style: 'cartoon', 'glossy', 'default', 'bubble', 'metallic' (default 'cartoon').
+    showBond : bool
+        Whether to draw bonds (default True).
+    showShading : bool
+        Enable directional shading on atom spheres (default True).
+    backgroundColor : str
+        Hex colour string for the 3-D panel background (default '#1f2937').
+    """
+
+    def __init__(self, data: Union[Atoms, Dict[str, Any], str, List], **kwargs):
+        super().__init__(data)
+        # Keep only the first frame
+        if isinstance(self.data, list):
+            self.data = self.data[0] if self.data else {}
+
+        self.settings = {
+            "bondThreshold": 1.2,
+            "atomSize":      0.4,
+            "style":         "cartoon",
+            "showBond":      True,
+            "showShading":   True,
+            "backgroundColor": "#1f2937",
+            **kwargs,
+        }
+
+    def _get_js_data(self) -> str:
+        """Return a single-element JSON array for the template."""
+        data = self.data
+        if isinstance(data, list):
+            data = data[0] if data else {}
+        return json.dumps([data])
+
+    def _generate_html(self) -> str:
+        js_data       = self._get_js_data()
+        settings_json = json.dumps(self.settings)
+
+        # ── Load template ──────────────────────────────────────────────────
+        template_candidates = [
+            os.path.join(os.path.dirname(__file__), "..", "static", "frag_selector.html"),
+            os.path.join(os.path.dirname(__file__), "templates", "frag_selector.html"),
+        ]
+        html = None
+        for candidate in template_candidates:
+            if os.path.exists(candidate):
+                with open(candidate, "r", encoding="utf-8") as f:
+                    html = f.read()
+                break
+
+        if html is None:
+            return "<html><body><p>FragSelector template not found.</p></body></html>"
+
+        # ── Inline vendor JS (same pattern as MolecularViewer) ─────────────
+        vendor_dir = os.path.join(os.path.dirname(__file__), "static", "js", "vendor")
+
+        three_path = os.path.join(vendor_dir, "three.min.js")
+        if os.path.exists(three_path):
+            with open(three_path, "r", encoding="utf-8") as f:
+                three_js = f.read()
+            html = html.replace(
+                '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>',
+                f"<script>{three_js}</script>",
+            )
+
+        orbit_path = os.path.join(vendor_dir, "OrbitControls.js")
+        if os.path.exists(orbit_path):
+            with open(orbit_path, "r", encoding="utf-8") as f:
+                orbit_js = f.read()
+            html = html.replace(
+                '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>',
+                f"<script>{orbit_js}</script>",
+            )
+
+        trackball_path = os.path.join(vendor_dir, "TrackballControls.js")
+        if os.path.exists(trackball_path):
+            with open(trackball_path, "r", encoding="utf-8") as f:
+                trackball_js = f.read()
+            html = html.replace(
+                '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>',
+                f"<script>{trackball_js}</script>",
+            )
+
+        styles_path = os.path.join(os.path.dirname(__file__), "static", "js", "styles.js")
+        if os.path.exists(styles_path):
+            with open(styles_path, "r", encoding="utf-8") as f:
+                styles_js = f.read()
+            cdn_tag = '<script src="https://raw.githack.com/kangmg/aseview/main/aseview/static/js/styles.js"></script>'
+            if cdn_tag in html:
+                html = html.replace(cdn_tag, f"<script>\n{styles_js}\n</script>")
+
+        # ── Inject molecular data and settings ────────────────────────────
+        html = html.replace("{{molecular_data}}", js_data)
+        html = html.replace("{{settings}}", settings_json)
+
+        return html
