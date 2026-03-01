@@ -3737,9 +3737,12 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             const canvas3d = document.getElementById('molecule-canvas-3d');
             if (canvas3d) canvas3d.className = 'mode-' + mode;
 
-            // 3D controls: disable rotation/pan in rect/lasso modes
+            // 3D controls: disable entirely in rect/lasso so TrackballControls
+            // does not call preventDefault() on pointerdown (which would suppress
+            // our own mousedown/mouseup handlers and break area-selection dragging).
             if (controls3D) {
                 const selMode = (mode === 'rect' || mode === 'lasso');
+                controls3D.enabled  = !selMode;
                 controls3D.noRotate = selMode;
                 controls3D.noPan    = selMode;
             }
@@ -4096,12 +4099,16 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             animate3D();
 
             // ── Mode-aware 3D interaction ─────────────────────────────────────
+            // Use pointer events throughout: TrackballControls registers
+            // 'pointerdown' on the canvas and calls event.preventDefault(), which
+            // suppresses the subsequent 'mousedown'. By also listening on 'pointerdown'
+            // we receive the event independently of what TrackballControls does.
             let md3 = null;
-            let sel3DDragging   = false;
-            let sel3DStartX     = 0, sel3DStartY = 0;
+            let sel3DDragging    = false;
+            let sel3DStartX      = 0, sel3DStartY = 0;
             let lasso3DClientPts = [];
 
-            renderer3D.domElement.addEventListener('mousedown', e => {
+            renderer3D.domElement.addEventListener('pointerdown', e => {
                 if (e.button !== 0) return;
                 md3 = { x: e.clientX, y: e.clientY };
 
@@ -4117,7 +4124,7 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 }
             });
 
-            window.addEventListener('mousemove', e => {
+            window.addEventListener('pointermove', e => {
                 if (sel3DDragging && currentMode === 'rect') {
                     update3DSelRectOverlay(sel3DStartX, sel3DStartY, e.clientX, e.clientY);
                 } else if (sel3DDragging && currentMode === 'lasso') {
@@ -4127,7 +4134,7 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 }
             });
 
-            window.addEventListener('mouseup', e => {
+            window.addEventListener('pointerup', e => {
                 if (!sel3DDragging) return;
                 sel3DDragging = false;
                 const additive = e.shiftKey;
@@ -4151,7 +4158,7 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             });
 
             // Atom picking (navigate + click modes; rect/lasso handle their own selection)
-            renderer3D.domElement.addEventListener('mouseup', e => {
+            renderer3D.domElement.addEventListener('pointerup', e => {
                 const areaMode = (currentMode === 'rect' || currentMode === 'lasso');
                 if (areaMode) { md3 = null; return; }
                 if (!md3) return;
