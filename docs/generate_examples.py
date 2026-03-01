@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ase import Atoms
 from ase.build import molecule, bulk, fcc111, graphene_nanoribbon, nanotube
 from ase.lattice.cubic import FaceCenteredCubic
-from aseview import MolecularViewer, OverlayViewer, NormalViewer
+from aseview import MolecularViewer, OverlayViewer, NormalViewer, FragSelector
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "assets", "viewers")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -76,41 +76,44 @@ def create_overlay_viewer():
     mol2.info['name'] = "Conformer B (+15°)"
     mol3.info['name'] = "Conformer C (-15°)"
 
-    # Rotate mol2 slightly
-    positions2 = mol2.get_positions()
+    # Center at COM before rotating so all conformers overlap at origin
+    center = mol2.get_positions().mean(axis=0)
+
+    # Rotate mol2 slightly around its own center
+    positions2 = mol2.get_positions() - center
     angle = np.pi / 12  # 15 degrees
     cos_a, sin_a = np.cos(angle), np.sin(angle)
     rotation = np.array([[cos_a, -sin_a, 0], [sin_a, cos_a, 0], [0, 0, 1]])
-    mol2.set_positions(positions2 @ rotation.T)
+    mol2.set_positions(positions2 @ rotation.T + center)
 
-    # Rotate mol3 differently
-    positions3 = mol3.get_positions()
+    # Rotate mol3 around its own center
+    positions3 = mol3.get_positions() - center
     angle = -np.pi / 12
     cos_a, sin_a = np.cos(angle), np.sin(angle)
     rotation = np.array([[cos_a, -sin_a, 0], [sin_a, cos_a, 0], [0, 0, 1]])
-    mol3.set_positions(positions3 @ rotation.T)
+    mol3.set_positions(positions3 @ rotation.T + center)
 
-    viewer = OverlayViewer([mol1, mol2, mol3], colorBy="Molecule", centerMolecules=True)
+    viewer = OverlayViewer([mol1, mol2, mol3], colorBy="Molecule", alignMolecules=True)
     viewer.save_html(os.path.join(OUTPUT_DIR, "overlay_conformers.html"))
     print("Created overlay_conformers.html")
 
 
 def create_overlay_colormap_viewer():
     """Create overlay with colormap."""
-    # Create optimization-like trajectory
+    # Create optimization-like trajectory (bond-length scan)
     water = molecule("H2O")
+    center = water.get_positions().mean(axis=0)
     trajectory = []
 
     for i in range(10):
         atoms = water.copy()
-        # Gradually change geometry
-        scale = 1.0 + i * 0.02
-        positions = atoms.get_positions()
-        positions *= scale
-        atoms.set_positions(positions)
+        # Scale positions around the molecular center so structures stay co-located
+        positions = atoms.get_positions() - center
+        positions *= (1.0 + i * 0.02)
+        atoms.set_positions(positions + center)
         trajectory.append(atoms)
 
-    viewer = OverlayViewer(trajectory, colorBy="Colormap", colormap="viridis", centerMolecules=True)
+    viewer = OverlayViewer(trajectory, colorBy="Colormap", colormap="viridis", alignMolecules=True)
     viewer.save_html(os.path.join(OUTPUT_DIR, "overlay_colormap.html"))
     print("Created overlay_colormap.html")
 
@@ -589,6 +592,35 @@ loop_
     print("Created casio3_polyhedron.html")
 
 
+def create_frag_selector_basic():
+    """Create basic FragSelector example (methanol)."""
+    atoms = molecule('CH3OH')
+    viewer = FragSelector(atoms, style='cartoon')
+    viewer.save_html(os.path.join(OUTPUT_DIR, "frag_selector_basic.html"))
+    print("Created frag_selector_basic.html")
+
+
+def create_frag_selector_multifrag():
+    """Create multi-fragment FragSelector example (two water molecules)."""
+    water1 = molecule('H2O')
+    water2 = molecule('H2O')
+    water2.translate([5, 0, 0])
+    system = water1 + water2
+    viewer = FragSelector(system, style='cartoon')
+    viewer.save_html(os.path.join(OUTPUT_DIR, "frag_selector_multifrag.html"))
+    print("Created frag_selector_multifrag.html")
+
+
+def create_frag_selector_bis_iodo():
+    """Create large conjugated system FragSelector example (bis-iodo benzimidazole dimer)."""
+    from ase.io import read
+    xyz_path = os.path.join(os.path.dirname(__file__), "assets", "examples", "dimer.xyz")
+    atoms = read(xyz_path)
+    viewer = FragSelector(atoms, style='cartoon')
+    viewer.save_html(os.path.join(OUTPUT_DIR, "frag_selector_bis_iodo.html"))
+    print("Created frag_selector_bis_iodo.html")
+
+
 def create_carbazole_ring_viewer():
     """Create carbazole molecule viewer with ring highlighting (inline coordinates)."""
     import os
@@ -688,4 +720,8 @@ if __name__ == "__main__":
     # Polyhedron & Ring highlight
     create_casio3_polyhedron_viewer()
     create_carbazole_ring_viewer()
+    # Fragment selector
+    create_frag_selector_basic()
+    create_frag_selector_multifrag()
+    create_frag_selector_bis_iodo()
     print("Done!")
