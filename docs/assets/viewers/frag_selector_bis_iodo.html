@@ -3115,6 +3115,15 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                             <button class="btn" id="clear-btn">Clear</button>
                             <button class="btn" id="invert-btn">Invert</button>
                         </div>
+                        <div class="control-group" style="margin-top:0.75rem;">
+                            <div class="control-label" style="margin-bottom:0.3rem;">
+                                <span>Copy xyz</span>
+                            </div>
+                            <div class="btn-row">
+                                <button class="btn" id="xyz-byfrag-btn" style="flex:1;" title="Multi-frame XYZ: one frame per fragment (selected first)">by frag</button>
+                                <button class="btn" id="xyz-reindexed-btn" style="flex:1;" title="Single XYZ: atoms reordered — selected fragments first">reindexed</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -3336,7 +3345,7 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
         // 2D layout state
         // ─────────────────────────────────────────────────────────────────────
         let svgTx = 0, svgTy = 0, svgScale = 1;
-        let layout2D = null;   // { coords2d: [[x,y]...], bonds: [[i,j]...] }
+        let layout2D = null;   // { coords2d: [[x,y]...], bonds: [[i,j]...], comps: [[idx,...]...] }
 
         // ═════════════════════════════════════════════════════════════════════
         // ── 2D Layout: math helpers ──────────────────────────────────────────
@@ -3541,7 +3550,7 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 cursorX += (maxX - minX) + GAP;
             }
 
-            return { coords2d, bonds };
+            return { coords2d, bonds, comps };
         }
 
         // ═════════════════════════════════════════════════════════════════════
@@ -3609,6 +3618,10 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                     l.setAttribute('stroke', col);
                     l.setAttribute('stroke-width', BOND_W);
                     l.setAttribute('stroke-linecap', 'round');
+                    l.setAttribute('class', 'bond-seg');
+                    l.dataset.bondA = a;
+                    l.dataset.bondB = b;
+                    l.dataset.origColor = col;
                     bondsLayer.appendChild(l);
                 }
             }
@@ -3692,12 +3705,21 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             }
         }
 
-        /** Update SVG highlight rings to match current selection. */
+        /** Update SVG highlight rings and bond colours to match current selection. */
         function updateSVGSelection() {
+            // Atom rings
             document.querySelectorAll('.atom-group').forEach(grp => {
                 const idx  = parseInt(grp.dataset.atomIdx);
                 const ring = grp.querySelector('.selection-ring');
                 if (ring) ring.setAttribute('display', selectedAtoms.has(idx) ? '' : 'none');
+            });
+            // Bond segments — yellow when both endpoints are selected
+            document.querySelectorAll('.bond-seg').forEach(el => {
+                const a = parseInt(el.dataset.bondA);
+                const b = parseInt(el.dataset.bondB);
+                el.setAttribute('stroke',
+                    (selectedAtoms.has(a) && selectedAtoms.has(b)) ? '#eab308' : el.dataset.origColor
+                );
             });
         }
 
@@ -3932,6 +3954,68 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 }
             });
             updateSelectionVisuals();
+        }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // ── XYZ export helpers ───────────────────────────────────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
+        /** Multi-frame (trajectory) XYZ: each connected component is a separate frame.
+         *  Frames with ≥1 selected atom come first, then unselected-fragment frames. */
+        function buildXyzByFrag() {
+            if (!layout2D || !molData) return '';
+            const { comps } = layout2D;
+            const { symbols, positions } = molData;
+
+            const selectedFrags   = [];
+            const unselectedFrags = [];
+            for (const comp of comps) {
+                if (comp.some(i => selectedAtoms.has(i))) selectedFrags.push(comp);
+                else                                       unselectedFrags.push(comp);
+            }
+
+            const lines = [];
+            for (const frag of [...selectedFrags, ...unselectedFrags]) {
+                lines.push(String(frag.length));
+                const hasAnySelected = frag.some(i => selectedAtoms.has(i));
+                lines.push(hasAnySelected ? 'selected' : 'unselected');
+                for (const i of frag) {
+                    const [x, y, z] = positions[i];
+                    lines.push(`${symbols[i]}  ${x.toFixed(6)}  ${y.toFixed(6)}  ${z.toFixed(6)}`);
+                }
+            }
+            return lines.join('\n');
+        }
+
+        /** Single XYZ with atoms reordered: selected-fragment atoms first (preserving
+         *  intra-fragment order), then unselected-fragment atoms.
+         *  Comment line: Frags= [0:N_sel, N_sel:N_total] */
+        function buildXyzReindexed() {
+            if (!layout2D || !molData) return '';
+            const { comps } = layout2D;
+            const { symbols, positions } = molData;
+
+            const selectedFrags   = [];
+            const unselectedFrags = [];
+            for (const comp of comps) {
+                if (comp.some(i => selectedAtoms.has(i))) selectedFrags.push(comp);
+                else                                       unselectedFrags.push(comp);
+            }
+
+            const selAtoms = selectedFrags.flat();
+            const unselAtoms = unselectedFrags.flat();
+            const orderedAtoms = [...selAtoms, ...unselAtoms];
+            const nSel   = selAtoms.length;
+            const nTotal = orderedAtoms.length;
+
+            const lines = [];
+            lines.push(String(nTotal));
+            lines.push(`Frags= [0:${nSel}, ${nSel}:${nTotal}]`);
+            for (const i of orderedAtoms) {
+                const [x, y, z] = positions[i];
+                lines.push(`${symbols[i]}  ${x.toFixed(6)}  ${y.toFixed(6)}  ${z.toFixed(6)}`);
+            }
+            return lines.join('\n');
         }
 
         // ═════════════════════════════════════════════════════════════════════
@@ -4470,6 +4554,16 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 navigator.clipboard.writeText(
                     document.getElementById('unselected-indices').value
                 ).catch(() => {});
+            });
+
+            // Copy XYZ buttons
+            document.getElementById('xyz-byfrag-btn').addEventListener('click', () => {
+                const xyz = buildXyzByFrag();
+                if (xyz) navigator.clipboard.writeText(xyz).catch(() => {});
+            });
+            document.getElementById('xyz-reindexed-btn').addEventListener('click', () => {
+                const xyz = buildXyzReindexed();
+                if (xyz) navigator.clipboard.writeText(xyz).catch(() => {});
             });
 
             // Window resize

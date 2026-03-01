@@ -9013,7 +9013,7 @@ if (typeof define === 'function' && define.amd) {
     (function() {
         var MAX_RETRIES = 100;  // 5 seconds max (100 * 50ms)
         var retryCount = 0;
-        var pythonSettings = {"bondThreshold": 1.2, "bondThickness": 0.1, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "cartoon", "showCell": true, "showBond": true, "showShadow": false, "showShading": true, "showEnergyPlot": false, "showForces": false, "colorBy": "Element", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Perspective", "rotationMode": "TrackBall", "selectionMode": "Lasso"};
+        var pythonSettings = {"bondThreshold": 1.15, "bondThickness": 0.1, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "cartoon", "showCell": true, "showBond": true, "showShadow": false, "showShading": true, "showEnergyPlot": false, "showForces": false, "colorBy": "Element", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Perspective", "rotationMode": "TrackBall", "selectionMode": "Lasso", "showRings": true, "ringOpacity": 0.35};
 
         function initData() {
             function trySetData() {
@@ -9029,7 +9029,7 @@ if (typeof define === 'function' && define.amd) {
                         updateFromSettings();
                     }
                     if (typeof setMolecularData === 'function') {
-                        setMolecularData([{"positions": [[0.0, 0.0, 0.119262], [0.0, 0.763239, -0.477047], [0.0, -0.763239, -0.477047]], "symbols": ["O", "H", "H"]}]);
+                        setMolecularData([{"positions": [[-1.268587, 3.133147, 10.747185], [-0.910866, 2.368808, 9.50654], [-0.690901, 0.983936, 9.572118], [-0.384794, 0.255745, 8.40103], [-0.315087, 0.936147, 7.185078], [-0.550664, 2.317767, 7.095945], [-0.852236, 3.015722, 8.270608], [0.0, 0.0, 6.218598], [0.118345, -1.260468, 6.773151], [-0.115645, -1.124745, 8.141747], [-0.052302, -2.274078, 8.960522], [0.226774, -3.529192, 8.397141], [0.466183, -3.628371, 7.025164], [0.410736, -2.505323, 6.192375], [0.325191, -4.742434, 9.27452], [0.188517, 0.300979, 4.805273], [-1.114221, 0.173663, 4.016158], [-0.970087, 0.574017, 2.547094], [-0.091333, -0.375951, 1.738248], [0.0, 0.0, 0.0], [0.846897, -0.876297, -0.85763], [-1.510074, 0.075719, -0.524504], [0.439665, 1.536509, -0.097183], [-0.797589, 2.687782, 11.62983], [-2.353966, 3.132756, 10.886772], [-0.920085, 4.169274, 10.682103], [-0.754857, 0.462445, 10.523085], [-0.508846, 2.843024, 6.147438], [-1.042825, 4.085461, 8.207878], [-0.224754, -2.178096, 10.028901], [0.700456, -4.595056, 6.583224], [0.592884, -2.609213, 5.127879], [-0.346025, -4.657379, 10.135616], [1.351415, -4.860402, 9.635738], [0.036392, -5.64559, 8.726657], [0.598193, 1.313979, 4.727826], [0.958922, -0.377103, 4.424704], [-1.878057, 0.815466, 4.473496], [-1.497217, -0.852179, 4.083605], [-0.574534, 1.59385, 2.475698], [-1.968957, 0.60058, 2.095905], [0.930434, -0.364498, 2.131032], [-0.465076, -1.400279, 1.84649], [-1.576519, 0.092936, -1.49701], [0.69844, 1.801183, -0.999255]], "symbols": ["C", "C", "C", "C", "C", "C", "C", "N", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "P", "O", "O", "O", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H"]}]);
                     } else {
                         console.error('setMolecularData function not found!');
                     }
