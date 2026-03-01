@@ -713,7 +713,13 @@
                     for (let j = i + 1; j < n; j++) {
                         let dx = pos[i][0] - pos[j][0];
                         let dy = pos[i][1] - pos[j][1];
-                        const d = Math.hypot(dx, dy) || 0.001;
+                        let d  = Math.hypot(dx, dy);
+                        if (d < 1e-9) {
+                            // Exact coincidence — inject a tiny random nudge so repulsion has direction
+                            dx = (Math.random() - 0.5) * 1e-4;
+                            dy = (Math.random() - 0.5) * 1e-4;
+                            d  = Math.hypot(dx, dy) || 1e-8;
+                        }
                         const f = k * k / d;
                         disp[i][0] += dx/d * f;  disp[i][1] += dy/d * f;
                         disp[j][0] -= dx/d * f;  disp[j][1] -= dy/d * f;
@@ -886,7 +892,8 @@
             const SVG_NS   = 'http://www.w3.org/2000/svg';
             const ATOM_R   = 0.38;   // in layout units
             const BOND_W   = 0.11;
-            const SEL_R    = ATOM_R + 0.20;
+            const SEL_SW   = 0.12;                // selection ring stroke-width
+            const SEL_R    = ATOM_R + SEL_SW / 2; // inner stroke edge sits exactly at atom rim
 
             document.getElementById('bonds-layer').innerHTML = '';
             document.getElementById('atoms-layer').innerHTML = '';
@@ -937,9 +944,9 @@
                 ring.setAttribute('class', 'selection-ring');
                 ring.setAttribute('cx', cx); ring.setAttribute('cy', cy);
                 ring.setAttribute('r', SEL_R);
-                ring.setAttribute('fill', 'rgba(234,179,8,0.20)');
+                ring.setAttribute('fill', 'rgba(234,179,8,0.15)');
                 ring.setAttribute('stroke', '#eab308');
-                ring.setAttribute('stroke-width', '0.15');
+                ring.setAttribute('stroke-width', SEL_SW);
                 ring.setAttribute('display', 'none');
                 grp.appendChild(ring);
 
@@ -1452,9 +1459,10 @@
                 md3 = null;
             });
 
-            // Atom picking (click mode only — navigate has no picking)
+            // Atom picking (navigate + click modes; rect/lasso handle their own selection)
             renderer3D.domElement.addEventListener('mouseup', e => {
-                if (currentMode !== 'click') { md3 = null; return; }
+                const areaMode = (currentMode === 'rect' || currentMode === 'lasso');
+                if (areaMode) { md3 = null; return; }
                 if (!md3) return;
                 if (Math.hypot(e.clientX - md3.x, e.clientY - md3.y) < 5) {
                     const rect  = renderer3D.domElement.getBoundingClientRect();
@@ -1605,7 +1613,7 @@
                 const r     = info.radius * atomScale * 1.50;
                 const geom  = new THREE.SphereGeometry(r, 16, 12);
                 const mat   = new THREE.MeshBasicMaterial({
-                    color: 0xeab308, transparent: true, opacity: 0.45, depthWrite: false,
+                    color: 0xeab308, transparent: true, opacity: 0.72, depthWrite: false,
                 });
                 const mesh  = new THREE.Mesh(geom, mat);
                 mesh.position.copy(cachedPos3D[idx]);
