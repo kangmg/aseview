@@ -1269,6 +1269,14 @@
         // ── XYZ export helpers ───────────────────────────────────────────────
         // ═════════════════════════════════════════════════════════════════════
 
+        /** Format one XYZ atom line with aligned, sign-spaced columns.
+         *  Symbol: left-justified in 3 chars.  Each coord: 11-char field,
+         *  positive numbers get a leading space so decimals stay aligned. */
+        function fmtXyzLine(sym, x, y, z) {
+            const fc = v => ((v < 0 ? '' : ' ') + v.toFixed(6)).padStart(11);
+            return `${sym.padEnd(3)}  ${fc(x)} ${fc(y)} ${fc(z)}`;
+        }
+
         /** Multi-frame (trajectory) XYZ: two frames — frame 1 = user-selected atoms,
          *  frame 2 = remaining atoms. */
         function buildXyzByFrag() {
@@ -1286,7 +1294,7 @@
                 lines.push(label);
                 for (const i of frag) {
                     const [x, y, z] = positions[i];
-                    lines.push(`${symbols[i]}  ${x.toFixed(6)}  ${y.toFixed(6)}  ${z.toFixed(6)}`);
+                    lines.push(fmtXyzLine(symbols[i], x, y, z));
                 }
             }
             return lines.join('\n');
@@ -1311,7 +1319,7 @@
             lines.push(`Frags= [0:${nSel}, ${nSel}:${nTotal}]`);
             for (const i of orderedAtoms) {
                 const [x, y, z] = positions[i];
-                lines.push(`${symbols[i]}  ${x.toFixed(6)}  ${y.toFixed(6)}  ${z.toFixed(6)}`);
+                lines.push(fmtXyzLine(symbols[i], x, y, z));
             }
             return lines.join('\n');
         }
