@@ -1134,6 +1134,10 @@
                     if (pointInPolygon(ax, ay, layoutPts)) selectedAtoms.add(i);
                 });
             }
+            // Expand to whole fragments: if any atom of a frag is touched, select all
+            layout2D.comps.forEach(comp => {
+                if (comp.some(i => selectedAtoms.has(i))) comp.forEach(i => selectedAtoms.add(i));
+            });
             updateSelectionVisuals();
         }
 
@@ -1262,6 +1266,12 @@
                     if (pointInPolygon(px, py, localPts)) selectedAtoms.add(i);
                 }
             });
+            // Expand to whole fragments
+            if (layout2D) {
+                layout2D.comps.forEach(comp => {
+                    if (comp.some(i => selectedAtoms.has(i))) comp.forEach(i => selectedAtoms.add(i));
+                });
+            }
             updateSelectionVisuals();
         }
 
@@ -1690,27 +1700,49 @@
             renderSelOverlay3D();
         }
 
-        /** Rebuild the transparent yellow selection-sphere overlay. */
+        /** Rebuild the transparent yellow selection-sphere + bond overlay. */
         function renderSelOverlay3D() {
             if (!scene3D) return;
             if (selOverlayGroup) { scene3D.remove(selOverlayGroup); disposeObj3D(selOverlayGroup); }
             selOverlayGroup = new THREE.Group();
             const atomScale  = Math.max(fragSettings.atomSize, 0.05);
+            const selMat = new THREE.MeshBasicMaterial({
+                color: 0xeab308, transparent: true, opacity: 0.72, depthWrite: false,
+            });
 
+            // Atom spheres
             for (const idx of selectedAtoms) {
                 if (idx >= cachedPos3D.length) continue;
                 const sym   = cachedSymbols[idx] || 'C';
                 const info  = atomInfo[sym] || atomInfo['default'];
                 const r     = info.radius * atomScale * 1.50;
-                const geom  = new THREE.SphereGeometry(r, 16, 12);
-                const mat   = new THREE.MeshBasicMaterial({
-                    color: 0xeab308, transparent: true, opacity: 0.72, depthWrite: false,
-                });
-                const mesh  = new THREE.Mesh(geom, mat);
+                const mesh  = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), selMat);
                 mesh.position.copy(cachedPos3D[idx]);
                 mesh.renderOrder = 5;
                 selOverlayGroup.add(mesh);
             }
+
+            // Bond cylinders between selected atom pairs
+            if (layout2D) {
+                const up = new THREE.Vector3(0, 1, 0);
+                layout2D.bonds.forEach(([a, b]) => {
+                    if (!selectedAtoms.has(a) || !selectedAtoms.has(b)) return;
+                    if (a >= cachedPos3D.length || b >= cachedPos3D.length) return;
+                    const pA = cachedPos3D[a], pB = cachedPos3D[b];
+                    const dir = new THREE.Vector3().subVectors(pB, pA);
+                    const len = dir.length();
+                    if (len < 1e-6) return;
+                    const cyl = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.12, 0.12, len, 8),
+                        selMat
+                    );
+                    cyl.position.copy(pA).addScaledVector(dir, 0.5);
+                    cyl.quaternion.setFromUnitVectors(up, dir.clone().normalize());
+                    cyl.renderOrder = 5;
+                    selOverlayGroup.add(cyl);
+                });
+            }
+
             scene3D.add(selOverlayGroup);
         }
 
@@ -1719,8 +1751,16 @@
         // ═════════════════════════════════════════════════════════════════════
 
         function toggleAtom(idx) {
-            if (selectedAtoms.has(idx)) selectedAtoms.delete(idx);
-            else                        selectedAtoms.add(idx);
+            // Select / deselect the entire connected fragment containing this atom
+            const comp = layout2D ? layout2D.comps.find(c => c.includes(idx)) : null;
+            if (comp) {
+                const allSelected = comp.every(i => selectedAtoms.has(i));
+                if (allSelected) comp.forEach(i => selectedAtoms.delete(i));
+                else             comp.forEach(i => selectedAtoms.add(i));
+            } else {
+                if (selectedAtoms.has(idx)) selectedAtoms.delete(idx);
+                else                        selectedAtoms.add(idx);
+            }
             updateSelectionVisuals();
         }
 
