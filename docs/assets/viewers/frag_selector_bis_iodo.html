@@ -3619,9 +3619,9 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                     l.setAttribute('stroke-width', BOND_W);
                     l.setAttribute('stroke-linecap', 'round');
                     l.setAttribute('class', 'bond-seg');
-                    l.dataset.bondA = a;
-                    l.dataset.bondB = b;
-                    l.dataset.origColor = col;
+                    l.setAttribute('data-bond-a', a);
+                    l.setAttribute('data-bond-b', b);
+                    l.setAttribute('data-orig-color', col);
                     bondsLayer.appendChild(l);
                 }
             }
@@ -3709,16 +3709,16 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
         function updateSVGSelection() {
             // Atom rings
             document.querySelectorAll('.atom-group').forEach(grp => {
-                const idx  = parseInt(grp.dataset.atomIdx);
+                const idx  = parseInt(grp.getAttribute('data-atom-idx'));
                 const ring = grp.querySelector('.selection-ring');
                 if (ring) ring.setAttribute('display', selectedAtoms.has(idx) ? '' : 'none');
             });
             // Bond segments — yellow when both endpoints are selected
             document.querySelectorAll('.bond-seg').forEach(el => {
-                const a = parseInt(el.dataset.bondA);
-                const b = parseInt(el.dataset.bondB);
+                const a = parseInt(el.getAttribute('data-bond-a'));
+                const b = parseInt(el.getAttribute('data-bond-b'));
                 el.setAttribute('stroke',
-                    (selectedAtoms.has(a) && selectedAtoms.has(b)) ? '#eab308' : el.dataset.origColor
+                    (selectedAtoms.has(a) && selectedAtoms.has(b)) ? '#eab308' : el.getAttribute('data-orig-color')
                 );
             });
         }
@@ -4544,26 +4544,40 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                 updateSelectionVisuals();
             });
 
+            // Clipboard helper — works in file:// / iframe contexts without HTTPS
+            function copyText(text) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).catch(() => execCopy(text));
+                } else {
+                    execCopy(text);
+                }
+            }
+            function execCopy(text) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+                document.body.appendChild(ta);
+                ta.focus(); ta.select();
+                try { document.execCommand('copy'); } catch (_) {}
+                document.body.removeChild(ta);
+            }
+
             // Copy buttons
             document.getElementById('copy-selected-btn').addEventListener('click', () => {
-                navigator.clipboard.writeText(
-                    document.getElementById('selected-indices').value
-                ).catch(() => {});
+                copyText(document.getElementById('selected-indices').value);
             });
             document.getElementById('copy-unselected-btn').addEventListener('click', () => {
-                navigator.clipboard.writeText(
-                    document.getElementById('unselected-indices').value
-                ).catch(() => {});
+                copyText(document.getElementById('unselected-indices').value);
             });
 
             // Copy XYZ buttons
             document.getElementById('xyz-byfrag-btn').addEventListener('click', () => {
                 const xyz = buildXyzByFrag();
-                if (xyz) navigator.clipboard.writeText(xyz).catch(() => {});
+                if (xyz) copyText(xyz);
             });
             document.getElementById('xyz-reindexed-btn').addEventListener('click', () => {
                 const xyz = buildXyzReindexed();
-                if (xyz) navigator.clipboard.writeText(xyz).catch(() => {});
+                if (xyz) copyText(xyz);
             });
 
             // Window resize

@@ -66,34 +66,29 @@ def create_trajectory_viewer():
 
 def create_overlay_viewer():
     """Create overlay comparison of conformers."""
-    # Create slightly different conformations
     mol1 = molecule("CH3CH2OH")
+
+    # Center mol1 at origin so all conformers share the same COM = [0,0,0]
+    pos = mol1.get_positions()
+    mol1.set_positions(pos - pos.mean(axis=0))
+
     mol2 = mol1.copy()
     mol3 = mol1.copy()
 
-    # Set custom names for each molecule
     mol1.info['name'] = "Conformer A (reference)"
     mol2.info['name'] = "Conformer B (+15°)"
     mol3.info['name'] = "Conformer C (-15°)"
 
-    # Center at COM before rotating so all conformers overlap at origin
-    center = mol2.get_positions().mean(axis=0)
+    # Rotate mol2/mol3 around origin (which is their COM after centering)
+    def rot_z(atoms, angle):
+        c, s = np.cos(angle), np.sin(angle)
+        R = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
+        atoms.set_positions(atoms.get_positions() @ R.T)
 
-    # Rotate mol2 slightly around its own center
-    positions2 = mol2.get_positions() - center
-    angle = np.pi / 12  # 15 degrees
-    cos_a, sin_a = np.cos(angle), np.sin(angle)
-    rotation = np.array([[cos_a, -sin_a, 0], [sin_a, cos_a, 0], [0, 0, 1]])
-    mol2.set_positions(positions2 @ rotation.T + center)
+    rot_z(mol2, np.pi / 12)   # +15°
+    rot_z(mol3, -np.pi / 12)  # -15°
 
-    # Rotate mol3 around its own center
-    positions3 = mol3.get_positions() - center
-    angle = -np.pi / 12
-    cos_a, sin_a = np.cos(angle), np.sin(angle)
-    rotation = np.array([[cos_a, -sin_a, 0], [sin_a, cos_a, 0], [0, 0, 1]])
-    mol3.set_positions(positions3 @ rotation.T + center)
-
-    viewer = OverlayViewer([mol1, mol2, mol3], colorBy="Molecule", alignMolecules=True)
+    viewer = OverlayViewer([mol1, mol2, mol3], colorBy="Molecule")
     viewer.save_html(os.path.join(OUTPUT_DIR, "overlay_conformers.html"))
     print("Created overlay_conformers.html")
 
@@ -102,18 +97,18 @@ def create_overlay_colormap_viewer():
     """Create overlay with colormap."""
     # Create optimization-like trajectory (bond-length scan)
     water = molecule("H2O")
-    center = water.get_positions().mean(axis=0)
+    # Center at origin so all frames share COM = [0,0,0]
+    pos0 = water.get_positions()
+    water.set_positions(pos0 - pos0.mean(axis=0))
     trajectory = []
 
     for i in range(10):
         atoms = water.copy()
-        # Scale positions around the molecular center so structures stay co-located
-        positions = atoms.get_positions() - center
-        positions *= (1.0 + i * 0.02)
-        atoms.set_positions(positions + center)
+        # Scale around origin (which is the COM after centering)
+        atoms.set_positions(atoms.get_positions() * (1.0 + i * 0.02))
         trajectory.append(atoms)
 
-    viewer = OverlayViewer(trajectory, colorBy="Colormap", colormap="viridis", alignMolecules=True)
+    viewer = OverlayViewer(trajectory, colorBy="Colormap", colormap="viridis")
     viewer.save_html(os.path.join(OUTPUT_DIR, "overlay_colormap.html"))
     print("Created overlay_colormap.html")
 
