@@ -48,15 +48,15 @@ viewer.show()
 After selecting the hydroxyl group (O + H) in the viewer the sidebar shows, for example:
 
 ```
-Selected   2  →  [2, 8]
-Unselected 7  →  [0, 1, 3, 4, 5, 6, 7]
+Selected   2  →  [2, 3]
+Unselected 7  →  [0, 1, 4, 5, 6, 7, 8]
 ```
 
 Use those indices directly in your code:
 
 ```python
-oh_indices    = [2, 8]                   # copied from "Selected"
-ethyl_indices = [0, 1, 3, 4, 5, 6, 7]  # copied from "Unselected"
+oh_indices    = [2, 3]                   # copied from "Selected"
+ethyl_indices = [0, 1, 4, 5, 6, 7, 8]  # copied from "Unselected"
 
 oh_group = ethanol[oh_indices]
 ethyl    = ethanol[ethyl_indices]
@@ -188,13 +188,13 @@ viewer.show()
 Select the reactive OH group; the sidebar gives:
 
 ```
-Selected   2  →  [1, 5]       ← QM region (O + H)
-Unselected 4  →  [0, 2, 3, 4] ← MM region (C + 3H)
+Selected   2  →  [1, 3]       ← QM region (O + H)
+Unselected 4  →  [0, 2, 4, 5] ← MM region (C + 3H)
 ```
 
 ```python
-qm_indices = [1, 5]        # from sidebar "Selected"
-mm_indices  = [0, 2, 3, 4] # from sidebar "Unselected"
+qm_indices = [1, 3]        # from sidebar "Selected"
+mm_indices  = [0, 2, 4, 5] # from sidebar "Unselected"
 
 qm_atoms = atoms[qm_indices]
 mm_atoms = atoms[mm_indices]

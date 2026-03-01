@@ -65,30 +65,23 @@ def create_trajectory_viewer():
 
 
 def create_overlay_viewer():
-    """Create overlay comparison of conformers."""
-    mol1 = molecule("CH3CH2OH")
+    """Create overlay comparison of ethanol conformers (anti and gauche)."""
+    # Atom ordering from ASE: C(0), C(1), O(2), H_OH(3), H_CH2(4,5), H_CH3(6,7,8)
+    # Initial H6-C0-C1-O2 dihedral = 180° (anti)
+    anti = molecule("CH3CH2OH")
+    gauche_plus  = anti.copy()
+    gauche_minus = anti.copy()
 
-    # Center mol1 at origin so all conformers share the same COM = [0,0,0]
-    pos = mol1.get_positions()
-    mol1.set_positions(pos - pos.mean(axis=0))
+    anti.info['name']         = "Anti (180°)"
+    gauche_plus.info['name']  = "Gauche+ (60°)"
+    gauche_minus.info['name'] = "Gauche- (-60°)"
 
-    mol2 = mol1.copy()
-    mol3 = mol1.copy()
+    # Rotate the CH2-OH fragment (atoms 1-5) around the C0-C1 bond to set dihedral
+    mask = [False, True, True, True, True, True, False, False, False]
+    gauche_plus.set_dihedral(6, 0, 1, 2,  60, mask=mask)
+    gauche_minus.set_dihedral(6, 0, 1, 2, -60, mask=mask)
 
-    mol1.info['name'] = "Conformer A (reference)"
-    mol2.info['name'] = "Conformer B (+15°)"
-    mol3.info['name'] = "Conformer C (-15°)"
-
-    # Rotate mol2/mol3 around origin (which is their COM after centering)
-    def rot_z(atoms, angle):
-        c, s = np.cos(angle), np.sin(angle)
-        R = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
-        atoms.set_positions(atoms.get_positions() @ R.T)
-
-    rot_z(mol2, np.pi / 12)   # +15°
-    rot_z(mol3, -np.pi / 12)  # -15°
-
-    viewer = OverlayViewer([mol1, mol2, mol3], colorBy="Molecule")
+    viewer = OverlayViewer([anti, gauche_plus, gauche_minus], colorBy="Molecule")
     viewer.save_html(os.path.join(OUTPUT_DIR, "overlay_conformers.html"))
     print("Created overlay_conformers.html")
 
