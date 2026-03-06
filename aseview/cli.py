@@ -163,23 +163,37 @@ def serve_html(html_content: str, port: int = 8080, open_browser: bool = True) -
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(html_content)
 
-    # Find available port
+    # Find available port — kill any stale process on the requested port first
     original_port = port
     max_attempts = 100
+
+    socketserver.TCPServer.allow_reuse_address = True
 
     for attempt in range(max_attempts):
         try:
             handler = lambda *args, **kwargs: QuietHandler(*args, directory=temp_dir, **kwargs)
-            socketserver.TCPServer.allow_reuse_address = True
             httpd = socketserver.TCPServer(("", port), handler)
             break
         except OSError:
+            if attempt == 0:
+                # First failure: try to reclaim the requested port
+                console.print(
+                    f"  [yellow]Port {port} is in use. Attempting to free it...[/yellow]"
+                )
+                killed = kill_port(port)
+                if killed:
+                    continue  # retry same port
             port += 1
             if attempt == max_attempts - 1:
                 console.print(
                     f"[red]Error: Could not find available port (tried {original_port}-{port})[/red]"
                 )
                 sys.exit(1)
+
+    if port != original_port:
+        console.print(
+            f"  [yellow]Port {original_port} unavailable — using port {port} instead.[/yellow]"
+        )
 
     url = f"http://localhost:{port}"
 
