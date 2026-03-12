@@ -3825,10 +3825,6 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                     if (pointInPolygon(ax, ay, layoutPts)) selectedAtoms.add(i);
                 });
             }
-            // Expand to whole fragments: if any atom of a frag is touched, select all
-            layout2D.comps.forEach(comp => {
-                if (comp.some(i => selectedAtoms.has(i))) comp.forEach(i => selectedAtoms.add(i));
-            });
             updateSelectionVisuals();
         }
 
@@ -3957,12 +3953,6 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
                     if (pointInPolygon(px, py, localPts)) selectedAtoms.add(i);
                 }
             });
-            // Expand to whole fragments
-            if (layout2D) {
-                layout2D.comps.forEach(comp => {
-                    if (comp.some(i => selectedAtoms.has(i))) comp.forEach(i => selectedAtoms.add(i));
-                });
-            }
             updateSelectionVisuals();
         }
 
@@ -3970,50 +3960,47 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
         // ── XYZ export helpers ───────────────────────────────────────────────
         // ═════════════════════════════════════════════════════════════════════
 
-        /** Multi-frame (trajectory) XYZ: each connected component is a separate frame.
-         *  Frames with ≥1 selected atom come first, then unselected-fragment frames. */
-        function buildXyzByFrag() {
-            if (!layout2D || !molData) return '';
-            const { comps } = layout2D;
-            const { symbols, positions } = molData;
+        /** Format one XYZ atom line with aligned, sign-spaced columns.
+         *  Symbol: left-justified in 3 chars.  Each coord: 11-char field,
+         *  positive numbers get a leading space so decimals stay aligned. */
+        function fmtXyzLine(sym, x, y, z) {
+            const fc = v => ((v < 0 ? '' : ' ') + v.toFixed(6)).padStart(11);
+            return `${sym.padEnd(3)}  ${fc(x)} ${fc(y)} ${fc(z)}`;
+        }
 
-            const selectedFrags   = [];
-            const unselectedFrags = [];
-            for (const comp of comps) {
-                if (comp.some(i => selectedAtoms.has(i))) selectedFrags.push(comp);
-                else                                       unselectedFrags.push(comp);
-            }
+        /** Multi-frame (trajectory) XYZ: two frames — frame 1 = user-selected atoms,
+         *  frame 2 = remaining atoms. */
+        function buildXyzByFrag() {
+            if (!molData) return '';
+            const { symbols, positions } = molData;
+            const n = symbols.length;
+
+            const selAtoms   = Array.from({ length: n }, (_, i) => i).filter(i =>  selectedAtoms.has(i));
+            const unselAtoms = Array.from({ length: n }, (_, i) => i).filter(i => !selectedAtoms.has(i));
 
             const lines = [];
-            for (const frag of [...selectedFrags, ...unselectedFrags]) {
+            for (const [frag, label] of [[selAtoms, 'selected'], [unselAtoms, 'unselected']]) {
+                if (frag.length === 0) continue;
                 lines.push(String(frag.length));
-                const hasAnySelected = frag.some(i => selectedAtoms.has(i));
-                lines.push(hasAnySelected ? 'selected' : 'unselected');
+                lines.push(label);
                 for (const i of frag) {
                     const [x, y, z] = positions[i];
-                    lines.push(`${symbols[i]}  ${x.toFixed(6)}  ${y.toFixed(6)}  ${z.toFixed(6)}`);
+                    lines.push(fmtXyzLine(symbols[i], x, y, z));
                 }
             }
             return lines.join('\n');
         }
 
-        /** Single XYZ with atoms reordered: selected-fragment atoms first (preserving
-         *  intra-fragment order), then unselected-fragment atoms.
+        /** Single XYZ with atoms reordered: user-selected atoms first (index order),
+         *  then unselected atoms.
          *  Comment line: Frags= [0:N_sel, N_sel:N_total] */
         function buildXyzReindexed() {
-            if (!layout2D || !molData) return '';
-            const { comps } = layout2D;
+            if (!molData) return '';
             const { symbols, positions } = molData;
+            const n = symbols.length;
 
-            const selectedFrags   = [];
-            const unselectedFrags = [];
-            for (const comp of comps) {
-                if (comp.some(i => selectedAtoms.has(i))) selectedFrags.push(comp);
-                else                                       unselectedFrags.push(comp);
-            }
-
-            const selAtoms = selectedFrags.flat();
-            const unselAtoms = unselectedFrags.flat();
+            const selAtoms   = Array.from({ length: n }, (_, i) => i).filter(i =>  selectedAtoms.has(i));
+            const unselAtoms = Array.from({ length: n }, (_, i) => i).filter(i => !selectedAtoms.has(i));
             const orderedAtoms = [...selAtoms, ...unselAtoms];
             const nSel   = selAtoms.length;
             const nTotal = orderedAtoms.length;
@@ -4023,7 +4010,7 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
             lines.push(`Frags= [0:${nSel}, ${nSel}:${nTotal}]`);
             for (const i of orderedAtoms) {
                 const [x, y, z] = positions[i];
-                lines.push(`${symbols[i]}  ${x.toFixed(6)}  ${y.toFixed(6)}  ${z.toFixed(6)}`);
+                lines.push(fmtXyzLine(symbols[i], x, y, z));
             }
             return lines.join('\n');
         }
@@ -4442,16 +4429,8 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
         // ═════════════════════════════════════════════════════════════════════
 
         function toggleAtom(idx) {
-            // Select / deselect the entire connected fragment containing this atom
-            const comp = layout2D ? layout2D.comps.find(c => c.includes(idx)) : null;
-            if (comp) {
-                const allSelected = comp.every(i => selectedAtoms.has(i));
-                if (allSelected) comp.forEach(i => selectedAtoms.delete(i));
-                else             comp.forEach(i => selectedAtoms.add(i));
-            } else {
-                if (selectedAtoms.has(idx)) selectedAtoms.delete(idx);
-                else                        selectedAtoms.add(idx);
-            }
+            if (selectedAtoms.has(idx)) selectedAtoms.delete(idx);
+            else                        selectedAtoms.add(idx);
             updateSelectionVisuals();
         }
 
