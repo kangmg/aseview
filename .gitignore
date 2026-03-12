@@ -89,3 +89,4 @@ venv.bak/
 *.cif
 *.json
 !pyproject.toml
+site/
