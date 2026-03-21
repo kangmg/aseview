@@ -1249,6 +1249,15 @@
             const atomFactory = atomFactories[styleName] || atomFactories['default'];
             const bondFactory = bondFactories[styleName] || bondFactories['default'];
 
+            // Performance: compute total atom count for LOD
+            let totalAtomCount = 0;
+            molecularData.forEach(mol => {
+                if (mol && mol.positions) totalAtomCount += mol.positions.length;
+            });
+            const perfMode = settings.performanceMode || 'auto';
+            const lodSegments = getLODSegments(totalAtomCount, perfMode);
+            clearPerformanceCache();
+
             // Render each molecule
             molecularData.forEach((molecule, molIndex) => {
                 if (!molecule || !molecule.positions || !molecule.symbols) return;
@@ -1302,66 +1311,51 @@
                         greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
                     });
                 }
-                const helpers = { greyColorMap };
+                const helpers = { greyColorMap, _lod: lodSegments };
 
-                // Render bonds
+                // Render bonds using spatial grid
                 if (settings.showBond) {
-                    for (let i = 0; i < positions.length; i++) {
-                        for (let j = i + 1; j < positions.length; j++) {
-                            const dist = positions[i].distanceTo(positions[j]);
-                            
-                            // Calculate bond cutoff based on covalent radii of both atoms
-                            const info1 = atomInfo[symbols[i]] || atomInfo['default'];
-                            const info2 = atomInfo[symbols[j]] || atomInfo['default'];
-                            const covalentRadiusSum = info1.radius + info2.radius;
-                            const adjustedCutoff = covalentRadiusSum * bondCutoff;
-                            
-                            if (dist <= adjustedCutoff) {
-                                // Always use style system for bonds
-                                let bondMesh = bondFactory(
-                                    positions[i],
-                                    positions[j],
-                                    symbols[i],
-                                    symbols[j],
-                                    bondRadius,
-                                    atomScale,
-                                    helpers
-                                );
+                    const bondPairs = findBondsSpatialGrid(positions, symbols, bondCutoff);
+                    const blackBondStyles = ['rowan', 'cartoon'];
+                    const isBlackBondStyle = blackBondStyles.includes(styleName);
 
-                                if (bondMesh) {
-                                    // Rowan and Cartoon styles: bonds are always black
-                                    const blackBondStyles = ['rowan', 'cartoon'];
-                                    const isBlackBondStyle = blackBondStyles.includes(styleName);
+                    for (let b = 0; b < bondPairs.length; b++) {
+                        const { i, j } = bondPairs[b];
+                        let bondMesh = bondFactory(
+                            positions[i],
+                            positions[j],
+                            symbols[i],
+                            symbols[j],
+                            bondRadius,
+                            atomScale,
+                            helpers
+                        );
 
-                                    // Color by Molecule or Colormap: Override bond color (except for black bond styles)
-                                    if ((colorBy === 'Molecule' || colorBy === 'Colormap') && !isBlackBondStyle) {
-                                        bondMesh.traverse((child) => {
-                                            if (child.isMesh && child.material) {
-                                                child.material.color.setHex(moleculeColor);
-                                            }
-                                        });
+                        if (bondMesh) {
+                            if ((colorBy === 'Molecule' || colorBy === 'Colormap') && !isBlackBondStyle) {
+                                bondMesh.traverse((child) => {
+                                    if (child.isMesh && child.material) {
+                                        child.material.color.setHex(moleculeColor);
                                     }
-
-                                    // Apply opacity
-                                    if (opacity < 1.0) {
-                                        bondMesh.traverse((child) => {
-                                            if (child.isMesh && child.material) {
-                                                child.material.transparent = true;
-                                                child.material.opacity = opacity;
-                                            }
-                                        });
-                                    }
-
-                                    molGroup.add(bondMesh);
-                                }
+                                });
                             }
+
+                            if (opacity < 1.0) {
+                                bondMesh.traverse((child) => {
+                                    if (child.isMesh && child.material) {
+                                        child.material.transparent = true;
+                                        child.material.opacity = opacity;
+                                    }
+                                });
+                            }
+
+                            molGroup.add(bondMesh);
                         }
                     }
                 }
 
                 // Render atoms
                 for (let i = 0; i < positions.length; i++) {
-                    // Always use style system for atoms
                     let atomMesh = atomFactory(positions[i], symbols[i], atomScale, helpers);
 
                     if (!atomMesh) {
@@ -1369,7 +1363,6 @@
                     }
 
                     if (atomMesh) {
-                        // Color by Molecule or Colormap: Override atom color
                         if (colorBy === 'Molecule' || colorBy === 'Colormap') {
                             atomMesh.traverse((child) => {
                                 if (child.isMesh && child.material) {
@@ -1378,7 +1371,6 @@
                             });
                         }
 
-                        // Apply opacity
                         if (opacity < 1.0) {
                             atomMesh.traverse((child) => {
                                 if (child.isMesh && child.material) {
@@ -1406,13 +1398,15 @@
             if (!obj) return;
 
             obj.traverse((child) => {
-                if (child.geometry) {
+                if (child.geometry && !child.geometry._isCached) {
                     child.geometry.dispose();
                 }
                 if (child.material) {
                     if (Array.isArray(child.material)) {
-                        child.material.forEach(mat => mat.dispose());
-                    } else {
+                        child.material.forEach(mat => {
+                            if (!mat._isCached) mat.dispose();
+                        });
+                    } else if (!child.material._isCached) {
                         child.material.dispose();
                     }
                 }

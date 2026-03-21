@@ -113,31 +113,18 @@ function createAtomStyle2D(pos, symbol, atomScale) {
     return sprite;
 }
 
-function createAtomStyleCartoon(pos, symbol, atomScale) {
+function createAtomStyleCartoon(pos, symbol, atomScale, helpers) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
+    const lod = (helpers && helpers._lod) || { sphere: 64, sphereHigh: 128 };
+    const seg = lod.sphere;
 
-    // Create simple 2-step gradient map for clean toon shading
-    const colors = new Uint8Array(2);
-    colors[0] = 0;      // Dark
-    colors[1] = 255;    // Light
-    const gradientMap = new THREE.DataTexture(colors, 2, 1, THREE.LuminanceFormat);
-    gradientMap.minFilter = THREE.NearestFilter;
-    gradientMap.magFilter = THREE.NearestFilter;
-    gradientMap.needsUpdate = true;
-
-    const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);  // Increased from 32 to 64
-    const toonMaterial = new THREE.MeshToonMaterial({
-        color: new THREE.Color(info.color),
-        gradientMap: gradientMap
-    });
+    const geometry = getCachedSphereGeometry(scaledRadius, seg);
+    const toonMaterial = getCachedMaterial('toon', info.color, `cartoon_${seg}`);
     const sphere = new THREE.Mesh(geometry, toonMaterial);
 
-    const outlineGeometry = new THREE.SphereGeometry(scaledRadius * 1.05, 64, 64);  // Increased from 32 to 64
-    const outlineMaterial = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        side: THREE.BackSide
-    });
+    const outlineGeometry = getCachedSphereGeometry(scaledRadius * 1.05, seg);
+    const outlineMaterial = getCachedMaterial('outline', 0x000000);
     const outline = new THREE.Mesh(outlineGeometry, outlineMaterial);
 
     const toonGroup = new THREE.Group();
@@ -205,52 +192,52 @@ function createAtomStyleNeon(pos, symbol, atomScale) {
     return glowSprite;
 }
 
-function createAtomStyleGlossy(pos, symbol, atomScale) {
+function createAtomStyleGlossy(pos, symbol, atomScale, helpers) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);
-    const material = getStandardMaterial(info.color, 'glossy');
+    const lod = (helpers && helpers._lod) || { sphere: 64 };
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphere);
+    const material = getCachedMaterial('glossy', info.color);
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
     return sphere;
 }
 
-function createAtomStyleMetallic(pos, symbol, atomScale) {
-    const info = atomInfo[symbol] || info['default'];
+function createAtomStyleMetallic(pos, symbol, atomScale, helpers) {
+    const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);
-    const material = getStandardMaterial(info.color, 'metallic');
+    const lod = (helpers && helpers._lod) || { sphere: 64 };
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphere);
+    const material = getCachedMaterial('metallic', info.color);
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
     return sphere;
 }
 
-function createAtomStyleDefault(pos, symbol, atomScale) {
+function createAtomStyleDefault(pos, symbol, atomScale, helpers) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);
-    const material = getStandardMaterial(info.color, 'default');
+    const lod = (helpers && helpers._lod) || { sphere: 64 };
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphere);
+    const material = getCachedMaterial('lambert', info.color);
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
     return sphere;
 }
 
-function createAtomStyleRowan(pos, symbol, atomScale) {
+function createAtomStyleRowan(pos, symbol, atomScale, helpers) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
+    const lod = (helpers && helpers._lod) || { sphere: 64, sphereHigh: 128 };
     const group = new THREE.Group();
 
-    // Use higher resolution to avoid banding artifacts
-    const geometry = new THREE.SphereGeometry(scaledRadius, 128, 128);
-    const material = new THREE.MeshLambertMaterial({
-        color: new THREE.Color(info.color),
-        flatShading: false
-    });
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphereHigh);
+    const material = getCachedMaterial('lambertFlat', info.color);
     const sphere = new THREE.Mesh(geometry, material);
     group.add(sphere);
 
-    const outlineGeometry = new THREE.SphereGeometry(scaledRadius * 1.05, 64, 64);
-    const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
+    const outlineGeometry = getCachedSphereGeometry(scaledRadius * 1.05, lod.sphere);
+    const outlineMaterial = getCachedMaterial('outline', 0x000000);
     const outline = new THREE.Mesh(outlineGeometry, outlineMaterial);
     group.add(outline);
 
@@ -913,4 +900,219 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
     });
 
     return new THREE.Mesh(geometry, material);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Performance Optimization Utilities
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Determine LOD (Level of Detail) sphere segments based on atom count
+ * and performance mode setting.
+ *
+ * @param {number} atomCount - Total number of atoms to render
+ * @param {string} performanceMode - "auto", "high", or "normal"
+ * @returns {{ sphere: number, sphereHigh: number, bond: number }}
+ */
+function getLODSegments(atomCount, performanceMode) {
+    if (performanceMode === 'normal') {
+        return { sphere: 64, sphereHigh: 128, bond: 8 };
+    }
+
+    const isHigh = performanceMode === 'high' ||
+                   (performanceMode === 'auto' && atomCount > 100);
+
+    if (!isHigh) {
+        return { sphere: 64, sphereHigh: 128, bond: 8 };
+    }
+
+    // Adaptive: reduce segments as atom count grows
+    if (atomCount > 2000) {
+        return { sphere: 8, sphereHigh: 16, bond: 4 };
+    } else if (atomCount > 500) {
+        return { sphere: 12, sphereHigh: 24, bond: 6 };
+    } else {
+        // 100 < atomCount <= 500
+        return { sphere: 16, sphereHigh: 32, bond: 6 };
+    }
+}
+
+/**
+ * Geometry & material cache — avoids creating duplicate SphereGeometry
+ * and material instances for atoms of the same element and style.
+ */
+const _geoCache = {};
+const _matCache = {};
+
+function clearPerformanceCache() {
+    // Dispose cached geometries
+    for (const key in _geoCache) {
+        if (_geoCache[key] && _geoCache[key].dispose) _geoCache[key].dispose();
+    }
+    for (const key in _matCache) {
+        if (_matCache[key] && _matCache[key].dispose) _matCache[key].dispose();
+    }
+    for (const key in _geoCache) delete _geoCache[key];
+    for (const key in _matCache) delete _matCache[key];
+}
+
+function getCachedSphereGeometry(radius, segments) {
+    const key = `sphere_${radius.toFixed(4)}_${segments}`;
+    if (!_geoCache[key]) {
+        _geoCache[key] = new THREE.SphereGeometry(radius, segments, segments);
+        _geoCache[key]._isCached = true;
+    }
+    return _geoCache[key];
+}
+
+function getCachedMaterial(type, colorHex, extraKey) {
+    const key = `mat_${type}_${colorHex}_${extraKey || ''}`;
+    if (!_matCache[key]) {
+        switch (type) {
+            case 'toon': {
+                const colors = new Uint8Array(2);
+                colors[0] = 0; colors[1] = 255;
+                const gradientMap = new THREE.DataTexture(colors, 2, 1, THREE.LuminanceFormat);
+                gradientMap.minFilter = THREE.NearestFilter;
+                gradientMap.magFilter = THREE.NearestFilter;
+                gradientMap.needsUpdate = true;
+                _matCache[key] = new THREE.MeshToonMaterial({
+                    color: new THREE.Color(colorHex),
+                    gradientMap: gradientMap
+                });
+                break;
+            }
+            case 'outline':
+                _matCache[key] = new THREE.MeshBasicMaterial({
+                    color: colorHex,
+                    side: THREE.BackSide
+                });
+                break;
+            case 'glossy':
+                _matCache[key] = new THREE.MeshPhongMaterial({
+                    color: colorHex, shininess: 100, specular: 0x222222
+                });
+                break;
+            case 'metallic':
+                _matCache[key] = new THREE.MeshStandardMaterial({
+                    color: colorHex, metalness: 0.3, roughness: 0.4
+                });
+                break;
+            case 'lambert':
+                _matCache[key] = new THREE.MeshLambertMaterial({ color: colorHex });
+                break;
+            case 'lambertFlat':
+                _matCache[key] = new THREE.MeshLambertMaterial({
+                    color: new THREE.Color(colorHex), flatShading: false
+                });
+                break;
+            default:
+                _matCache[key] = new THREE.MeshLambertMaterial({ color: colorHex });
+        }
+        _matCache[key]._isCached = true;
+    }
+    return _matCache[key];
+}
+
+/**
+ * Spatial grid for O(n) bond detection.
+ * Instead of O(n²) all-pairs, partition atoms into grid cells
+ * and only check atoms in neighboring cells.
+ *
+ * @param {THREE.Vector3[]} positions - Atom positions
+ * @param {string[]} symbols - Atom symbols
+ * @param {number} bondCutoff - Bond threshold multiplier for covalent radii
+ * @returns {Array<{i: number, j: number}>} - Bond pairs
+ */
+function findBondsSpatialGrid(positions, symbols, bondCutoff) {
+    const n = positions.length;
+    if (n === 0) return [];
+
+    // For small systems, brute force is fine and avoids grid overhead
+    if (n < 80) {
+        return _findBondsBruteForce(positions, symbols, bondCutoff);
+    }
+
+    // Determine max possible bond distance
+    let maxCutoff = 0;
+    for (let i = 0; i < n; i++) {
+        const r = (atomInfo[symbols[i]] || atomInfo['default']).radius;
+        const d = r * 2 * bondCutoff;
+        if (d > maxCutoff) maxCutoff = d;
+    }
+
+    // Build spatial grid
+    const cellSize = maxCutoff + 0.001;
+    const grid = {};
+    const bonds = [];
+
+    function cellKey(x, y, z) {
+        return `${x},${y},${z}`;
+    }
+
+    // Insert atoms into grid cells
+    for (let i = 0; i < n; i++) {
+        const p = positions[i];
+        const cx = Math.floor(p.x / cellSize);
+        const cy = Math.floor(p.y / cellSize);
+        const cz = Math.floor(p.z / cellSize);
+        const key = cellKey(cx, cy, cz);
+        if (!grid[key]) grid[key] = [];
+        grid[key].push(i);
+    }
+
+    // Check neighboring cells (3x3x3 neighborhood)
+    const checked = new Set();
+    for (let i = 0; i < n; i++) {
+        const p = positions[i];
+        const cx = Math.floor(p.x / cellSize);
+        const cy = Math.floor(p.y / cellSize);
+        const cz = Math.floor(p.z / cellSize);
+
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dz = -1; dz <= 1; dz++) {
+                    const key = cellKey(cx + dx, cy + dy, cz + dz);
+                    const cell = grid[key];
+                    if (!cell) continue;
+
+                    for (let k = 0; k < cell.length; k++) {
+                        const j = cell[k];
+                        if (j <= i) continue;
+
+                        const pairKey = i * n + j;
+                        if (checked.has(pairKey)) continue;
+                        checked.add(pairKey);
+
+                        const dist = positions[i].distanceTo(positions[j]);
+                        const r1 = (atomInfo[symbols[i]] || atomInfo['default']).radius;
+                        const r2 = (atomInfo[symbols[j]] || atomInfo['default']).radius;
+                        const adjustedCutoff = (r1 + r2) * bondCutoff;
+
+                        if (dist <= adjustedCutoff) {
+                            bonds.push({ i: i, j: j });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return bonds;
+}
+
+function _findBondsBruteForce(positions, symbols, bondCutoff) {
+    const bonds = [];
+    const n = positions.length;
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            const dist = positions[i].distanceTo(positions[j]);
+            const r1 = (atomInfo[symbols[i]] || atomInfo['default']).radius;
+            const r2 = (atomInfo[symbols[j]] || atomInfo['default']).radius;
+            if (dist <= (r1 + r2) * bondCutoff) {
+                bonds.push({ i: i, j: j });
+            }
+        }
+    }
+    return bonds;
 }
