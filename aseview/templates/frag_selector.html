@@ -1606,10 +1606,12 @@
 
         function disposeObj3D(obj) {
             obj.traverse(child => {
-                if (child.geometry) child.geometry.dispose();
+                if (child.geometry && !child.geometry._isCached) child.geometry.dispose();
                 if (child.material) {
-                    if (Array.isArray(child.material)) child.material.forEach(m => m.dispose && m.dispose());
-                    else if (child.material.dispose) child.material.dispose();
+                    if (Array.isArray(child.material)) child.material.forEach(m => {
+                        if (m.dispose && !m._isCached) m.dispose();
+                    });
+                    else if (child.material.dispose && !child.material._isCached) child.material.dispose();
                 }
             });
         }
@@ -1649,24 +1651,24 @@
             const af         = atomFactories[style]  || atomFactories['default'];
             const bf         = bondFactories[style]  || bondFactories['default'];
 
+            // Performance: LOD and caching
+            const lodSeg = getLODSegments(positions.length, 'auto');
+            clearPerformanceCache();
+
             const uniq = [...new Set(symbols)];
             const grey = {};
             uniq.forEach((s, i) => {
                 grey[s] = new THREE.Color().setHSL(0, 0, (i+1) / (uniq.length+1)).getHex();
             });
-            const helpers = { greyColorMap: grey };
+            const helpers = { greyColorMap: grey, _lod: lodSeg };
 
-            // Bonds
+            // Bonds using spatial grid
             if (fragSettings.showBond) {
-                for (let i = 0; i < positions.length; i++) {
-                    for (let j = i + 1; j < positions.length; j++) {
-                        const r1 = (atomInfo[symbols[i]] || atomInfo['default']).radius;
-                        const r2 = (atomInfo[symbols[j]] || atomInfo['default']).radius;
-                        if (positions[i].distanceTo(positions[j]) <= (r1 + r2) * cutoff) {
-                            const bond = bf(positions[i], positions[j], symbols[i], symbols[j], bondRadius, atomScale, helpers);
-                            if (bond) { bond.renderOrder = 1; moleculeGroup3D.add(bond); }
-                        }
-                    }
+                const bp = findBondsSpatialGrid(positions, symbols, cutoff);
+                for (let b = 0; b < bp.length; b++) {
+                    const { i, j } = bp[b];
+                    const bond = bf(positions[i], positions[j], symbols[i], symbols[j], bondRadius, atomScale, helpers);
+                    if (bond) { bond.renderOrder = 1; moleculeGroup3D.add(bond); }
                 }
             }
 

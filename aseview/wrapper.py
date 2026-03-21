@@ -234,6 +234,7 @@ class MolecularViewer(BaseViewer):
             "viewMode": "Perspective",
             "rotationMode": "TrackBall",
             "selectionMode": "Lasso",
+            "performanceMode": "auto",  # "auto", "high", or "normal"
             **kwargs,
         }
 
@@ -464,6 +465,7 @@ class NormalViewer(BaseViewer):
             "showModeVector": False,
             "initialModeIndex": 0,
             "nFrames": n_frames,
+            "performanceMode": "auto",  # "auto", "high", or "normal"
             **kwargs,
         }
 
@@ -762,6 +764,7 @@ class OverlayViewer(BaseViewer):
             "viewMode": "Perspective",
             "rotationMode": "TrackBall",
             "colorBy": "Atom",
+            "performanceMode": "auto",  # "auto", "high", or "normal"
             **kwargs,
         }
 
