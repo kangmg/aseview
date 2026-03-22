@@ -6,9 +6,18 @@ Molecular structure viewer for ASE (Atomic Simulation Environment).
 
 ## Installation
 
+Recommended :
+
+```bash
+uv venv -p 3.11
+uv pip install aseview
+uv run aseview -h
+```
+
 ```bash
 pip install aseview
 ```
+
 
 For development:
 
