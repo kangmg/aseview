@@ -199,11 +199,68 @@
         }
     }
 
+    /**
+     * FragSelector - Interactive fragment selector with synchronized 2D/3D views
+     *
+     * Features: Click/rect/lasso atom selection, synchronized SVG 2D and THREE.js 3D
+     * panels, fragment export as XYZ, clipboard copy of selected/unselected indices.
+     */
+    class FragSelector extends BaseViewer {
+        constructor(container, options = {}) {
+            super(container, 'frag_selector.html', options);
+        }
+
+        /**
+         * Set molecular data for fragment selection
+         * @param {Object} data - Single molecular structure { symbols, positions }
+         * @param {string[]} data.symbols - Atom symbols
+         * @param {number[][]} data.positions - Atom positions [[x,y,z], ...]
+         */
+        setData(data) {
+            const dataArray = Array.isArray(data) ? data : [data];
+            this._postMessage({ type: 'setData', data: dataArray });
+        }
+
+        /**
+         * Get current selection (requires iframe to post back)
+         * @returns {Promise<number[]>} Selected atom indices
+         */
+        getSelection() {
+            return new Promise((resolve) => {
+                const handler = (event) => {
+                    const msg = event.data;
+                    if (msg && msg.type === 'selectionResponse') {
+                        window.removeEventListener('message', handler);
+                        resolve(msg.selected || []);
+                    }
+                };
+                window.addEventListener('message', handler);
+                this._postMessage({ type: 'getSelection' });
+            });
+        }
+
+        /**
+         * Set selection programmatically
+         * @param {number[]} indices - Atom indices to select
+         */
+        setSelection(indices) {
+            this._postMessage({ type: 'setSelection', indices });
+        }
+
+        /**
+         * Clear all selection
+         */
+        clearSelection() {
+            this._postMessage({ type: 'clearSelection' });
+        }
+    }
+
     // Export to global namespace
     global.ASEView = {
         MolecularViewer,
         NormalModeViewer,
         OverlayViewer,
+        FragSelector,
         version: '1.0.0',
         CDN_BASE
     };

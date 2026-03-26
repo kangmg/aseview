@@ -1946,6 +1946,109 @@
                 requestAnimationFrame(() => { requestAnimationFrame(fitSVG); });
             }
         });
+
+        // ═════════════════════════════════════════════════════════════════════
+        // ── PostMessage API for iframe embedding (JS module) ────────────────
+        // ═════════════════════════════════════════════════════════════════════
+
+        /**
+         * Load new molecular data and recompute everything.
+         * Accepts a single-element array [{ symbols, positions }].
+         */
+        function setMolecularData(dataArray) {
+            const d = Array.isArray(dataArray) ? dataArray[0] : dataArray;
+            if (!d || !d.symbols || !d.positions) return;
+
+            // Update the global molData reference
+            Object.assign(molData, d);
+
+            // Reset selection
+            selectedAtoms.clear();
+
+            // Recompute layout and rebuild both panels
+            layout2D = computeLayout(molData.positions, molData.symbols, fragSettings.bondThreshold);
+            buildSVG();
+            fitOnNextRender = true;
+            renderMolecule3D();
+            updateIndexPanel();
+            requestAnimationFrame(() => { requestAnimationFrame(fitSVG); });
+        }
+
+        window.addEventListener('message', function (event) {
+            const msg = event.data;
+            if (!msg || !msg.type) return;
+
+            switch (msg.type) {
+                case 'setData':
+                    if (msg.data) {
+                        setMolecularData(msg.data);
+                    }
+                    break;
+
+                case 'setSettings':
+                    if (msg.settings) {
+                        Object.assign(fragSettings, msg.settings);
+                        // Update UI controls to reflect new settings
+                        const btSlider = document.getElementById('bond-threshold');
+                        if (btSlider && msg.settings.bondThreshold !== undefined) {
+                            btSlider.value = fragSettings.bondThreshold;
+                            document.getElementById('bond-threshold-value').textContent =
+                                parseFloat(fragSettings.bondThreshold).toFixed(2);
+                        }
+                        const asSlider = document.getElementById('atom-size');
+                        if (asSlider && msg.settings.atomSize !== undefined) {
+                            asSlider.value = fragSettings.atomSize;
+                            document.getElementById('atom-size-value').textContent =
+                                parseFloat(fragSettings.atomSize).toFixed(2);
+                        }
+                        const styleSelect = document.getElementById('style-select');
+                        if (styleSelect && msg.settings.style !== undefined) {
+                            styleSelect.value = fragSettings.style;
+                        }
+                        const bgInput = document.getElementById('bg-color');
+                        if (bgInput && msg.settings.backgroundColor !== undefined) {
+                            bgInput.value = fragSettings.backgroundColor;
+                            document.getElementById('bg-color-value').textContent = fragSettings.backgroundColor;
+                            updateBgColor3D();
+                        }
+                        recompute();
+                    }
+                    break;
+
+                case 'setSelection':
+                    if (msg.indices && Array.isArray(msg.indices)) {
+                        selectedAtoms.clear();
+                        msg.indices.forEach(i => selectedAtoms.add(i));
+                        updateSelectionVisuals();
+                    }
+                    break;
+
+                case 'clearSelection':
+                    selectedAtoms.clear();
+                    updateSelectionVisuals();
+                    break;
+
+                case 'getSelection':
+                    if (event.source) {
+                        event.source.postMessage({
+                            type: 'selectionResponse',
+                            selected: [...selectedAtoms].sort((a, b) => a - b),
+                        }, '*');
+                    }
+                    break;
+
+                case 'ready':
+                    if (event.source) {
+                        event.source.postMessage({ type: 'ready', viewer: 'fragSelector' }, '*');
+                    }
+                    break;
+            }
+        });
+
+        // Notify parent that viewer is loaded
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'viewerLoaded', viewer: 'fragSelector' }, '*');
+        }
     </script>
 </body>
 
