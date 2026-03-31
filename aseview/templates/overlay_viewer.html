@@ -847,6 +847,14 @@
                 if (valueEl) valueEl.textContent = bondThicknessSlider.value;
             }
 
+            // Update cell color picker
+            const cellColorPicker = document.getElementById('cell-color');
+            if (cellColorPicker && settings.cellColor) {
+                cellColorPicker.value = settings.cellColor;
+                const cellColorValue = document.getElementById('cell-color-value');
+                if (cellColorValue) cellColorValue.textContent = settings.cellColor;
+            }
+
             // Update color picker
             const bgColorPicker = document.getElementById('background-color');
             if (bgColorPicker && settings.backgroundColor) {

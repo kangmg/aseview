@@ -2169,7 +2169,8 @@
             const d = Array.isArray(dataArray) ? dataArray[0] : dataArray;
             if (!d || !d.symbols || !d.positions) return;
 
-            // Update the global molData reference
+            // Update the global molData reference; clear fields absent in new data
+            if (!d.cell) delete molData.cell;
             Object.assign(molData, d);
 
             // Reset selection
@@ -2220,6 +2221,20 @@
                             bgInput.value = fragSettings.backgroundColor;
                             document.getElementById('bg-color-value').textContent = fragSettings.backgroundColor;
                             updateBgColor3D();
+                        }
+                        const showCellCbMsg = document.getElementById('show-cell');
+                        if (showCellCbMsg && msg.settings.showCell !== undefined) {
+                            showCellCbMsg.checked = fragSettings.showCell;
+                        }
+                        const cellColorInputMsg = document.getElementById('cell-color');
+                        if (cellColorInputMsg && msg.settings.cellColor !== undefined) {
+                            cellColorInputMsg.value = fragSettings.cellColor;
+                            const ccv = document.getElementById('cell-color-value');
+                            if (ccv) ccv.textContent = fragSettings.cellColor;
+                        }
+                        const showAxisCbMsg = document.getElementById('show-axis');
+                        if (showAxisCbMsg && msg.settings.showAxis !== undefined) {
+                            showAxisCbMsg.checked = fragSettings.showAxis;
                         }
                         recompute();
                     }
