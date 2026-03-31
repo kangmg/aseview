@@ -529,6 +529,13 @@
                                 </label>
                             </div>
                         </div>
+                        <div class="control-group" id="cell-color-group" style="display: none;">
+                            <div class="control-label"><span>Cell Color</span></div>
+                            <div class="color-picker">
+                                <input type="color" value="#808080" class="color-input" id="cell-color">
+                                <span class="color-value" id="cell-color-value">#808080</span>
+                            </div>
+                        </div>
 
                         <div class="control-group">
                             <div class="control-label">
@@ -779,6 +786,7 @@
             backgroundColor: '#1f2937',
             style: 'cartoon',
             showCell: true,
+            cellColor: '#808080',
             showBond: true,
             showShading: false,
             showEnergyPlot: false,
@@ -837,6 +845,14 @@
                 bondThicknessSlider.value = settings.bondThickness || 0.1;
                 const valueEl = document.getElementById('bond-thickness-value');
                 if (valueEl) valueEl.textContent = bondThicknessSlider.value;
+            }
+
+            // Update cell color picker
+            const cellColorPicker = document.getElementById('cell-color');
+            if (cellColorPicker && settings.cellColor) {
+                cellColorPicker.value = settings.cellColor;
+                const cellColorValue = document.getElementById('cell-color-value');
+                if (cellColorValue) cellColorValue.textContent = settings.cellColor;
             }
 
             // Update color picker
@@ -1384,6 +1400,31 @@
                     }
                 }
 
+                // Render unit cell
+                if (settings.showCell && molecule.cell) {
+                    const cellVectors = molecule.cell.map(c => new THREE.Vector3(...c));
+                    const points = [
+                        new THREE.Vector3(0, 0, 0), cellVectors[0],
+                        new THREE.Vector3(0, 0, 0), cellVectors[1],
+                        new THREE.Vector3(0, 0, 0), cellVectors[2],
+                        cellVectors[0], cellVectors[0].clone().add(cellVectors[1]),
+                        cellVectors[0], cellVectors[0].clone().add(cellVectors[2]),
+                        cellVectors[1], cellVectors[1].clone().add(cellVectors[0]),
+                        cellVectors[1], cellVectors[1].clone().add(cellVectors[2]),
+                        cellVectors[2], cellVectors[2].clone().add(cellVectors[0]),
+                        cellVectors[2], cellVectors[2].clone().add(cellVectors[1]),
+                        cellVectors[0].clone().add(cellVectors[1]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+                        cellVectors[0].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+                        cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
+                    ];
+                    const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const cellColor = new THREE.Color(settings.cellColor);
+                    const cellMaterial = new THREE.LineBasicMaterial({ color: cellColor });
+                    const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
+                    cellMesh.renderOrder = 2;
+                    molGroup.add(cellMesh);
+                }
+
                 moleculeGroup.add(molGroup);
             });
 
@@ -1641,6 +1682,13 @@
                 animationCard.style.display = molecularData.length > 1 ? 'block' : 'none';
             }
 
+            // Show/hide cell color control based on whether any molecule has cell data
+            const hasCell = molecularData.some(mol => mol && mol.cell);
+            const cellColorGroup = document.getElementById('cell-color-group');
+            if (cellColorGroup) {
+                cellColorGroup.style.display = hasCell ? 'block' : 'none';
+            }
+
             renderMolecule();
         }
 
@@ -1893,6 +1941,13 @@
 
             safeAddListener('show-cell', 'change', function () {
                 settings.showCell = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('cell-color', 'input', function () {
+                const valueEl = document.getElementById('cell-color-value');
+                if (valueEl) valueEl.textContent = this.value;
+                settings.cellColor = this.value;
                 renderMolecule();
             });
 

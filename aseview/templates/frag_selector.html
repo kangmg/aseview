@@ -301,6 +301,28 @@
             white-space: nowrap;
         }
 
+        /* ── Toggle switch ── */
+        .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider-switch {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--border-color);
+            border-radius: 20px;
+            transition: 0.2s;
+        }
+        .slider-switch:before {
+            content: "";
+            position: absolute;
+            height: 14px; width: 14px;
+            left: 3px; bottom: 3px;
+            background-color: var(--text-primary);
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+        .switch input:checked + .slider-switch { background-color: var(--accent-color); }
+        .switch input:checked + .slider-switch:before { transform: translateX(16px); }
+
         /* ── Help hint ── */
         .help-hint {
             position: absolute;
@@ -487,6 +509,31 @@
                                 <span class="color-value" id="bg-color-value">#1f2937</span>
                             </div>
                         </div>
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Cell</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-cell" checked>
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group" id="cell-color-group" style="display: none;">
+                            <div class="control-label"><span>Cell Color</span></div>
+                            <div class="color-picker">
+                                <input type="color" value="#808080" class="color-input" id="cell-color">
+                                <span class="color-value" id="cell-color-value">#808080</span>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Axis</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-axis" checked>
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -601,7 +648,11 @@
         const _allMolData = {{molecular_data}};
         const molData = Array.isArray(_allMolData) ? _allMolData[0] : _allMolData;
 
-        const fragSettings = {{settings}};
+        const fragSettings = Object.assign({
+            showCell: true,
+            cellColor: '#808080',
+            showAxis: true,
+        }, {{settings}});
 
         // ─────────────────────────────────────────────────────────────────────
         // atom/bond factory tables  (mirrors molecular_viewer.html)
@@ -644,6 +695,7 @@
         let renderer3D = null, scene3D = null, camera3D = null;
         let controls3D = null, dirLight3D = null;
         let moleculeGroup3D = null, selOverlayGroup = null;
+        let axisScene3D = null, axisCamera3D = null, axisGroup3D = null;
         let atomMeshes3D = [];
         let cachedPos3D = [];       // THREE.Vector3[]
         let cachedSymbols = [];
@@ -1449,6 +1501,57 @@
         // ── 3D rendering ─────────────────────────────────────────────────────
         // ═════════════════════════════════════════════════════════════════════
 
+        function setupAxisHelper3D() {
+            axisScene3D = new THREE.Scene();
+            axisScene3D.background = null;
+
+            const axisViewSize = 100;
+            axisCamera3D = new THREE.OrthographicCamera(-axisViewSize, axisViewSize, axisViewSize, -axisViewSize, -200, 200);
+            axisCamera3D.position.set(0, 0, 100);
+
+            axisGroup3D = new THREE.Group();
+
+            const colors = { x: 0xff4444, y: 0x44cc44, z: 0x4488ff };
+            const axisLength = 50;
+            const arrowHeadLength = 12;
+            const arrowHeadWidth = 6;
+            const origin = new THREE.Vector3(0, 0, 0);
+
+            const xArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), origin, axisLength, colors.x, arrowHeadLength, arrowHeadWidth);
+            const yArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), origin, axisLength, colors.y, arrowHeadLength, arrowHeadWidth);
+            const zArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), origin, axisLength, colors.z, arrowHeadLength, arrowHeadWidth);
+            xArrow.line.material.linewidth = 2;
+            yArrow.line.material.linewidth = 2;
+            zArrow.line.material.linewidth = 2;
+            axisGroup3D.add(xArrow); axisGroup3D.add(yArrow); axisGroup3D.add(zArrow);
+
+            const createTextSprite = (text, color) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 64; canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
+                ctx.fillText(text, 32, 32);
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+                const sprite = new THREE.Sprite(material);
+                sprite.scale.set(14, 14, 1);
+                return sprite;
+            };
+
+            const xLabel = createTextSprite('X', colors.x);
+            const yLabel = createTextSprite('Y', colors.y);
+            const zLabel = createTextSprite('Z', colors.z);
+            xLabel.position.set(axisLength + 10, 0, 0);
+            yLabel.position.set(0, axisLength + 10, 0);
+            zLabel.position.set(0, 0, axisLength + 10);
+            axisGroup3D.add(xLabel); axisGroup3D.add(yLabel); axisGroup3D.add(zLabel);
+
+            axisScene3D.add(axisGroup3D);
+            axisScene3D.add(new THREE.AmbientLight(0xffffff, 1.0));
+        }
+
         function init3D() {
             const panel  = document.getElementById('panel-3d');
             const canvas = document.getElementById('molecule-canvas-3d');
@@ -1486,6 +1589,7 @@
 
             window.addEventListener('resize', handle3DResize);
             handle3DResize();
+            setupAxisHelper3D();
             animate3D();
 
             // ── Mode-aware 3D interaction ─────────────────────────────────────
@@ -1582,7 +1686,26 @@
                     dirLight3D.position.copy(camera3D.position);
                 }
             }
-            if (renderer3D && scene3D && camera3D) renderer3D.render(scene3D, camera3D);
+            if (renderer3D && scene3D && camera3D) {
+                renderer3D.render(scene3D, camera3D);
+
+                // Render axis helper in bottom-left corner
+                if (fragSettings.showAxis && axisScene3D && axisCamera3D && axisGroup3D) {
+                    axisGroup3D.quaternion.copy(camera3D.quaternion).invert();
+                    const currentViewport = renderer3D.getViewport(new THREE.Vector4());
+                    const currentAutoClear = renderer3D.autoClear;
+                    const axisViewportSize = 150;
+                    renderer3D.setViewport(15, 20, axisViewportSize, axisViewportSize);
+                    renderer3D.setScissor(15, 20, axisViewportSize, axisViewportSize);
+                    renderer3D.setScissorTest(true);
+                    renderer3D.autoClear = false;
+                    renderer3D.clearDepth();
+                    renderer3D.render(axisScene3D, axisCamera3D);
+                    renderer3D.autoClear = currentAutoClear;
+                    renderer3D.setScissorTest(false);
+                    renderer3D.setViewport(currentViewport);
+                }
+            }
         }
 
         function handle3DResize() {
@@ -1684,6 +1807,36 @@
                 }
             }
 
+            // Unit cell
+            if (fragSettings.showCell && molData.cell) {
+                const cellVectors = molData.cell.map(c => new THREE.Vector3(...c));
+                const points = [
+                    new THREE.Vector3(0, 0, 0), cellVectors[0],
+                    new THREE.Vector3(0, 0, 0), cellVectors[1],
+                    new THREE.Vector3(0, 0, 0), cellVectors[2],
+                    cellVectors[0], cellVectors[0].clone().add(cellVectors[1]),
+                    cellVectors[0], cellVectors[0].clone().add(cellVectors[2]),
+                    cellVectors[1], cellVectors[1].clone().add(cellVectors[0]),
+                    cellVectors[1], cellVectors[1].clone().add(cellVectors[2]),
+                    cellVectors[2], cellVectors[2].clone().add(cellVectors[0]),
+                    cellVectors[2], cellVectors[2].clone().add(cellVectors[1]),
+                    cellVectors[0].clone().add(cellVectors[1]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+                    cellVectors[0].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+                    cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
+                ];
+                const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
+                const cellMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(fragSettings.cellColor) });
+                const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
+                cellMesh.renderOrder = 2;
+                moleculeGroup3D.add(cellMesh);
+            }
+
+            // Show/hide cell color control
+            const cellColorGroup = document.getElementById('cell-color-group');
+            if (cellColorGroup) {
+                cellColorGroup.style.display = (molData.cell) ? 'block' : 'none';
+            }
+
             scene3D.add(moleculeGroup3D);
             if (fitOnNextRender) { fitCamera3D(moleculeGroup3D); fitOnNextRender = false; }
             renderSelOverlay3D();
@@ -1730,6 +1883,32 @@
                     cyl.renderOrder = 5;
                     selOverlayGroup.add(cyl);
                 });
+            }
+
+            // Cell overlay: yellow highlight when any atoms are selected
+            if (selectedAtoms.size > 0 && fragSettings.showCell && molData && molData.cell) {
+                const cellVectors = molData.cell.map(c => new THREE.Vector3(...c));
+                const pts = [
+                    new THREE.Vector3(0, 0, 0), cellVectors[0],
+                    new THREE.Vector3(0, 0, 0), cellVectors[1],
+                    new THREE.Vector3(0, 0, 0), cellVectors[2],
+                    cellVectors[0], cellVectors[0].clone().add(cellVectors[1]),
+                    cellVectors[0], cellVectors[0].clone().add(cellVectors[2]),
+                    cellVectors[1], cellVectors[1].clone().add(cellVectors[0]),
+                    cellVectors[1], cellVectors[1].clone().add(cellVectors[2]),
+                    cellVectors[2], cellVectors[2].clone().add(cellVectors[0]),
+                    cellVectors[2], cellVectors[2].clone().add(cellVectors[1]),
+                    cellVectors[0].clone().add(cellVectors[1]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+                    cellVectors[0].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+                    cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
+                ];
+                const cellGeom = new THREE.BufferGeometry().setFromPoints(pts);
+                const cellSelMat = new THREE.LineBasicMaterial({
+                    color: 0xeab308, transparent: true, opacity: 0.72,
+                });
+                const cellSel = new THREE.LineSegments(cellGeom, cellSelMat);
+                cellSel.renderOrder = 5;
+                selOverlayGroup.add(cellSel);
             }
 
             scene3D.add(selOverlayGroup);
@@ -1856,6 +2035,37 @@
                 updateBgColor3D();
             });
 
+            // Cell toggle
+            const showCellCb = document.getElementById('show-cell');
+            if (showCellCb) {
+                showCellCb.checked = fragSettings.showCell;
+                showCellCb.addEventListener('change', function () {
+                    fragSettings.showCell = this.checked;
+                    renderMolecule3D();
+                });
+            }
+
+            // Cell color
+            const cellColorInput = document.getElementById('cell-color');
+            if (cellColorInput) {
+                cellColorInput.value = fragSettings.cellColor || '#808080';
+                document.getElementById('cell-color-value').textContent = cellColorInput.value;
+                cellColorInput.addEventListener('input', function () {
+                    fragSettings.cellColor = this.value;
+                    document.getElementById('cell-color-value').textContent = this.value;
+                    renderMolecule3D();
+                });
+            }
+
+            // Axis toggle
+            const showAxisCb = document.getElementById('show-axis');
+            if (showAxisCb) {
+                showAxisCb.checked = fragSettings.showAxis;
+                showAxisCb.addEventListener('change', function () {
+                    fragSettings.showAxis = this.checked;
+                });
+            }
+
             // Selection buttons
             document.getElementById('select-all-btn').addEventListener('click', () => {
                 if (molData) molData.symbols.forEach((_, i) => selectedAtoms.add(i));
@@ -1959,7 +2169,8 @@
             const d = Array.isArray(dataArray) ? dataArray[0] : dataArray;
             if (!d || !d.symbols || !d.positions) return;
 
-            // Update the global molData reference
+            // Update the global molData reference; clear fields absent in new data
+            if (!d.cell) delete molData.cell;
             Object.assign(molData, d);
 
             // Reset selection
@@ -2010,6 +2221,20 @@
                             bgInput.value = fragSettings.backgroundColor;
                             document.getElementById('bg-color-value').textContent = fragSettings.backgroundColor;
                             updateBgColor3D();
+                        }
+                        const showCellCbMsg = document.getElementById('show-cell');
+                        if (showCellCbMsg && msg.settings.showCell !== undefined) {
+                            showCellCbMsg.checked = fragSettings.showCell;
+                        }
+                        const cellColorInputMsg = document.getElementById('cell-color');
+                        if (cellColorInputMsg && msg.settings.cellColor !== undefined) {
+                            cellColorInputMsg.value = fragSettings.cellColor;
+                            const ccv = document.getElementById('cell-color-value');
+                            if (ccv) ccv.textContent = fragSettings.cellColor;
+                        }
+                        const showAxisCbMsg = document.getElementById('show-axis');
+                        if (showAxisCbMsg && msg.settings.showAxis !== undefined) {
+                            showAxisCbMsg.checked = fragSettings.showAxis;
                         }
                         recompute();
                     }
