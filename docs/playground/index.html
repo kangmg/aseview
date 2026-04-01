@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASEView — Playground</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f172a;
+      --surface:   #1e293b;
+      --surface2:  #273449;
+      --border:    #334155;
+      --accent:    #3b82f6;
+      --accent-h:  #2563eb;
+      --text:      #e2e8f0;
+      --muted:     #94a3b8;
+      --success:   #22c55e;
+      --error:     #ef4444;
+      --warn:      #f59e0b;
+      --radius:    0.5rem;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.6rem 1.2rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-title { font-size: 1.05rem; font-weight: 700; color: #60a5fa; white-space: nowrap; }
+    .header-sep { color: var(--border); }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 1.2rem;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    label.lbl {
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    select.sel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 0.35rem 0.6rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      outline: none;
+    }
+    select.sel:focus { border-color: var(--accent); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 0.35rem 0.75rem;
+      font-size: 0.82rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn:hover { background: var(--border); border-color: var(--accent); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn.primary:hover { background: var(--accent-h); border-color: var(--accent-h); }
+
+    #file-input { display: none; }
+
+    .viewer-badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 99px;
+      background: rgba(59,130,246,0.15);
+      border: 1px solid rgba(59,130,246,0.3);
+      color: #93c5fd;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
+    .status-dot.ok { background: var(--success); }
+    .status-dot.err { background: var(--error); }
+    .status-dot.warn { background: var(--warn); }
+    #status-text { font-size: 0.78rem; color: var(--muted); }
+
+    .toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
+
+    /* ── Viewer area ── */
+    #viewer-wrap {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      background: #111827;
+    }
+    #viewer-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Help panel ── */
+    .help-panel {
+      flex-shrink: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      max-height: 220px;
+      overflow: hidden;
+      transition: max-height 0.25s ease;
+    }
+    .help-panel.collapsed { max-height: 36px; }
+    .help-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 1.2rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: left;
+      border-bottom: 1px solid transparent;
+    }
+    .help-panel:not(.collapsed) .help-toggle { border-bottom-color: var(--border); }
+    .help-toggle:hover { color: var(--text); }
+    .help-arrow { transition: transform 0.2s; }
+    .help-panel.collapsed .help-arrow { transform: rotate(-90deg); }
+
+    .help-body {
+      padding: 0.75rem 1.2rem 0.9rem;
+      overflow-y: auto;
+      max-height: 184px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 0.75rem 2rem;
+    }
+    .help-section h4 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .help-section p, .help-section li {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .help-section ul { padding-left: 1rem; }
+    code {
+      font-family: 'Courier New', monospace;
+      background: rgba(255,255,255,0.06);
+      border-radius: 3px;
+      padding: 1px 4px;
+      font-size: 0.72rem;
+      color: #a5f3fc;
+    }
+
+    /* ── Drop overlay ── */
+    #drop-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(59,130,246,0.12);
+      border: 2px dashed var(--accent);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      color: var(--accent);
+      pointer-events: none;
+    }
+    #drop-overlay.active { display: flex; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120%);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.55rem 1.1rem;
+      font-size: 0.82rem;
+      color: var(--text);
+      transition: transform 0.25s;
+      z-index: 200;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.toast-ok { border-color: var(--success); color: var(--success); }
+    #toast.toast-err { border-color: var(--error); color: var(--error); }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="header">
+  <span class="header-title">ASEView</span>
+  <span class="header-sep">|</span>
+  <span style="font-size:0.82rem;color:var(--muted);">Playground</span>
+</header>
+
+<!-- ── Toolbar ── -->
+<div class="toolbar">
+  <!-- Viewer selector -->
+  <div class="toolbar-group">
+    <label class="lbl" for="viewer-type">Viewer</label>
+    <select class="sel" id="viewer-type">
+      <option value="MolecularViewer">MolecularViewer</option>
+      <option value="OverlayViewer">OverlayViewer</option>
+      <option value="NormalModeViewer">NormalModeViewer</option>
+      <option value="FragSelector">FragSelector</option>
+    </select>
+  </div>
+
+  <!-- File upload -->
+  <div class="toolbar-group">
+    <input type="file" id="file-input" accept=".xyz,.json" />
+    <button class="btn primary" id="upload-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+      </svg>
+      Upload File
+    </button>
+  </div>
+
+  <!-- Load sample -->
+  <button class="btn" id="sample-btn">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+    </svg>
+    Load Sample
+  </button>
+
+  <!-- Status -->
+  <div class="toolbar-right toolbar-group">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">Ready</span>
+    <span class="viewer-badge" id="viewer-badge">MolecularViewer</span>
+  </div>
+</div>
+
+<!-- ── Viewer ── -->
+<div id="viewer-wrap">
+  <div id="drop-overlay">Drop file to load</div>
+  <div id="viewer-container"></div>
+</div>
+
+<!-- ── Help panel ── -->
+<div class="help-panel collapsed" id="help-panel">
+  <button class="help-toggle" id="help-toggle">
+    <svg class="help-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M19 9l-7 7-7-7"/>
+    </svg>
+    Format Help
+  </button>
+  <div class="help-body" id="help-body"></div>
+</div>
+
+<!-- ── Toast ── -->
+<div id="toast"></div>
+
+<!-- ── Scripts ── -->
+<script src="https://raw.githack.com/kangmg/aseview/main/aseview/static/js/aseview.js"></script>
+<script>
+// ─────────────────────────────────────────────────────────────
+// Sample data
+// ─────────────────────────────────────────────────────────────
+const SAMPLES = {
+  MolecularViewer: {
+    label: 'Ethanol (trajectory: 3 frames)',
+    data: [
+      {
+        symbols: ['C','C','O','H','H','H','H','H','H'],
+        positions: [[-0.047,0.666,0.000],[-0.047,-0.866,0.000],[1.204,1.144,0.000],
+                    [1.869,0.485,0.000],[-0.570,1.035,0.889],[-0.570,1.035,-0.889],
+                    [0.982,-1.162,0.000],[-0.557,-1.222,0.889],[-0.557,-1.222,-0.889]]
+      },
+      {
+        symbols: ['C','C','O','H','H','H','H','H','H'],
+        positions: [[-0.047,0.700,0.000],[-0.047,-0.900,0.000],[1.250,1.180,0.000],
+                    [1.900,0.510,0.000],[-0.580,1.060,0.900],[-0.580,1.060,-0.900],
+                    [1.000,-1.190,0.000],[-0.570,-1.240,0.900],[-0.570,-1.240,-0.900]]
+      },
+      {
+        symbols: ['C','C','O','H','H','H','H','H','H'],
+        positions: [[-0.047,0.666,0.000],[-0.047,-0.866,0.000],[1.204,1.144,0.000],
+                    [1.869,0.485,0.000],[-0.570,1.035,0.889],[-0.570,1.035,-0.889],
+                    [0.982,-1.162,0.000],[-0.557,-1.222,0.889],[-0.557,-1.222,-0.889]]
+      }
+    ]
+  },
+  OverlayViewer: {
+    label: 'Water — optimized vs. stretched',
+    data: [
+      { symbols: ['O','H','H'], positions: [[0,0,0.117],[0,0.757,-0.469],[0,-0.757,-0.469]] },
+      { symbols: ['O','H','H'], positions: [[0,0,0.050],[0,0.900,-0.400],[0,-0.900,-0.400]] },
+      { symbols: ['O','H','H'], positions: [[0,0,0.200],[0,0.600,-0.550],[0,-0.600,-0.550]] }
+    ]
+  },
+  NormalModeViewer: {
+    label: 'Water — 3 vibrational modes',
+    atoms: {
+      symbols: ['O','H','H'],
+      positions: [[0,0,0.117],[0,0.757,-0.469],[0,-0.757,-0.469]]
+    },
+    vibrationData: {
+      modeVectors: [
+        [[0,0,-0.071],[0,0.422,0.565],[0,-0.422,0.565]],
+        [[0,0.066,0],[0,-0.565,0.422],[0,0.565,0.422]],
+        [[0.071,0,0],[-0.565,0,0],[-0.565,0,0]]
+      ],
+      frequencies: ['1595.32','3657.05','3755.93'],
+      isImaginary: [false, false, false]
+    }
+  },
+  FragSelector: {
+    label: 'Adenine (15 atoms)',
+    data: {
+      symbols: ['N','C','N','C','C','N','C','N','C','N','H','H','H','H','H'],
+      positions: [
+        [1.370,-0.021,0.000],[0.696,-1.197,0.000],[-0.696,-1.197,0.000],
+        [-1.370,-0.021,0.000],[-0.696,1.197,0.000],[0.696,1.197,0.000],
+        [2.770,-0.021,0.000],[-2.770,-0.021,0.000],[0.000,-2.394,0.000],
+        [0.000,2.394,0.000],[3.170,-1.021,0.000],[3.170,0.979,0.000],
+        [-3.170,-1.021,0.000],[-3.170,0.979,0.000],[0.000,-3.494,0.000]
+      ]
+    }
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// Format help per viewer
+// ─────────────────────────────────────────────────────────────
+const HELP = {
+  MolecularViewer: `
+    <div class="help-section">
+      <h4>Supported Files</h4>
+      <ul>
+        <li><code>.xyz</code> — single frame or multi-frame trajectory</li>
+        <li><code>.json</code> — <code>{symbols, positions}</code> or array of frames</li>
+      </ul>
+    </div>
+    <div class="help-section">
+      <h4>XYZ Format</h4>
+      <p>Standard or Extended XYZ. Multiple frames = trajectory animation.</p>
+      <p>Extended XYZ: <code>Lattice="a1 a2 a3 b1 b2 b3 c1 c2 c3"</code> in comment line for unit cell.</p>
+    </div>
+    <div class="help-section">
+      <h4>JSON Format</h4>
+      <p>Single: <code>{"symbols":["C","H"],"positions":[[0,0,0],[0,0,1]]}</code></p>
+      <p>Trajectory: array of such objects.</p>
+    </div>`,
+  OverlayViewer: `
+    <div class="help-section">
+      <h4>Supported Files</h4>
+      <ul>
+        <li><code>.xyz</code> — each frame = one structure for overlay</li>
+        <li><code>.json</code> — array of structures <code>[{...}, {...}]</code></li>
+      </ul>
+    </div>
+    <div class="help-section">
+      <h4>Multi-file Upload</h4>
+      <p>Select multiple <code>.xyz</code> files at once — each file becomes one overlay structure.</p>
+    </div>
+    <div class="help-section">
+      <h4>Note</h4>
+      <p>All structures are shown simultaneously with individual color/opacity controls.</p>
+    </div>`,
+  NormalModeViewer: `
+    <div class="help-section">
+      <h4>Supported Files</h4>
+      <ul><li><code>.json</code> only — must contain <code>atoms</code> and <code>vibrationData</code></li></ul>
+    </div>
+    <div class="help-section">
+      <h4>JSON Format</h4>
+      <p><code>{"atoms": {"symbols": [...], "positions": [...]}, "vibrationData": {"modeVectors": [[...]], "frequencies": ["1234.5"], "isImaginary": [false]}}</code></p>
+    </div>
+    <div class="help-section">
+      <h4>modeVectors</h4>
+      <p>Array of modes. Each mode is an array of <code>[dx, dy, dz]</code> displacement vectors per atom.</p>
+    </div>`,
+  FragSelector: `
+    <div class="help-section">
+      <h4>Supported Files</h4>
+      <ul>
+        <li><code>.xyz</code> — single frame (first frame used)</li>
+        <li><code>.json</code> — <code>{symbols, positions}</code></li>
+      </ul>
+    </div>
+    <div class="help-section">
+      <h4>Selection Modes</h4>
+      <ul>
+        <li><b>Click</b> — toggle single atom</li>
+        <li><b>Rect</b> — drag rectangle to select region</li>
+        <li><b>Lasso</b> — freehand selection</li>
+      </ul>
+    </div>
+    <div class="help-section">
+      <h4>Export</h4>
+      <p>Copy selected/unselected atom indices or export as XYZ (by fragment or reindexed).</p>
+    </div>`
+};
+
+// ─────────────────────────────────────────────────────────────
+// XYZ parser
+// ─────────────────────────────────────────────────────────────
+function parseXYZ(text) {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const frames = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (!line) { i++; continue; }
+    const natoms = parseInt(line);
+    if (isNaN(natoms) || natoms <= 0) { i++; continue; }
+    if (i + 1 + natoms >= lines.length + 1) break;  // incomplete frame
+
+    const comment = lines[i + 1] || '';
+    const symbols = [], positions = [];
+
+    for (let j = 0; j < natoms; j++) {
+      const row = (lines[i + 2 + j] || '').trim().split(/\s+/);
+      if (row.length < 4) continue;
+      symbols.push(row[0]);
+      positions.push([parseFloat(row[1]), parseFloat(row[2]), parseFloat(row[3])]);
+    }
+
+    if (symbols.length !== natoms) { i++; continue; }
+
+    const frame = { symbols, positions };
+
+    // Parse cell from extended XYZ comment: Lattice="a1 a2 a3 b1 ..."
+    const latticeMatch = comment.match(/Lattice\s*=\s*"([^"]+)"/i);
+    if (latticeMatch) {
+      const vals = latticeMatch[1].trim().split(/\s+/).map(Number);
+      if (vals.length === 9) {
+        frame.cell = [
+          [vals[0], vals[1], vals[2]],
+          [vals[3], vals[4], vals[5]],
+          [vals[6], vals[7], vals[8]]
+        ];
+      }
+    }
+
+    // Carry energy from comment if present
+    const eMatch = comment.match(/energy[=\s]+(-?\d+\.?\d*(?:[eE][+-]?\d+)?)/i);
+    if (eMatch) frame.energy = parseFloat(eMatch[1]);
+
+    frames.push(frame);
+    i += 2 + natoms;
+  }
+  return frames;
+}
+
+// ─────────────────────────────────────────────────────────────
+// JSON parser
+// ─────────────────────────────────────────────────────────────
+function parseJSON(text) {
+  const obj = JSON.parse(text);
+  // NormalMode format: {atoms, vibrationData}
+  if (obj.atoms && obj.vibrationData) return { type: 'normalMode', ...obj };
+  // Array of frames
+  if (Array.isArray(obj)) return { type: 'trajectory', frames: obj };
+  // Single frame
+  if (obj.symbols && obj.positions) return { type: 'single', frames: [obj] };
+  throw new Error('Unrecognized JSON structure');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Viewer state
+// ─────────────────────────────────────────────────────────────
+let currentViewer = null;
+let currentType = 'MolecularViewer';
+
+function setStatus(msg, kind = '') {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  dot.className = 'status-dot' + (kind ? ' ' + kind : '');
+  txt.textContent = msg;
+}
+
+function showToast(msg, kind = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast-' + kind + ' show';
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => { t.className = ''; }, 2800);
+}
+
+function createViewer(type) {
+  const container = document.getElementById('viewer-container');
+  container.innerHTML = '';
+  container.style.width  = '100%';
+  container.style.height = '100%';
+
+  if (currentViewer && typeof currentViewer.dispose === 'function') {
+    currentViewer.dispose();
+  }
+
+  const badge = document.getElementById('viewer-badge');
+  badge.textContent = type;
+  document.getElementById('viewer-type').value = type;
+  currentType = type;
+  updateHelpBody(type);
+
+  // Update file input: OverlayViewer allows multiple files
+  const fi = document.getElementById('file-input');
+  if (type === 'OverlayViewer') {
+    fi.multiple = true;
+    fi.accept = '.xyz,.json';
+  } else if (type === 'NormalModeViewer') {
+    fi.multiple = false;
+    fi.accept = '.json';
+  } else {
+    fi.multiple = false;
+    fi.accept = '.xyz,.json';
+  }
+
+  try {
+    currentViewer = new ASEView[type]('#viewer-container');
+    setStatus('Viewer ready — load a file or try the sample', 'ok');
+  } catch (e) {
+    setStatus('Failed to create viewer: ' + e.message, 'err');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Data loading
+// ─────────────────────────────────────────────────────────────
+function loadDataIntoViewer(parsedFrames, sourceLabel) {
+  if (!currentViewer) return;
+
+  try {
+    if (currentType === 'MolecularViewer') {
+      currentViewer.setData(parsedFrames);
+      setStatus('Loaded ' + parsedFrames.length + ' frame(s) — ' + sourceLabel, 'ok');
+      showToast('Loaded ' + parsedFrames.length + ' frame(s)');
+    } else if (currentType === 'OverlayViewer') {
+      currentViewer.setData(parsedFrames);
+      setStatus('Loaded ' + parsedFrames.length + ' structure(s) — ' + sourceLabel, 'ok');
+      showToast('Loaded ' + parsedFrames.length + ' structure(s)');
+    } else if (currentType === 'FragSelector') {
+      currentViewer.setData(parsedFrames[0]);
+      setStatus('Loaded ' + parsedFrames[0].symbols.length + ' atoms — ' + sourceLabel, 'ok');
+      showToast('Loaded ' + parsedFrames[0].symbols.length + ' atoms');
+    }
+  } catch (e) {
+    setStatus('Error loading data: ' + e.message, 'err');
+    showToast('Error: ' + e.message, 'err');
+  }
+}
+
+function loadNormalModeData(parsed, sourceLabel) {
+  if (!currentViewer || currentType !== 'NormalModeViewer') return;
+  try {
+    currentViewer.setVibrationData(parsed.atoms, parsed.vibrationData);
+    const nModes = parsed.vibrationData.modeVectors.length;
+    setStatus('Loaded ' + nModes + ' mode(s) — ' + sourceLabel, 'ok');
+    showToast('Loaded ' + nModes + ' vibrational mode(s)');
+  } catch (e) {
+    setStatus('Error loading vibration data: ' + e.message, 'err');
+    showToast('Error: ' + e.message, 'err');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// File reading
+// ─────────────────────────────────────────────────────────────
+function readFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('Failed to read ' + file.name));
+    reader.readAsText(file);
+  });
+}
+
+async function handleFiles(files) {
+  if (!files || files.length === 0) return;
+  setStatus('Reading file(s)…', '');
+
+  try {
+    if (currentType === 'OverlayViewer' && files.length > 1) {
+      // Multiple files → one structure per file (use first frame of each)
+      const structs = [];
+      for (const f of files) {
+        const text = await readFile(f);
+        const ext  = f.name.split('.').pop().toLowerCase();
+        if (ext === 'xyz') {
+          const frames = parseXYZ(text);
+          if (frames.length) structs.push(frames[0]);
+        } else if (ext === 'json') {
+          const parsed = parseJSON(text);
+          if (parsed.type === 'single' || parsed.type === 'trajectory')
+            structs.push(parsed.frames[0]);
+        }
+      }
+      if (structs.length === 0) throw new Error('No valid structures found in files');
+      loadDataIntoViewer(structs, files.length + ' files');
+      return;
+    }
+
+    // Single file
+    const file = files[0];
+    const text = await readFile(file);
+    const ext  = file.name.split('.').pop().toLowerCase();
+    const label = file.name;
+
+    if (ext === 'xyz') {
+      const frames = parseXYZ(text);
+      if (frames.length === 0) throw new Error('No valid frames found in XYZ file');
+
+      if (currentType === 'NormalModeViewer') {
+        throw new Error('NormalModeViewer requires JSON format. Use Load Sample or a JSON file.');
+      }
+      loadDataIntoViewer(frames, label);
+
+    } else if (ext === 'json') {
+      const parsed = parseJSON(text);
+
+      if (currentType === 'NormalModeViewer') {
+        if (parsed.type !== 'normalMode') {
+          throw new Error('JSON must have "atoms" and "vibrationData" fields for NormalModeViewer');
+        }
+        loadNormalModeData(parsed, label);
+      } else {
+        loadDataIntoViewer(parsed.frames, label);
+      }
+    } else {
+      throw new Error('Unsupported file type: .' + ext);
+    }
+
+  } catch (e) {
+    setStatus('Error: ' + e.message, 'err');
+    showToast('Error: ' + e.message, 'err');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Sample data loading
+// ─────────────────────────────────────────────────────────────
+function loadSample() {
+  const s = SAMPLES[currentType];
+  if (!s) return;
+
+  if (currentType === 'NormalModeViewer') {
+    loadNormalModeData(s, s.label);
+  } else if (currentType === 'OverlayViewer') {
+    loadDataIntoViewer(s.data, s.label);
+  } else if (currentType === 'MolecularViewer') {
+    loadDataIntoViewer(s.data, s.label);
+  } else if (currentType === 'FragSelector') {
+    loadDataIntoViewer([s.data], s.label);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Help panel
+// ─────────────────────────────────────────────────────────────
+function updateHelpBody(type) {
+  document.getElementById('help-body').innerHTML = HELP[type] || '';
+}
+
+// ─────────────────────────────────────────────────────────────
+// Event listeners
+// ─────────────────────────────────────────────────────────────
+document.getElementById('viewer-type').addEventListener('change', function () {
+  createViewer(this.value);
+});
+
+document.getElementById('upload-btn').addEventListener('click', () => {
+  document.getElementById('file-input').click();
+});
+
+document.getElementById('file-input').addEventListener('change', function () {
+  if (this.files && this.files.length > 0) {
+    handleFiles(this.files);
+    this.value = '';
+  }
+});
+
+document.getElementById('sample-btn').addEventListener('click', loadSample);
+
+document.getElementById('help-toggle').addEventListener('click', () => {
+  document.getElementById('help-panel').classList.toggle('collapsed');
+});
+
+// Drag & drop on viewer area
+const wrap = document.getElementById('viewer-wrap');
+const dropOverlay = document.getElementById('drop-overlay');
+
+wrap.addEventListener('dragenter', e => { e.preventDefault(); dropOverlay.classList.add('active'); });
+wrap.addEventListener('dragleave', e => { if (!wrap.contains(e.relatedTarget)) dropOverlay.classList.remove('active'); });
+wrap.addEventListener('dragover',  e => { e.preventDefault(); });
+wrap.addEventListener('drop', e => {
+  e.preventDefault();
+  dropOverlay.classList.remove('active');
+  const files = e.dataTransfer.files;
+  if (files.length) handleFiles(files);
+});
+
+// ─────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────
+createViewer('MolecularViewer');
+// Auto-load sample on first visit
+setTimeout(loadSample, 800);
+</script>
+</body>
+</html>

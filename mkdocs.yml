@@ -62,6 +62,7 @@ nav:
     - Polyhedron & Ring Highlight: examples/polyhedron-rings.md
     - Fragment Selector: examples/frag-selector.md
   - File Formats: file-formats.md
+  - Playground: https://kangmg.github.io/aseview/playground/
 
 extra:
   social:
