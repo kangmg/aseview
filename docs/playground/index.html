@@ -231,6 +231,72 @@
     #toast.show { transform: translateX(-50%) translateY(0); }
     #toast.toast-ok { border-color: var(--success); color: var(--success); }
     #toast.toast-err { border-color: var(--error); color: var(--error); }
+
+    /* ── Paste modal ── */
+    #paste-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+    }
+    #paste-backdrop.open { display: flex; }
+
+    .paste-modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      width: min(640px, 90vw);
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .paste-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .paste-header h3 { font-size: 0.9rem; font-weight: 600; }
+    .paste-close {
+      background: none; border: none; color: var(--muted);
+      font-size: 1.2rem; cursor: pointer; padding: 0 0.3rem;
+    }
+    .paste-close:hover { color: var(--text); }
+
+    .paste-body { padding: 0.75rem 1rem; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .paste-row { display: flex; align-items: center; gap: 0.6rem; }
+
+    #paste-area {
+      flex: 1;
+      min-height: 180px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      padding: 0.6rem 0.75rem;
+      resize: none;
+      outline: none;
+      line-height: 1.45;
+    }
+    #paste-area:focus { border-color: var(--accent); }
+    #paste-area::placeholder { color: var(--muted); }
+
+    .paste-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .paste-hint { font-size: 0.72rem; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -255,6 +321,16 @@
     </select>
   </div>
 
+  <!-- Format selector -->
+  <div class="toolbar-group">
+    <label class="lbl" for="format-type">Format</label>
+    <select class="sel" id="format-type">
+      <option value="auto">Auto</option>
+      <option value="xyz">XYZ</option>
+      <option value="json">JSON</option>
+    </select>
+  </div>
+
   <!-- File upload -->
   <div class="toolbar-group">
     <input type="file" id="file-input" accept=".xyz,.json" />
@@ -265,6 +341,15 @@
       Upload File
     </button>
   </div>
+
+  <!-- Paste -->
+  <button class="btn" id="paste-btn">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
+      <rect x="8" y="2" width="8" height="4" rx="1"/>
+    </svg>
+    Paste
+  </button>
 
   <!-- Load sample -->
   <button class="btn" id="sample-btn">
@@ -297,6 +382,23 @@
     Format Help
   </button>
   <div class="help-body" id="help-body"></div>
+</div>
+
+<!-- ── Paste modal ── -->
+<div id="paste-backdrop">
+  <div class="paste-modal">
+    <div class="paste-header">
+      <h3>Paste molecular data</h3>
+      <button class="paste-close" id="paste-close">&times;</button>
+    </div>
+    <div class="paste-body">
+      <textarea id="paste-area" placeholder="Paste XYZ or JSON data here...&#10;&#10;Example XYZ:&#10;3&#10;water&#10;O  0.000  0.000  0.117&#10;H  0.000  0.757 -0.469&#10;H  0.000 -0.757 -0.469" spellcheck="false"></textarea>
+    </div>
+    <div class="paste-footer">
+      <span class="paste-hint">Format is auto-detected, or set explicitly in toolbar. Ctrl+V anywhere to open.</span>
+      <button class="btn primary" id="paste-load-btn">Load</button>
+    </div>
+  </div>
 </div>
 
 <!-- ── Toast ── -->
@@ -607,6 +709,47 @@ function loadNormalModeData(parsed, sourceLabel) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Format detection & unified text handler
+// ─────────────────────────────────────────────────────────────
+function getSelectedFormat() {
+  return document.getElementById('format-type').value;  // 'auto' | 'xyz' | 'json'
+}
+
+function detectFormat(text, hintExt) {
+  const sel = getSelectedFormat();
+  if (sel !== 'auto') return sel;
+  if (hintExt === 'xyz') return 'xyz';
+  if (hintExt === 'json') return 'json';
+  // Auto-detect from content
+  const trimmed = text.trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) return 'json';
+  return 'xyz';
+}
+
+function handleText(text, label, hintExt) {
+  const fmt = detectFormat(text, hintExt);
+
+  if (fmt === 'xyz') {
+    const frames = parseXYZ(text);
+    if (frames.length === 0) throw new Error('No valid frames found in XYZ data');
+    if (currentType === 'NormalModeViewer') {
+      throw new Error('NormalModeViewer requires JSON format');
+    }
+    loadDataIntoViewer(frames, label);
+  } else {
+    const parsed = parseJSON(text);
+    if (currentType === 'NormalModeViewer') {
+      if (parsed.type !== 'normalMode') {
+        throw new Error('JSON must have "atoms" and "vibrationData" for NormalModeViewer');
+      }
+      loadNormalModeData(parsed, label);
+    } else {
+      loadDataIntoViewer(parsed.frames, label);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // File reading
 // ─────────────────────────────────────────────────────────────
 function readFile(file) {
@@ -624,15 +767,15 @@ async function handleFiles(files) {
 
   try {
     if (currentType === 'OverlayViewer' && files.length > 1) {
-      // Multiple files → one structure per file (use first frame of each)
       const structs = [];
       for (const f of files) {
         const text = await readFile(f);
         const ext  = f.name.split('.').pop().toLowerCase();
-        if (ext === 'xyz') {
+        const fmt  = detectFormat(text, ext);
+        if (fmt === 'xyz') {
           const frames = parseXYZ(text);
           if (frames.length) structs.push(frames[0]);
-        } else if (ext === 'json') {
+        } else {
           const parsed = parseJSON(text);
           if (parsed.type === 'single' || parsed.type === 'trajectory')
             structs.push(parsed.frames[0]);
@@ -643,36 +786,38 @@ async function handleFiles(files) {
       return;
     }
 
-    // Single file
     const file = files[0];
     const text = await readFile(file);
     const ext  = file.name.split('.').pop().toLowerCase();
-    const label = file.name;
+    handleText(text, file.name, ext);
 
-    if (ext === 'xyz') {
-      const frames = parseXYZ(text);
-      if (frames.length === 0) throw new Error('No valid frames found in XYZ file');
+  } catch (e) {
+    setStatus('Error: ' + e.message, 'err');
+    showToast('Error: ' + e.message, 'err');
+  }
+}
 
-      if (currentType === 'NormalModeViewer') {
-        throw new Error('NormalModeViewer requires JSON format. Use Load Sample or a JSON file.');
-      }
-      loadDataIntoViewer(frames, label);
+// ─────────────────────────────────────────────────────────────
+// Paste modal
+// ─────────────────────────────────────────────────────────────
+function openPasteModal(initialText) {
+  const backdrop = document.getElementById('paste-backdrop');
+  const area = document.getElementById('paste-area');
+  backdrop.classList.add('open');
+  if (initialText) area.value = initialText;
+  area.focus();
+}
 
-    } else if (ext === 'json') {
-      const parsed = parseJSON(text);
+function closePasteModal() {
+  document.getElementById('paste-backdrop').classList.remove('open');
+}
 
-      if (currentType === 'NormalModeViewer') {
-        if (parsed.type !== 'normalMode') {
-          throw new Error('JSON must have "atoms" and "vibrationData" fields for NormalModeViewer');
-        }
-        loadNormalModeData(parsed, label);
-      } else {
-        loadDataIntoViewer(parsed.frames, label);
-      }
-    } else {
-      throw new Error('Unsupported file type: .' + ext);
-    }
-
+function loadFromPaste() {
+  const text = document.getElementById('paste-area').value.trim();
+  if (!text) { showToast('Nothing to load', 'err'); return; }
+  closePasteModal();
+  try {
+    handleText(text, 'pasted data');
   } catch (e) {
     setStatus('Error: ' + e.message, 'err');
     showToast('Error: ' + e.message, 'err');
@@ -723,6 +868,30 @@ document.getElementById('file-input').addEventListener('change', function () {
 });
 
 document.getElementById('sample-btn').addEventListener('click', loadSample);
+
+// Paste modal controls
+document.getElementById('paste-btn').addEventListener('click', () => openPasteModal());
+document.getElementById('paste-close').addEventListener('click', closePasteModal);
+document.getElementById('paste-load-btn').addEventListener('click', loadFromPaste);
+document.getElementById('paste-backdrop').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closePasteModal();
+});
+document.getElementById('paste-area').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); loadFromPaste(); }
+  if (e.key === 'Escape') closePasteModal();
+});
+
+// Global Ctrl+V: open paste modal with clipboard content
+document.addEventListener('paste', e => {
+  // Ignore if focus is inside the paste textarea or an iframe
+  if (document.activeElement && (document.activeElement.tagName === 'TEXTAREA' ||
+      document.activeElement.tagName === 'INPUT')) return;
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if (text && text.trim()) {
+    e.preventDefault();
+    openPasteModal(text);
+  }
+});
 
 document.getElementById('help-toggle').addEventListener('click', () => {
   document.getElementById('help-panel').classList.toggle('collapsed');
