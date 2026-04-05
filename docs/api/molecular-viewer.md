@@ -51,6 +51,7 @@ MolecularViewer(data, **kwargs)
 | `showCell` | `bool` | Show unit cell | `True` |
 | `showBond` | `bool` | Show covalent bonds | `True` |
 | `showHBond` | `bool` | Show hydrogen bonds | `False` |
+| `hBondThreshold` | `float` | H···A distance cutoff (Å) for hydrogen-bond detection | `2.5` |
 | `showShadow` | `bool` | Enable shadows | `False` |
 | `showEnergyPlot` | `bool` | Show energy plot (if energy data available) | `False` |
 | `showForces` | `bool` | Show force vectors | `False` |
@@ -92,7 +93,7 @@ MolecularViewer(data, **kwargs)
 
 !!! note "Hydrogen Bonds"
     `showHBond=True` detects and renders hydrogen bonds as dashed lines.
-    Criteria: donor H bonded to N/O/F, acceptor N/O/F, H···A ≤ 2.5 Å,
+    Criteria: donor H bonded to N/O/F, acceptor N/O/F, H···A ≤ `hBondThreshold` (default 2.5 Å),
     D···A ≤ 3.5 Å, D–H···A angle ≥ 120°.
 
 #### Force Vector Settings
@@ -244,7 +245,7 @@ from ase.io import read
 from aseview import MolecularViewer
 
 atoms = read("water_dimer.xyz")
-viewer = MolecularViewer(atoms, showHBond=True)
+viewer = MolecularViewer(atoms, showHBond=True, hBondThreshold=2.8)
 viewer.show()
 ```
 

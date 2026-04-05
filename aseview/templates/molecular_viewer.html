@@ -601,6 +601,16 @@
                                 </label>
                             </div>
                         </div>
+                        <div class="control-group" id="hbond-threshold-group" style="display:none;">
+                            <div class="control-label">
+                                <span>H-Bond Threshold (Å)</span>
+                                <span class="slider-value" id="hbond-threshold-value">2.5</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="1.5" max="4.0" step="0.1" value="2.5" class="slider"
+                                    id="hbond-threshold">
+                            </div>
+                        </div>
 
                         <div class="control-group">
                             <div class="control-label">
@@ -1033,6 +1043,7 @@
 
         let settings = {
             bondThreshold: 1.0,
+            hBondThreshold: 2.5,
             bondThickness: 0.1,
             atomSize: 0.4,
             animationSpeed: 30,
@@ -1107,6 +1118,17 @@
                 bondThresholdSlider.value = settings.bondThreshold || 1.0;
                 const valueEl = document.getElementById('bond-threshold-value');
                 if (valueEl) valueEl.textContent = bondThresholdSlider.value;
+            }
+
+            const hbondThresholdSlider = document.getElementById('hbond-threshold');
+            if (hbondThresholdSlider) {
+                hbondThresholdSlider.value = settings.hBondThreshold || 2.5;
+                const valueEl = document.getElementById('hbond-threshold-value');
+                if (valueEl) valueEl.textContent = hbondThresholdSlider.value;
+            }
+            const hbondThresholdGroup = document.getElementById('hbond-threshold-group');
+            if (hbondThresholdGroup) {
+                hbondThresholdGroup.style.display = settings.showHBond ? 'block' : 'none';
             }
 
             const bondThicknessSlider = document.getElementById('bond-thickness');
@@ -1551,6 +1573,11 @@
             const bondThresholdSlider = document.getElementById('bond-threshold');
             if (bondThresholdSlider) {
                 settings.bondThreshold = parseFloat(bondThresholdSlider.value);
+            }
+
+            const hbondThresholdSlider = document.getElementById('hbond-threshold');
+            if (hbondThresholdSlider) {
+                settings.hBondThreshold = parseFloat(hbondThresholdSlider.value);
             }
 
             const bondThicknessSlider = document.getElementById('bond-thickness');
@@ -2217,7 +2244,9 @@
             }
 
             if (settings.showHBond) {
-                const hbondPairs = detectHydrogenBonds(positions, symbols, bondPairs);
+                const hbondPairs = detectHydrogenBonds(positions, symbols, bondPairs, {
+                    hBondThreshold: settings.hBondThreshold
+                });
                 for (let b = 0; b < hbondPairs.length; b++) {
                     const { h, a } = hbondPairs[b];
                     const hbond = createHydrogenBond(positions[h], positions[a]);
@@ -2777,6 +2806,15 @@
                 renderMolecule();
             });
 
+            safeAddListener('hbond-threshold', 'input', function () {
+                const valueEl = document.getElementById('hbond-threshold-value');
+                if (valueEl) valueEl.textContent = this.value;
+                settings.hBondThreshold = parseFloat(this.value);
+                if (settings.showHBond) {
+                    renderMolecule();
+                }
+            });
+
             safeAddListener('bond-thickness', 'input', function () {
                 const valueEl = document.getElementById('bond-thickness-value');
                 if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
@@ -2858,6 +2896,8 @@
 
             safeAddListener('show-hbond', 'change', function () {
                 settings.showHBond = this.checked;
+                const hbondThresholdGroup = document.getElementById('hbond-threshold-group');
+                if (hbondThresholdGroup) hbondThresholdGroup.style.display = this.checked ? 'block' : 'none';
                 renderMolecule();
             });
 

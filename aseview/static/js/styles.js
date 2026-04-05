@@ -1189,11 +1189,11 @@ function _findBondsBruteForce(positions, symbols, bondCutoff) {
  * @param {Array<{i,j}>}    covalentBonds - Existing covalent bond pairs
  * @returns {Array<{h, a}>} H-bond pairs: index of H and acceptor atom
  */
-function detectHydrogenBonds(positions, symbols, covalentBonds) {
+function detectHydrogenBonds(positions, symbols, covalentBonds, options = {}) {
     const donorElements   = new Set(['N', 'O', 'F']);
     const acceptorElements = new Set(['N', 'O', 'F']);
 
-    const HA_CUTOFF = 2.5;   // Å  H...A distance
+    const HA_CUTOFF = Number.isFinite(options.hBondThreshold) ? options.hBondThreshold : 2.5;   // Å  H...A distance
     const DA_CUTOFF = 3.5;   // Å  D...A distance
     const ANGLE_MIN = 120.0; // °  D-H...A angle
 

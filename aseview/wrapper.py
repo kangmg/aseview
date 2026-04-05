@@ -227,6 +227,7 @@ class MolecularViewer(BaseViewer):
         super().__init__(data)
         self.settings = {
             "bondThreshold": 1.2,  # Scale factor for covalent radii sum
+            "hBondThreshold": 2.5, # H...A distance cutoff for hydrogen-bond detection (Å)
             "bondThickness": 0.1,
             "atomSize": 0.4,
             "animationSpeed": 30,
