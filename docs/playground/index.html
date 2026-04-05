@@ -326,14 +326,17 @@
     <label class="lbl" for="format-type">Format</label>
     <select class="sel" id="format-type">
       <option value="auto">Auto</option>
-      <option value="xyz">XYZ</option>
-      <option value="json">JSON</option>
+      <option value="xyz">XYZ / extXYZ</option>
+      <option value="poscar">POSCAR (VASP)</option>
+      <option value="cif">CIF</option>
+      <option value="sdf">SDF / MOL</option>
+      <option value="pdb">PDB</option>
     </select>
   </div>
 
   <!-- File upload -->
   <div class="toolbar-group">
-    <input type="file" id="file-input" accept=".xyz,.json" />
+    <input type="file" id="file-input" accept=".xyz,.extxyz,.json,.poscar,.vasp,.cif,.sdf,.mol,.pdb,POSCAR,CONTCAR" />
     <button class="btn primary" id="upload-btn">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
@@ -392,7 +395,7 @@
       <button class="paste-close" id="paste-close">&times;</button>
     </div>
     <div class="paste-body">
-      <textarea id="paste-area" placeholder="Paste XYZ or JSON data here...&#10;&#10;Example XYZ:&#10;3&#10;water&#10;O  0.000  0.000  0.117&#10;H  0.000  0.757 -0.469&#10;H  0.000 -0.757 -0.469" spellcheck="false"></textarea>
+      <textarea id="paste-area" placeholder="Paste molecular data here (XYZ, extXYZ, POSCAR, CIF, SDF, PDB)...&#10;&#10;Example XYZ:&#10;3&#10;water&#10;O  0.000  0.000  0.117&#10;H  0.000  0.757 -0.469&#10;H  0.000 -0.757 -0.469" spellcheck="false"></textarea>
     </div>
     <div class="paste-footer">
       <span class="paste-hint">Format is auto-detected, or set explicitly in toolbar. Ctrl+V anywhere to open.</span>
@@ -476,62 +479,43 @@ const SAMPLES = {
 // ─────────────────────────────────────────────────────────────
 // Format help per viewer
 // ─────────────────────────────────────────────────────────────
+const FORMATS_SECTION = `
+    <div class="help-section">
+      <h4>Supported Formats</h4>
+      <ul>
+        <li><code>.xyz</code> / <code>.extxyz</code> — XYZ, Extended XYZ with <code>Lattice="..."</code></li>
+        <li><code>POSCAR</code> / <code>.vasp</code> — VASP POSCAR / CONTCAR</li>
+        <li><code>.cif</code> — Crystallographic Information File</li>
+        <li><code>.sdf</code> / <code>.mol</code> — SDF / MOL V2000</li>
+        <li><code>.pdb</code> — Protein Data Bank</li>
+      </ul>
+      <p>Format is auto-detected from extension or content; you can also force it in the toolbar dropdown.</p>
+    </div>`;
+
 const HELP = {
   MolecularViewer: `
+    ${FORMATS_SECTION}
     <div class="help-section">
-      <h4>Supported Files</h4>
-      <ul>
-        <li><code>.xyz</code> — single frame or multi-frame trajectory</li>
-        <li><code>.json</code> — <code>{symbols, positions}</code> or array of frames</li>
-      </ul>
-    </div>
-    <div class="help-section">
-      <h4>XYZ Format</h4>
-      <p>Standard or Extended XYZ. Multiple frames = trajectory animation.</p>
-      <p>Extended XYZ: <code>Lattice="a1 a2 a3 b1 b2 b3 c1 c2 c3"</code> in comment line for unit cell.</p>
-    </div>
-    <div class="help-section">
-      <h4>JSON Format</h4>
-      <p>Single: <code>{"symbols":["C","H"],"positions":[[0,0,0],[0,0,1]]}</code></p>
-      <p>Trajectory: array of such objects.</p>
+      <h4>Trajectory</h4>
+      <p>Multi-frame XYZ is animated as a trajectory. PDB <code>MODEL</code> records are also supported.</p>
     </div>`,
   OverlayViewer: `
-    <div class="help-section">
-      <h4>Supported Files</h4>
-      <ul>
-        <li><code>.xyz</code> — each frame = one structure for overlay</li>
-        <li><code>.json</code> — array of structures <code>[{...}, {...}]</code></li>
-      </ul>
-    </div>
+    ${FORMATS_SECTION}
     <div class="help-section">
       <h4>Multi-file Upload</h4>
-      <p>Select multiple <code>.xyz</code> files at once — each file becomes one overlay structure.</p>
-    </div>
-    <div class="help-section">
-      <h4>Note</h4>
-      <p>All structures are shown simultaneously with individual color/opacity controls.</p>
+      <p>Select multiple files at once — each file becomes one overlay structure. A single multi-frame XYZ is expanded into one structure per frame.</p>
     </div>`,
   NormalModeViewer: `
     <div class="help-section">
-      <h4>Supported Files</h4>
-      <ul><li><code>.json</code> only — must contain <code>atoms</code> and <code>vibrationData</code></li></ul>
+      <h4>Vibration Data</h4>
+      <p>NormalModeViewer needs pre-computed mode vectors. Use the <b>Load Sample</b> button to try it with water's three modes, or load a JSON of shape <code>{atoms, vibrationData}</code>.</p>
     </div>
     <div class="help-section">
-      <h4>JSON Format</h4>
-      <p><code>{"atoms": {"symbols": [...], "positions": [...]}, "vibrationData": {"modeVectors": [[...]], "frequencies": ["1234.5"], "isImaginary": [false]}}</code></p>
-    </div>
-    <div class="help-section">
-      <h4>modeVectors</h4>
-      <p>Array of modes. Each mode is an array of <code>[dx, dy, dz]</code> displacement vectors per atom.</p>
+      <h4>JSON Shape</h4>
+      <p><code>{"atoms":{"symbols":[...],"positions":[...]},"vibrationData":{"modeVectors":[[[dx,dy,dz],...],...],"frequencies":["1234.5"],"isImaginary":[false]}}</code></p>
     </div>`,
   FragSelector: `
-    <div class="help-section">
-      <h4>Supported Files</h4>
-      <ul>
-        <li><code>.xyz</code> — single frame (first frame used)</li>
-        <li><code>.json</code> — <code>{symbols, positions}</code></li>
-      </ul>
-    </div>
+    ${FORMATS_SECTION}
     <div class="help-section">
       <h4>Selection Modes</h4>
       <ul>
@@ -539,10 +523,7 @@ const HELP = {
         <li><b>Rect</b> — drag rectangle to select region</li>
         <li><b>Lasso</b> — freehand selection</li>
       </ul>
-    </div>
-    <div class="help-section">
-      <h4>Export</h4>
-      <p>Copy selected/unselected atom indices or export as XYZ (by fragment or reindexed).</p>
+      <p>Only a single structure is used (first frame if multi-frame).</p>
     </div>`
 };
 
@@ -594,6 +575,324 @@ function parseXYZ(text) {
     frames.push(frame);
     i += 2 + natoms;
   }
+  return frames;
+}
+
+// ─────────────────────────────────────────────────────────────
+// POSCAR / VASP parser (ref: ase/io/vasp.py read_vasp)
+// ─────────────────────────────────────────────────────────────
+function parsePOSCAR(text) {
+  const raw = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  if (raw.length < 8) throw new Error('POSCAR: file too short');
+
+  const stripComment = s => s.split(/[!#]/)[0];
+  const toks = s => stripComment(s).trim().split(/\s+/).filter(Boolean);
+
+  // Line 0: comment / title. May also hold symbols (ASE convention).
+  const titleTokens = toks(raw[0]);
+
+  // Line 1: scale (1 or 3 floats; negative = volume)
+  const scaleToks = toks(raw[1]).map(Number);
+  if (scaleToks.length === 0 || scaleToks.some(isNaN))
+    throw new Error('POSCAR: invalid scale line');
+
+  // Lines 2-4: lattice vectors
+  const lattice = [];
+  for (let k = 0; k < 3; k++) {
+    const v = toks(raw[2 + k]).map(Number);
+    if (v.length < 3 || v.some(isNaN))
+      throw new Error('POSCAR: invalid lattice vector on line ' + (3 + k));
+    lattice.push([v[0], v[1], v[2]]);
+  }
+
+  // Apply scale
+  let appliedScale;
+  let cell;
+  if (scaleToks.length === 1) {
+    let s = scaleToks[0];
+    if (s < 0) {
+      // negative = target volume
+      const [a, b, c] = lattice;
+      const vol = Math.abs(
+        a[0]*(b[1]*c[2]-b[2]*c[1]) - a[1]*(b[0]*c[2]-b[2]*c[0]) + a[2]*(b[0]*c[1]-b[1]*c[0])
+      );
+      s = Math.cbrt(-s / vol);
+    }
+    appliedScale = [s, s, s];
+    cell = lattice.map(v => v.map(x => x * s));
+  } else if (scaleToks.length === 3) {
+    appliedScale = [scaleToks[0], scaleToks[1], scaleToks[2]];
+    cell = lattice.map((v, idx) => v.map(x => x * scaleToks[idx]));
+  } else {
+    throw new Error('POSCAR: scale must be 1 or 3 numbers');
+  }
+
+  // Line 5: either symbols (VASP5) or counts (VASP4)
+  let lineIdx = 5;
+  let line5 = toks(raw[lineIdx]);
+  let symbolsList;
+  let counts;
+  const isNumeric = s => /^-?\d+$/.test(s);
+  if (line5.every(isNumeric)) {
+    // VASP4 — symbols come from title line
+    if (titleTokens.length < line5.length)
+      throw new Error('POSCAR: VASP4 format requires element symbols in first line');
+    symbolsList = titleTokens.slice(0, line5.length);
+    counts = line5.map(Number);
+    lineIdx = 6;
+  } else {
+    symbolsList = line5;
+    counts = toks(raw[lineIdx + 1]).map(Number);
+    if (counts.some(isNaN))
+      throw new Error('POSCAR: counts line invalid');
+    lineIdx = 7;
+  }
+  if (counts.length !== symbolsList.length)
+    throw new Error('POSCAR: symbols/counts length mismatch');
+
+  const natoms = counts.reduce((a, b) => a + b, 0);
+  const symbols = [];
+  for (let k = 0; k < symbolsList.length; k++)
+    for (let n = 0; n < counts[k]; n++) symbols.push(symbolsList[k]);
+
+  // Optional Selective dynamics line
+  let sel = toks(raw[lineIdx])[0] || '';
+  if (sel && /^s/i.test(sel)) lineIdx++;
+
+  // Coordinate mode line: D/d/C/c/K/k
+  const modeLine = toks(raw[lineIdx])[0] || '';
+  lineIdx++;
+  const direct = /^[dD]/.test(modeLine);  // else Cartesian
+
+  const positions = [];
+  for (let k = 0; k < natoms; k++) {
+    const v = toks(raw[lineIdx + k] || '').map(Number);
+    if (v.length < 3 || v.slice(0, 3).some(isNaN))
+      throw new Error('POSCAR: invalid coordinate line ' + (lineIdx + k + 1));
+    if (direct) {
+      // fractional → cartesian
+      positions.push([
+        v[0]*cell[0][0] + v[1]*cell[1][0] + v[2]*cell[2][0],
+        v[0]*cell[0][1] + v[1]*cell[1][1] + v[2]*cell[2][1],
+        v[0]*cell[0][2] + v[1]*cell[1][2] + v[2]*cell[2][2],
+      ]);
+    } else {
+      // Cartesian coords are scaled by POSCAR scale (1 or 3 factors)
+      positions.push([
+        v[0]*appliedScale[0],
+        v[1]*appliedScale[1],
+        v[2]*appliedScale[2]
+      ]);
+    }
+  }
+
+  return [{ symbols, positions, cell }];
+}
+
+// ─────────────────────────────────────────────────────────────
+// CIF parser (simple — _cell_* + _atom_site_fract_*)
+// ─────────────────────────────────────────────────────────────
+function stripCIFNum(s) {
+  // Remove standard uncertainty like "1.2345(6)"
+  return parseFloat(String(s).replace(/\(\d+\)/, ''));
+}
+
+function cellABCtoVectors(a, b, c, alpha, beta, gamma) {
+  const deg = Math.PI / 180;
+  const ca = Math.cos(alpha*deg), cb = Math.cos(beta*deg), cg = Math.cos(gamma*deg);
+  const sg = Math.sin(gamma*deg);
+  const v1 = [a, 0, 0];
+  const v2 = [b*cg, b*sg, 0];
+  const cx = c*cb;
+  const cy = c*(ca - cb*cg)/sg;
+  const cz = Math.sqrt(Math.max(0, c*c - cx*cx - cy*cy));
+  const v3 = [cx, cy, cz];
+  return [v1, v2, v3];
+}
+
+function parseCIF(text) {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  let a=null, b=null, c=null, alpha=90, beta=90, gamma=90;
+
+  // Scan key-value pairs
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (/^_cell_length_a\b/i.test(t))     a = stripCIFNum(t.split(/\s+/)[1]);
+    else if (/^_cell_length_b\b/i.test(t)) b = stripCIFNum(t.split(/\s+/)[1]);
+    else if (/^_cell_length_c\b/i.test(t)) c = stripCIFNum(t.split(/\s+/)[1]);
+    else if (/^_cell_angle_alpha\b/i.test(t)) alpha = stripCIFNum(t.split(/\s+/)[1]);
+    else if (/^_cell_angle_beta\b/i.test(t))  beta  = stripCIFNum(t.split(/\s+/)[1]);
+    else if (/^_cell_angle_gamma\b/i.test(t)) gamma = stripCIFNum(t.split(/\s+/)[1]);
+  }
+
+  // Find loop_ containing _atom_site_*
+  const symbols = [];
+  const fracs = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (/^\s*loop_\s*$/i.test(lines[i])) {
+      const headers = [];
+      i++;
+      while (i < lines.length && /^\s*_/.test(lines[i])) {
+        headers.push(lines[i].trim());
+        i++;
+      }
+      // Is this an atom_site loop?
+      const hasAtomSite = headers.some(h => /^_atom_site_/i.test(h));
+      if (!hasAtomSite) continue;
+
+      const idxSymbol = headers.findIndex(h => /^_atom_site_type_symbol$/i.test(h));
+      const idxLabel  = headers.findIndex(h => /^_atom_site_label$/i.test(h));
+      const idxFX = headers.findIndex(h => /^_atom_site_fract_x$/i.test(h));
+      const idxFY = headers.findIndex(h => /^_atom_site_fract_y$/i.test(h));
+      const idxFZ = headers.findIndex(h => /^_atom_site_fract_z$/i.test(h));
+      const idxCX = headers.findIndex(h => /^_atom_site_cartn_x$/i.test(h));
+      const idxCY = headers.findIndex(h => /^_atom_site_cartn_y$/i.test(h));
+      const idxCZ = headers.findIndex(h => /^_atom_site_cartn_z$/i.test(h));
+
+      while (i < lines.length) {
+        const raw = lines[i];
+        const t = raw.trim();
+        if (!t || /^loop_\s*$/i.test(t) || /^_/.test(t) || /^data_/i.test(t)) break;
+        // Simple whitespace split — does not handle quoted strings with spaces
+        const toks = t.split(/\s+/);
+        if (toks.length >= headers.length) {
+          const sym = idxSymbol >= 0 ? toks[idxSymbol]
+                     : idxLabel  >= 0 ? toks[idxLabel].replace(/[^A-Za-z]/g, '').slice(0, 2) : 'X';
+          // Strip trailing digits/charges from type_symbol like "Fe3+" → "Fe"
+          const cleanSym = sym.match(/^[A-Z][a-z]?/)?.[0] || sym;
+          if (idxFX >= 0 && idxFY >= 0 && idxFZ >= 0) {
+            fracs.push([
+              stripCIFNum(toks[idxFX]),
+              stripCIFNum(toks[idxFY]),
+              stripCIFNum(toks[idxFZ]),
+              cleanSym, 'frac'
+            ]);
+          } else if (idxCX >= 0 && idxCY >= 0 && idxCZ >= 0) {
+            fracs.push([
+              stripCIFNum(toks[idxCX]),
+              stripCIFNum(toks[idxCY]),
+              stripCIFNum(toks[idxCZ]),
+              cleanSym, 'cart'
+            ]);
+          }
+        }
+        i++;
+      }
+      continue;
+    }
+    i++;
+  }
+
+  if (fracs.length === 0) throw new Error('CIF: no _atom_site entries found');
+
+  let cell = null;
+  if (a != null && b != null && c != null && !isNaN(a) && !isNaN(b) && !isNaN(c))
+    cell = cellABCtoVectors(a, b, c, alpha, beta, gamma);
+
+  const positions = [];
+  for (const row of fracs) {
+    const [x, y, z, sym, kind] = row;
+    symbols.push(sym);
+    if (kind === 'frac' && cell) {
+      positions.push([
+        x*cell[0][0] + y*cell[1][0] + z*cell[2][0],
+        x*cell[0][1] + y*cell[1][1] + z*cell[2][1],
+        x*cell[0][2] + y*cell[1][2] + z*cell[2][2],
+      ]);
+    } else {
+      positions.push([x, y, z]);
+    }
+  }
+
+  const frame = { symbols, positions };
+  if (cell) frame.cell = cell;
+  return [frame];
+}
+
+// ─────────────────────────────────────────────────────────────
+// SDF / MOL V2000 parser
+// ─────────────────────────────────────────────────────────────
+function parseSDF(text) {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  if (lines.length < 4) throw new Error('SDF: file too short');
+  // Line 4 is counts line. Chars 0-2 = natoms, 3-5 = nbonds (fixed width).
+  const counts = lines[3];
+  const natoms = parseInt(counts.substring(0, 3));
+  if (!natoms || isNaN(natoms)) throw new Error('SDF: invalid counts line');
+
+  const symbols = [], positions = [];
+  for (let k = 0; k < natoms; k++) {
+    const ln = lines[4 + k] || '';
+    // Fixed columns: x [0,10), y [10,20), z [20,30), symbol [31,34)
+    const x = parseFloat(ln.substring(0, 10));
+    const y = parseFloat(ln.substring(10, 20));
+    const z = parseFloat(ln.substring(20, 30));
+    const sym = (ln.substring(31, 34) || '').trim();
+    if (isNaN(x) || isNaN(y) || isNaN(z) || !sym)
+      throw new Error('SDF: invalid atom line ' + (5 + k));
+    symbols.push(sym);
+    positions.push([x, y, z]);
+  }
+  return [{ symbols, positions }];
+}
+
+// ─────────────────────────────────────────────────────────────
+// PDB parser (ATOM/HETATM + CRYST1, supports MODEL trajectories)
+// ─────────────────────────────────────────────────────────────
+function parsePDB(text) {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const frames = [];
+  let cur = { symbols: [], positions: [] };
+  let cell = null;
+
+  const pushFrame = () => {
+    if (cur.symbols.length > 0) {
+      const f = { symbols: cur.symbols, positions: cur.positions };
+      if (cell) f.cell = cell;
+      frames.push(f);
+    }
+    cur = { symbols: [], positions: [] };
+  };
+
+  for (const line of lines) {
+    const rec = line.substring(0, 6);
+    if (rec === 'CRYST1') {
+      const a = parseFloat(line.substring(6, 15));
+      const b = parseFloat(line.substring(15, 24));
+      const c = parseFloat(line.substring(24, 33));
+      const al = parseFloat(line.substring(33, 40));
+      const be = parseFloat(line.substring(40, 47));
+      const ga = parseFloat(line.substring(47, 54));
+      if (!isNaN(a) && !isNaN(b) && !isNaN(c))
+        cell = cellABCtoVectors(a, b, c, al, be, ga);
+    } else if (rec === 'ATOM  ' || rec === 'HETATM') {
+      const x = parseFloat(line.substring(30, 38));
+      const y = parseFloat(line.substring(38, 46));
+      const z = parseFloat(line.substring(46, 54));
+      let elem = (line.substring(76, 78) || '').trim();
+      if (!elem) {
+        // Fall back to atom name (cols 12-16), strip digits
+        const name = (line.substring(12, 16) || '').trim();
+        elem = name.replace(/[^A-Za-z]/g, '').slice(0, 2);
+        // Prefer single-char element for common cases like "CA" (C-alpha)
+        if (elem.length === 2 && /[A-Z][A-Z]/.test(elem)) elem = elem[0];
+        else if (elem.length >= 2) elem = elem[0].toUpperCase() + elem[1].toLowerCase();
+        else elem = elem.toUpperCase();
+      } else {
+        elem = elem[0].toUpperCase() + (elem[1] || '').toLowerCase();
+      }
+      if (isNaN(x) || isNaN(y) || isNaN(z)) continue;
+      cur.symbols.push(elem);
+      cur.positions.push([x, y, z]);
+    } else if (rec.trim() === 'ENDMDL') {
+      pushFrame();
+    } else if (rec === 'END   ' || line.substring(0, 3) === 'END') {
+      // 'END' terminates the file in many PDBs
+    }
+  }
+  pushFrame();
+  if (frames.length === 0) throw new Error('PDB: no ATOM/HETATM records found');
   return frames;
 }
 
@@ -650,15 +949,16 @@ function createViewer(type) {
 
   // Update file input: OverlayViewer allows multiple files
   const fi = document.getElementById('file-input');
+  const CHEM_ACCEPT = '.xyz,.extxyz,.poscar,.vasp,.cif,.sdf,.mol,.pdb,.ent,POSCAR,CONTCAR';
   if (type === 'OverlayViewer') {
     fi.multiple = true;
-    fi.accept = '.xyz,.json';
+    fi.accept = CHEM_ACCEPT;
   } else if (type === 'NormalModeViewer') {
     fi.multiple = false;
     fi.accept = '.json';
   } else {
     fi.multiple = false;
-    fi.accept = '.xyz,.json';
+    fi.accept = CHEM_ACCEPT;
   }
 
   try {
@@ -712,41 +1012,73 @@ function loadNormalModeData(parsed, sourceLabel) {
 // Format detection & unified text handler
 // ─────────────────────────────────────────────────────────────
 function getSelectedFormat() {
-  return document.getElementById('format-type').value;  // 'auto' | 'xyz' | 'json'
+  return document.getElementById('format-type').value;  // 'auto' | 'xyz' | 'poscar' | 'cif' | 'sdf' | 'pdb'
 }
 
-function detectFormat(text, hintExt) {
+function detectFormat(text, hintName) {
   const sel = getSelectedFormat();
   if (sel !== 'auto') return sel;
-  if (hintExt === 'xyz') return 'xyz';
-  if (hintExt === 'json') return 'json';
-  // Auto-detect from content
+
+  // Hint from filename (full name or extension)
+  if (hintName) {
+    const base = hintName.split('/').pop();
+    const low  = base.toLowerCase();
+    if (/^(poscar|contcar)(\..*)?$/.test(low)) return 'poscar';
+    const ext = low.includes('.') ? low.split('.').pop() : '';
+    if (ext === 'xyz' || ext === 'extxyz') return 'xyz';
+    if (ext === 'json') return 'json';
+    if (ext === 'poscar' || ext === 'vasp') return 'poscar';
+    if (ext === 'cif')  return 'cif';
+    if (ext === 'sdf' || ext === 'mol') return 'sdf';
+    if (ext === 'pdb' || ext === 'ent') return 'pdb';
+  }
+
+  // Content sniffing
   const trimmed = text.trim();
   if (trimmed.startsWith('{') || trimmed.startsWith('[')) return 'json';
-  return 'xyz';
+  if (/^data_/m.test(text) && /_atom_site_/i.test(text)) return 'cif';
+  if (/^(ATOM  |HETATM|CRYST1|MODEL )/m.test(text)) return 'pdb';
+  if (/V2000\s*$/m.test(text) || /\$\$\$\$/.test(text)) return 'sdf';
+  // XYZ starts with an integer line
+  const firstLine = trimmed.split('\n', 1)[0].trim();
+  if (/^\d+$/.test(firstLine)) return 'xyz';
+  // Otherwise, assume POSCAR (free-form)
+  return 'poscar';
 }
 
-function handleText(text, label, hintExt) {
-  const fmt = detectFormat(text, hintExt);
+function handleText(text, label, hintName) {
+  const fmt = detectFormat(text, hintName);
 
-  if (fmt === 'xyz') {
-    const frames = parseXYZ(text);
-    if (frames.length === 0) throw new Error('No valid frames found in XYZ data');
-    if (currentType === 'NormalModeViewer') {
-      throw new Error('NormalModeViewer requires JSON format');
-    }
-    loadDataIntoViewer(frames, label);
-  } else {
+  // NormalModeViewer only accepts JSON vibration data
+  if (currentType === 'NormalModeViewer') {
+    if (fmt !== 'json')
+      throw new Error('NormalModeViewer requires JSON {atoms, vibrationData}');
     const parsed = parseJSON(text);
-    if (currentType === 'NormalModeViewer') {
-      if (parsed.type !== 'normalMode') {
-        throw new Error('JSON must have "atoms" and "vibrationData" for NormalModeViewer');
-      }
-      loadNormalModeData(parsed, label);
-    } else {
-      loadDataIntoViewer(parsed.frames, label);
-    }
+    if (parsed.type !== 'normalMode')
+      throw new Error('JSON must contain "atoms" and "vibrationData"');
+    loadNormalModeData(parsed, label);
+    return;
   }
+
+  let frames;
+  switch (fmt) {
+    case 'xyz':    frames = parseXYZ(text); break;
+    case 'poscar': frames = parsePOSCAR(text); break;
+    case 'cif':    frames = parseCIF(text); break;
+    case 'sdf':    frames = parseSDF(text); break;
+    case 'pdb':    frames = parsePDB(text); break;
+    case 'json': {
+      const parsed = parseJSON(text);
+      frames = parsed.frames || [];
+      break;
+    }
+    default: throw new Error('Unknown format: ' + fmt);
+  }
+
+  if (!frames || frames.length === 0)
+    throw new Error('No valid structures found in ' + fmt.toUpperCase() + ' data');
+
+  loadDataIntoViewer(frames, label);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -765,21 +1097,29 @@ async function handleFiles(files) {
   if (!files || files.length === 0) return;
   setStatus('Reading file(s)…', '');
 
+  const parseByFormat = (text, name) => {
+    const fmt = detectFormat(text, name);
+    switch (fmt) {
+      case 'xyz':    return parseXYZ(text);
+      case 'poscar': return parsePOSCAR(text);
+      case 'cif':    return parseCIF(text);
+      case 'sdf':    return parseSDF(text);
+      case 'pdb':    return parsePDB(text);
+      case 'json': {
+        const p = parseJSON(text);
+        return p.frames || [];
+      }
+      default: throw new Error('Unknown format: ' + fmt);
+    }
+  };
+
   try {
     if (currentType === 'OverlayViewer' && files.length > 1) {
       const structs = [];
       for (const f of files) {
         const text = await readFile(f);
-        const ext  = f.name.split('.').pop().toLowerCase();
-        const fmt  = detectFormat(text, ext);
-        if (fmt === 'xyz') {
-          const frames = parseXYZ(text);
-          if (frames.length) structs.push(frames[0]);
-        } else {
-          const parsed = parseJSON(text);
-          if (parsed.type === 'single' || parsed.type === 'trajectory')
-            structs.push(parsed.frames[0]);
-        }
+        const frames = parseByFormat(text, f.name);
+        if (frames && frames.length) structs.push(frames[0]);
       }
       if (structs.length === 0) throw new Error('No valid structures found in files');
       loadDataIntoViewer(structs, files.length + ' files');
@@ -788,8 +1128,7 @@ async function handleFiles(files) {
 
     const file = files[0];
     const text = await readFile(file);
-    const ext  = file.name.split('.').pop().toLowerCase();
-    handleText(text, file.name, ext);
+    handleText(text, file.name, file.name);
 
   } catch (e) {
     setStatus('Error: ' + e.message, 'err');
