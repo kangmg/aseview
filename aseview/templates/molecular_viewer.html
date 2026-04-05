@@ -455,6 +455,16 @@
                     <div class="card-content" id="advanced-content">
                         <div class="control-group">
                             <div class="control-label">
+                                <span>Color Scheme</span>
+                            </div>
+                            <select class="select" id="color-scheme-select">
+                                <option value="Jmol">Jmol</option>
+                                <option value="CPK">CPK</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
                                 <span>Bond Threshold Scale</span>
                                 <span class="slider-value" id="bond-threshold-value">1.0</span>
                             </div>
@@ -1045,7 +1055,8 @@
             showRings: false,
             ringOpacity: 0.30,
             ringColor: null,          // null = auto (dominant-atom color)
-            colorBy: 'Element',  // 'Element' or 'Charge'
+            colorBy: 'Element',  // 'Element', 'Charge', or 'Constraint'
+            colorScheme: 'Jmol', // 'Jmol' or 'CPK'
             normalizeCharges: false,
             showChargeLabels: false,
             chargeColormap: 'coolwarm',
@@ -1061,6 +1072,9 @@
 
             const colorBySelect = document.getElementById('color-by-select');
             if (colorBySelect) colorBySelect.value = settings.colorBy || 'Element';
+
+            const colorSchemeSelect = document.getElementById('color-scheme-select');
+            if (colorSchemeSelect) colorSchemeSelect.value = settings.colorScheme || 'Jmol';
 
             // Update checkboxes
             const checkboxMappings = {
@@ -1179,6 +1193,21 @@
 
         // Charge coloring utilities
         let chargeStats = { hasCharges: false, min: 0, max: 0, maxPositive: 0, minNegative: 0 };
+        let fixedStats  = { hasFixed: false, indices: new Set() };
+
+        function checkConstraintsInData() {
+            if (!molecularData || molecularData.length === 0) return false;
+            for (const frame of molecularData) {
+                if (frame.fixed && Array.isArray(frame.fixed) && frame.fixed.length > 0) {
+                    fixedStats.hasFixed  = true;
+                    fixedStats.indices   = new Set(frame.fixed);
+                    return true;
+                }
+            }
+            fixedStats.hasFixed  = false;
+            fixedStats.indices   = new Set();
+            return false;
+        }
 
         function checkChargesInData() {
             if (!molecularData || molecularData.length === 0) return false;
@@ -1215,28 +1244,39 @@
             const normalizeSection = document.getElementById('normalize-charges-section');
             const labelsSection = document.getElementById('show-charge-labels-section');
             const colorbarSection = document.getElementById('charge-colorbar-section');
+            const select = document.getElementById('color-by-select');
 
-            if (!colorBySection) return;
+            if (!colorBySection || !select) return;
 
+            // Rebuild dynamic options (Charge / Constraint) based on data availability
+            [...select.options].forEach(o => { if (o.value !== 'Element') o.remove(); });
             if (chargeStats.hasCharges) {
-                colorBySection.style.display = 'block';
-
-                // Show options only when colorBy is 'Charge'
-                const showChargeOptions = settings.colorBy === 'Charge';
-                if (normalizeSection) normalizeSection.style.display = showChargeOptions ? 'block' : 'none';
-                if (labelsSection) labelsSection.style.display = showChargeOptions ? 'block' : 'none';
-                if (colorbarSection) colorbarSection.style.display = showChargeOptions ? 'block' : 'none';
-
-                // Update colorbar labels
-                if (showChargeOptions) {
-                    updateColorbarLabels();
-                }
-            } else {
-                colorBySection.style.display = 'none';
-                if (normalizeSection) normalizeSection.style.display = 'none';
-                if (labelsSection) labelsSection.style.display = 'none';
-                if (colorbarSection) colorbarSection.style.display = 'none';
+                const opt = document.createElement('option');
+                opt.value = 'Charge'; opt.text = 'Charge';
+                select.add(opt);
             }
+            if (fixedStats.hasFixed) {
+                const opt = document.createElement('option');
+                opt.value = 'Constraint'; opt.text = 'Constraint';
+                select.add(opt);
+            }
+
+            // If selected value no longer valid, reset to Element
+            if ((settings.colorBy === 'Charge' && !chargeStats.hasCharges) ||
+                (settings.colorBy === 'Constraint' && !fixedStats.hasFixed)) {
+                settings.colorBy = 'Element';
+            }
+            select.value = settings.colorBy;
+
+            const hasAny = chargeStats.hasCharges || fixedStats.hasFixed;
+            colorBySection.style.display = hasAny ? 'block' : 'none';
+
+            // Charge-specific sub-controls
+            const showChargeOptions = settings.colorBy === 'Charge';
+            if (normalizeSection) normalizeSection.style.display = showChargeOptions ? 'block' : 'none';
+            if (labelsSection)    labelsSection.style.display    = showChargeOptions ? 'block' : 'none';
+            if (colorbarSection)  colorbarSection.style.display  = showChargeOptions ? 'block' : 'none';
+            if (showChargeOptions) updateColorbarLabels();
         }
 
         function updateColorbarLabels() {
@@ -1364,7 +1404,7 @@
         }
 
         // Create charge label sprite
-        function createChargeLabelSprite(charge, position, atomScale) {
+        function createChargeLabelSprite(charge, position, atomScale, normalize) {
             const canvas = document.createElement('canvas');
             canvas.width = 128;
             canvas.height = 64;
@@ -1384,8 +1424,10 @@
             ctx.lineWidth = 4;
             ctx.strokeText(text, 64, 32);
 
-            // Fill with color based on charge
-            ctx.fillStyle = charge >= 0 ? '#3b82f6' : '#ef4444';
+            // Label color matches atom color (reflects normalization)
+            const colorHex = getChargeColor(charge, normalize || false);
+            const labelColor = new THREE.Color(colorHex);
+            ctx.fillStyle = '#' + labelColor.getHexString();
             ctx.fillText(text, 64, 32);
 
             const texture = new THREE.CanvasTexture(canvas);
@@ -2037,6 +2079,9 @@
             if (!scene || !camera || !renderer) return;
             if (!molecularData || molecularData.length === 0) return;
 
+            // Sync color scheme global (styles.js) with current setting
+            atomColorScheme = (settings.colorScheme || 'Jmol').toLowerCase();
+
             if (moleculeGroup) {
                 scene.remove(moleculeGroup);
                 disposeObject3D(moleculeGroup);
@@ -2117,9 +2162,10 @@
 
             // Get charges for current frame (if available)
             const frameCharges = molecule.charges || [];
-            const useChargeColor = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
+            const useChargeColor     = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
+            const useConstraintColor = settings.colorBy === 'Constraint' && fixedStats.hasFixed;
 
-            // Pre-calculate charge colors for all atoms
+            // Pre-calculate per-atom colors
             const atomChargeColors = [];
             if (useChargeColor) {
                 for (let i = 0; i < positions.length; i++) {
@@ -2146,6 +2192,10 @@
                             atomChargeColors[j],
                             styleName
                         );
+                    } else if (useConstraintColor && !fixedBondStyles.includes(styleName)) {
+                        const c1 = fixedStats.indices.has(i) ? 0x808080 : getAtomColorByScheme(symbols[i]);
+                        const c2 = fixedStats.indices.has(j) ? 0x808080 : getAtomColorByScheme(symbols[j]);
+                        bond = createBondWithColor(positions[i], positions[j], bondRadius, c1, c2, styleName);
                     } else {
                         bond = bondFactory(
                             positions[i],
@@ -2182,10 +2232,11 @@
                 let atom;
 
                 if (useChargeColor) {
-                    // Use charge-based coloring (colors already calculated)
                     atom = createAtomWithColor(positions[i], symbols[i], atomScale, atomChargeColors[i], styleName, lodSegments);
+                } else if (useConstraintColor) {
+                    const color = fixedStats.indices.has(i) ? 0x808080 : getAtomColorByScheme(symbols[i]);
+                    atom = createAtomWithColor(positions[i], symbols[i], atomScale, color, styleName, lodSegments);
                 } else {
-                    // Use element-based coloring (default)
                     atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
                     if (!atom) {
                         atom = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
@@ -2202,7 +2253,7 @@
             if (settings.showChargeLabels && useChargeColor && frameCharges.length > 0) {
                 for (let i = 0; i < positions.length; i++) {
                     const charge = frameCharges[i] || 0;
-                    const label = createChargeLabelSprite(charge, positions[i], atomScale);
+                    const label = createChargeLabelSprite(charge, positions[i], atomScale, settings.normalizeCharges);
                     if (label) {
                         label.renderOrder = 4;
                         moleculeGroup.add(label);
@@ -2596,8 +2647,9 @@
             // Extract energy data for plotting
             extractEnergyData();
 
-            // Check for charge data and update UI
+            // Check for charge / constraint data and update UI
             checkChargesInData();
+            checkConstraintsInData();
             updateChargeUI();
 
             // Show/hide energy plot checkbox based on energy availability
@@ -2923,10 +2975,17 @@
                 renderMolecule();
             });
 
-            // Color by selection (Element or Charge)
+            // Color by selection (Element / Charge / Constraint)
             safeAddListener('color-by-select', 'change', function () {
                 settings.colorBy = this.value;
                 updateChargeUI();
+                renderMolecule();
+            });
+
+            // Color scheme selection (Jmol / CPK)
+            safeAddListener('color-scheme-select', 'change', function () {
+                settings.colorScheme = this.value;
+                atomColorScheme = this.value.toLowerCase(); // sync styles.js global
                 renderMolecule();
             });
 

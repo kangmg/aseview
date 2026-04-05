@@ -48,9 +48,61 @@ const atomInfo = {
     'Pa': { radius: 2.00, color: 0x00A1FF }, 'U': { radius: 1.96, color: 0x008FFF },
     'Np': { radius: 1.90, color: 0x0080FF }, 'Pu': { radius: 1.87, color: 0x006BFF },
     'Am': { radius: 1.80, color: 0x545CF2 }, 'Cm': { radius: 1.69, color: 0x785CE3 },
+    // Transuranium elements (not in original list)
+    'Bk': { radius: 1.70, color: 0x8A4FE3 }, 'Cf': { radius: 1.70, color: 0xA136D4 },
+    'Es': { radius: 1.70, color: 0xB31FD4 }, 'Fm': { radius: 1.70, color: 0xB31FBA },
+    'Md': { radius: 1.70, color: 0xB30DA6 }, 'No': { radius: 1.70, color: 0xBD0D87 },
+    'Lr': { radius: 1.70, color: 0xC70066 }, 'Rf': { radius: 1.70, color: 0xCC0059 },
+    'Db': { radius: 1.70, color: 0xD1004F }, 'Sg': { radius: 1.70, color: 0xD90045 },
+    'Bh': { radius: 1.70, color: 0xE00038 }, 'Hs': { radius: 1.70, color: 0xE6002E },
+    'Mt': { radius: 1.70, color: 0xEB0026 },
     'X': { radius: 0.7, color: 0xFFC0CB },
     'default': { radius: 0.7, color: 0xFFC0CB } // Pink as default for unknown elements
 };
+
+// CPK color scheme (classic Corey-Pauling-Koltun)
+const cpkColors = {
+    'H': 0xFFFFFF, 'He': 0xFFC0CB, 'Li': 0xB22222, 'Be': 0xFF1493,
+    'B': 0x00FF00, 'C': 0xC8C8C8, 'N': 0x8F8FFF, 'O': 0xF00000,
+    'F': 0xDAA520, 'Ne': 0xFF1493, 'Na': 0x0000FF, 'Mg': 0x228B22,
+    'Al': 0x808090, 'Si': 0xDAA520, 'P': 0xFFA500, 'S': 0xFFC832,
+    'Cl': 0x00FF00, 'Ar': 0xFF1493, 'K': 0xFF1493, 'Ca': 0x808090,
+    'Sc': 0xFF1493, 'Ti': 0x808090, 'V': 0xFF1493, 'Cr': 0x808090,
+    'Mn': 0x808090, 'Fe': 0xFFA500, 'Co': 0xFF1493, 'Ni': 0xA52A2A,
+    'Cu': 0xA52A2A, 'Zn': 0xA52A2A, 'Ga': 0xFF1493, 'Ge': 0xFF1493,
+    'As': 0xFF1493, 'Se': 0xFF1493, 'Br': 0xA52A2A, 'Kr': 0xFF1493,
+    'Rb': 0xFF1493, 'Sr': 0xFF1493, 'Y': 0xFF1493, 'Zr': 0xFF1493,
+    'Nb': 0xFF1493, 'Mo': 0xFF1493, 'Tc': 0xFF1493, 'Ru': 0xFF1493,
+    'Rh': 0xFF1493, 'Pd': 0xFF1493, 'Ag': 0x808090, 'Cd': 0xFF1493,
+    'In': 0xFF1493, 'Sn': 0xFF1493, 'Sb': 0xFF1493, 'Te': 0xFF1493,
+    'I': 0xA020F0, 'Xe': 0xFF1493, 'Cs': 0xFF1493, 'Ba': 0xFFA500,
+    'La': 0xFF1493, 'Ce': 0xFF1493, 'Pr': 0xFF1493, 'Nd': 0xFF1493,
+    'Pm': 0xFF1493, 'Sm': 0xFF1493, 'Eu': 0xFF1493, 'Gd': 0xFF1493,
+    'Tb': 0xFF1493, 'Dy': 0xFF1493, 'Ho': 0xFF1493, 'Er': 0xFF1493,
+    'Tm': 0xFF1493, 'Yb': 0xFF1493, 'Lu': 0xFF1493, 'Hf': 0xFF1493,
+    'Ta': 0xFF1493, 'W': 0xFF1493, 'Re': 0xFF1493, 'Os': 0xFF1493,
+    'Ir': 0xFF1493, 'Pt': 0xFF1493, 'Au': 0xDAA520, 'Hg': 0xFF1493,
+    'Tl': 0xFF1493, 'Pb': 0xFF1493, 'Bi': 0xFF1493, 'Po': 0xFF1493,
+    'At': 0xFF1493, 'Rn': 0xFFFFFF, 'Fr': 0xFFFFFF, 'Ra': 0xFFFFFF,
+    'Ac': 0xFFFFFF, 'Th': 0xFF1493, 'Pa': 0xFFFFFF, 'U': 0xFF1493,
+    'Np': 0xFFFFFF, 'Pu': 0xFFFFFF, 'Am': 0xFFFFFF, 'Cm': 0xFFFFFF,
+};
+
+// Active color scheme: 'jmol' (default) or 'cpk'
+let atomColorScheme = 'jmol';
+
+/**
+ * Return the element color for `symbol` under the current atomColorScheme.
+ * Falls back to jmol (atomInfo.color) for unknown elements or schemes.
+ */
+function getAtomColorByScheme(symbol) {
+    if (atomColorScheme === 'cpk') {
+        return cpkColors[symbol] !== undefined
+            ? cpkColors[symbol]
+            : (atomInfo[symbol] || atomInfo['default']).color;
+    }
+    return (atomInfo[symbol] || atomInfo['default']).color; // 'jmol'
+}
 
 function getStandardMaterial(color, type) {
     switch (type) {
@@ -120,7 +172,7 @@ function createAtomStyleCartoon(pos, symbol, atomScale, helpers) {
     const seg = lod.sphere;
 
     const geometry = getCachedSphereGeometry(scaledRadius, seg);
-    const toonMaterial = getCachedMaterial('toon', info.color, `cartoon_${seg}`);
+    const toonMaterial = getCachedMaterial('toon', getAtomColorByScheme(symbol), `cartoon_${seg}`);
     const sphere = new THREE.Mesh(geometry, toonMaterial);
 
     const outlineGeometry = getCachedSphereGeometry(scaledRadius * 1.05, seg);
@@ -137,7 +189,7 @@ function createAtomStyleCartoon(pos, symbol, atomScale, helpers) {
 function createAtomStyleNeon(pos, symbol, atomScale) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    const atomColor = new THREE.Color(info.color);
+    const atomColor = new THREE.Color(getAtomColorByScheme(symbol));
 
     // Use single sprite for glow effect only
     const glowCanvas = document.createElement('canvas');
@@ -197,7 +249,7 @@ function createAtomStyleGlossy(pos, symbol, atomScale, helpers) {
     const scaledRadius = info.radius * atomScale;
     const lod = (helpers && helpers._lod) || { sphere: 64 };
     const geometry = getCachedSphereGeometry(scaledRadius, lod.sphere);
-    const material = getCachedMaterial('glossy', info.color);
+    const material = getCachedMaterial('glossy', getAtomColorByScheme(symbol));
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
     return sphere;
@@ -208,7 +260,7 @@ function createAtomStyleMetallic(pos, symbol, atomScale, helpers) {
     const scaledRadius = info.radius * atomScale;
     const lod = (helpers && helpers._lod) || { sphere: 64 };
     const geometry = getCachedSphereGeometry(scaledRadius, lod.sphere);
-    const material = getCachedMaterial('metallic', info.color);
+    const material = getCachedMaterial('metallic', getAtomColorByScheme(symbol));
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
     return sphere;
@@ -219,7 +271,7 @@ function createAtomStyleDefault(pos, symbol, atomScale, helpers) {
     const scaledRadius = info.radius * atomScale;
     const lod = (helpers && helpers._lod) || { sphere: 64 };
     const geometry = getCachedSphereGeometry(scaledRadius, lod.sphere);
-    const material = getCachedMaterial('lambert', info.color);
+    const material = getCachedMaterial('lambert', getAtomColorByScheme(symbol));
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
     return sphere;
@@ -232,7 +284,7 @@ function createAtomStyleRowan(pos, symbol, atomScale, helpers) {
     const group = new THREE.Group();
 
     const geometry = getCachedSphereGeometry(scaledRadius, lod.sphereHigh);
-    const material = getCachedMaterial('lambertFlat', info.color);
+    const material = getCachedMaterial('lambertFlat', getAtomColorByScheme(symbol));
     const sphere = new THREE.Mesh(geometry, material);
     group.add(sphere);
 
@@ -265,7 +317,7 @@ function createAtomStyleBubble(pos, symbol, atomScale) {
         centerX, centerY, radius
     );
 
-    const atomColor = new THREE.Color(info.color);
+    const atomColor = new THREE.Color(getAtomColorByScheme(symbol));
     const colorStyle = atomColor.getStyle();
 
     // Bubble gradient: bright highlight -> main color -> darker edge
@@ -416,8 +468,8 @@ function createBondStyleDefault(p1, p2, sym1, sym2, bondThickness, atomScale, st
     const { startPos, endPos } = bondPoints;
 
     const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
-    const color1 = (atomInfo[sym1] || atomInfo.default).color;
-    const color2 = (atomInfo[sym2] || atomInfo.default).color;
+    const color1 = getAtomColorByScheme(sym1);
+    const color2 = getAtomColorByScheme(sym2);
 
     const bondGroup = new THREE.Group();
     const bond1 = createHalfBond(startPos, midPoint, color1, bondThickness, style);
@@ -525,8 +577,8 @@ function createBondStyleBubble(p1, p2, sym1, sym2, bondThickness, atomScale) {
     const { startPos, endPos } = bondPoints;
 
     const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
-    const color1 = (atomInfo[sym1] || atomInfo.default).color;
-    const color2 = (atomInfo[sym2] || atomInfo.default).color;
+    const color1 = getAtomColorByScheme(sym1);
+    const color2 = getAtomColorByScheme(sym2);
 
     const bondGroup = new THREE.Group();
 
