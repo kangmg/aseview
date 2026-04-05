@@ -1116,3 +1116,136 @@ function _findBondsBruteForce(positions, symbols, bondCutoff) {
     }
     return bonds;
 }
+
+// ======== Hydrogen Bond Functions ========
+
+/**
+ * Detect hydrogen bonds using the D-H...A geometric criteria.
+ *
+ * Donors:    H bonded to N, O, F, or S
+ * Acceptors: N, O, F, S, Cl
+ * Criteria:
+ *   - H...A distance  ≤ 2.5 Å
+ *   - D...A distance  ≤ 3.5 Å
+ *   - D-H...A angle   ≥ 120°
+ *   - D and A are not directly covalently bonded
+ *
+ * @param {THREE.Vector3[]} positions   - Atom positions
+ * @param {string[]}        symbols     - Element symbols
+ * @param {Array<{i,j}>}    covalentBonds - Existing covalent bond pairs
+ * @returns {Array<{h, a}>} H-bond pairs: index of H and acceptor atom
+ */
+function detectHydrogenBonds(positions, symbols, covalentBonds) {
+    const donorElements    = new Set(['N', 'O', 'F', 'S']);
+    const acceptorElements = new Set(['N', 'O', 'F', 'S', 'Cl']);
+    const H_A_CUTOFF  = 2.5;   // Å  H...A distance
+    const D_A_CUTOFF  = 3.5;   // Å  D...A distance
+    const MIN_ANGLE   = 120.0; // °  D-H...A angle
+
+    // Build adjacency list and direct-bond set from covalent bonds
+    const adjacency = {};
+    const bondSet   = new Set();
+    if (covalentBonds) {
+        covalentBonds.forEach(({ i, j }) => {
+            if (!adjacency[i]) adjacency[i] = [];
+            if (!adjacency[j]) adjacency[j] = [];
+            adjacency[i].push(j);
+            adjacency[j].push(i);
+            bondSet.add(`${Math.min(i, j)}_${Math.max(i, j)}`);
+        });
+    }
+
+    const hbonds = [];
+
+    for (let h = 0; h < symbols.length; h++) {
+        if (symbols[h] !== 'H') continue;
+
+        const hNeighbors = adjacency[h] || [];
+        // H must be covalently bonded to a donor atom
+        const donorIdx = hNeighbors.find(d => donorElements.has(symbols[d]));
+        if (donorIdx === undefined) continue;   // e.g. C-H — not a donor H
+
+        const pH = positions[h];
+        const pD = positions[donorIdx];
+
+        for (let a = 0; a < symbols.length; a++) {
+            if (a === h || a === donorIdx) continue;
+            if (!acceptorElements.has(symbols[a])) continue;
+
+            // Skip if donor and acceptor are directly bonded (same molecule, adjacent)
+            if (bondSet.has(`${Math.min(donorIdx, a)}_${Math.max(donorIdx, a)}`)) continue;
+
+            const pA = positions[a];
+
+            // Distance filters (cheap, check first)
+            const haDist = pH.distanceTo(pA);
+            if (haDist > H_A_CUTOFF) continue;
+
+            const daDist = pD.distanceTo(pA);
+            if (daDist > D_A_CUTOFF) continue;
+
+            // Angle filter: D-H...A angle at H
+            const vecHD = new THREE.Vector3().subVectors(pD, pH).normalize();
+            const vecHA = new THREE.Vector3().subVectors(pA, pH).normalize();
+            const cosAngle = Math.max(-1, Math.min(1, vecHD.dot(vecHA)));
+            const angleDeg = Math.acos(cosAngle) * (180 / Math.PI);
+            if (angleDeg < MIN_ANGLE) continue;
+
+            hbonds.push({ h, a });
+        }
+    }
+
+    return hbonds;
+}
+
+/**
+ * Create a dashed-cylinder representation of a hydrogen bond.
+ *
+ * @param {THREE.Vector3} p1
+ * @param {THREE.Vector3} p2
+ * @returns {THREE.Group}
+ */
+function createHydrogenBond(p1, p2) {
+    const distance  = p1.distanceTo(p2);
+    const direction = new THREE.Vector3().subVectors(p2, p1).normalize();
+
+    const hBondRadius = 0.05;  // thinner than covalent bonds (0.1)
+    const dashLength  = 0.20;
+    const gapLength   = 0.12;
+
+    const group = new THREE.Group();
+    const up    = new THREE.Vector3(0, 1, 0);
+
+    let traveled = 0;
+    let isDash   = true;
+
+    while (traveled < distance) {
+        const segLen   = isDash ? dashLength : gapLength;
+        const actual   = Math.min(segLen, distance - traveled);
+
+        if (isDash && actual > 0.01) {
+            const start   = p1.clone().addScaledVector(direction, traveled);
+            const end     = p1.clone().addScaledVector(direction, traveled + actual);
+            const midPt   = start.clone().lerp(end, 0.5);
+
+            const geometry = new THREE.CylinderGeometry(hBondRadius, hBondRadius, actual, 6, 1);
+            const material = new THREE.MeshBasicMaterial({
+                color:       0x222222,
+                transparent: true,
+                opacity:     0.65,
+                depthTest:   true,
+                depthWrite:  false
+            });
+
+            const cylinder = new THREE.Mesh(geometry, material);
+            cylinder.position.copy(midPt);
+            cylinder.quaternion.setFromUnitVectors(up, direction);
+            group.add(cylinder);
+        }
+
+        traveled += actual;
+        isDash = !isDash;
+    }
+
+    return group;
+}
