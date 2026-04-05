@@ -1122,16 +1122,12 @@ function _findBondsBruteForce(positions, symbols, bondCutoff) {
 /**
  * Detect hydrogen bonds using the D-H...A geometric criteria.
  *
- * Donors:    H bonded to N, O, or F  (classical strong donors)
- * Acceptors: N, O, F  (strong) | S, Cl (weak — stricter angle applied)
- * Criteria (strong acceptors N/O/F):
+ * Donors:    H bonded to N, O, or F
+ * Acceptors: N, O, F
+ * Criteria:
  *   - H...A distance  ≤ 2.5 Å
  *   - D...A distance  ≤ 3.5 Å
  *   - D-H...A angle   ≥ 120°
- * Criteria (weak acceptors S/Cl):
- *   - H...A distance  ≤ 2.8 Å  (larger vdW radii)
- *   - D...A distance  ≤ 3.8 Å
- *   - D-H...A angle   ≥ 140°   (stricter — rules out casual vdW contacts)
  * Excluded:
  *   - D and A directly bonded (1,2)
  *   - D and A share a common bonded neighbor (1,3: H-D-X-A)
@@ -1142,19 +1138,12 @@ function _findBondsBruteForce(positions, symbols, bondCutoff) {
  * @returns {Array<{h, a}>} H-bond pairs: index of H and acceptor atom
  */
 function detectHydrogenBonds(positions, symbols, covalentBonds) {
-    const donorElements       = new Set(['N', 'O', 'F']);
-    const strongAcceptors     = new Set(['N', 'O', 'F']);
-    const weakAcceptors       = new Set(['S', 'Cl']);
+    const donorElements   = new Set(['N', 'O', 'F']);
+    const acceptorElements = new Set(['N', 'O', 'F']);
 
-    // Strong acceptor thresholds
-    const HA_CUTOFF_STRONG    = 2.5;
-    const DA_CUTOFF_STRONG    = 3.5;
-    const ANGLE_MIN_STRONG    = 120.0;
-
-    // Weak acceptor (S, Cl) thresholds — stricter angle, looser distance
-    const HA_CUTOFF_WEAK      = 2.8;
-    const DA_CUTOFF_WEAK      = 3.8;
-    const ANGLE_MIN_WEAK      = 140.0;
+    const HA_CUTOFF = 2.5;   // Å  H...A distance
+    const DA_CUTOFF = 3.5;   // Å  D...A distance
+    const ANGLE_MIN = 120.0; // °  D-H...A angle
 
     // Build adjacency list and direct-bond set from covalent bonds
     const adjacency = {};
@@ -1186,13 +1175,11 @@ function detectHydrogenBonds(positions, symbols, covalentBonds) {
         for (let a = 0; a < symbols.length; a++) {
             if (a === h || a === donorIdx) continue;
 
-            const isStrong = strongAcceptors.has(symbols[a]);
-            const isWeak   = weakAcceptors.has(symbols[a]);
-            if (!isStrong && !isWeak) continue;
+            if (!acceptorElements.has(symbols[a])) continue;
 
-            const haCutoff    = isStrong ? HA_CUTOFF_STRONG : HA_CUTOFF_WEAK;
-            const daCutoff    = isStrong ? DA_CUTOFF_STRONG : DA_CUTOFF_WEAK;
-            const angleMin    = isStrong ? ANGLE_MIN_STRONG : ANGLE_MIN_WEAK;
+            const haCutoff = HA_CUTOFF;
+            const daCutoff = DA_CUTOFF;
+            const angleMin = ANGLE_MIN;
 
             // --- Topology filters (cheap, no sqrt) ---
 
