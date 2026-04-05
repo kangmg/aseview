@@ -1122,13 +1122,19 @@ function _findBondsBruteForce(positions, symbols, bondCutoff) {
 /**
  * Detect hydrogen bonds using the D-H...A geometric criteria.
  *
- * Donors:    H bonded to N, O, F, or S
- * Acceptors: N, O, F, S, Cl
- * Criteria:
+ * Donors:    H bonded to N, O, or F  (classical strong donors)
+ * Acceptors: N, O, F  (strong) | S, Cl (weak — stricter angle applied)
+ * Criteria (strong acceptors N/O/F):
  *   - H...A distance  ≤ 2.5 Å
  *   - D...A distance  ≤ 3.5 Å
  *   - D-H...A angle   ≥ 120°
- *   - D and A are not directly covalently bonded
+ * Criteria (weak acceptors S/Cl):
+ *   - H...A distance  ≤ 2.8 Å  (larger vdW radii)
+ *   - D...A distance  ≤ 3.8 Å
+ *   - D-H...A angle   ≥ 140°   (stricter — rules out casual vdW contacts)
+ * Excluded:
+ *   - D and A directly bonded (1,2)
+ *   - D and A share a common bonded neighbor (1,3: H-D-X-A)
  *
  * @param {THREE.Vector3[]} positions   - Atom positions
  * @param {string[]}        symbols     - Element symbols
@@ -1136,11 +1142,19 @@ function _findBondsBruteForce(positions, symbols, bondCutoff) {
  * @returns {Array<{h, a}>} H-bond pairs: index of H and acceptor atom
  */
 function detectHydrogenBonds(positions, symbols, covalentBonds) {
-    const donorElements    = new Set(['N', 'O', 'F', 'S']);
-    const acceptorElements = new Set(['N', 'O', 'F', 'S', 'Cl']);
-    const H_A_CUTOFF  = 2.5;   // Å  H...A distance
-    const D_A_CUTOFF  = 3.5;   // Å  D...A distance
-    const MIN_ANGLE   = 120.0; // °  D-H...A angle
+    const donorElements       = new Set(['N', 'O', 'F']);
+    const strongAcceptors     = new Set(['N', 'O', 'F']);
+    const weakAcceptors       = new Set(['S', 'Cl']);
+
+    // Strong acceptor thresholds
+    const HA_CUTOFF_STRONG    = 2.5;
+    const DA_CUTOFF_STRONG    = 3.5;
+    const ANGLE_MIN_STRONG    = 120.0;
+
+    // Weak acceptor (S, Cl) thresholds — stricter angle, looser distance
+    const HA_CUTOFF_WEAK      = 2.8;
+    const DA_CUTOFF_WEAK      = 3.8;
+    const ANGLE_MIN_WEAK      = 140.0;
 
     // Build adjacency list and direct-bond set from covalent bonds
     const adjacency = {};
@@ -1161,35 +1175,51 @@ function detectHydrogenBonds(positions, symbols, covalentBonds) {
         if (symbols[h] !== 'H') continue;
 
         const hNeighbors = adjacency[h] || [];
-        // H must be covalently bonded to a donor atom
+        // H must be covalently bonded to a strong donor (N/O/F); excludes C-H, S-H
         const donorIdx = hNeighbors.find(d => donorElements.has(symbols[d]));
-        if (donorIdx === undefined) continue;   // e.g. C-H — not a donor H
+        if (donorIdx === undefined) continue;
 
         const pH = positions[h];
         const pD = positions[donorIdx];
+        const dNeighbors = adjacency[donorIdx] || [];
 
         for (let a = 0; a < symbols.length; a++) {
             if (a === h || a === donorIdx) continue;
-            if (!acceptorElements.has(symbols[a])) continue;
 
-            // Skip if donor and acceptor are directly bonded (same molecule, adjacent)
+            const isStrong = strongAcceptors.has(symbols[a]);
+            const isWeak   = weakAcceptors.has(symbols[a]);
+            if (!isStrong && !isWeak) continue;
+
+            const haCutoff    = isStrong ? HA_CUTOFF_STRONG : HA_CUTOFF_WEAK;
+            const daCutoff    = isStrong ? DA_CUTOFF_STRONG : DA_CUTOFF_WEAK;
+            const angleMin    = isStrong ? ANGLE_MIN_STRONG : ANGLE_MIN_WEAK;
+
+            // --- Topology filters (cheap, no sqrt) ---
+
+            // Exclude 1,2: D directly bonded to A
             if (bondSet.has(`${Math.min(donorIdx, a)}_${Math.max(donorIdx, a)}`)) continue;
 
+            // Exclude 1,3: D-X-A (H-D-X-A = 3-bond path), e.g. H-N-C=O
+            const is13 = dNeighbors.some(
+                x => x !== h && bondSet.has(`${Math.min(x, a)}_${Math.max(x, a)}`)
+            );
+            if (is13) continue;
+
+            // --- Distance filters ---
             const pA = positions[a];
 
-            // Distance filters (cheap, check first)
             const haDist = pH.distanceTo(pA);
-            if (haDist > H_A_CUTOFF) continue;
+            if (haDist > haCutoff) continue;
 
             const daDist = pD.distanceTo(pA);
-            if (daDist > D_A_CUTOFF) continue;
+            if (daDist > daCutoff) continue;
 
-            // Angle filter: D-H...A angle at H
+            // --- Angle filter: D-H...A angle at H ---
             const vecHD = new THREE.Vector3().subVectors(pD, pH).normalize();
             const vecHA = new THREE.Vector3().subVectors(pA, pH).normalize();
             const cosAngle = Math.max(-1, Math.min(1, vecHD.dot(vecHA)));
             const angleDeg = Math.acos(cosAngle) * (180 / Math.PI);
-            if (angleDeg < MIN_ANGLE) continue;
+            if (angleDeg < angleMin) continue;
 
             hbonds.push({ h, a });
         }
