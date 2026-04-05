@@ -574,6 +574,16 @@
 
                         <div class="control-group">
                             <div class="control-label">
+                                <span>H-Bond</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-hbond">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
                                 <span>Axis</span>
                                 <label class="switch">
                                     <input type="checkbox" id="show-axis" checked>
@@ -882,6 +892,7 @@
             style: 'cartoon',
             showCell: true,
             showBond: true,
+            showHBond: false,
             showShadow: false,
             showShading: true,
             showEnergyPlot: false,
@@ -909,6 +920,7 @@
             const checkboxMappings = {
                 'show-cell': 'showCell',
                 'show-bond': 'showBond',
+                'show-hbond': 'showHBond',
                 'show-shading': 'showShading',
                 'show-axis': 'showAxis',
                 'show-shadow': 'showShadow',
@@ -1572,6 +1584,18 @@
                 console.log('Total bonds created:', bondCount, 'for style:', styleName);
             }
 
+            if (settings.showHBond) {
+                const hbondPairs = detectHydrogenBonds(positions, symbols, bondPairs);
+                for (let b = 0; b < hbondPairs.length; b++) {
+                    const { h, a } = hbondPairs[b];
+                    const hbond = createHydrogenBond(positions[h], positions[a]);
+                    if (hbond) {
+                        hbond.renderOrder = 1;
+                        moleculeGroup.add(hbond);
+                    }
+                }
+            }
+
             for (let i = 0; i < positions.length; i++) {
                 let atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
                 if (!atom) {
@@ -2156,6 +2180,11 @@
 
             safeAddListener('show-bond', 'change', function () {
                 settings.showBond = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-hbond', 'change', function () {
+                settings.showHBond = this.checked;
                 renderMolecule();
             });
 

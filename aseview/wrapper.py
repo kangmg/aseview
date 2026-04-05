@@ -71,6 +71,17 @@ class MolecularData:
             except (TypeError, ValueError):
                 pass
 
+        # Add fixed atom indices from FixAtoms constraints
+        if hasattr(atoms, "constraints") and atoms.constraints:
+            import numpy as np
+
+            fixed = []
+            for c in atoms.constraints:
+                if hasattr(c, "index"):  # FixAtoms stores indices in .index
+                    fixed.extend(int(i) for i in np.asarray(c.index).flatten())
+            if fixed:
+                data["fixed"] = sorted(set(fixed))
+
         return data
 
     @staticmethod
