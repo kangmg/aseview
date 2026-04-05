@@ -1172,14 +1172,13 @@ function _findBondsBruteForce(positions, symbols, bondCutoff) {
 // ======== Hydrogen Bond Functions ========
 
 /**
- * Detect hydrogen bonds using the D-H...A geometric criteria.
+ * Detect hydrogen bonds using D-H...A distance/topology criteria.
  *
  * Donors:    H bonded to N, O, or F
  * Acceptors: N, O, F
  * Criteria:
  *   - H...A distance  ≤ 2.5 Å
  *   - D...A distance  ≤ 3.5 Å
- *   - D-H...A angle   ≥ 120°
  * Excluded:
  *   - D and A directly bonded (1,2)
  *   - D and A share a common bonded neighbor (1,3: H-D-X-A)
@@ -1195,7 +1194,6 @@ function detectHydrogenBonds(positions, symbols, covalentBonds, options = {}) {
 
     const HA_CUTOFF = Number.isFinite(options.hBondThreshold) ? options.hBondThreshold : 2.5;   // Å  H...A distance
     const DA_CUTOFF = 3.5;   // Å  D...A distance
-    const ANGLE_MIN = 120.0; // °  D-H...A angle
 
     // Build adjacency list and direct-bond set from covalent bonds
     const adjacency = {};
@@ -1231,7 +1229,6 @@ function detectHydrogenBonds(positions, symbols, covalentBonds, options = {}) {
 
             const haCutoff = HA_CUTOFF;
             const daCutoff = DA_CUTOFF;
-            const angleMin = ANGLE_MIN;
 
             // --- Topology filters (cheap, no sqrt) ---
 
@@ -1252,13 +1249,6 @@ function detectHydrogenBonds(positions, symbols, covalentBonds, options = {}) {
 
             const daDist = pD.distanceTo(pA);
             if (daDist > daCutoff) continue;
-
-            // --- Angle filter: D-H...A angle at H ---
-            const vecHD = new THREE.Vector3().subVectors(pD, pH).normalize();
-            const vecHA = new THREE.Vector3().subVectors(pA, pH).normalize();
-            const cosAngle = Math.max(-1, Math.min(1, vecHD.dot(vecHA)));
-            const angleDeg = Math.acos(cosAngle) * (180 / Math.PI);
-            if (angleDeg < angleMin) continue;
 
             hbonds.push({ h, a });
         }
