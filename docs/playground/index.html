@@ -606,6 +606,7 @@ function parsePOSCAR(text) {
   }
 
   // Apply scale
+  let appliedScale;
   let cell;
   if (scaleToks.length === 1) {
     let s = scaleToks[0];
@@ -617,8 +618,10 @@ function parsePOSCAR(text) {
       );
       s = Math.cbrt(-s / vol);
     }
+    appliedScale = [s, s, s];
     cell = lattice.map(v => v.map(x => x * s));
   } else if (scaleToks.length === 3) {
+    appliedScale = [scaleToks[0], scaleToks[1], scaleToks[2]];
     cell = lattice.map((v, idx) => v.map(x => x * scaleToks[idx]));
   } else {
     throw new Error('POSCAR: scale must be 1 or 3 numbers');
@@ -674,9 +677,12 @@ function parsePOSCAR(text) {
         v[0]*cell[0][2] + v[1]*cell[1][2] + v[2]*cell[2][2],
       ]);
     } else {
-      // Cartesian coords are scaled by the global scale factor too
-      const s = scaleToks.length === 1 && scaleToks[0] > 0 ? scaleToks[0] : 1.0;
-      positions.push([v[0]*s, v[1]*s, v[2]*s]);
+      // Cartesian coords are scaled by POSCAR scale (1 or 3 factors)
+      positions.push([
+        v[0]*appliedScale[0],
+        v[1]*appliedScale[1],
+        v[2]*appliedScale[2]
+      ]);
     }
   }
 
