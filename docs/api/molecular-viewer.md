@@ -49,7 +49,8 @@ MolecularViewer(data, **kwargs)
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `showCell` | `bool` | Show unit cell | `True` |
-| `showBond` | `bool` | Show bonds | `True` |
+| `showBond` | `bool` | Show covalent bonds | `True` |
+| `showHBond` | `bool` | Show hydrogen bonds | `False` |
 | `showShadow` | `bool` | Enable shadows | `False` |
 | `showEnergyPlot` | `bool` | Show energy plot (if energy data available) | `False` |
 | `showForces` | `bool` | Show force vectors | `False` |
@@ -59,7 +60,8 @@ MolecularViewer(data, **kwargs)
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `colorBy` | `str` | Atom coloring mode: `"Element"` or `"Charge"` | `"Element"` |
+| `colorBy` | `str` | Atom coloring mode: `"Element"`, `"Charge"`, or `"Constraint"` | `"Element"` |
+| `colorScheme` | `str` | Element color scheme: `"Jmol"` or `"CPK"` | `"Jmol"` |
 | `normalizeCharges` | `bool` | Normalize charges to symmetric range | `False` |
 | `chargeColormap` | `str` | Colormap for charge visualization | `"coolwarm"` |
 
@@ -72,9 +74,26 @@ MolecularViewer(data, **kwargs)
 
     The colormap uses a diverging scheme:
 
-    - **Blue** → negative charges
+    - **Blue** → positive charges
     - **White** → neutral (zero)
-    - **Red** → positive charges
+    - **Red** → negative charges
+
+!!! note "Constraint Coloring"
+    The `colorBy="Constraint"` option is only available when atoms have `FixAtoms`
+    constraints. Fixed atoms are rendered in **grey**, free atoms in their normal
+    element color.
+
+    ```python
+    from ase.constraints import FixAtoms
+
+    atoms.set_constraint(FixAtoms(indices=[0, 1, 2]))
+    viewer = MolecularViewer(atoms, colorBy="Constraint")
+    ```
+
+!!! note "Hydrogen Bonds"
+    `showHBond=True` detects and renders hydrogen bonds as dashed lines.
+    Criteria: donor H bonded to N/O/F, acceptor N/O/F, H···A ≤ 2.5 Å,
+    D···A ≤ 3.5 Å, D–H···A angle ≥ 120°.
 
 #### Force Vector Settings
 
@@ -203,6 +222,39 @@ viewer.show()
     ```python
     water.info['charges'] = [-0.82, 0.41, 0.41]
     ```
+
+### Constraint Visualization
+
+```python
+from ase.io import read
+from ase.constraints import FixAtoms
+from aseview import MolecularViewer
+
+atoms = read("surface.xyz")
+atoms.set_constraint(FixAtoms(indices=list(range(12))))  # fix bottom layer
+
+viewer = MolecularViewer(atoms, colorBy="Constraint")
+viewer.show()
+```
+
+### Hydrogen Bond Visualization
+
+```python
+from ase.io import read
+from aseview import MolecularViewer
+
+atoms = read("water_dimer.xyz")
+viewer = MolecularViewer(atoms, showHBond=True)
+viewer.show()
+```
+
+### Color Scheme
+
+```python
+# CPK classic colors
+viewer = MolecularViewer(atoms, colorScheme="CPK")
+viewer.show()
+```
 
 ### Save to File
 

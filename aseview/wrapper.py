@@ -235,17 +235,19 @@ class MolecularViewer(BaseViewer):
             "style": "cartoon",
             "showCell": True,
             "showBond": True,
+            "showHBond": False,          # Hydrogen bond detection (N/O/F donors & acceptors)
             "showShadow": False,
             "showShading": True,
             "showEnergyPlot": False,
             "showForces": False,
-            "colorBy": "Element",  # "Element" or "Charge"
-            "normalizeCharges": False,  # Normalize charges to -1 to 1 range
-            "chargeColormap": "coolwarm",  # Colormap for charge visualization
+            "colorBy": "Element",        # "Element", "Charge", or "Constraint"
+            "colorScheme": "Jmol",       # "Jmol" (default) or "CPK"
+            "normalizeCharges": False,   # Normalize charges to symmetric range
+            "chargeColormap": "coolwarm",
             "viewMode": "Perspective",
             "rotationMode": "TrackBall",
             "selectionMode": "Lasso",
-            "performanceMode": "auto",  # "auto", "high", or "normal"
+            "performanceMode": "auto",   # "auto", "high", or "normal"
             **kwargs,
         }
 
