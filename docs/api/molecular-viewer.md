@@ -94,7 +94,7 @@ MolecularViewer(data, **kwargs)
 !!! note "Hydrogen Bonds"
     `showHBond=True` detects and renders hydrogen bonds as dashed lines.
     Criteria: donor H bonded to N/O/F, acceptor N/O/F, H···A ≤ `hBondThreshold` (default 2.5 Å),
-    D···A ≤ 3.5 Å, D–H···A angle ≥ 120°.
+    D···A ≤ 3.5 Å, with direct-bonded (1,2) and shared-neighbor (1,3) donor–acceptor pairs excluded.
 
 #### Force Vector Settings
 
