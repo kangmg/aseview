@@ -1,0 +1,7 @@
+**/.git/**
+**/.vscode/**
+**/*.ts
+src/**
+tsconfig.json
+node_modules/typescript/**
+node_modules/@types/**
