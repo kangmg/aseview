@@ -3,5 +3,6 @@
 **/*.ts
 src/**
 tsconfig.json
-node_modules/typescript/**
-node_modules/@types/**
+node_modules/**
+node/parse_with_ase_ts.mjs
+python/**

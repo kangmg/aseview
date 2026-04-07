@@ -1,26 +1,9 @@
-import * as path from "path";
-import * as os from "os";
+﻿import * as path from "path";
 import * as fs from "fs/promises";
 import { spawn } from "child_process";
 import * as vscode from "vscode";
 
 const VIEW_TYPE = "aseview.viewer";
-
-type CommandCandidate = {
-  command: string;
-  prefixArgs: string[];
-  label: string;
-};
-
-class RendererLaunchError extends Error {
-  public readonly notFound: boolean;
-
-  constructor(message: string, notFound = false) {
-    super(message);
-    this.name = "RendererLaunchError";
-    this.notFound = notFound;
-  }
-}
 
 type ViewerFrame = {
   symbols: string[];
@@ -109,7 +92,10 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
   ): Promise<void> {
     webviewPanel.webview.options = {
       enableScripts: true,
-      localResourceRoots: [this.context.extensionUri],
+      localResourceRoots: [
+        this.context.extensionUri,
+        vscode.Uri.joinPath(this.context.extensionUri, "media"),
+      ],
     };
 
     const sessionKey = document.uri.toString();
@@ -140,6 +126,33 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
       }
     });
 
+    webviewPanel.webview.onDidReceiveMessage(async (msg: unknown) => {
+      if (!msg || typeof msg !== "object") { return; }
+      const m = msg as Record<string, unknown>;
+      if (m["type"] !== "saveFile") { return; }
+
+      const dataUrl = m["dataUrl"] as string | undefined;
+      const suggestedName = typeof m["filename"] === "string" ? m["filename"] : "download";
+      if (!dataUrl) { return; }
+
+      const saveUri = await vscode.window.showSaveDialog({
+        defaultUri: vscode.Uri.file(suggestedName),
+        filters: suggestedName.endsWith(".gif")
+          ? { "GIF Image": ["gif"] }
+          : { "PNG Image": ["png"] },
+      });
+      if (!saveUri) { return; }
+
+      try {
+        const base64 = dataUrl.replace(/^data:[^;]+;base64,/, "");
+        const buffer = Buffer.from(base64, "base64");
+        await fs.writeFile(saveUri.fsPath, buffer);
+        void vscode.window.showInformationMessage(`Saved: ${path.basename(saveUri.fsPath)}`);
+      } catch (err) {
+        void vscode.window.showErrorMessage(`Failed to save file: ${asError(err).message}`);
+      }
+    });
+
     await refreshPanel();
   }
 
@@ -159,14 +172,22 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
     panel.webview.html = this.renderLoadingHtml(document.uri.fsPath);
 
     try {
-      const renderedHtml = await this.renderWithAseTs(document);
-      panel.webview.html = renderedHtml;
+      const { html, bundleHtml } = await this.renderWithAseTs(document);
+      panel.webview.html = html;
+      // Send the self-contained template bundle via postMessage to avoid
+      // embedding a ~900KB string inline (which causes </script> escaping bugs).
+      if (bundleHtml) {
+        // Small delay to ensure the WebView script has set up its message listener.
+        setTimeout(() => {
+          void panel.webview.postMessage({ type: "initTemplate", template: bundleHtml });
+        }, 100);
+      }
     } catch (error) {
       panel.webview.html = this.renderErrorHtml(document.uri.fsPath, error);
     }
   }
 
-  private async renderWithAseTs(document: vscode.TextDocument): Promise<string> {
+  private async renderWithAseTs(document: vscode.TextDocument): Promise<{ html: string; bundleHtml: string }> {
     const config = vscode.workspace.getConfiguration("aseview");
     const style = config.get<string>("defaultStyle", "cartoon");
     const viewer = config.get<string>("defaultViewer", "auto");
@@ -174,16 +195,17 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
     const formatSetting = config.get<string>("readFormat", "").trim();
 
     const format = formatSetting || inferFormatFromFileName(document.uri.fsPath);
-    const contentBytes = await vscode.workspace.fs.readFile(document.uri);
-    const text = new TextDecoder("utf-8").decode(contentBytes);
+    const workerPath = vscode.Uri.joinPath(
+      this.context.extensionUri,
+      "node",
+      "parse_with_ase_ts.bundle.cjs"
+    ).fsPath;
 
-    const aseTs = await importAseTs();
-    const allFramesRaw = aseTs.readAll(text, {
-      data: true,
-      ...(format ? { format } : {}),
-    });
-
-    const allFrames = allFramesRaw.map((atoms) => atomsToViewerFrame(atoms));
+    const allFrames = await this.parseWithAseTsWorker(
+      workerPath,
+      document.uri.fsPath,
+      format
+    );
     if (allFrames.length === 0) {
       throw new Error("No structure frames were parsed from this file.");
     }
@@ -193,7 +215,82 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
       throw new Error(`No frames selected by index expression: ${indexExpr}`);
     }
 
-    return this.renderAseviewHtml(document.uri.fsPath, selectedFrames, viewer, style);
+    // Read the self-contained bundle (three.js + gifshot + download relay all inlined)
+    const bundlePath = vscode.Uri.joinPath(
+      this.context.extensionUri, "media", "molecular_viewer_bundle.html"
+    ).fsPath;
+    let bundleHtml = "";
+    try {
+      bundleHtml = await fs.readFile(bundlePath, "utf8");
+    } catch {
+      // Bundle not available; fallback to CDN (GIF saving won't work)
+    }
+
+    return {
+      html: this.renderAseviewHtml(document.uri.fsPath, selectedFrames, viewer, style),
+      bundleHtml,
+    };
+  }
+
+  private parseWithAseTsWorker(
+    workerScriptPath: string,
+    filePath: string,
+    format?: string
+  ): Promise<ViewerFrame[]> {
+    return new Promise((resolve, reject) => {
+      const args = [workerScriptPath, "--file", filePath];
+      if (format) {
+        args.push("--format", format);
+      }
+
+      const child = spawn(process.execPath, args, {
+        windowsHide: true,
+      });
+
+      let stdout = "";
+      let stderr = "";
+      const timeoutMs = 45000;
+      const timeout = setTimeout(() => {
+        child.kill();
+        reject(new Error(`ase-ts worker timed out after ${timeoutMs / 1000}s.`));
+      }, timeoutMs);
+
+      child.stdout.setEncoding("utf8");
+      child.stderr.setEncoding("utf8");
+
+      child.stdout.on("data", (chunk: string) => {
+        stdout += chunk;
+      });
+      child.stderr.on("data", (chunk: string) => {
+        stderr += chunk;
+      });
+
+      child.on("error", (err) => {
+        clearTimeout(timeout);
+        reject(new Error(`Failed to start ase-ts worker: ${err.message}`));
+      });
+
+      child.on("close", (code) => {
+        clearTimeout(timeout);
+        if (code !== 0) {
+          const details = [stderr.trim(), stdout.trim()].filter(Boolean).join("\n");
+          reject(new Error(details || `ase-ts worker failed with exit code ${code}.`));
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(stdout) as { frames?: ViewerFrame[] };
+          const frames = parsed.frames;
+          if (!Array.isArray(frames)) {
+            reject(new Error("ase-ts worker returned invalid payload."));
+            return;
+          }
+          resolve(frames);
+        } catch (err) {
+          reject(new Error(`Failed to parse ase-ts worker output: ${asError(err).message}`));
+        }
+      });
+    });
   }
 
   private renderAseviewHtml(
@@ -207,6 +304,7 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
       viewerType === "frag" || viewerType === "normal" ? frames[0] : frames;
     const dataJson = JSON.stringify(initData);
     const optionsJson = JSON.stringify({ style });
+    const baseName = path.basename(filePath, path.extname(filePath));
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -215,372 +313,95 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ASEView</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #0b1220;
-      color: #e5e7eb;
-      font-family: Arial, sans-serif;
-    }
-    #root {
-      width: 100%;
-      height: 100%;
-      position: relative;
-    }
-    .loading {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #0b1220;
-      color: #93c5fd;
-      z-index: 5;
-      font-size: 13px;
-    }
+    html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#0b1220; color:#e5e7eb; font-family:Arial,sans-serif; }
+    #root { width:100%; height:100%; position:relative; }
+    .loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#0b1220; color:#93c5fd; z-index:5; font-size:13px; }
   </style>
 </head>
 <body>
-  <div id="root">
-    <div class="loading" id="loading">ASEView is loading...</div>
-  </div>
+  <div id="root"><div class="loading" id="loading">ASEView is loading...</div></div>
   <script src="https://raw.githack.com/kangmg/aseview/main/aseview/static/js/aseview.js"></script>
   <script>
     (function () {
+      const vscodeApi = acquireVsCodeApi();
       const data = ${dataJson};
       const options = ${optionsJson};
       const viewerType = ${JSON.stringify(viewerType)};
       const filePath = ${JSON.stringify(filePath)};
+      const baseName = ${JSON.stringify(baseName)};
 
-      const root = document.getElementById("root");
-      const loading = document.getElementById("loading");
+      let _blobUrl = null;
 
-      if (!window.ASEView) {
-        if (loading) loading.textContent = "Failed to load ASEView JavaScript module.";
-        return;
+      // Set up iframe.src override BEFORE aseview.js can create the iframe.
+      // When molecular_viewer.html is requested, redirect to our self-contained blob.
+      const _srcDesc = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src');
+      if (_srcDesc && _srcDesc.set) {
+        Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
+          configurable: true,
+          get: function() { return _srcDesc.get.call(this); },
+          set: function(url) {
+            if (_blobUrl && url && url.includes('molecular_viewer.html')) {
+              _srcDesc.set.call(this, _blobUrl);
+            } else {
+              _srcDesc.set.call(this, url);
+            }
+          }
+        });
       }
 
-      let viewer = null;
-      if (viewerType === "overlay") {
-        viewer = new window.ASEView.OverlayViewer(root, options);
-      } else if (viewerType === "frag") {
-        viewer = new window.ASEView.FragSelector(root, options);
-      } else if (viewerType === "normal") {
-        viewer = new window.ASEView.NormalModeViewer(root, options);
-      } else {
-        viewer = new window.ASEView.MolecularViewer(root, options);
-      }
+      // Receive bundle HTML or save-file relay from iframe
+      window.addEventListener('message', function(e) {
+        const msg = e.data;
+        if (!msg) return;
 
-      viewer.setData(data);
-      if (loading) loading.remove();
-      window.__aseview_meta = { filePath, viewerType };
+        // Template bundle from extension host
+        if (msg.type === 'initTemplate' && msg.template) {
+          const blob = new Blob([msg.template], { type: 'text/html' });
+          _blobUrl = URL.createObjectURL(blob);
+          _initViewer();
+          return;
+        }
+
+        // Save-file relay from iframe
+        if (msg.type === 'saveFile') {
+          vscodeApi.postMessage(msg);
+        }
+      });
+
+      let _viewerCreated = false;
+      function _initViewer() {
+        if (_viewerCreated) return;
+        _viewerCreated = true;
+
+        const root = document.getElementById('root');
+        const loading = document.getElementById('loading');
+
+        if (!window.ASEView) {
+          if (loading) loading.textContent = 'Failed to load ASEView module.';
+          return;
+        }
+
+        let viewer = null;
+        if (viewerType === 'overlay') {
+          viewer = new window.ASEView.OverlayViewer(root, options);
+        } else if (viewerType === 'frag') {
+          viewer = new window.ASEView.FragSelector(root, options);
+        } else if (viewerType === 'normal') {
+          viewer = new window.ASEView.NormalModeViewer(root, options);
+        } else {
+          viewer = new window.ASEView.MolecularViewer(root, options);
+        }
+
+        viewer.setData(data);
+        if (loading) loading.remove();
+        window.__aseview_meta = { filePath, viewerType };
+      }
     })();
   </script>
 </body>
 </html>`;
   }
 
-  private async renderWithPython(document: vscode.TextDocument): Promise<string> {
-    const config = vscode.workspace.getConfiguration("aseview");
-    const style = config.get<string>("defaultStyle", "cartoon");
-    const viewer = config.get<string>("defaultViewer", "auto");
-    const index = config.get<string>("readIndex", ":");
-    const format = config.get<string>("readFormat", "").trim();
-
-    const scriptPath = vscode.Uri.joinPath(
-      this.context.extensionUri,
-      "python",
-      "render_viewer.py"
-    ).fsPath;
-
-    const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-    const cwd = workspaceFolder?.uri.fsPath ?? path.dirname(document.uri.fsPath);
-    const baseArgs = [
-      scriptPath,
-      "--file",
-      document.uri.fsPath,
-      "--viewer",
-      viewer,
-      "--style",
-      style,
-      "--index",
-      index,
-    ];
-    if (format) {
-      baseArgs.push("--format", format);
-    }
-
-    const candidates = this.getPythonCandidates();
-    let lastError: Error | undefined;
-
-    for (const candidate of candidates) {
-      const args = [...candidate.prefixArgs, ...baseArgs];
-      try {
-        const output = await this.runRenderer(candidate, args, cwd);
-        if (!output.trim()) {
-          throw new RendererLaunchError(
-            `Renderer returned empty output (${candidate.label}).`
-          );
-        }
-        return output;
-      } catch (error) {
-        const err = asError(error);
-        lastError = err;
-        if (err instanceof RendererLaunchError && err.notFound) {
-          continue;
-        }
-      }
-    }
-
-    const pythonError = lastError ?? new Error("Failed to run ASEView renderer with Python.");
-
-    try {
-      return await this.renderWithAseviewCli(document, style, viewer, index, format, cwd);
-    } catch (cliError) {
-      const cliErr = asError(cliError);
-      throw new Error(
-        [
-          "Python renderer failed.",
-          pythonError.message,
-          "",
-          "ASEView CLI fallback failed.",
-          cliErr.message,
-        ].join("\n")
-      );
-    }
-  }
-
-  private getPythonCandidates(): CommandCandidate[] {
-    const configured = vscode.workspace
-      .getConfiguration("aseview")
-      .get<string>("pythonPath", "")
-      .trim();
-
-    const rawCandidates: CommandCandidate[] = [];
-    if (configured) {
-      rawCandidates.push({
-        command: configured,
-        prefixArgs: [],
-        label: configured,
-      });
-    }
-
-    if (process.platform === "win32") {
-      rawCandidates.push(
-        { command: "python", prefixArgs: [], label: "python" },
-        { command: "py", prefixArgs: ["-3"], label: "py -3" }
-      );
-    } else {
-      rawCandidates.push(
-        { command: "python3", prefixArgs: [], label: "python3" },
-        { command: "python", prefixArgs: [], label: "python" }
-      );
-    }
-
-    const dedup = new Map<string, CommandCandidate>();
-    for (const candidate of rawCandidates) {
-      const key = `${candidate.command}|${candidate.prefixArgs.join(" ")}`;
-      if (!dedup.has(key)) {
-        dedup.set(key, candidate);
-      }
-    }
-    return [...dedup.values()];
-  }
-
-  private getAseviewCandidates(): CommandCandidate[] {
-    const launcher = vscode.workspace
-      .getConfiguration("aseview")
-      .get<string>("launcher", "")
-      .trim();
-    const configured = vscode.workspace
-      .getConfiguration("aseview")
-      .get<string>("commandPath", "")
-      .trim();
-
-    const rawCandidates: CommandCandidate[] = [];
-    if (launcher) {
-      const parsed = parseCommandLine(launcher);
-      if (parsed) {
-        rawCandidates.push({
-          command: parsed.command,
-          prefixArgs: parsed.args,
-          label: launcher,
-        });
-      }
-    }
-
-    if (configured) {
-      rawCandidates.push({
-        command: configured,
-        prefixArgs: [],
-        label: configured,
-      });
-    }
-
-    rawCandidates.push({ command: "aseview", prefixArgs: [], label: "aseview" });
-    rawCandidates.push({
-      command: "uv",
-      prefixArgs: ["run", "aseview"],
-      label: "uv run aseview",
-    });
-
-    const dedup = new Map<string, CommandCandidate>();
-    for (const candidate of rawCandidates) {
-      const key = `${candidate.command}|${candidate.prefixArgs.join(" ")}`;
-      if (!dedup.has(key)) {
-        dedup.set(key, candidate);
-      }
-    }
-    return [...dedup.values()];
-  }
-
-  private async renderWithAseviewCli(
-    document: vscode.TextDocument,
-    style: string,
-    viewer: string,
-    index: string,
-    format: string,
-    cwd: string
-  ): Promise<string> {
-    const candidates = this.getAseviewCandidates();
-    let lastError: Error | undefined;
-
-    for (const candidate of candidates) {
-      const tempPath = path.join(
-        os.tmpdir(),
-        `aseview-vscode-${Date.now()}-${Math.random().toString(36).slice(2)}.html`
-      );
-      const args = [
-        ...candidate.prefixArgs,
-        document.uri.fsPath,
-        "--no-browser",
-        "-o",
-        tempPath,
-        "--style",
-        style,
-        "-i",
-        index,
-      ];
-
-      if (viewer !== "auto") {
-        args.push("-v", viewer);
-      }
-      if (format) {
-        args.push("-f", format);
-      }
-
-      try {
-        await this.runRenderer(candidate, args, cwd);
-        const html = await fs.readFile(tempPath, "utf8");
-        if (!html.trim()) {
-          throw new RendererLaunchError(
-            `ASEView CLI returned empty output (${candidate.label}).`
-          );
-        }
-        return html;
-      } catch (error) {
-        const err = asError(error);
-        lastError = err;
-        if (err instanceof RendererLaunchError) {
-          if (err.notFound) {
-            continue;
-          }
-          // For commands that exist but fail, surface the first actionable error.
-          throw err;
-        }
-        throw err;
-      } finally {
-        try {
-          await fs.unlink(tempPath);
-        } catch {
-          // Ignore temp cleanup failures.
-        }
-      }
-    }
-
-    throw lastError ?? new Error("Failed to run ASEView CLI fallback.");
-  }
-
-  private runRenderer(
-    candidate: CommandCandidate,
-    args: string[],
-    cwd: string
-  ): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const env: NodeJS.ProcessEnv = { ...process.env };
-      if (isUvCommand(candidate.command)) {
-        const uvRoot = inferUvRoot(cwd, args);
-        if (!env.UV_CACHE_DIR) {
-          env.UV_CACHE_DIR = path.join(uvRoot, ".uv-cache");
-        }
-        if (!env.UV_PYTHON_INSTALL_DIR) {
-          env.UV_PYTHON_INSTALL_DIR = path.join(uvRoot, ".uv-python");
-        }
-      }
-
-      const child = spawn(candidate.command, args, {
-        cwd,
-        windowsHide: true,
-        env,
-      });
-
-      let stdout = "";
-      let stderr = "";
-      const timeoutMs = 45000;
-
-      const timeout = setTimeout(() => {
-        child.kill();
-        reject(
-          new RendererLaunchError(
-            `Renderer timed out after ${timeoutMs / 1000}s (${candidate.label}).`
-          )
-        );
-      }, timeoutMs);
-
-      child.stdout.setEncoding("utf8");
-      child.stderr.setEncoding("utf8");
-
-      child.stdout.on("data", (chunk: string) => {
-        stdout += chunk;
-      });
-
-      child.stderr.on("data", (chunk: string) => {
-        stderr += chunk;
-      });
-
-      child.on("error", (err: NodeJS.ErrnoException) => {
-        clearTimeout(timeout);
-        if (err.code === "ENOENT") {
-          reject(new RendererLaunchError(`Command not found: ${candidate.label}`, true));
-          return;
-        }
-        reject(
-          new RendererLaunchError(
-            `Failed to launch renderer (${candidate.label}): ${err.message}`
-          )
-        );
-      });
-
-      child.on("close", (code, signal) => {
-        clearTimeout(timeout);
-        if (code === 0) {
-          resolve(stdout);
-          return;
-        }
-
-        const details = [stderr.trim(), stdout.trim()].filter(Boolean).join("\n");
-        const signalText = signal ? `, signal ${signal}` : "";
-        reject(
-          new RendererLaunchError(
-            `Renderer failed (${candidate.label}, exit ${code ?? "null"}${signalText}).\n${details}`
-          )
-        );
-      });
-    });
-  }
 
   private renderLoadingHtml(filePath: string): string {
     return `<!DOCTYPE html>
@@ -626,11 +447,9 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
     const message = escapeHtml(err.message);
     const hint = escapeHtml(
       [
-        "Check Python environment and install dependencies:",
-        "pip install aseview ase",
-        "If needed, set 'aseview.pythonPath' in VS Code settings.",
-        "If needed, set 'aseview.launcher' (example: uv run --project ... aseview).",
-        "If ASEView CLI is installed, set 'aseview.commandPath' (or keep default 'aseview').",
+        "This extension parses files with ase-ts (no Python runtime required).",
+        "If parsing fails, try setting 'aseview.readFormat' explicitly (e.g. vasp, cif, extxyz, vasprun-xml).",
+        "You can also adjust 'aseview.readIndex' (for trajectory files).",
       ].join("\n")
     );
 
@@ -745,18 +564,6 @@ function asError(error: unknown): Error {
   return new Error(String(error));
 }
 
-async function importAseTs(): Promise<{
-  readAll: (source: string, options?: { data?: boolean; format?: string }) => unknown[];
-}> {
-  const dynamicImport = new Function(
-    "m",
-    "return import(m);"
-  ) as (moduleName: string) => Promise<{
-    readAll: (source: string, options?: { data?: boolean; format?: string }) => unknown[];
-  }>;
-  return dynamicImport("ase-ts");
-}
-
 function inferFormatFromFileName(filePath: string): string | undefined {
   const base = path.basename(filePath).toLowerCase();
   if (base === "poscar") {
@@ -849,158 +656,6 @@ function normalizeViewerType(input: string): "molecular" | "overlay" | "frag" | 
     return input;
   }
   return "molecular";
-}
-
-function atomsToViewerFrame(atoms: unknown): ViewerFrame {
-  const a = atoms as {
-    getChemicalSymbols?: () => string[];
-    getPositions?: () => number[][];
-    getCell?: () => number[][];
-    getPbc?: () => [boolean, boolean, boolean];
-    has?: (name: string) => boolean;
-    getArray?: (name: string, copy?: boolean) => unknown;
-    getInitialCharges?: () => number[];
-    info?: Record<string, unknown>;
-  };
-
-  const symbols = ensureStringArray(a.getChemicalSymbols?.(), "symbols");
-  const positions = ensureVec3Array(a.getPositions?.(), "positions");
-  const frame: ViewerFrame = { symbols, positions };
-
-  const pbc = a.getPbc?.() ?? [false, false, false];
-  if (Array.isArray(pbc) && pbc.some(Boolean)) {
-    const cell = a.getCell?.();
-    if (cell) {
-      frame.cell = ensureVec3Array(cell, "cell");
-    }
-  }
-
-  const forcesRaw = a.has?.("forces") ? a.getArray?.("forces", true) : undefined;
-  if (forcesRaw) {
-    frame.forces = ensureVec3Array(forcesRaw, "forces");
-  }
-
-  const chargesRaw = a.has?.("charges") ? a.getArray?.("charges", true) : a.getInitialCharges?.();
-  if (chargesRaw) {
-    frame.charges = ensureNumberArray(chargesRaw, "charges");
-  }
-
-  const info = a.info ?? {};
-  const energy = info["energy"];
-  if (typeof energy === "number" && Number.isFinite(energy)) {
-    frame.energy = energy;
-  }
-  const name = info["name"];
-  if (typeof name === "string" && name.trim()) {
-    frame.name = name;
-  }
-
-  return frame;
-}
-
-function ensureStringArray(value: unknown, label: string): string[] {
-  if (!Array.isArray(value)) {
-    throw new Error(`Expected ${label} to be an array.`);
-  }
-  return value.map((item) => String(item));
-}
-
-function ensureNumberArray(value: unknown, label: string): number[] {
-  if (!Array.isArray(value)) {
-    throw new Error(`Expected ${label} to be an array.`);
-  }
-  return value.map((item) => {
-    const n = Number(item);
-    if (!Number.isFinite(n)) {
-      throw new Error(`Expected ${label} to contain numeric values.`);
-    }
-    return n;
-  });
-}
-
-function ensureVec3Array(value: unknown, label: string): number[][] {
-  if (!Array.isArray(value)) {
-    throw new Error(`Expected ${label} to be an array.`);
-  }
-  return value.map((vec) => {
-    if (!Array.isArray(vec) || vec.length < 3) {
-      throw new Error(`Expected ${label} to contain 3D vectors.`);
-    }
-    const xyz = vec.slice(0, 3).map((x) => Number(x));
-    if (xyz.some((x) => !Number.isFinite(x))) {
-      throw new Error(`Expected ${label} vectors to be numeric.`);
-    }
-    return xyz as number[];
-  });
-}
-
-function isUvCommand(command: string): boolean {
-  const name = path.basename(command).toLowerCase();
-  return name === "uv" || name === "uv.exe";
-}
-
-function inferUvRoot(cwd: string, args: string[]): string {
-  const projectFlagIndex = args.findIndex((arg) => arg === "--project");
-  if (projectFlagIndex >= 0 && projectFlagIndex + 1 < args.length) {
-    const projectArg = args[projectFlagIndex + 1];
-    if (projectArg.trim()) {
-      return path.isAbsolute(projectArg)
-        ? projectArg
-        : path.resolve(cwd, projectArg);
-    }
-  }
-  return cwd;
-}
-
-function parseCommandLine(input: string): { command: string; args: string[] } | undefined {
-  const parts: string[] = [];
-  let current = "";
-  let quote: "'" | '"' | null = null;
-  let i = 0;
-
-  while (i < input.length) {
-    const ch = input[i];
-    if (quote) {
-      if (ch === quote) {
-        quote = null;
-      } else {
-        current += ch;
-      }
-      i += 1;
-      continue;
-    }
-
-    if (ch === "'" || ch === '"') {
-      quote = ch;
-      i += 1;
-      continue;
-    }
-
-    if (/\s/.test(ch)) {
-      if (current) {
-        parts.push(current);
-        current = "";
-      }
-      i += 1;
-      continue;
-    }
-
-    current += ch;
-    i += 1;
-  }
-
-  if (current) {
-    parts.push(current);
-  }
-
-  if (parts.length === 0) {
-    return undefined;
-  }
-
-  return {
-    command: parts[0],
-    args: parts.slice(1),
-  };
 }
 
 export function activate(context: vscode.ExtensionContext): void {

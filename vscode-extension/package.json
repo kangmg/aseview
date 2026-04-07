@@ -1,0 +1,159 @@
+{
+  "name": "aseview-vscode",
+  "displayName": "ASEView",
+  "description": "Read-only ASE structure viewer inside VS Code using ase-ts.",
+  "version": "0.0.6",
+  "publisher": "aseview-local",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kangmg/aseview.git"
+  },
+  "engines": {
+    "vscode": "^1.86.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "activationEvents": [
+    "onCustomEditor:aseview.viewer",
+    "onCommand:aseview.openWith",
+    "onCommand:aseview.openActiveFile",
+    "onCommand:aseview.refresh"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aseview.openWith",
+        "title": "Open With ASEView"
+      },
+      {
+        "command": "aseview.openActiveFile",
+        "title": "ASEView: Open Active File"
+      },
+      {
+        "command": "aseview.refresh",
+        "title": "ASEView: Refresh Current View"
+      }
+    ],
+    "configuration": {
+      "title": "ASEView",
+      "properties": {
+        "aseview.defaultViewer": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "molecular",
+            "overlay",
+            "frag",
+            "normal"
+          ],
+          "description": "Default viewer mode."
+        },
+        "aseview.defaultStyle": {
+          "type": "string",
+          "default": "cartoon",
+          "enum": [
+            "default",
+            "cartoon",
+            "neon",
+            "glossy",
+            "metallic",
+            "rowan",
+            "grey",
+            "bubble",
+            "2d"
+          ],
+          "description": "Default style."
+        },
+        "aseview.readIndex": {
+          "type": "string",
+          "default": ":",
+          "description": "ASE index/slice used when loading trajectories (examples: :, 0, -1, 0:10, ::2)."
+        },
+        "aseview.readFormat": {
+          "type": "string",
+          "default": "",
+          "description": "Optional ASE format override (for files that need explicit format). Empty means auto-detect."
+        }
+      }
+    },
+    "customEditors": [
+      {
+        "viewType": "aseview.viewer",
+        "displayName": "ASEView",
+        "selector": [
+          {
+            "filenamePattern": "*.xyz"
+          },
+          {
+            "filenamePattern": "*.extxyz"
+          },
+          {
+            "filenamePattern": "*.cif"
+          },
+          {
+            "filenamePattern": "*.pdb"
+          },
+          {
+            "filenamePattern": "*.vasp"
+          },
+          {
+            "filenamePattern": "**/POSCAR"
+          },
+          {
+            "filenamePattern": "**/CONTCAR"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "aseview.openWith",
+          "when": "resourceScheme == file",
+          "group": "navigation@10"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "aseview.openWith",
+          "when": "resourceScheme == file",
+          "group": "navigation"
+        },
+        {
+          "command": "aseview.refresh",
+          "when": "resourceScheme == file",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "aseview.openWith",
+          "when": "resourceScheme == file",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -watch -p .",
+    "build-worker": "esbuild node/parse_with_ase_ts.mjs --bundle --platform=node --format=cjs --outfile=node/parse_with_ase_ts.bundle.cjs",
+    "bundle-viewer": "node scripts/bundle-viewer.cjs",
+    "build": "npm run compile && npm run build-worker && npm run bundle-viewer",
+    "package": "npm run build && vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/vscode": "^1.86.0",
+    "@vscode/vsce": "^2.28.0",
+    "ase-ts": "^0.1.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^5.5.4"
+  }
+}
