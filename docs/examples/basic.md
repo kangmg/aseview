@@ -70,8 +70,25 @@ viewer.show()
 | Option | Description |
 |--------|-------------|
 | `colorBy="Charge"` | Enable charge coloring |
-| `normalizeCharge=True` | Scale colors to full range |
+| `normalizeCharges=True` | Scale colors to full range |
 | `showChargeLabels=True` | Display charge values on atoms |
+
+---
+
+## Constraint Visualization
+
+Highlight fixed atoms with `colorBy="Constraint"`. Fixed atoms (from `FixAtoms`) appear in **grey**; free atoms keep their element color. The option is only available when constraints are present.
+
+```python
+from ase.constraints import FixAtoms
+from aseview import MolecularViewer
+
+atoms.set_constraint(FixAtoms(indices=[0, 1, 2]))
+viewer = MolecularViewer(atoms, colorBy="Constraint")
+viewer.show()
+```
+
+See the [Solid-State examples](../examples/solid-state.md#live-demo-cu111-surface--fixed-atoms-fixatoms-constraint) for a full surface slab demo.
 
 ---
 
