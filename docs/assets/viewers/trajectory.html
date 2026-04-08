@@ -1833,9 +1833,61 @@ const atomInfo = {
     'Pa': { radius: 2.00, color: 0x00A1FF }, 'U': { radius: 1.96, color: 0x008FFF },
     'Np': { radius: 1.90, color: 0x0080FF }, 'Pu': { radius: 1.87, color: 0x006BFF },
     'Am': { radius: 1.80, color: 0x545CF2 }, 'Cm': { radius: 1.69, color: 0x785CE3 },
+    // Transuranium elements (not in original list)
+    'Bk': { radius: 1.70, color: 0x8A4FE3 }, 'Cf': { radius: 1.70, color: 0xA136D4 },
+    'Es': { radius: 1.70, color: 0xB31FD4 }, 'Fm': { radius: 1.70, color: 0xB31FBA },
+    'Md': { radius: 1.70, color: 0xB30DA6 }, 'No': { radius: 1.70, color: 0xBD0D87 },
+    'Lr': { radius: 1.70, color: 0xC70066 }, 'Rf': { radius: 1.70, color: 0xCC0059 },
+    'Db': { radius: 1.70, color: 0xD1004F }, 'Sg': { radius: 1.70, color: 0xD90045 },
+    'Bh': { radius: 1.70, color: 0xE00038 }, 'Hs': { radius: 1.70, color: 0xE6002E },
+    'Mt': { radius: 1.70, color: 0xEB0026 },
     'X': { radius: 0.7, color: 0xFFC0CB },
     'default': { radius: 0.7, color: 0xFFC0CB } // Pink as default for unknown elements
 };
+
+// CPK color scheme (classic Corey-Pauling-Koltun)
+const cpkColors = {
+    'H': 0xFFFFFF, 'He': 0xFFC0CB, 'Li': 0xB22222, 'Be': 0xFF1493,
+    'B': 0x00FF00, 'C': 0xC8C8C8, 'N': 0x8F8FFF, 'O': 0xF00000,
+    'F': 0xDAA520, 'Ne': 0xFF1493, 'Na': 0x0000FF, 'Mg': 0x228B22,
+    'Al': 0x808090, 'Si': 0xDAA520, 'P': 0xFFA500, 'S': 0xFFC832,
+    'Cl': 0x00FF00, 'Ar': 0xFF1493, 'K': 0xFF1493, 'Ca': 0x808090,
+    'Sc': 0xFF1493, 'Ti': 0x808090, 'V': 0xFF1493, 'Cr': 0x808090,
+    'Mn': 0x808090, 'Fe': 0xFFA500, 'Co': 0xFF1493, 'Ni': 0xA52A2A,
+    'Cu': 0xA52A2A, 'Zn': 0xA52A2A, 'Ga': 0xFF1493, 'Ge': 0xFF1493,
+    'As': 0xFF1493, 'Se': 0xFF1493, 'Br': 0xA52A2A, 'Kr': 0xFF1493,
+    'Rb': 0xFF1493, 'Sr': 0xFF1493, 'Y': 0xFF1493, 'Zr': 0xFF1493,
+    'Nb': 0xFF1493, 'Mo': 0xFF1493, 'Tc': 0xFF1493, 'Ru': 0xFF1493,
+    'Rh': 0xFF1493, 'Pd': 0xFF1493, 'Ag': 0x808090, 'Cd': 0xFF1493,
+    'In': 0xFF1493, 'Sn': 0xFF1493, 'Sb': 0xFF1493, 'Te': 0xFF1493,
+    'I': 0xA020F0, 'Xe': 0xFF1493, 'Cs': 0xFF1493, 'Ba': 0xFFA500,
+    'La': 0xFF1493, 'Ce': 0xFF1493, 'Pr': 0xFF1493, 'Nd': 0xFF1493,
+    'Pm': 0xFF1493, 'Sm': 0xFF1493, 'Eu': 0xFF1493, 'Gd': 0xFF1493,
+    'Tb': 0xFF1493, 'Dy': 0xFF1493, 'Ho': 0xFF1493, 'Er': 0xFF1493,
+    'Tm': 0xFF1493, 'Yb': 0xFF1493, 'Lu': 0xFF1493, 'Hf': 0xFF1493,
+    'Ta': 0xFF1493, 'W': 0xFF1493, 'Re': 0xFF1493, 'Os': 0xFF1493,
+    'Ir': 0xFF1493, 'Pt': 0xFF1493, 'Au': 0xDAA520, 'Hg': 0xFF1493,
+    'Tl': 0xFF1493, 'Pb': 0xFF1493, 'Bi': 0xFF1493, 'Po': 0xFF1493,
+    'At': 0xFF1493, 'Rn': 0xFFFFFF, 'Fr': 0xFFFFFF, 'Ra': 0xFFFFFF,
+    'Ac': 0xFFFFFF, 'Th': 0xFF1493, 'Pa': 0xFFFFFF, 'U': 0xFF1493,
+    'Np': 0xFFFFFF, 'Pu': 0xFFFFFF, 'Am': 0xFFFFFF, 'Cm': 0xFFFFFF,
+};
+
+// Active color scheme: 'jmol' (default) or 'cpk'
+let atomColorScheme = 'jmol';
+
+/**
+ * Return the element color for `symbol` under the current atomColorScheme.
+ * Falls back to jmol (atomInfo.color) for unknown elements or schemes.
+ */
+function getAtomColorByScheme(symbol) {
+    if (atomColorScheme === 'cpk') {
+        return cpkColors[symbol] !== undefined
+            ? cpkColors[symbol]
+            : (atomInfo[symbol] || atomInfo['default']).color;
+    }
+    return (atomInfo[symbol] || atomInfo['default']).color; // 'jmol'
+}
 
 function getStandardMaterial(color, type) {
     switch (type) {
@@ -1898,31 +1950,18 @@ function createAtomStyle2D(pos, symbol, atomScale) {
     return sprite;
 }
 
-function createAtomStyleCartoon(pos, symbol, atomScale) {
+function createAtomStyleCartoon(pos, symbol, atomScale, helpers) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
+    const lod = (helpers && helpers._lod) || { sphere: 64, sphereHigh: 128 };
+    const seg = lod.sphere;
 
-    // Create simple 2-step gradient map for clean toon shading
-    const colors = new Uint8Array(2);
-    colors[0] = 0;      // Dark
-    colors[1] = 255;    // Light
-    const gradientMap = new THREE.DataTexture(colors, 2, 1, THREE.LuminanceFormat);
-    gradientMap.minFilter = THREE.NearestFilter;
-    gradientMap.magFilter = THREE.NearestFilter;
-    gradientMap.needsUpdate = true;
-
-    const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);  // Increased from 32 to 64
-    const toonMaterial = new THREE.MeshToonMaterial({
-        color: new THREE.Color(info.color),
-        gradientMap: gradientMap
-    });
+    const geometry = getCachedSphereGeometry(scaledRadius, seg);
+    const toonMaterial = getCachedMaterial('toon', getAtomColorByScheme(symbol), `cartoon_${seg}`);
     const sphere = new THREE.Mesh(geometry, toonMaterial);
 
-    const outlineGeometry = new THREE.SphereGeometry(scaledRadius * 1.05, 64, 64);  // Increased from 32 to 64
-    const outlineMaterial = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        side: THREE.BackSide
-    });
+    const outlineGeometry = getCachedSphereGeometry(scaledRadius * 1.05, seg);
+    const outlineMaterial = getCachedMaterial('outline', 0x000000);
     const outline = new THREE.Mesh(outlineGeometry, outlineMaterial);
 
     const toonGroup = new THREE.Group();
@@ -1935,7 +1974,7 @@ function createAtomStyleCartoon(pos, symbol, atomScale) {
 function createAtomStyleNeon(pos, symbol, atomScale) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    const atomColor = new THREE.Color(info.color);
+    const atomColor = new THREE.Color(getAtomColorByScheme(symbol));
 
     // Use single sprite for glow effect only
     const glowCanvas = document.createElement('canvas');
@@ -1990,52 +2029,52 @@ function createAtomStyleNeon(pos, symbol, atomScale) {
     return glowSprite;
 }
 
-function createAtomStyleGlossy(pos, symbol, atomScale) {
+function createAtomStyleGlossy(pos, symbol, atomScale, helpers) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);
-    const material = getStandardMaterial(info.color, 'glossy');
+    const lod = (helpers && helpers._lod) || { sphere: 64 };
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphere);
+    const material = getCachedMaterial('glossy', getAtomColorByScheme(symbol));
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
     return sphere;
 }
 
-function createAtomStyleMetallic(pos, symbol, atomScale) {
-    const info = atomInfo[symbol] || info['default'];
+function createAtomStyleMetallic(pos, symbol, atomScale, helpers) {
+    const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);
-    const material = getStandardMaterial(info.color, 'metallic');
+    const lod = (helpers && helpers._lod) || { sphere: 64 };
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphere);
+    const material = getCachedMaterial('metallic', getAtomColorByScheme(symbol));
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
     return sphere;
 }
 
-function createAtomStyleDefault(pos, symbol, atomScale) {
+function createAtomStyleDefault(pos, symbol, atomScale, helpers) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
-    const geometry = new THREE.SphereGeometry(scaledRadius, 64, 64);
-    const material = getStandardMaterial(info.color, 'default');
+    const lod = (helpers && helpers._lod) || { sphere: 64 };
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphere);
+    const material = getCachedMaterial('lambert', getAtomColorByScheme(symbol));
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
     return sphere;
 }
 
-function createAtomStyleRowan(pos, symbol, atomScale) {
+function createAtomStyleRowan(pos, symbol, atomScale, helpers) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
+    const lod = (helpers && helpers._lod) || { sphere: 64, sphereHigh: 128 };
     const group = new THREE.Group();
 
-    // Use higher resolution to avoid banding artifacts
-    const geometry = new THREE.SphereGeometry(scaledRadius, 128, 128);
-    const material = new THREE.MeshLambertMaterial({
-        color: new THREE.Color(info.color),
-        flatShading: false
-    });
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphereHigh);
+    const material = getCachedMaterial('lambertFlat', getAtomColorByScheme(symbol));
     const sphere = new THREE.Mesh(geometry, material);
     group.add(sphere);
 
-    const outlineGeometry = new THREE.SphereGeometry(scaledRadius * 1.05, 64, 64);
-    const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
+    const outlineGeometry = getCachedSphereGeometry(scaledRadius * 1.05, lod.sphere);
+    const outlineMaterial = getCachedMaterial('outline', 0x000000);
     const outline = new THREE.Mesh(outlineGeometry, outlineMaterial);
     group.add(outline);
 
@@ -2063,7 +2102,7 @@ function createAtomStyleBubble(pos, symbol, atomScale) {
         centerX, centerY, radius
     );
 
-    const atomColor = new THREE.Color(info.color);
+    const atomColor = new THREE.Color(getAtomColorByScheme(symbol));
     const colorStyle = atomColor.getStyle();
 
     // Bubble gradient: bright highlight -> main color -> darker edge
@@ -2214,8 +2253,8 @@ function createBondStyleDefault(p1, p2, sym1, sym2, bondThickness, atomScale, st
     const { startPos, endPos } = bondPoints;
 
     const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
-    const color1 = (atomInfo[sym1] || atomInfo.default).color;
-    const color2 = (atomInfo[sym2] || atomInfo.default).color;
+    const color1 = getAtomColorByScheme(sym1);
+    const color2 = getAtomColorByScheme(sym2);
 
     const bondGroup = new THREE.Group();
     const bond1 = createHalfBond(startPos, midPoint, color1, bondThickness, style);
@@ -2323,8 +2362,8 @@ function createBondStyleBubble(p1, p2, sym1, sym2, bondThickness, atomScale) {
     const { startPos, endPos } = bondPoints;
 
     const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
-    const color1 = (atomInfo[sym1] || atomInfo.default).color;
-    const color2 = (atomInfo[sym2] || atomInfo.default).color;
+    const color1 = getAtomColorByScheme(sym1);
+    const color2 = getAtomColorByScheme(sym2);
 
     const bondGroup = new THREE.Group();
 
@@ -2698,6 +2737,371 @@ function createRingFace(ringPositions, faceColor, opacity = 0.3) {
     });
 
     return new THREE.Mesh(geometry, material);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Performance Optimization Utilities
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Determine LOD (Level of Detail) sphere segments based on atom count
+ * and performance mode setting.
+ *
+ * @param {number} atomCount - Total number of atoms to render
+ * @param {string} performanceMode - "auto", "high", or "normal"
+ * @returns {{ sphere: number, sphereHigh: number, bond: number }}
+ */
+function getLODSegments(atomCount, performanceMode) {
+    if (performanceMode === 'normal') {
+        return { sphere: 64, sphereHigh: 128, bond: 8 };
+    }
+
+    const isHigh = performanceMode === 'high' ||
+                   (performanceMode === 'auto' && atomCount > 100);
+
+    if (!isHigh) {
+        return { sphere: 64, sphereHigh: 128, bond: 8 };
+    }
+
+    // Adaptive: reduce segments as atom count grows
+    if (atomCount > 2000) {
+        return { sphere: 8, sphereHigh: 16, bond: 4 };
+    } else if (atomCount > 500) {
+        return { sphere: 12, sphereHigh: 24, bond: 6 };
+    } else {
+        // 100 < atomCount <= 500
+        return { sphere: 16, sphereHigh: 32, bond: 6 };
+    }
+}
+
+/**
+ * Geometry & material cache — avoids creating duplicate SphereGeometry
+ * and material instances for atoms of the same element and style.
+ */
+const _geoCache = {};
+const _matCache = {};
+
+function clearPerformanceCache() {
+    // Dispose cached geometries
+    for (const key in _geoCache) {
+        if (_geoCache[key] && _geoCache[key].dispose) _geoCache[key].dispose();
+    }
+    for (const key in _matCache) {
+        if (_matCache[key] && _matCache[key].dispose) _matCache[key].dispose();
+    }
+    for (const key in _geoCache) delete _geoCache[key];
+    for (const key in _matCache) delete _matCache[key];
+}
+
+function getCachedSphereGeometry(radius, segments) {
+    const key = `sphere_${radius.toFixed(4)}_${segments}`;
+    if (!_geoCache[key]) {
+        _geoCache[key] = new THREE.SphereGeometry(radius, segments, segments);
+        _geoCache[key]._isCached = true;
+    }
+    return _geoCache[key];
+}
+
+function getCachedMaterial(type, colorHex, extraKey) {
+    const key = `mat_${type}_${colorHex}_${extraKey || ''}`;
+    if (!_matCache[key]) {
+        switch (type) {
+            case 'toon': {
+                const colors = new Uint8Array(2);
+                colors[0] = 0; colors[1] = 255;
+                const gradientMap = new THREE.DataTexture(colors, 2, 1, THREE.LuminanceFormat);
+                gradientMap.minFilter = THREE.NearestFilter;
+                gradientMap.magFilter = THREE.NearestFilter;
+                gradientMap.needsUpdate = true;
+                _matCache[key] = new THREE.MeshToonMaterial({
+                    color: new THREE.Color(colorHex),
+                    gradientMap: gradientMap
+                });
+                break;
+            }
+            case 'outline':
+                _matCache[key] = new THREE.MeshBasicMaterial({
+                    color: colorHex,
+                    side: THREE.BackSide
+                });
+                break;
+            case 'glossy':
+                _matCache[key] = new THREE.MeshPhongMaterial({
+                    color: colorHex, shininess: 100, specular: 0x222222
+                });
+                break;
+            case 'metallic':
+                _matCache[key] = new THREE.MeshStandardMaterial({
+                    color: colorHex, metalness: 0.3, roughness: 0.4
+                });
+                break;
+            case 'lambert':
+                _matCache[key] = new THREE.MeshLambertMaterial({ color: colorHex });
+                break;
+            case 'lambertFlat':
+                _matCache[key] = new THREE.MeshLambertMaterial({
+                    color: new THREE.Color(colorHex), flatShading: false
+                });
+                break;
+            default:
+                _matCache[key] = new THREE.MeshLambertMaterial({ color: colorHex });
+        }
+        _matCache[key]._isCached = true;
+    }
+    return _matCache[key];
+}
+
+/**
+ * Spatial grid for O(n) bond detection.
+ * Instead of O(n²) all-pairs, partition atoms into grid cells
+ * and only check atoms in neighboring cells.
+ *
+ * @param {THREE.Vector3[]} positions - Atom positions
+ * @param {string[]} symbols - Atom symbols
+ * @param {number} bondCutoff - Bond threshold multiplier for covalent radii
+ * @returns {Array<{i: number, j: number}>} - Bond pairs
+ */
+function findBondsSpatialGrid(positions, symbols, bondCutoff) {
+    const n = positions.length;
+    if (n === 0) return [];
+
+    // For small systems, brute force is fine and avoids grid overhead
+    if (n < 80) {
+        return _findBondsBruteForce(positions, symbols, bondCutoff);
+    }
+
+    // Determine max possible bond distance
+    let maxCutoff = 0;
+    for (let i = 0; i < n; i++) {
+        const r = (atomInfo[symbols[i]] || atomInfo['default']).radius;
+        const d = r * 2 * bondCutoff;
+        if (d > maxCutoff) maxCutoff = d;
+    }
+
+    // Build spatial grid
+    const cellSize = maxCutoff + 0.001;
+    const grid = {};
+    const bonds = [];
+
+    function cellKey(x, y, z) {
+        return `${x},${y},${z}`;
+    }
+
+    // Insert atoms into grid cells
+    for (let i = 0; i < n; i++) {
+        const p = positions[i];
+        const cx = Math.floor(p.x / cellSize);
+        const cy = Math.floor(p.y / cellSize);
+        const cz = Math.floor(p.z / cellSize);
+        const key = cellKey(cx, cy, cz);
+        if (!grid[key]) grid[key] = [];
+        grid[key].push(i);
+    }
+
+    // Check neighboring cells (3x3x3 neighborhood)
+    const checked = new Set();
+    for (let i = 0; i < n; i++) {
+        const p = positions[i];
+        const cx = Math.floor(p.x / cellSize);
+        const cy = Math.floor(p.y / cellSize);
+        const cz = Math.floor(p.z / cellSize);
+
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dz = -1; dz <= 1; dz++) {
+                    const key = cellKey(cx + dx, cy + dy, cz + dz);
+                    const cell = grid[key];
+                    if (!cell) continue;
+
+                    for (let k = 0; k < cell.length; k++) {
+                        const j = cell[k];
+                        if (j <= i) continue;
+
+                        const pairKey = i * n + j;
+                        if (checked.has(pairKey)) continue;
+                        checked.add(pairKey);
+
+                        const dist = positions[i].distanceTo(positions[j]);
+                        const r1 = (atomInfo[symbols[i]] || atomInfo['default']).radius;
+                        const r2 = (atomInfo[symbols[j]] || atomInfo['default']).radius;
+                        const adjustedCutoff = (r1 + r2) * bondCutoff;
+
+                        if (dist <= adjustedCutoff) {
+                            bonds.push({ i: i, j: j });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return bonds;
+}
+
+function _findBondsBruteForce(positions, symbols, bondCutoff) {
+    const bonds = [];
+    const n = positions.length;
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            const dist = positions[i].distanceTo(positions[j]);
+            const r1 = (atomInfo[symbols[i]] || atomInfo['default']).radius;
+            const r2 = (atomInfo[symbols[j]] || atomInfo['default']).radius;
+            if (dist <= (r1 + r2) * bondCutoff) {
+                bonds.push({ i: i, j: j });
+            }
+        }
+    }
+    return bonds;
+}
+
+// ======== Hydrogen Bond Functions ========
+
+/**
+ * Detect hydrogen bonds using the D-H...A geometric criteria.
+ *
+ * Donors:    H bonded to N, O, or F
+ * Acceptors: N, O, F
+ * Criteria:
+ *   - H...A distance  ≤ 2.5 Å
+ *   - D...A distance  ≤ 3.5 Å
+ *   - D-H...A angle   ≥ 120°
+ * Excluded:
+ *   - D and A directly bonded (1,2)
+ *   - D and A share a common bonded neighbor (1,3: H-D-X-A)
+ *
+ * @param {THREE.Vector3[]} positions   - Atom positions
+ * @param {string[]}        symbols     - Element symbols
+ * @param {Array<{i,j}>}    covalentBonds - Existing covalent bond pairs
+ * @returns {Array<{h, a}>} H-bond pairs: index of H and acceptor atom
+ */
+function detectHydrogenBonds(positions, symbols, covalentBonds) {
+    const donorElements   = new Set(['N', 'O', 'F']);
+    const acceptorElements = new Set(['N', 'O', 'F']);
+
+    const HA_CUTOFF = 2.5;   // Å  H...A distance
+    const DA_CUTOFF = 3.5;   // Å  D...A distance
+    const ANGLE_MIN = 120.0; // °  D-H...A angle
+
+    // Build adjacency list and direct-bond set from covalent bonds
+    const adjacency = {};
+    const bondSet   = new Set();
+    if (covalentBonds) {
+        covalentBonds.forEach(({ i, j }) => {
+            if (!adjacency[i]) adjacency[i] = [];
+            if (!adjacency[j]) adjacency[j] = [];
+            adjacency[i].push(j);
+            adjacency[j].push(i);
+            bondSet.add(`${Math.min(i, j)}_${Math.max(i, j)}`);
+        });
+    }
+
+    const hbonds = [];
+
+    for (let h = 0; h < symbols.length; h++) {
+        if (symbols[h] !== 'H') continue;
+
+        const hNeighbors = adjacency[h] || [];
+        // H must be covalently bonded to a strong donor (N/O/F); excludes C-H, S-H
+        const donorIdx = hNeighbors.find(d => donorElements.has(symbols[d]));
+        if (donorIdx === undefined) continue;
+
+        const pH = positions[h];
+        const pD = positions[donorIdx];
+        const dNeighbors = adjacency[donorIdx] || [];
+
+        for (let a = 0; a < symbols.length; a++) {
+            if (a === h || a === donorIdx) continue;
+
+            if (!acceptorElements.has(symbols[a])) continue;
+
+            const haCutoff = HA_CUTOFF;
+            const daCutoff = DA_CUTOFF;
+            const angleMin = ANGLE_MIN;
+
+            // --- Topology filters (cheap, no sqrt) ---
+
+            // Exclude 1,2: D directly bonded to A
+            if (bondSet.has(`${Math.min(donorIdx, a)}_${Math.max(donorIdx, a)}`)) continue;
+
+            // Exclude 1,3: D-X-A (H-D-X-A = 3-bond path), e.g. H-N-C=O
+            const is13 = dNeighbors.some(
+                x => x !== h && bondSet.has(`${Math.min(x, a)}_${Math.max(x, a)}`)
+            );
+            if (is13) continue;
+
+            // --- Distance filters ---
+            const pA = positions[a];
+
+            const haDist = pH.distanceTo(pA);
+            if (haDist > haCutoff) continue;
+
+            const daDist = pD.distanceTo(pA);
+            if (daDist > daCutoff) continue;
+
+            // --- Angle filter: D-H...A angle at H ---
+            const vecHD = new THREE.Vector3().subVectors(pD, pH).normalize();
+            const vecHA = new THREE.Vector3().subVectors(pA, pH).normalize();
+            const cosAngle = Math.max(-1, Math.min(1, vecHD.dot(vecHA)));
+            const angleDeg = Math.acos(cosAngle) * (180 / Math.PI);
+            if (angleDeg < angleMin) continue;
+
+            hbonds.push({ h, a });
+        }
+    }
+
+    return hbonds;
+}
+
+/**
+ * Create a dashed-cylinder representation of a hydrogen bond.
+ *
+ * @param {THREE.Vector3} p1
+ * @param {THREE.Vector3} p2
+ * @returns {THREE.Group}
+ */
+function createHydrogenBond(p1, p2) {
+    const distance  = p1.distanceTo(p2);
+    const direction = new THREE.Vector3().subVectors(p2, p1).normalize();
+
+    const hBondRadius = 0.05;  // thinner than covalent bonds (0.1)
+    const dashLength  = 0.20;
+    const gapLength   = 0.12;
+
+    const group = new THREE.Group();
+    const up    = new THREE.Vector3(0, 1, 0);
+
+    let traveled = 0;
+    let isDash   = true;
+
+    while (traveled < distance) {
+        const segLen   = isDash ? dashLength : gapLength;
+        const actual   = Math.min(segLen, distance - traveled);
+
+        if (isDash && actual > 0.01) {
+            const start   = p1.clone().addScaledVector(direction, traveled);
+            const end     = p1.clone().addScaledVector(direction, traveled + actual);
+            const midPt   = start.clone().lerp(end, 0.5);
+
+            const geometry = new THREE.CylinderGeometry(hBondRadius, hBondRadius, actual, 6, 1);
+            const material = new THREE.MeshBasicMaterial({
+                color:       0x222222,
+                transparent: true,
+                opacity:     0.65,
+                depthTest:   true,
+                depthWrite:  false
+            });
+
+            const cylinder = new THREE.Mesh(geometry, material);
+            cylinder.position.copy(midPt);
+            cylinder.quaternion.setFromUnitVectors(up, direction);
+            group.add(cylinder);
+        }
+
+        traveled += actual;
+        isDash = !isDash;
+    }
+
+    return group;
 }
 </script>
     <style>
@@ -5972,6 +6376,16 @@ if (typeof define === 'function' && define.amd) {
                     <div class="card-content" id="advanced-content">
                         <div class="control-group">
                             <div class="control-label">
+                                <span>Color Scheme</span>
+                            </div>
+                            <select class="select" id="color-scheme-select">
+                                <option value="Jmol">Jmol</option>
+                                <option value="CPK">CPK</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
                                 <span>Bond Threshold Scale</span>
                                 <span class="slider-value" id="bond-threshold-value">1.0</span>
                             </div>
@@ -6094,6 +6508,16 @@ if (typeof define === 'function' && define.amd) {
                                 <span>Bond</span>
                                 <label class="switch">
                                     <input type="checkbox" id="show-bond" checked>
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>H-Bond</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-hbond">
                                     <span class="slider-switch"></span>
                                 </label>
                             </div>
@@ -6539,6 +6963,7 @@ if (typeof define === 'function' && define.amd) {
             style: 'cartoon',
             showCell: true,
             showBond: true,
+            showHBond: false,
             showShading: true,
             showEnergyPlot: false,
             showForces: false,
@@ -6551,7 +6976,8 @@ if (typeof define === 'function' && define.amd) {
             showRings: false,
             ringOpacity: 0.30,
             ringColor: null,          // null = auto (dominant-atom color)
-            colorBy: 'Element',  // 'Element' or 'Charge'
+            colorBy: 'Element',  // 'Element', 'Charge', or 'Constraint'
+            colorScheme: 'Jmol', // 'Jmol' or 'CPK'
             normalizeCharges: false,
             showChargeLabels: false,
             chargeColormap: 'coolwarm',
@@ -6568,10 +6994,14 @@ if (typeof define === 'function' && define.amd) {
             const colorBySelect = document.getElementById('color-by-select');
             if (colorBySelect) colorBySelect.value = settings.colorBy || 'Element';
 
+            const colorSchemeSelect = document.getElementById('color-scheme-select');
+            if (colorSchemeSelect) colorSchemeSelect.value = settings.colorScheme || 'Jmol';
+
             // Update checkboxes
             const checkboxMappings = {
                 'show-cell': 'showCell',
                 'show-bond': 'showBond',
+                'show-hbond': 'showHBond',
                 'show-shading': 'showShading',
                 'show-energy-plot': 'showEnergyPlot',
                 'show-forces': 'showForces',
@@ -6684,6 +7114,21 @@ if (typeof define === 'function' && define.amd) {
 
         // Charge coloring utilities
         let chargeStats = { hasCharges: false, min: 0, max: 0, maxPositive: 0, minNegative: 0 };
+        let fixedStats  = { hasFixed: false, indices: new Set() };
+
+        function checkConstraintsInData() {
+            if (!molecularData || molecularData.length === 0) return false;
+            for (const frame of molecularData) {
+                if (frame.fixed && Array.isArray(frame.fixed) && frame.fixed.length > 0) {
+                    fixedStats.hasFixed  = true;
+                    fixedStats.indices   = new Set(frame.fixed);
+                    return true;
+                }
+            }
+            fixedStats.hasFixed  = false;
+            fixedStats.indices   = new Set();
+            return false;
+        }
 
         function checkChargesInData() {
             if (!molecularData || molecularData.length === 0) return false;
@@ -6720,28 +7165,39 @@ if (typeof define === 'function' && define.amd) {
             const normalizeSection = document.getElementById('normalize-charges-section');
             const labelsSection = document.getElementById('show-charge-labels-section');
             const colorbarSection = document.getElementById('charge-colorbar-section');
+            const select = document.getElementById('color-by-select');
 
-            if (!colorBySection) return;
+            if (!colorBySection || !select) return;
 
+            // Rebuild dynamic options (Charge / Constraint) based on data availability
+            [...select.options].forEach(o => { if (o.value !== 'Element') o.remove(); });
             if (chargeStats.hasCharges) {
-                colorBySection.style.display = 'block';
-
-                // Show options only when colorBy is 'Charge'
-                const showChargeOptions = settings.colorBy === 'Charge';
-                if (normalizeSection) normalizeSection.style.display = showChargeOptions ? 'block' : 'none';
-                if (labelsSection) labelsSection.style.display = showChargeOptions ? 'block' : 'none';
-                if (colorbarSection) colorbarSection.style.display = showChargeOptions ? 'block' : 'none';
-
-                // Update colorbar labels
-                if (showChargeOptions) {
-                    updateColorbarLabels();
-                }
-            } else {
-                colorBySection.style.display = 'none';
-                if (normalizeSection) normalizeSection.style.display = 'none';
-                if (labelsSection) labelsSection.style.display = 'none';
-                if (colorbarSection) colorbarSection.style.display = 'none';
+                const opt = document.createElement('option');
+                opt.value = 'Charge'; opt.text = 'Charge';
+                select.add(opt);
             }
+            if (fixedStats.hasFixed) {
+                const opt = document.createElement('option');
+                opt.value = 'Constraint'; opt.text = 'Constraint';
+                select.add(opt);
+            }
+
+            // If selected value no longer valid, reset to Element
+            if ((settings.colorBy === 'Charge' && !chargeStats.hasCharges) ||
+                (settings.colorBy === 'Constraint' && !fixedStats.hasFixed)) {
+                settings.colorBy = 'Element';
+            }
+            select.value = settings.colorBy;
+
+            const hasAny = chargeStats.hasCharges || fixedStats.hasFixed;
+            colorBySection.style.display = hasAny ? 'block' : 'none';
+
+            // Charge-specific sub-controls
+            const showChargeOptions = settings.colorBy === 'Charge';
+            if (normalizeSection) normalizeSection.style.display = showChargeOptions ? 'block' : 'none';
+            if (labelsSection)    labelsSection.style.display    = showChargeOptions ? 'block' : 'none';
+            if (colorbarSection)  colorbarSection.style.display  = showChargeOptions ? 'block' : 'none';
+            if (showChargeOptions) updateColorbarLabels();
         }
 
         function updateColorbarLabels() {
@@ -6803,16 +7259,17 @@ if (typeof define === 'function' && define.amd) {
         }
 
         // Create atom with custom color (for charge coloring)
-        function createAtomWithColor(pos, symbol, atomScale, colorHex, styleName) {
+        function createAtomWithColor(pos, symbol, atomScale, colorHex, styleName, lodSegments) {
             const info = atomInfo[symbol] || atomInfo['default'];
             const scaledRadius = info.radius * atomScale;
+            const seg = (lodSegments && lodSegments.sphere) || 32;
 
             // Create geometry based on style
             let geometry, material, mesh;
 
             switch (styleName) {
                 case 'neon':
-                    geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
+                    geometry = getCachedSphereGeometry(scaledRadius, seg);
                     material = new THREE.MeshBasicMaterial({
                         color: colorHex,
                         transparent: true,
@@ -6822,7 +7279,7 @@ if (typeof define === 'function' && define.amd) {
                     mesh.position.copy(pos);
 
                     // Add glow effect
-                    const glowGeometry = new THREE.SphereGeometry(scaledRadius * 1.3, 32, 32);
+                    const glowGeometry = getCachedSphereGeometry(scaledRadius * 1.3, seg);
                     const glowMaterial = new THREE.MeshBasicMaterial({
                         color: colorHex,
                         transparent: true,
@@ -6837,7 +7294,7 @@ if (typeof define === 'function' && define.amd) {
                     return group;
 
                 case 'glossy':
-                    geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
+                    geometry = getCachedSphereGeometry(scaledRadius, seg);
                     material = new THREE.MeshPhongMaterial({
                         color: colorHex,
                         specular: 0x444444,
@@ -6848,7 +7305,7 @@ if (typeof define === 'function' && define.amd) {
                     return mesh;
 
                 case 'metallic':
-                    geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
+                    geometry = getCachedSphereGeometry(scaledRadius, seg);
                     material = new THREE.MeshStandardMaterial({
                         color: colorHex,
                         metalness: 0.8,
@@ -6859,7 +7316,7 @@ if (typeof define === 'function' && define.amd) {
                     return mesh;
 
                 default:  // cartoon, default, etc.
-                    geometry = new THREE.SphereGeometry(scaledRadius, 32, 32);
+                    geometry = getCachedSphereGeometry(scaledRadius, seg);
                     material = new THREE.MeshLambertMaterial({ color: colorHex });
                     mesh = new THREE.Mesh(geometry, material);
                     mesh.position.copy(pos);
@@ -6868,7 +7325,7 @@ if (typeof define === 'function' && define.amd) {
         }
 
         // Create charge label sprite
-        function createChargeLabelSprite(charge, position, atomScale) {
+        function createChargeLabelSprite(charge, position, atomScale, normalize) {
             const canvas = document.createElement('canvas');
             canvas.width = 128;
             canvas.height = 64;
@@ -6888,8 +7345,10 @@ if (typeof define === 'function' && define.amd) {
             ctx.lineWidth = 4;
             ctx.strokeText(text, 64, 32);
 
-            // Fill with color based on charge
-            ctx.fillStyle = charge >= 0 ? '#3b82f6' : '#ef4444';
+            // Label color matches atom color (reflects normalization)
+            const colorHex = getChargeColor(charge, normalize || false);
+            const labelColor = new THREE.Color(colorHex);
+            ctx.fillStyle = '#' + labelColor.getHexString();
             ctx.fillText(text, 64, 32);
 
             const texture = new THREE.CanvasTexture(canvas);
@@ -7345,13 +7804,15 @@ if (typeof define === 'function' && define.amd) {
 
         function disposeObject3D(object) {
             object.traverse(child => {
-                if (child.geometry) {
+                if (child.geometry && !child.geometry._isCached) {
                     child.geometry.dispose();
                 }
                 if (child.material) {
                     if (Array.isArray(child.material)) {
-                        child.material.forEach(mat => mat.dispose && mat.dispose());
-                    } else if (child.material.dispose) {
+                        child.material.forEach(mat => {
+                            if (mat.dispose && !mat._isCached) mat.dispose();
+                        });
+                    } else if (child.material.dispose && !child.material._isCached) {
                         child.material.dispose();
                     }
                 }
@@ -7539,6 +8000,9 @@ if (typeof define === 'function' && define.amd) {
             if (!scene || !camera || !renderer) return;
             if (!molecularData || molecularData.length === 0) return;
 
+            // Sync color scheme global (styles.js) with current setting
+            atomColorScheme = (settings.colorScheme || 'Jmol').toLowerCase();
+
             if (moleculeGroup) {
                 scene.remove(moleculeGroup);
                 disposeObject3D(moleculeGroup);
@@ -7578,6 +8042,11 @@ if (typeof define === 'function' && define.amd) {
             const bondRadius = Math.max(settings.bondThickness, 0.005);
             const bondCutoff = settings.bondThreshold;
 
+            // Performance: compute LOD segments based on atom count
+            const perfMode = settings.performanceMode || 'auto';
+            const lodSegments = getLODSegments(positions.length, perfMode);
+            clearPerformanceCache();
+
             const uniqueSymbols = [...new Set(symbols)];
             const greyColorMap = {};
             if (uniqueSymbols.length > 0) {
@@ -7586,7 +8055,7 @@ if (typeof define === 'function' && define.amd) {
                     greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
                 });
             }
-            const helpers = { greyColorMap };
+            const helpers = { greyColorMap, _lod: lodSegments };
 
             if (settings.showCell && molecule.cell) {
                 const cellVectors = molecule.cell.map(c => new THREE.Vector3(...c));
@@ -7614,9 +8083,10 @@ if (typeof define === 'function' && define.amd) {
 
             // Get charges for current frame (if available)
             const frameCharges = molecule.charges || [];
-            const useChargeColor = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
+            const useChargeColor     = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
+            const useConstraintColor = settings.colorBy === 'Constraint' && fixedStats.hasFixed;
 
-            // Pre-calculate charge colors for all atoms
+            // Pre-calculate per-atom colors
             const atomChargeColors = [];
             if (useChargeColor) {
                 for (let i = 0; i < positions.length; i++) {
@@ -7625,63 +8095,69 @@ if (typeof define === 'function' && define.amd) {
                 }
             }
 
+            // Use spatial grid for O(n) bond detection instead of O(n²)
+            const bondPairs = findBondsSpatialGrid(positions, symbols, bondCutoff);
+
             if (settings.showBond) {
                 let bondCount = 0;
-                for (let i = 0; i < positions.length; i++) {
-                    for (let j = i + 1; j < positions.length; j++) {
-                        const dist = positions[i].distanceTo(positions[j]);
-
-                        // Calculate bond cutoff based on covalent radii of both atoms
-                        const info1 = atomInfo[symbols[i]] || atomInfo['default'];
-                        const info2 = atomInfo[symbols[j]] || atomInfo['default'];
-                        const covalentRadiusSum = info1.radius + info2.radius;
-                        const adjustedCutoff = covalentRadiusSum * bondCutoff;
-
-                        if (dist <= adjustedCutoff) {
-                            let bond;
-                            // Styles with fixed bond colors (not dependent on atom colors)
-                            const fixedBondStyles = ['rowan', 'neon', 'cartoon', '2d'];
-                            if (useChargeColor && !fixedBondStyles.includes(styleName)) {
-                                // Use charge-based coloring for bonds
-                                bond = createBondWithColor(
-                                    positions[i],
-                                    positions[j],
-                                    bondRadius,
-                                    atomChargeColors[i],
-                                    atomChargeColors[j],
-                                    styleName
-                                );
-                            } else {
-                                // Use element-based coloring or fixed style coloring
-                                bond = bondFactory(
-                                    positions[i],
-                                    positions[j],
-                                    symbols[i],
-                                    symbols[j],
-                                    bondRadius,
-                                    atomScale,
-                                    helpers
-                                );
-                            }
-                            if (bond) {
-                                bond.renderOrder = 1;
-                                moleculeGroup.add(bond);
-                                bondCount++;
-                            }
-                        }
+                const fixedBondStyles = ['rowan', 'neon', 'cartoon', '2d'];
+                for (let b = 0; b < bondPairs.length; b++) {
+                    const { i, j } = bondPairs[b];
+                    let bond;
+                    if (useChargeColor && !fixedBondStyles.includes(styleName)) {
+                        bond = createBondWithColor(
+                            positions[i],
+                            positions[j],
+                            bondRadius,
+                            atomChargeColors[i],
+                            atomChargeColors[j],
+                            styleName
+                        );
+                    } else if (useConstraintColor && !fixedBondStyles.includes(styleName)) {
+                        const c1 = fixedStats.indices.has(i) ? 0x808080 : getAtomColorByScheme(symbols[i]);
+                        const c2 = fixedStats.indices.has(j) ? 0x808080 : getAtomColorByScheme(symbols[j]);
+                        bond = createBondWithColor(positions[i], positions[j], bondRadius, c1, c2, styleName);
+                    } else {
+                        bond = bondFactory(
+                            positions[i],
+                            positions[j],
+                            symbols[i],
+                            symbols[j],
+                            bondRadius,
+                            atomScale,
+                            helpers
+                        );
+                    }
+                    if (bond) {
+                        bond.renderOrder = 1;
+                        moleculeGroup.add(bond);
+                        bondCount++;
                     }
                 }
                 console.log('Total bonds created:', bondCount, 'for style:', styleName);
+            }
+
+            if (settings.showHBond) {
+                const hbondPairs = detectHydrogenBonds(positions, symbols, bondPairs);
+                for (let b = 0; b < hbondPairs.length; b++) {
+                    const { h, a } = hbondPairs[b];
+                    const hbond = createHydrogenBond(positions[h], positions[a]);
+                    if (hbond) {
+                        hbond.renderOrder = 1;
+                        moleculeGroup.add(hbond);
+                    }
+                }
             }
 
             for (let i = 0; i < positions.length; i++) {
                 let atom;
 
                 if (useChargeColor) {
-                    // Use charge-based coloring (colors already calculated)
-                    atom = createAtomWithColor(positions[i], symbols[i], atomScale, atomChargeColors[i], styleName);
+                    atom = createAtomWithColor(positions[i], symbols[i], atomScale, atomChargeColors[i], styleName, lodSegments);
+                } else if (useConstraintColor) {
+                    const color = fixedStats.indices.has(i) ? 0x808080 : getAtomColorByScheme(symbols[i]);
+                    atom = createAtomWithColor(positions[i], symbols[i], atomScale, color, styleName, lodSegments);
                 } else {
-                    // Use element-based coloring (default)
                     atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
                     if (!atom) {
                         atom = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
@@ -7698,7 +8174,7 @@ if (typeof define === 'function' && define.amd) {
             if (settings.showChargeLabels && useChargeColor && frameCharges.length > 0) {
                 for (let i = 0; i < positions.length; i++) {
                     const charge = frameCharges[i] || 0;
-                    const label = createChargeLabelSprite(charge, positions[i], atomScale);
+                    const label = createChargeLabelSprite(charge, positions[i], atomScale, settings.normalizeCharges);
                     if (label) {
                         label.renderOrder = 4;
                         moleculeGroup.add(label);
@@ -7722,20 +8198,14 @@ if (typeof define === 'function' && define.amd) {
                 }
             }
 
-            // ── Polyhedron & Ring: build adjacency from bonds ──────────
-            // (Always build adjacency; used by both features)
+            // ── Polyhedron & Ring: build adjacency from bond pairs ──────
+            // Reuse spatial grid bond detection result to avoid redundant O(n²)
             const adjacency = Array.from({ length: positions.length }, () => []);
             if (settings.showPolyhedron || settings.showRings) {
-                for (let i = 0; i < positions.length; i++) {
-                    for (let j = i + 1; j < positions.length; j++) {
-                        const dist = positions[i].distanceTo(positions[j]);
-                        const r1 = (atomInfo[symbols[i]] || atomInfo['default']).radius;
-                        const r2 = (atomInfo[symbols[j]] || atomInfo['default']).radius;
-                        if (dist <= (r1 + r2) * bondCutoff) {
-                            adjacency[i].push(j);
-                            adjacency[j].push(i);
-                        }
-                    }
+                for (let b = 0; b < bondPairs.length; b++) {
+                    const { i, j } = bondPairs[b];
+                    adjacency[i].push(j);
+                    adjacency[j].push(i);
                 }
             }
 
@@ -8098,8 +8568,9 @@ if (typeof define === 'function' && define.amd) {
             // Extract energy data for plotting
             extractEnergyData();
 
-            // Check for charge data and update UI
+            // Check for charge / constraint data and update UI
             checkChargesInData();
+            checkConstraintsInData();
             updateChargeUI();
 
             // Show/hide energy plot checkbox based on energy availability
@@ -8306,6 +8777,11 @@ if (typeof define === 'function' && define.amd) {
                 renderMolecule();
             });
 
+            safeAddListener('show-hbond', 'change', function () {
+                settings.showHBond = this.checked;
+                renderMolecule();
+            });
+
             safeAddListener('show-shading', 'change', function () {
                 settings.showShading = this.checked;
                 updateShading();
@@ -8420,10 +8896,17 @@ if (typeof define === 'function' && define.amd) {
                 renderMolecule();
             });
 
-            // Color by selection (Element or Charge)
+            // Color by selection (Element / Charge / Constraint)
             safeAddListener('color-by-select', 'change', function () {
                 settings.colorBy = this.value;
                 updateChargeUI();
+                renderMolecule();
+            });
+
+            // Color scheme selection (Jmol / CPK)
+            safeAddListener('color-scheme-select', 'change', function () {
+                settings.colorScheme = this.value;
+                atomColorScheme = this.value.toLowerCase(); // sync styles.js global
                 renderMolecule();
             });
 
@@ -9013,7 +9496,7 @@ if (typeof define === 'function' && define.amd) {
     (function() {
         var MAX_RETRIES = 100;  // 5 seconds max (100 * 50ms)
         var retryCount = 0;
-        var pythonSettings = {"bondThreshold": 1.2, "bondThickness": 0.1, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "cartoon", "showCell": true, "showBond": true, "showShadow": false, "showShading": true, "showEnergyPlot": true, "showForces": false, "colorBy": "Element", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Perspective", "rotationMode": "TrackBall", "selectionMode": "Lasso"};
+        var pythonSettings = {"bondThreshold": 1.2, "bondThickness": 0.1, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "cartoon", "showCell": true, "showBond": true, "showHBond": false, "showShadow": false, "showShading": true, "showEnergyPlot": true, "showForces": false, "colorBy": "Element", "colorScheme": "Jmol", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Perspective", "rotationMode": "TrackBall", "selectionMode": "Lasso", "performanceMode": "auto"};
 
         function initData() {
             function trySetData() {
