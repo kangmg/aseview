@@ -2,6 +2,34 @@
 
 Visualize crystals, surfaces, and periodic systems with unit cell display.
 
+## Live Demo: Cu(111) Surface — Fixed Atoms (FixAtoms Constraint)
+
+Cu(111) 4-layer slab with the bottom 2 layers frozen. Fixed atoms are shown in **grey**, free atoms in their normal element color.
+
+```python
+from ase.build import fcc111
+from ase.constraints import FixAtoms
+from aseview import MolecularViewer
+import numpy as np
+
+slab = fcc111('Cu', size=(3, 3, 4), vacuum=8.0)
+
+# Fix bottom 2 layers
+z_coords = slab.get_positions()[:, 2]
+z_sorted = np.sort(np.unique(np.round(z_coords, 2)))
+fixed_z = set(z_sorted[:2])
+fixed_indices = [i for i, pos in enumerate(slab.get_positions())
+                 if round(pos[2], 2) in fixed_z]
+slab.set_constraint(FixAtoms(indices=fixed_indices))
+
+viewer = MolecularViewer(slab, style="metallic", colorBy="Constraint", showCell=True)
+viewer.show()
+```
+
+<iframe src="../../assets/viewers/cu111_fixed.html" width="100%" height="500" style="border: 1px solid #374151; border-radius: 8px;" loading="lazy"></iframe>
+
+---
+
 ## Live Demo: Silicon Crystal
 
 Silicon in diamond structure (2x2x2 supercell):

@@ -681,7 +681,34 @@ def create_carbazole_ring_viewer():
     print("Created carbazole_rings.html")
 
 
-if __name__ == "__main__":
+def create_fixed_atoms_viewer():
+    """Create a Cu(111) slab with fixed bottom layers (FixAtoms constraint visualization)."""
+    from ase.build import fcc111
+    from ase.constraints import FixAtoms
+
+    # 4-layer Cu(111) slab, 3x3 surface cell
+    slab = fcc111('Cu', size=(3, 3, 4), vacuum=8.0)
+
+    # Fix bottom 2 layers (common setup for surface relaxation calculations)
+    z_coords = slab.get_positions()[:, 2]
+    z_sorted = np.sort(np.unique(np.round(z_coords, 2)))
+    fixed_z = set(z_sorted[:2])  # two lowest z-layers
+    fixed_indices = [i for i, pos in enumerate(slab.get_positions())
+                     if round(pos[2], 2) in fixed_z]
+    slab.set_constraint(FixAtoms(indices=fixed_indices))
+
+    viewer = MolecularViewer(
+        slab,
+        style="metallic",
+        colorBy="Constraint",
+        showCell=True,
+        atomSize=0.45,
+    )
+    viewer.save_html(os.path.join(OUTPUT_DIR, "cu111_fixed.html"))
+    print(f"Created cu111_fixed.html ({len(fixed_indices)} fixed atoms out of {len(slab)})")
+
+
+
     print("Generating example viewer HTML files...")
     # Molecules
     create_water_viewer()
@@ -705,6 +732,8 @@ if __name__ == "__main__":
     # Charge visualization
     create_phosphine_charge_viewer()
     create_ethanol_charge_viewer()
+    # Constraint visualization
+    create_fixed_atoms_viewer()
     # Polyhedron & Ring highlight
     create_casio3_polyhedron_viewer()
     create_carbazole_ring_viewer()
