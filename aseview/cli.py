@@ -293,7 +293,7 @@ def main(
         None,
         "--hess",
         "--hessian",
-        help="Hessian file for normal mode viewer (ORCA .hess format)",
+        help="Hessian file for normal mode viewer (ORCA .hess or VASP OUTCAR)",
     ),
     bond_threshold: Optional[float] = typer.Option(
         None,
@@ -350,6 +350,7 @@ def main(
     \b
     Normal Mode Viewer (--hess):
       aseview mol.xyz --hess orca.hess             # ORCA Hessian file
+      aseview POSCAR --hess OUTCAR                 # VASP OUTCAR (auto-detected)
       aseview mol.xyz --hess orca.hess -v normal   # Explicit normal viewer
 
     \b
@@ -461,7 +462,7 @@ def main(
                 console.print(f"[red]Error: Hessian file not found: {hess}[/red]")
                 raise typer.Exit(1)
             try:
-                viewer_obj = NormalViewer.from_orca(all_atoms[0], hess, **viewer_kwargs)
+                viewer_obj = NormalViewer.from_file(all_atoms[0], hess, **viewer_kwargs)
                 console.print(f"  [green]✓[/green] Loaded Hessian from [bold]{hess}[/bold]")
             except Exception as e:
                 console.print(f"[red]Error parsing Hessian file: {e}[/red]")

@@ -3,9 +3,10 @@ Hessian file parsers for various quantum chemistry programs.
 
 Supported formats:
 - ORCA: .hess files
-- More formats can be added (VASP, Gaussian, xTB, etc.)
+- VASP: OUTCAR files (IBRION=5 or 6)
 """
 
+import re
 import numpy as np
 from typing import Tuple, List, Optional
 from pathlib import Path
@@ -155,6 +156,125 @@ def _parse_orca_normal_modes(content: str) -> np.ndarray:
         mode_col_start += n_cols_in_block
 
     return normal_modes
+
+
+def parse_vasp_outcar(filepath: str) -> Tuple[np.ndarray, np.ndarray, int]:
+    """
+    Parse VASP OUTCAR file to extract normal modes and frequencies.
+
+    The OUTCAR must contain the "Eigenvectors and eigenvalues of the dynamical
+    matrix" section produced by IBRION=5 or IBRION=6 calculations.
+
+    Args:
+        filepath: Path to the VASP OUTCAR file
+
+    Returns:
+        Tuple of (frequencies, normal_modes, n_atoms)
+        - frequencies: 1D array of vibrational frequencies in cm^-1
+          (negative values indicate imaginary / soft modes)
+        - normal_modes: 2D array of shape (n_modes, 3*n_atoms)
+        - n_atoms: Number of atoms in the unit cell
+    """
+    filepath = Path(filepath)
+    if not filepath.exists():
+        raise FileNotFoundError(f"OUTCAR file not found: {filepath}")
+
+    with open(filepath, "r") as f:
+        content = f.read()
+
+    marker = "Eigenvectors and eigenvalues of the dynamical matrix"
+    # Use rfind so we always get the final (converged) section
+    idx = content.rfind(marker)
+    if idx == -1:
+        raise ValueError(
+            'Could not find "Eigenvectors and eigenvalues of the dynamical matrix" '
+            "in OUTCAR. Make sure IBRION=5 or IBRION=6 was used."
+        )
+
+    lines = content[idx:].split("\n")
+
+    # Regex for mode-header lines:
+    #   "   1 f  =   93.265082 THz ..."
+    #   "   1 f/i=    2.714783 THz ..."
+    mode_header_re = re.compile(
+        r"^\s*\d+\s+f(/i)?\s*=\s*[\d.]+\s+THz\s+[\d.]+\s+2PiTHz\s+([\d.]+)\s+cm-1"
+    )
+    # Atom-displacement lines: 6 floats  (X  Y  Z  dx  dy  dz)
+    atom_line_re = re.compile(
+        r"^\s*([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s*$"
+    )
+
+    frequencies: List[float] = []
+    all_modes: List[List[List[float]]] = []
+    current_disps: List[List[float]] = []
+    in_mode = False
+
+    for line in lines:
+        m = mode_header_re.match(line)
+        if m:
+            # Save the previous mode
+            if in_mode and current_disps:
+                all_modes.append(current_disps)
+                current_disps = []
+            imaginary = m.group(1) is not None   # "/i" present
+            freq = float(m.group(2))
+            frequencies.append(-freq if imaginary else freq)
+            in_mode = True
+            continue
+
+        if in_mode:
+            am = atom_line_re.match(line)
+            if am:
+                dx, dy, dz = float(am.group(4)), float(am.group(5)), float(am.group(6))
+                current_disps.append([dx, dy, dz])
+
+    # Flush the last mode
+    if in_mode and current_disps:
+        all_modes.append(current_disps)
+
+    if not all_modes:
+        raise ValueError(
+            "No normal modes found in OUTCAR. "
+            "Make sure IBRION=5 or IBRION=6 was used and the calculation completed."
+        )
+
+    n_atoms = len(all_modes[0])
+    n_modes = len(all_modes)
+
+    normal_modes = np.zeros((n_modes, n_atoms * 3))
+    for mode_idx, mode in enumerate(all_modes):
+        for atom_idx, (dx, dy, dz) in enumerate(mode[:n_atoms]):
+            normal_modes[mode_idx, atom_idx * 3]     = dx
+            normal_modes[mode_idx, atom_idx * 3 + 1] = dy
+            normal_modes[mode_idx, atom_idx * 3 + 2] = dz
+
+    return np.array(frequencies), normal_modes, n_atoms
+
+
+def detect_hessian_format(filepath: str) -> str:
+    """
+    Auto-detect hessian file format from filename and content.
+
+    Returns:
+        'orca' or 'vasp'
+    """
+    name = Path(filepath).name.upper()
+    if "OUTCAR" in name:
+        return "vasp"
+
+    # Fall back to content sniffing (read first 8 KB)
+    with open(filepath, "r", errors="replace") as f:
+        head = f.read(8192)
+
+    if "Eigenvectors and eigenvalues of the dynamical matrix" in head:
+        return "vasp"
+    if "$vibrational_frequencies" in head:
+        return "orca"
+
+    raise ValueError(
+        f"Cannot determine hessian format for '{filepath}'. "
+        "Expected ORCA .hess or VASP OUTCAR."
+    )
 
 
 def reshape_modes_to_atoms(normal_modes: np.ndarray, n_atoms: int) -> List[List[List[float]]]:
