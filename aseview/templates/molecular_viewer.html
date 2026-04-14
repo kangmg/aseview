@@ -2219,10 +2219,6 @@
                             atomChargeColors[j],
                             styleName
                         );
-                    } else if (useConstraintColor && !fixedBondStyles.includes(styleName)) {
-                        const c1 = fixedStats.indices.has(i) ? 0x808080 : getAtomColorByScheme(symbols[i]);
-                        const c2 = fixedStats.indices.has(j) ? 0x808080 : getAtomColorByScheme(symbols[j]);
-                        bond = createBondWithColor(positions[i], positions[j], bondRadius, c1, c2, styleName);
                     } else {
                         bond = bondFactory(
                             positions[i],
@@ -2262,9 +2258,6 @@
 
                 if (useChargeColor) {
                     atom = createAtomWithColor(positions[i], symbols[i], atomScale, atomChargeColors[i], styleName, lodSegments);
-                } else if (useConstraintColor) {
-                    const color = fixedStats.indices.has(i) ? 0x808080 : getAtomColorByScheme(symbols[i]);
-                    atom = createAtomWithColor(positions[i], symbols[i], atomScale, color, styleName, lodSegments);
                 } else {
                     atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
                     if (!atom) {
@@ -2275,6 +2268,24 @@
                 if (atom) {
                     atom.renderOrder = 0;
                     moleculeGroup.add(atom);
+                }
+            }
+
+            // Highlight fixed atoms with yellow semi-transparent sphere overlay
+            if (useConstraintColor && fixedStats.indices.size > 0) {
+                const fixedMat = new THREE.MeshBasicMaterial({
+                    color: 0xeab308, transparent: true, opacity: 0.72, depthWrite: false,
+                });
+                for (const idx of fixedStats.indices) {
+                    if (idx >= positions.length) continue;
+                    const info = atomInfo[symbols[idx]] || atomInfo['default'];
+                    const r = info.radius * atomScale * 1.50;
+                    const mesh = new THREE.Mesh(
+                        new THREE.SphereGeometry(r, 16, 12), fixedMat
+                    );
+                    mesh.position.copy(positions[idx]);
+                    mesh.renderOrder = 5;
+                    moleculeGroup.add(mesh);
                 }
             }
 

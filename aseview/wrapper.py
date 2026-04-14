@@ -732,6 +732,78 @@ class NormalViewer(BaseViewer):
 
         return cls(atoms, mode_vectors=mode_vectors, frequencies=frequencies.tolist(), **kwargs)
 
+    @classmethod
+    def from_vasp(cls, atoms, outcar_file: str, skip_imaginary: bool = False, **kwargs):
+        """
+        Create NormalViewer from VASP OUTCAR file (IBRION=5 or 6).
+
+        Args:
+            atoms: ASE Atoms object of equilibrium structure
+            outcar_file: Path to VASP OUTCAR file
+            skip_imaginary: If True, skip translational/rotational modes (freq < 10 cm^-1). Default False.
+            **kwargs: Additional viewer settings
+
+        Returns:
+            NormalViewer instance
+
+        Example:
+            >>> from ase.io import read
+            >>> atoms = read("POSCAR")
+            >>> viewer = NormalViewer.from_vasp(atoms, "OUTCAR")
+            >>> viewer.show()
+        """
+        from .hessian_parsers import parse_vasp_outcar, reshape_modes_to_atoms, get_real_vibrations
+
+        frequencies, normal_modes, n_atoms_outcar = parse_vasp_outcar(outcar_file)
+
+        if isinstance(atoms, Atoms):
+            n_atoms = len(atoms)
+        else:
+            n_atoms = len(atoms.get("symbols", []))
+
+        if n_atoms != n_atoms_outcar:
+            raise ValueError(
+                f"Atom count mismatch: structure has {n_atoms} atoms, "
+                f"but OUTCAR has {n_atoms_outcar} atoms"
+            )
+
+        if skip_imaginary:
+            frequencies, normal_modes = get_real_vibrations(frequencies, normal_modes)
+
+        mode_vectors = reshape_modes_to_atoms(normal_modes, n_atoms)
+
+        return cls(atoms, mode_vectors=mode_vectors, frequencies=frequencies.tolist(), **kwargs)
+
+    @classmethod
+    def from_file(cls, atoms, filepath: str, skip_imaginary: bool = False, **kwargs):
+        """
+        Create NormalViewer from a Hessian file, auto-detecting the format.
+
+        Supports ORCA .hess files and VASP OUTCAR files (IBRION=5 or 6).
+
+        Args:
+            atoms: ASE Atoms object of equilibrium structure
+            filepath: Path to Hessian file (ORCA .hess or VASP OUTCAR)
+            skip_imaginary: If True, skip translational/rotational modes (freq < 10 cm^-1). Default False.
+            **kwargs: Additional viewer settings
+
+        Returns:
+            NormalViewer instance
+
+        Example:
+            >>> from ase.io import read
+            >>> atoms = read("molecule.xyz")
+            >>> viewer = NormalViewer.from_file(atoms, "orca.hess")   # ORCA
+            >>> viewer = NormalViewer.from_file(atoms, "OUTCAR")       # VASP
+            >>> viewer.show()
+        """
+        from .hessian_parsers import detect_hessian_format
+
+        fmt = detect_hessian_format(filepath)
+        if fmt == "vasp":
+            return cls.from_vasp(atoms, filepath, skip_imaginary, **kwargs)
+        return cls.from_orca(atoms, filepath, skip_imaginary, **kwargs)
+
 
 class OverlayViewer(BaseViewer):
     """Overlay viewer for comparing multiple molecules simultaneously."""
