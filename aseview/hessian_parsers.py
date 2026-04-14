@@ -158,22 +158,28 @@ def _parse_orca_normal_modes(content: str) -> np.ndarray:
     return normal_modes
 
 
-def parse_vasp_outcar(filepath: str) -> Tuple[np.ndarray, np.ndarray, int]:
+def parse_vasp_outcar(filepath: str) -> Tuple[np.ndarray, np.ndarray, int, np.ndarray]:
     """
     Parse VASP OUTCAR file to extract normal modes and frequencies.
 
     The OUTCAR must contain the "Eigenvectors and eigenvalues of the dynamical
     matrix" section produced by IBRION=5 or IBRION=6 calculations.
 
+    For calculations with selective dynamics (only a subset of atoms free),
+    the returned n_atoms and free_atom_positions reflect only the free atoms.
+    Use the free_atom_positions to match these atoms to a full structure.
+
     Args:
         filepath: Path to the VASP OUTCAR file
 
     Returns:
-        Tuple of (frequencies, normal_modes, n_atoms)
+        Tuple of (frequencies, normal_modes, n_atoms, free_atom_positions)
         - frequencies: 1D array of vibrational frequencies in cm^-1
           (negative values indicate imaginary / soft modes)
         - normal_modes: 2D array of shape (n_modes, 3*n_atoms)
-        - n_atoms: Number of atoms in the unit cell
+        - n_atoms: Number of free atoms in the eigenvector block
+        - free_atom_positions: 2D array of shape (n_atoms, 3) — Cartesian
+          coordinates of the free atoms as listed in the eigenvector block
     """
     filepath = Path(filepath)
     if not filepath.exists():
@@ -206,7 +212,9 @@ def parse_vasp_outcar(filepath: str) -> Tuple[np.ndarray, np.ndarray, int]:
 
     frequencies: List[float] = []
     all_modes: List[List[List[float]]] = []
+    all_positions: List[List[List[float]]] = []   # XYZ per mode
     current_disps: List[List[float]] = []
+    current_pos: List[List[float]] = []
     in_mode = False
 
     for line in lines:
@@ -215,7 +223,9 @@ def parse_vasp_outcar(filepath: str) -> Tuple[np.ndarray, np.ndarray, int]:
             # Save the previous mode
             if in_mode and current_disps:
                 all_modes.append(current_disps)
+                all_positions.append(current_pos)
                 current_disps = []
+                current_pos = []
             imaginary = m.group(1) is not None   # "/i" present
             freq = float(m.group(2))
             frequencies.append(-freq if imaginary else freq)
@@ -225,12 +235,15 @@ def parse_vasp_outcar(filepath: str) -> Tuple[np.ndarray, np.ndarray, int]:
         if in_mode:
             am = atom_line_re.match(line)
             if am:
+                x, y, z = float(am.group(1)), float(am.group(2)), float(am.group(3))
                 dx, dy, dz = float(am.group(4)), float(am.group(5)), float(am.group(6))
+                current_pos.append([x, y, z])
                 current_disps.append([dx, dy, dz])
 
     # Flush the last mode
     if in_mode and current_disps:
         all_modes.append(current_disps)
+        all_positions.append(current_pos)
 
     if not all_modes:
         raise ValueError(
@@ -248,7 +261,10 @@ def parse_vasp_outcar(filepath: str) -> Tuple[np.ndarray, np.ndarray, int]:
             normal_modes[mode_idx, atom_idx * 3 + 1] = dy
             normal_modes[mode_idx, atom_idx * 3 + 2] = dz
 
-    return np.array(frequencies), normal_modes, n_atoms
+    # Use positions from the first mode as the canonical free-atom positions
+    free_positions = np.array(all_positions[0]) if all_positions else np.zeros((n_atoms, 3))
+
+    return np.array(frequencies), normal_modes, n_atoms, free_positions
 
 
 def detect_hessian_format(filepath: str) -> str:

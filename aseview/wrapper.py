@@ -415,6 +415,54 @@ class MolecularViewer(BaseViewer):
         """
 
 
+def _expand_selective_modes(
+    normal_modes: "np.ndarray",
+    free_positions: "np.ndarray",
+    struct_positions: "np.ndarray",
+    n_free: int,
+    n_full: int,
+    tol: float = 0.5,
+) -> "np.ndarray":
+    """
+    Expand normal modes from n_free atoms to n_full atoms (selective dynamics).
+
+    Maps each free atom to its counterpart in the full structure by nearest
+    Cartesian position, then zero-pads fixed atoms.
+
+    Args:
+        normal_modes: (n_modes, 3*n_free) displacement array
+        free_positions: (n_free, 3) Cartesian coords from OUTCAR eigenvector block
+        struct_positions: (n_full, 3) Cartesian coords from the full structure
+        n_free: number of free atoms in OUTCAR
+        n_full: total atom count in full structure
+        tol: maximum allowed matching distance in Angstrom
+
+    Returns:
+        (n_modes, 3*n_full) array with zeros for fixed atoms
+    """
+    import numpy as np
+
+    free_indices = []
+    for i, fpos in enumerate(free_positions):
+        dists = np.linalg.norm(struct_positions - fpos, axis=1)
+        best = int(np.argmin(dists))
+        if dists[best] > tol:
+            raise ValueError(
+                f"Selective dynamics: free atom {i} at {fpos} cannot be matched "
+                f"to any atom in the structure (closest distance: {dists[best]:.3f} Å). "
+                "Check that the OUTCAR and structure file correspond to the same geometry."
+            )
+        free_indices.append(best)
+
+    n_modes = normal_modes.shape[0]
+    full_modes = np.zeros((n_modes, n_full * 3))
+    for free_idx, struct_idx in enumerate(free_indices):
+        full_modes[:, struct_idx * 3 : struct_idx * 3 + 3] = (
+            normal_modes[:, free_idx * 3 : free_idx * 3 + 3]
+        )
+    return full_modes
+
+
 class NormalViewer(BaseViewer):
     """Normal mode viewer for molecular vibrations."""
 
@@ -705,6 +753,12 @@ class NormalViewer(BaseViewer):
             >>> viewer = NormalViewer.from_orca(atoms, "orca.hess")
             >>> viewer.show()
         """
+        if isinstance(atoms, str):
+            raise TypeError(
+                f"Expected an Atoms object as the first argument, got a string '{atoms}'. "
+                "Usage: NormalViewer.from_orca(atoms, hess_file)"
+            )
+
         from .hessian_parsers import parse_orca_hess, reshape_modes_to_atoms, get_real_vibrations
 
         # Parse ORCA .hess file
@@ -736,6 +790,10 @@ class NormalViewer(BaseViewer):
         """
         Create NormalViewer from VASP OUTCAR file (IBRION=5 or 6).
 
+        Supports selective dynamics: if the OUTCAR contains eigenvectors only for
+        a subset of free atoms, their Cartesian positions are used to match them
+        to the full structure and the mode vectors are zero-padded for fixed atoms.
+
         Args:
             atoms: ASE Atoms object of equilibrium structure
             outcar_file: Path to VASP OUTCAR file
@@ -751,19 +809,30 @@ class NormalViewer(BaseViewer):
             >>> viewer = NormalViewer.from_vasp(atoms, "OUTCAR")
             >>> viewer.show()
         """
+        import numpy as np
         from .hessian_parsers import parse_vasp_outcar, reshape_modes_to_atoms, get_real_vibrations
 
-        frequencies, normal_modes, n_atoms_outcar = parse_vasp_outcar(outcar_file)
+        if isinstance(atoms, str):
+            raise TypeError(
+                f"Expected an Atoms object as the first argument, got a string '{atoms}'. "
+                "Usage: NormalViewer.from_vasp(atoms, outcar_file)"
+            )
+
+        frequencies, normal_modes, n_atoms_outcar, free_positions = parse_vasp_outcar(outcar_file)
 
         if isinstance(atoms, Atoms):
             n_atoms = len(atoms)
+            struct_positions = atoms.get_positions()
         else:
-            n_atoms = len(atoms.get("symbols", []))
+            syms = atoms.get("symbols", [])
+            n_atoms = len(syms)
+            struct_positions = np.array(atoms.get("positions", []))
 
         if n_atoms != n_atoms_outcar:
-            raise ValueError(
-                f"Atom count mismatch: structure has {n_atoms} atoms, "
-                f"but OUTCAR has {n_atoms_outcar} atoms"
+            # Selective dynamics: OUTCAR only has eigenvectors for free atoms.
+            # Match free atoms to the full structure by Cartesian position.
+            normal_modes = _expand_selective_modes(
+                normal_modes, free_positions, struct_positions, n_atoms_outcar, n_atoms
             )
 
         if skip_imaginary:
@@ -796,6 +865,12 @@ class NormalViewer(BaseViewer):
             >>> viewer = NormalViewer.from_file(atoms, "OUTCAR")       # VASP
             >>> viewer.show()
         """
+        if isinstance(atoms, str):
+            raise TypeError(
+                f"Expected an Atoms object as the first argument, got a string '{atoms}'. "
+                "Usage: NormalViewer.from_file(atoms, filepath)"
+            )
+
         from .hessian_parsers import detect_hessian_format
 
         fmt = detect_hessian_format(filepath)
