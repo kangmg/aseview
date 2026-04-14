@@ -641,18 +641,32 @@
     <!-- Tooltip -->
     <div id="atom-tooltip"></div>
 
+    <!-- Data injection via JSON script tags (safe for CDN use without server-side rendering) -->
+    <script type="application/json" id="__frag_mol_data__">{{molecular_data}}</script>
+    <script type="application/json" id="__frag_settings__">{{settings}}</script>
+
     <script>
         // ─────────────────────────────────────────────────────────────────────
         // Injected data & settings
         // ─────────────────────────────────────────────────────────────────────
-        const _allMolData = {{molecular_data}};
-        const molData = Array.isArray(_allMolData) ? _allMolData[0] : _allMolData;
+        function _readInjectedJSON(id, fallback) {
+            try {
+                const el = document.getElementById(id);
+                if (!el) return fallback;
+                const t = el.textContent.trim();
+                // Unrendered placeholder — return fallback
+                if (!t || t.startsWith('{{')) return fallback;
+                return JSON.parse(t);
+            } catch(e) { return fallback; }
+        }
+        const _allMolData = _readInjectedJSON('__frag_mol_data__', null);
+        const molData = Array.isArray(_allMolData) ? _allMolData[0] : (_allMolData || {symbols:[], positions:[]});
 
         const fragSettings = Object.assign({
             showCell: true,
             cellColor: '#808080',
             showAxis: true,
-        }, {{settings}});
+        }, _readInjectedJSON('__frag_settings__', {}));
 
         // ─────────────────────────────────────────────────────────────────────
         // atom/bond factory tables  (mirrors molecular_viewer.html)
@@ -2145,7 +2159,7 @@
             initSplitter();
             initUIEvents();
 
-            if (molData) {
+            if (molData && molData.symbols && molData.symbols.length > 0) {
                 layout2D = computeLayout(
                     molData.positions, molData.symbols, fragSettings.bondThreshold
                 );
