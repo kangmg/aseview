@@ -72,6 +72,39 @@ NormalViewer.from_orca(atoms, hess_file, skip_imaginary=False, **kwargs)
 | `hess_file` | `str` | Path to ORCA `.hess` file | Required |
 | `skip_imaginary` | `bool` | Filter out modes with freq < 10 cm⁻¹ | `False` |
 
+### from_vasp()
+
+Create NormalViewer from VASP OUTCAR file (IBRION=5 or 6).
+
+```python
+NormalViewer.from_vasp(atoms, outcar_file, skip_imaginary=False, **kwargs)
+```
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `atoms` | `Atoms` | Equilibrium structure | Required |
+| `outcar_file` | `str` | Path to VASP OUTCAR file | Required |
+| `skip_imaginary` | `bool` | Filter out modes with freq < 10 cm⁻¹ | `False` |
+
+!!! note
+    The OUTCAR must contain the "Eigenvectors and eigenvalues of the dynamical matrix" section produced by `IBRION=5` or `IBRION=6`. Imaginary (soft) modes are reported with negative frequencies.
+
+### from_file()
+
+Auto-detect format and create NormalViewer from any supported Hessian file.
+
+```python
+NormalViewer.from_file(atoms, filepath, skip_imaginary=False, **kwargs)
+```
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `atoms` | `Atoms` | Equilibrium structure | Required |
+| `filepath` | `str` | Path to ORCA `.hess` or VASP `OUTCAR` | Required |
+| `skip_imaginary` | `bool` | Filter out modes with freq < 10 cm⁻¹ | `False` |
+
+Format detection order: filename (`OUTCAR` → VASP), then content sniffing.
+
 ## Instance Methods
 
 ### show()
@@ -147,6 +180,29 @@ viewer = NormalViewer.from_orca(atoms, "orca.hess")
 viewer.show()
 ```
 
+### From VASP OUTCAR
+
+```python
+from ase.io import read
+from aseview import NormalViewer
+
+atoms = read("POSCAR")
+viewer = NormalViewer.from_vasp(atoms, "OUTCAR")
+viewer.show()
+```
+
+### Auto-detect format
+
+```python
+from ase.io import read
+from aseview import NormalViewer
+
+atoms = read("molecule.xyz")
+viewer = NormalViewer.from_file(atoms, "orca.hess")   # ORCA
+viewer = NormalViewer.from_file(atoms, "OUTCAR")       # VASP
+viewer.show()
+```
+
 ### With Mode Vectors Visible
 
 ```python
@@ -175,7 +231,7 @@ viewer.show()
 ### Save Normal Mode Viewer
 
 ```python
-viewer = NormalViewer.from_orca(atoms, "orca.hess")
+viewer = NormalViewer.from_file(atoms, "orca.hess")
 viewer.save_html("vibrations.html")
 ```
 
@@ -184,7 +240,7 @@ viewer.save_html("vibrations.html")
 | Program | File | Status |
 |---------|------|--------|
 | ORCA | `.hess` | Supported |
-| VASP | `OUTCAR` | Planned |
+| VASP | `OUTCAR` (IBRION=5/6) | Supported |
 | Gaussian | `.fchk` | Planned |
 | xTB | `hessian` | Planned |
 
