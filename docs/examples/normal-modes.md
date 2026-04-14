@@ -29,6 +29,36 @@ Visualize molecular vibrations from frequency calculations.
 
 ---
 
+## From VASP OUTCAR
+
+Requires a VASP calculation with `IBRION=5` or `IBRION=6`.
+
+=== "Python"
+
+    ```python
+    from ase.io import read
+    from aseview import NormalViewer
+
+    atoms = read("POSCAR")
+    viewer = NormalViewer.from_vasp(atoms, "OUTCAR")
+    viewer.show()
+    ```
+
+=== "CLI"
+
+    ```bash
+    aseview POSCAR --hess OUTCAR
+    ```
+
+The format is auto-detected — you can also use `from_file()` for either format:
+
+```python
+viewer = NormalViewer.from_file(atoms, "orca.hess")  # ORCA
+viewer = NormalViewer.from_file(atoms, "OUTCAR")      # VASP
+```
+
+---
+
 ## From ASE Vibrations
 
 ```python
@@ -47,7 +77,7 @@ viewer.show()
 ## Options
 
 ```python
-viewer = NormalViewer.from_orca(
+viewer = NormalViewer.from_file(
     atoms,
     "orca.hess",
     showModeVector=True,        # Show displacement arrows
@@ -85,7 +115,7 @@ Imaginary frequencies indicate transition states or incomplete optimization.
 | Program | File | Status |
 |---------|------|--------|
 | ORCA | `.hess` | Supported |
-| VASP | `OUTCAR` | Planned |
+| VASP | `OUTCAR` (IBRION=5/6) | Supported |
 | Gaussian | `.fchk` | Planned |
 
 ---
@@ -93,6 +123,6 @@ Imaginary frequencies indicate transition states or incomplete optimization.
 ## Saving
 
 ```python
-viewer = NormalViewer.from_orca(atoms, "orca.hess")
+viewer = NormalViewer.from_file(atoms, "orca.hess")
 viewer.save_html("vibrations.html")
 ```

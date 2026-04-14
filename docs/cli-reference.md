@@ -88,7 +88,7 @@ aseview [OPTIONS] FILES...
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--hess` | Path to Hessian file (ORCA .hess format) | None |
+| `--hess` | Path to Hessian file (ORCA `.hess` or VASP `OUTCAR`, auto-detected) | None |
 
 ### Fragment Selector Options
 
@@ -157,6 +157,9 @@ aseview conf1.xyz conf2.xyz conf3.xyz --cmap plasma
 ```bash
 # ORCA Hessian
 aseview molecule.xyz --hess orca.hess
+
+# VASP OUTCAR (auto-detected)
+aseview POSCAR --hess OUTCAR
 
 # Explicit viewer type
 aseview molecule.xyz --hess orca.hess -v normal
