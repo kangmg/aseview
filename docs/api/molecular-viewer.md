@@ -60,10 +60,11 @@ MolecularViewer(data, **kwargs)
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `colorBy` | `str` | Atom coloring mode: `"Element"`, `"Charge"`, or `"Constraint"` | `"Element"` |
+| `colorBy` | `str` | Atom coloring mode: `"Element"` or `"Charge"` | `"Element"` |
 | `colorScheme` | `str` | Element color scheme: `"Jmol"` or `"CPK"` | `"Jmol"` |
 | `normalizeCharges` | `bool` | Normalize charges to symmetric range | `False` |
 | `chargeColormap` | `str` | Colormap for charge visualization | `"coolwarm"` |
+| `showConstraint` | `bool` | Highlight fixed atoms with a yellow overlay | `False` |
 
 !!! note "Charge Coloring"
     The `colorBy="Charge"` option is only available when atoms have charge data.
@@ -78,16 +79,16 @@ MolecularViewer(data, **kwargs)
     - **White** → neutral (zero)
     - **Red** → negative charges
 
-!!! note "Constraint Coloring"
-    The `colorBy="Constraint"` option is only available when atoms have `FixAtoms`
-    constraints. Fixed atoms are rendered in **grey**, free atoms in their normal
-    element color.
+!!! note "Constraint Visualization"
+    The `showConstraint=True` option is only available when atoms have `FixAtoms`
+    constraints. Fixed atoms are rendered with a semi-transparent yellow sphere overlay
+    on top of their normal element color.
 
     ```python
     from ase.constraints import FixAtoms
 
     atoms.set_constraint(FixAtoms(indices=[0, 1, 2]))
-    viewer = MolecularViewer(atoms, colorBy="Constraint")
+    viewer = MolecularViewer(atoms, showConstraint=True)
     ```
 
 !!! note "Hydrogen Bonds"
@@ -233,7 +234,7 @@ from aseview import MolecularViewer
 atoms = read("surface.xyz")
 atoms.set_constraint(FixAtoms(indices=list(range(12))))  # fix bottom layer
 
-viewer = MolecularViewer(atoms, colorBy="Constraint")
+viewer = MolecularViewer(atoms, showConstraint=True)
 viewer.show()
 ```
 

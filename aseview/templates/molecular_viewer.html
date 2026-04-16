@@ -781,6 +781,17 @@
                             </div>
                         </div>
 
+                        <!-- Fixed Atoms toggle - only visible when FixAtoms constraints are present -->
+                        <div class="control-group" id="show-constraint-section" style="display: none;">
+                            <div class="control-label">
+                                <span>Fixed Atoms</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-constraint">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="control-group">
                             <div class="control-label">
                                 <span>View Mode</span>
@@ -1055,7 +1066,8 @@
             showRings: false,
             ringOpacity: 0.30,
             ringColor: null,          // null = auto (dominant-atom color)
-            colorBy: 'Element',  // 'Element', 'Charge', or 'Constraint'
+            colorBy: 'Element',  // 'Element' or 'Charge'
+            showConstraint: false,
             colorScheme: 'Jmol', // 'Jmol' or 'CPK'
             normalizeCharges: false,
             showChargeLabels: false,
@@ -1086,7 +1098,8 @@
                 'show-forces': 'showForces',
                 'show-axis': 'showAxis',
                 'normalize-charges': 'normalizeCharges',
-                'show-charge-labels': 'showChargeLabels'
+                'show-charge-labels': 'showChargeLabels',
+                'show-constraint': 'showConstraint'
             };
 
             for (const [elemId, settingKey] of Object.entries(checkboxMappings)) {
@@ -1244,32 +1257,34 @@
             const normalizeSection = document.getElementById('normalize-charges-section');
             const labelsSection = document.getElementById('show-charge-labels-section');
             const colorbarSection = document.getElementById('charge-colorbar-section');
+            const constraintSection = document.getElementById('show-constraint-section');
             const select = document.getElementById('color-by-select');
 
             if (!colorBySection || !select) return;
 
-            // Rebuild dynamic options (Charge / Constraint) based on data availability
+            // Rebuild Charge option dynamically
             [...select.options].forEach(o => { if (o.value !== 'Element') o.remove(); });
             if (chargeStats.hasCharges) {
                 const opt = document.createElement('option');
                 opt.value = 'Charge'; opt.text = 'Charge';
                 select.add(opt);
             }
-            if (fixedStats.hasFixed) {
-                const opt = document.createElement('option');
-                opt.value = 'Constraint'; opt.text = 'Constraint';
-                select.add(opt);
-            }
 
-            // If selected value no longer valid, reset to Element
-            if ((settings.colorBy === 'Charge' && !chargeStats.hasCharges) ||
-                (settings.colorBy === 'Constraint' && !fixedStats.hasFixed)) {
+            // If selected colorBy is no longer valid, reset to Element
+            if (settings.colorBy === 'Charge' && !chargeStats.hasCharges) {
                 settings.colorBy = 'Element';
             }
             select.value = settings.colorBy;
 
-            const hasAny = chargeStats.hasCharges || fixedStats.hasFixed;
-            colorBySection.style.display = hasAny ? 'block' : 'none';
+            // Fixed Atoms toggle: show only when constraints are present
+            if (constraintSection) {
+                constraintSection.style.display = fixedStats.hasFixed ? 'block' : 'none';
+                if (!fixedStats.hasFixed) settings.showConstraint = false;
+                const cb = document.getElementById('show-constraint');
+                if (cb) cb.checked = !!settings.showConstraint;
+            }
+
+            colorBySection.style.display = chargeStats.hasCharges ? 'block' : 'none';
 
             // Charge-specific sub-controls
             const showChargeOptions = settings.colorBy === 'Charge';
@@ -2163,7 +2178,7 @@
             // Get charges for current frame (if available)
             const frameCharges = molecule.charges || [];
             const useChargeColor     = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
-            const useConstraintColor = settings.colorBy === 'Constraint' && fixedStats.hasFixed;
+            const useConstraintColor = settings.showConstraint && fixedStats.hasFixed;
 
             // Pre-calculate per-atom colors
             const atomChargeColors = [];
@@ -2859,6 +2874,11 @@
 
             safeAddListener('show-cell', 'change', function () {
                 settings.showCell = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-constraint', 'change', function () {
+                settings.showConstraint = this.checked;
                 renderMolecule();
             });
 

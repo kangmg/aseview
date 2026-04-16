@@ -240,7 +240,8 @@ class MolecularViewer(BaseViewer):
             "showShading": True,
             "showEnergyPlot": False,
             "showForces": False,
-            "colorBy": "Element",        # "Element", "Charge", or "Constraint"
+            "colorBy": "Element",        # "Element" or "Charge"
+            "showConstraint": False,
             "colorScheme": "Jmol",       # "Jmol" (default) or "CPK"
             "normalizeCharges": False,   # Normalize charges to symmetric range
             "chargeColormap": "coolwarm",
