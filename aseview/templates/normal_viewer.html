@@ -562,6 +562,16 @@
                             </div>
                         </div>
 
+                        <div class="control-group" id="cell-color-group">
+                            <div class="control-label">
+                                <span>Cell Color</span>
+                            </div>
+                            <div class="color-picker">
+                                <input type="color" value="#808080" class="color-input" id="cell-color">
+                                <span class="color-value" id="cell-color-value">#808080</span>
+                            </div>
+                        </div>
+
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Bond</span>
@@ -907,7 +917,8 @@
             ringOpacity: 0.30,
             showModeVector: false,
             viewMode: 'Perspective',
-            rotationMode: 'TrackBall'
+            rotationMode: 'TrackBall',
+            cellColor: '#808080'
         };
 
         // Update UI and rendering from settings (called via postMessage API)
@@ -969,6 +980,13 @@
                 if (viewerContainer) {
                     viewerContainer.style.background = `linear-gradient(135deg, ${settings.backgroundColor}, ${darkenColorHex(settings.backgroundColor, 20)})`;
                 }
+            }
+
+            const cellColorPicker = document.getElementById('cell-color');
+            if (cellColorPicker && settings.cellColor) {
+                cellColorPicker.value = settings.cellColor;
+                const cellColorValue = document.getElementById('cell-color-value');
+                if (cellColorValue) cellColorValue.textContent = settings.cellColor;
             }
 
             // Apply rendering changes
@@ -1547,7 +1565,7 @@
                     cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
                 ];
                 const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                const cellMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });  // Red color
+                const cellMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(settings.cellColor || '#808080') });
                 const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
                 cellMesh.renderOrder = 2;
                 moleculeGroup.add(cellMesh);
@@ -2175,6 +2193,13 @@
 
             safeAddListener('show-cell', 'change', function () {
                 settings.showCell = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('cell-color', 'input', function () {
+                const valueEl = document.getElementById('cell-color-value');
+                if (valueEl) valueEl.textContent = this.value;
+                settings.cellColor = this.value;
                 renderMolecule();
             });
 
@@ -2817,7 +2842,7 @@
                     cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
                 ];
                 const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                const cellMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+                const cellMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(settings.cellColor || '#808080') });
                 const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
                 cellMesh.renderOrder = 2;
                 moleculeGroup.add(cellMesh);

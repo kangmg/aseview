@@ -521,6 +521,7 @@ class NormalViewer(BaseViewer):
             "backgroundColor": "#1f2937",
             "style": "cartoon",
             "showCell": True,
+            "cellColor": "#808080",
             "showBond": True,
             "showShadow": False,
             "displacementAmplitude": 0.75,
