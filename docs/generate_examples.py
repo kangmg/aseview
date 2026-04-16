@@ -700,7 +700,7 @@ def create_fixed_atoms_viewer():
     viewer = MolecularViewer(
         slab,
         style="metallic",
-        colorBy="Constraint",
+        showConstraint=True,
         showCell=True,
         atomSize=0.45,
     )

@@ -6702,6 +6702,17 @@ if (typeof define === 'function' && define.amd) {
                             </div>
                         </div>
 
+                        <!-- Fixed Atoms toggle - only visible when FixAtoms constraints are present -->
+                        <div class="control-group" id="show-constraint-section" style="display: none;">
+                            <div class="control-label">
+                                <span>Fixed Atoms</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-constraint">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="control-group">
                             <div class="control-label">
                                 <span>View Mode</span>
@@ -6976,7 +6987,8 @@ if (typeof define === 'function' && define.amd) {
             showRings: false,
             ringOpacity: 0.30,
             ringColor: null,          // null = auto (dominant-atom color)
-            colorBy: 'Element',  // 'Element', 'Charge', or 'Constraint'
+            colorBy: 'Element',  // 'Element' or 'Charge'
+            showConstraint: false,
             colorScheme: 'Jmol', // 'Jmol' or 'CPK'
             normalizeCharges: false,
             showChargeLabels: false,
@@ -7007,7 +7019,8 @@ if (typeof define === 'function' && define.amd) {
                 'show-forces': 'showForces',
                 'show-axis': 'showAxis',
                 'normalize-charges': 'normalizeCharges',
-                'show-charge-labels': 'showChargeLabels'
+                'show-charge-labels': 'showChargeLabels',
+                'show-constraint': 'showConstraint'
             };
 
             for (const [elemId, settingKey] of Object.entries(checkboxMappings)) {
@@ -7165,32 +7178,34 @@ if (typeof define === 'function' && define.amd) {
             const normalizeSection = document.getElementById('normalize-charges-section');
             const labelsSection = document.getElementById('show-charge-labels-section');
             const colorbarSection = document.getElementById('charge-colorbar-section');
+            const constraintSection = document.getElementById('show-constraint-section');
             const select = document.getElementById('color-by-select');
 
             if (!colorBySection || !select) return;
 
-            // Rebuild dynamic options (Charge / Constraint) based on data availability
+            // Rebuild Charge option dynamically
             [...select.options].forEach(o => { if (o.value !== 'Element') o.remove(); });
             if (chargeStats.hasCharges) {
                 const opt = document.createElement('option');
                 opt.value = 'Charge'; opt.text = 'Charge';
                 select.add(opt);
             }
-            if (fixedStats.hasFixed) {
-                const opt = document.createElement('option');
-                opt.value = 'Constraint'; opt.text = 'Constraint';
-                select.add(opt);
-            }
 
-            // If selected value no longer valid, reset to Element
-            if ((settings.colorBy === 'Charge' && !chargeStats.hasCharges) ||
-                (settings.colorBy === 'Constraint' && !fixedStats.hasFixed)) {
+            // If selected colorBy is no longer valid, reset to Element
+            if (settings.colorBy === 'Charge' && !chargeStats.hasCharges) {
                 settings.colorBy = 'Element';
             }
             select.value = settings.colorBy;
 
-            const hasAny = chargeStats.hasCharges || fixedStats.hasFixed;
-            colorBySection.style.display = hasAny ? 'block' : 'none';
+            // Fixed Atoms toggle: show only when constraints are present
+            if (constraintSection) {
+                constraintSection.style.display = fixedStats.hasFixed ? 'block' : 'none';
+                if (!fixedStats.hasFixed) settings.showConstraint = false;
+                const cb = document.getElementById('show-constraint');
+                if (cb) cb.checked = !!settings.showConstraint;
+            }
+
+            colorBySection.style.display = chargeStats.hasCharges ? 'block' : 'none';
 
             // Charge-specific sub-controls
             const showChargeOptions = settings.colorBy === 'Charge';
@@ -8084,7 +8099,7 @@ if (typeof define === 'function' && define.amd) {
             // Get charges for current frame (if available)
             const frameCharges = molecule.charges || [];
             const useChargeColor     = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
-            const useConstraintColor = settings.colorBy === 'Constraint' && fixedStats.hasFixed;
+            const useConstraintColor = settings.showConstraint && fixedStats.hasFixed;
 
             // Pre-calculate per-atom colors
             const atomChargeColors = [];
@@ -8780,6 +8795,11 @@ if (typeof define === 'function' && define.amd) {
 
             safeAddListener('show-cell', 'change', function () {
                 settings.showCell = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-constraint', 'change', function () {
+                settings.showConstraint = this.checked;
                 renderMolecule();
             });
 
@@ -9507,7 +9527,7 @@ if (typeof define === 'function' && define.amd) {
     (function() {
         var MAX_RETRIES = 100;  // 5 seconds max (100 * 50ms)
         var retryCount = 0;
-        var pythonSettings = {"bondThreshold": 1.2, "bondThickness": 0.1, "atomSize": 0.45, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "metallic", "showCell": true, "showBond": true, "showHBond": false, "showShadow": false, "showShading": true, "showEnergyPlot": false, "showForces": false, "colorBy": "Constraint", "colorScheme": "Jmol", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Perspective", "rotationMode": "TrackBall", "selectionMode": "Lasso", "performanceMode": "auto"};
+        var pythonSettings = {"bondThreshold": 1.2, "bondThickness": 0.1, "atomSize": 0.45, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "metallic", "showCell": true, "showBond": true, "showHBond": false, "showShadow": false, "showShading": true, "showEnergyPlot": false, "showForces": false, "colorBy": "Element", "showConstraint": true, "colorScheme": "Jmol", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Perspective", "rotationMode": "TrackBall", "selectionMode": "Lasso", "performanceMode": "auto"};
 
         function initData() {
             function trySetData() {
@@ -9523,7 +9543,7 @@ if (typeof define === 'function' && define.amd) {
                         updateFromSettings();
                     }
                     if (typeof setMolecularData === 'function') {
-                        setMolecularData([{"positions": [[0.0, 0.0, 8.0], [2.5526554800834367, 0.0, 8.0], [5.105310960166873, 0.0, 8.0], [1.2763277400417183, 2.2106644928618175, 8.0], [3.828983220125155, 2.2106644928618175, 8.0], [6.381638700208592, 2.2106644928618175, 8.0], [2.5526554800834367, 4.421328985723635, 8.0], [5.105310960166873, 4.421328985723635, 8.0], [7.65796644025031, 4.421328985723635, 8.0], [1.2763277400417183, 0.7368881642872724, 10.084234471774549], [3.828983220125155, 0.7368881642872724, 10.084234471774549], [6.381638700208591, 0.7368881642872724, 10.084234471774549], [2.5526554800834367, 2.9475526571490898, 10.084234471774549], [5.105310960166873, 2.9475526571490898, 10.084234471774549], [7.65796644025031, 2.9475526571490898, 10.084234471774549], [3.828983220125155, 5.158217150010908, 10.084234471774549], [6.381638700208592, 5.158217150010908, 10.084234471774549], [8.934294180292028, 5.158217150010908, 10.084234471774549], [-4.72336147987369e-17, 1.4737763285745449, 12.168468943549097], [2.5526554800834367, 1.4737763285745449, 12.168468943549097], [5.105310960166873, 1.4737763285745449, 12.168468943549097], [1.2763277400417181, 3.6844408214363624, 12.168468943549097], [3.828983220125155, 3.6844408214363624, 12.168468943549097], [6.381638700208591, 3.6844408214363624, 12.168468943549097], [2.5526554800834367, 5.8951053142981795, 12.168468943549097], [5.105310960166873, 5.8951053142981795, 12.168468943549097], [7.65796644025031, 5.8951053142981795, 12.168468943549097], [0.0, 0.0, 14.252703415323648], [2.5526554800834367, 0.0, 14.252703415323648], [5.105310960166873, 0.0, 14.252703415323648], [1.2763277400417183, 2.2106644928618175, 14.252703415323648], [3.828983220125155, 2.2106644928618175, 14.252703415323648], [6.381638700208592, 2.2106644928618175, 14.252703415323648], [2.5526554800834367, 4.421328985723635, 14.252703415323648], [5.105310960166873, 4.421328985723635, 14.252703415323648], [7.65796644025031, 4.421328985723635, 14.252703415323648]], "symbols": ["Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu"], "cell": [[7.65796644025031, 0.0, 0.0], [3.828983220125155, 6.6319934785854535, 0.0], [0.0, 0.0, 22.252703415323648]], "fixed": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]}]);
+                        setMolecularData([{"positions": [[0.0, 0.0, 10.0], [2.5526554800834367, 0.0, 10.0], [5.105310960166873, 0.0, 10.0], [1.2763277400417183, 2.2106644928618175, 10.0], [3.828983220125155, 2.2106644928618175, 10.0], [6.381638700208592, 2.2106644928618175, 10.0], [2.5526554800834367, 4.421328985723635, 10.0], [5.105310960166873, 4.421328985723635, 10.0], [7.65796644025031, 4.421328985723635, 10.0], [1.2763277400417183, 0.7368881642872724, 12.084234471774549], [3.828983220125155, 0.7368881642872724, 12.084234471774549], [6.381638700208591, 0.7368881642872724, 12.084234471774549], [2.5526554800834367, 2.9475526571490898, 12.084234471774549], [5.105310960166873, 2.9475526571490898, 12.084234471774549], [7.65796644025031, 2.9475526571490898, 12.084234471774549], [3.828983220125155, 5.158217150010908, 12.084234471774549], [6.381638700208592, 5.158217150010908, 12.084234471774549], [8.934294180292028, 5.158217150010908, 12.084234471774549], [-4.72336147987369e-17, 1.4737763285745449, 14.168468943549097], [2.5526554800834367, 1.4737763285745449, 14.168468943549097], [5.105310960166873, 1.4737763285745449, 14.168468943549097], [1.2763277400417181, 3.6844408214363624, 14.168468943549097], [3.828983220125155, 3.6844408214363624, 14.168468943549097], [6.381638700208591, 3.6844408214363624, 14.168468943549097], [2.5526554800834367, 5.8951053142981795, 14.168468943549097], [5.105310960166873, 5.8951053142981795, 14.168468943549097], [7.65796644025031, 5.8951053142981795, 14.168468943549097], [0.0, 0.0, 16.252703415323648], [2.5526554800834367, 0.0, 16.252703415323648], [5.105310960166873, 0.0, 16.252703415323648], [1.2763277400417183, 2.2106644928618175, 16.252703415323648], [3.828983220125155, 2.2106644928618175, 16.252703415323648], [6.381638700208592, 2.2106644928618175, 16.252703415323648], [2.5526554800834367, 4.421328985723635, 16.252703415323648], [5.105310960166873, 4.421328985723635, 16.252703415323648], [7.65796644025031, 4.421328985723635, 16.252703415323648]], "symbols": ["Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu", "Cu"], "cell": [[7.65796644025031, 0.0, 0.0], [3.828983220125155, 6.6319934785854535, 0.0], [0.0, 0.0, 26.252703415323648]], "fixed": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]}]);
                     } else {
                         console.error('setMolecularData function not found!');
                     }
