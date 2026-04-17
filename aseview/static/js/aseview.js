@@ -12,9 +12,8 @@
 (function(global) {
     'use strict';
 
-    // CDN base URL for templates (using raw.githack.com which properly serves HTML with correct content-type)
-    // raw.githack.com serves files with correct MIME types, unlike jsDelivr which serves HTML as text
-    const CDN_BASE = 'https://raw.githack.com/kangmg/aseview/main/aseview/templates';
+    // CDN base URL for templates (jsDelivr serves all file types with correct MIME types)
+    const CDN_BASE = 'https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/templates';
 
     /**
      * Base class for all viewers
