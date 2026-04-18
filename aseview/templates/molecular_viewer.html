@@ -2326,7 +2326,7 @@
                         if (neighbors.length < 4) continue;
                         const neighborPositions = neighbors.map(ni => positions[ni]);
                         const neighborColors = neighbors.map(ni =>
-                            (atomInfo[symbols[ni]] || atomInfo['default']).color);
+                            getAtomColorByScheme(symbols[ni]));
                         const polyMesh = createPolyhedronFaces(
                             positions[i], neighborPositions, neighborColors,
                             settings.polyhedronOpacity, settings.showPolyhedronEdge, settings.polyhedronEdgeOpacity);
@@ -2342,7 +2342,7 @@
                             if (nbrs.length < 4) continue;
                             const neighborPositions = nbrs.map(ni => positions[ni]);
                             const neighborColors = nbrs.map(ni =>
-                                (atomInfo[symbols[ni]] || atomInfo['default']).color);
+                                getAtomColorByScheme(symbols[ni]));
                             const polyMesh = createPolyhedronFaces(
                                 positions[i], neighborPositions, neighborColors,
                                 settings.polyhedronOpacity, settings.showPolyhedronEdge, settings.polyhedronEdgeOpacity);
