@@ -1723,9 +1723,10 @@
                 controls = new THREE.OrbitControls(camera, renderer.domElement);
             } else {
                 controls = new THREE.TrackballControls(camera, renderer.domElement);
-                controls.rotateSpeed = 5.0;
+                controls.rotateSpeed = 2.0;
                 controls.zoomSpeed = 1.2;
                 controls.panSpeed = 0.8;
+                controls.staticMoving = true;
             }
 
             controls.target.copy(target);
