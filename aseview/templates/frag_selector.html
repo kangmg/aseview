@@ -1592,9 +1592,10 @@
             updateBgColor3D();
 
             controls3D = new THREE.TrackballControls(camera3D, renderer3D.domElement);
-            controls3D.rotateSpeed = 5.0;
+            controls3D.rotateSpeed = 2.0;
             controls3D.zoomSpeed   = 1.2;
             controls3D.panSpeed    = 0.8;
+            controls3D.staticMoving = true;
 
             dirLight3D = new THREE.DirectionalLight(0xffffff, 0.8);
             dirLight3D.position.set(10, 10, 10);
