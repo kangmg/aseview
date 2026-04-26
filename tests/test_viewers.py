@@ -1,10 +1,14 @@
 """Test viewer instantiation and HTML generation."""
 
+import os
 import pytest
 from ase import Atoms
 from ase.build import molecule, bulk
 
-from aseview.wrapper import MolecularViewer, NormalViewer, OverlayViewer, FragSelector
+from aseview.wrapper import (
+    MolecularViewer, NormalViewer, OverlayViewer, FragSelector,
+    set_theme, get_theme, list_themes, _resolve_template,
+)
 
 
 @pytest.fixture
@@ -155,3 +159,63 @@ class TestFragSelector:
         html = viewer.get_html()
         assert isinstance(html, str)
         assert len(html) > 1000
+
+
+# ── Theme System ─────────────────────────────────────────────
+
+
+class TestThemeSystem:
+    def test_list_themes(self):
+        themes = list_themes()
+        assert isinstance(themes, list)
+        assert "dark" in themes
+
+    def test_get_set_theme(self):
+        original = get_theme()
+        set_theme("dark")
+        assert get_theme() == "dark"
+        set_theme(original)
+
+    def test_resolve_template_dark(self):
+        path = _resolve_template("molecular_viewer.html", "dark")
+        assert os.path.exists(path)
+        assert "dark" in path
+
+    def test_resolve_template_fallback(self):
+        path = _resolve_template("molecular_viewer.html", "nonexistent_theme_xyz")
+        assert os.path.exists(path)
+
+    def test_resolve_template_all_themes(self):
+        for theme in list_themes():
+            for name in ["molecular_viewer.html", "normal_viewer.html",
+                         "overlay_viewer.html", "frag_selector.html"]:
+                path = _resolve_template(name, theme)
+                assert os.path.exists(path), f"Missing {theme}/{name}"
+
+    def test_viewer_theme_param(self, h2o):
+        for theme in list_themes():
+            v = MolecularViewer(h2o, theme=theme)
+            html = v.get_html()
+            assert len(html) > 1000
+
+    def test_overlay_viewer_theme_param(self, h2o):
+        for theme in list_themes():
+            v = OverlayViewer(h2o, theme=theme)
+            html = v.get_html()
+            assert len(html) > 1000
+
+    def test_frag_selector_theme_param(self, h2o):
+        for theme in list_themes():
+            v = FragSelector(h2o, theme=theme)
+            html = v.get_html()
+            assert len(html) > 1000
+
+    def test_global_theme_affects_viewers(self, h2o):
+        original = get_theme()
+        try:
+            set_theme("dark")
+            v = MolecularViewer(h2o)
+            html = v.get_html()
+            assert len(html) > 1000
+        finally:
+            set_theme(original)

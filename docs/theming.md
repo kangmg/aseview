@@ -69,6 +69,77 @@ const v = new ASEView.MolecularViewer('#container');  // spring
 ASEView.getTheme();                      // 'spring'
 ```
 
+## VS Code Extension
+
+If you are building a VS Code extension that wraps aseview, expose theme as a configuration setting and forward it to the viewer.
+
+### extension.json (contributes)
+
+```json
+"contributes": {
+  "configuration": {
+    "title": "ASEView",
+    "properties": {
+      "aseview.theme": {
+        "type": "string",
+        "default": "dark",
+        "enum": ["dark", "spring"],
+        "description": "Visual theme for the ASEView viewer"
+      }
+    }
+  }
+}
+```
+
+### TypeScript / JavaScript
+
+**CLI-based extensions** — pass `--theme` when spawning aseview:
+
+```typescript
+import * as vscode from 'vscode';
+import { execFile } from 'child_process';
+
+const theme = vscode.workspace.getConfiguration('aseview').get<string>('theme', 'dark');
+execFile('aseview', [filePath, '--theme', theme, '--no-browser', '-o', outPath]);
+```
+
+**Python-API-based extensions** — pass via the Python script you invoke:
+
+```typescript
+const theme = vscode.workspace.getConfiguration('aseview').get<string>('theme', 'dark');
+const script = `
+import aseview
+viewer = aseview.MolecularViewer(atoms, theme='${theme}')
+viewer.save_html('${outPath}')
+`;
+```
+
+**WebView + JS module** — call `ASEView.setTheme()` before creating viewers:
+
+```typescript
+const theme = vscode.workspace.getConfiguration('aseview').get<string>('theme', 'dark');
+const html = `
+<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/aseview.js"></script>
+<script>
+  ASEView.setTheme('${theme}');
+  const viewer = new ASEView.MolecularViewer('#container', { ...options });
+</script>
+`;
+panel.webview.html = html;
+```
+
+React to configuration changes so the view updates without restarting:
+
+```typescript
+vscode.workspace.onDidChangeConfiguration(e => {
+    if (e.affectsConfiguration('aseview.theme')) {
+        const newTheme = vscode.workspace.getConfiguration('aseview').get<string>('theme', 'dark');
+        // Re-render the webview with the new theme
+        panel.webview.postMessage({ command: 'setTheme', theme: newTheme });
+    }
+});
+```
+
 ## Adding a Custom Theme
 
 A theme is a directory inside `aseview/themes/` containing four HTML files:
