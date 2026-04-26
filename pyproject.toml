@@ -41,6 +41,7 @@ include = ["aseview*"]
 
 [tool.setuptools.package-data]
 aseview = [
+    "themes/*/*.html",
     "templates/*.html",
     "static/js/*.js",
     "static/js/vendor/*.js",

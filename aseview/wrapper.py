@@ -8,6 +8,47 @@ import os
 from typing import Dict, Any, List, Union
 from ase import Atoms
 
+# ── Theme management ──────────────────────────────────────────────────────────
+_THEME = 'dark'
+
+def set_theme(name: str) -> None:
+    """Set the global default theme for all viewers."""
+    global _THEME
+    _THEME = name
+
+def get_theme() -> str:
+    """Return the current global theme name."""
+    return _THEME
+
+def list_themes() -> List[str]:
+    """Return the names of all installed themes."""
+    themes_dir = os.path.join(os.path.dirname(__file__), "themes")
+    if not os.path.isdir(themes_dir):
+        return []
+    return sorted(d for d in os.listdir(themes_dir)
+                  if os.path.isdir(os.path.join(themes_dir, d)))
+
+def _resolve_template(name: str, theme: str = None) -> str:
+    """
+    Resolve an HTML template file path for the given theme.
+
+    Search order:
+      1. aseview/themes/{theme}/{name}
+      2. aseview/templates/{name}  (backward-compat fallback)
+    """
+    theme = theme or _THEME
+    pkg = os.path.dirname(__file__)
+    path = os.path.join(pkg, "themes", theme, name)
+    if os.path.exists(path):
+        return path
+    path = os.path.join(pkg, "templates", name)
+    if os.path.exists(path):
+        return path
+    raise FileNotFoundError(
+        f"Template '{name}' not found for theme '{theme}'. "
+        f"Available themes: {list_themes()}"
+    )
+
 
 class MolecularData:
     """Class to handle molecular data conversion between ASE Atoms and JSON format."""
@@ -223,8 +264,9 @@ class BaseViewer:
 class MolecularViewer(BaseViewer):
     """Molecular viewer with advanced settings and controls."""
 
-    def __init__(self, data: Union[Atoms, Dict[str, Any], str, List], **kwargs):
+    def __init__(self, data: Union[Atoms, Dict[str, Any], str, List], theme: str = None, **kwargs):
         super().__init__(data)
+        self._theme = theme
         self.settings = {
             "bondThreshold": 1.2,  # Scale factor for covalent radii sum
             "bondThickness": 0.1,
@@ -256,22 +298,11 @@ class MolecularViewer(BaseViewer):
         """Generate the HTML content for the molecular viewer."""
         js_data = self._get_js_data()
 
-        # Load the HTML template (prefer packaged template, fallback to static copy)
+        # Load the HTML template
         try:
-            template_candidates = [
-                os.path.join(os.path.dirname(__file__), "..", "static", "molecular_viewer.html"),
-                os.path.join(os.path.dirname(__file__), "templates", "molecular_viewer.html"),
-            ]
-
-            html = None
-            for candidate in template_candidates:
-                if os.path.exists(candidate):
-                    with open(candidate, "r", encoding="utf-8") as f:
-                        html = f.read()
-                    break
-
-            if html is None:
-                return self._generate_simple_html()
+            template_path = _resolve_template("molecular_viewer.html", self._theme)
+            with open(template_path, "r", encoding="utf-8") as f:
+                html = f.read()
         except FileNotFoundError:
             return self._generate_simple_html()
 
@@ -474,6 +505,7 @@ class NormalViewer(BaseViewer):
         mode_vectors: List = None,
         frequencies: List = None,
         n_frames: int = 30,
+        theme: str = None,
         **kwargs,
     ):
         """
@@ -487,6 +519,8 @@ class NormalViewer(BaseViewer):
             n_frames: Number of animation frames per cycle
             **kwargs: Additional viewer settings
         """
+        self._theme = theme
+
         # Process atoms data
         if isinstance(atoms, Atoms):
             self.atoms_data = MolecularData.from_atoms(atoms)
@@ -602,9 +636,7 @@ class NormalViewer(BaseViewer):
 
         # Load normal_viewer template
         try:
-            template_path = os.path.join(
-                os.path.dirname(__file__), "templates", "normal_viewer.html"
-            )
+            template_path = _resolve_template("normal_viewer.html", self._theme)
             with open(template_path, "r", encoding="utf-8") as f:
                 html = f.read()
         except FileNotFoundError:
@@ -888,6 +920,7 @@ class OverlayViewer(BaseViewer):
         self,
         data: Union[Atoms, List[Atoms], Dict[str, Any], str, List],
         index_list=None,
+        theme: str = None,
         **kwargs,
     ):
         """
@@ -904,6 +937,7 @@ class OverlayViewer(BaseViewer):
                                   e.g. [[0, 1], [2, 3], [0, 2]]
             **kwargs: Additional settings for visualization
         """
+        self._theme = theme
         super().__init__(data)
 
         # Ensure data is always a list for overlay viewer
@@ -977,9 +1011,7 @@ class OverlayViewer(BaseViewer):
 
         # Load overlay_viewer template
         try:
-            template_path = os.path.join(
-                os.path.dirname(__file__), "templates", "overlay_viewer.html"
-            )
+            template_path = _resolve_template("overlay_viewer.html", self._theme)
             with open(template_path, "r", encoding="utf-8") as f:
                 html = f.read()
         except FileNotFoundError:
@@ -1124,7 +1156,8 @@ class FragSelector(BaseViewer):
         Hex colour string for the 3-D panel background (default '#1f2937').
     """
 
-    def __init__(self, data: Union[Atoms, Dict[str, Any], str, List], **kwargs):
+    def __init__(self, data: Union[Atoms, Dict[str, Any], str, List], theme: str = None, **kwargs):
+        self._theme = theme
         super().__init__(data)
         # Keep only the first frame
         if isinstance(self.data, list):
@@ -1152,18 +1185,11 @@ class FragSelector(BaseViewer):
         settings_json = json.dumps(self.settings)
 
         # ── Load template ──────────────────────────────────────────────────
-        template_candidates = [
-            os.path.join(os.path.dirname(__file__), "..", "static", "frag_selector.html"),
-            os.path.join(os.path.dirname(__file__), "templates", "frag_selector.html"),
-        ]
-        html = None
-        for candidate in template_candidates:
-            if os.path.exists(candidate):
-                with open(candidate, "r", encoding="utf-8") as f:
-                    html = f.read()
-                break
-
-        if html is None:
+        try:
+            template_path = _resolve_template("frag_selector.html", self._theme)
+            with open(template_path, "r", encoding="utf-8") as f:
+                html = f.read()
+        except FileNotFoundError:
             return "<html><body><p>FragSelector template not found.</p></body></html>"
 
         # ── Inline vendor JS (same pattern as MolecularViewer) ─────────────

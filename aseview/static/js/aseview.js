@@ -12,8 +12,17 @@
 (function(global) {
     'use strict';
 
-    // CDN base URL for templates - must use raw.githack.com because jsDelivr blocks HTML files
-    const CDN_BASE = 'https://raw.githack.com/kangmg/aseview/main/aseview/templates';
+    // CDN base for themes - must use raw.githack.com (jsDelivr blocks HTML)
+    // Themes live at: aseview/themes/{theme}/{template}.html
+    // Fallback to legacy templates/ path for backward compat
+    const THEMES_BASE    = 'https://raw.githack.com/kangmg/aseview/main/aseview/themes';
+    const FALLBACK_BASE  = 'https://raw.githack.com/kangmg/aseview/main/aseview/templates';
+    const CDN_BASE       = THEMES_BASE;   // kept for external access via ASEView.CDN_BASE
+
+    let _defaultTheme = 'dark';
+
+    function setTheme(name) { _defaultTheme = name; }
+    function getTheme()     { return _defaultTheme; }
 
     /**
      * Base class for all viewers
@@ -33,6 +42,7 @@
 
             this.options = options;
             this.templateName = templateName;
+            this._theme = options.theme || _defaultTheme;
             this.iframe = null;
             this.isReady = false;
             this.pendingMessages = [];
@@ -49,9 +59,13 @@
             this.iframe.style.cssText = 'width:100%;height:100%;border:none;display:block;';
             this.iframe.setAttribute('allowfullscreen', 'true');
 
-            // Build template URL
-            const templateUrl = `${CDN_BASE}/${this.templateName}`;
+            // Build template URL: themes/{theme}/template.html
+            // On error (theme not found), fall back to legacy templates/ path
+            const templateUrl = `${THEMES_BASE}/${this._theme}/${this.templateName}`;
             this.iframe.src = templateUrl;
+            this.iframe.addEventListener('error', () => {
+                this.iframe.src = `${FALLBACK_BASE}/${this.templateName}`;
+            }, { once: true });
 
             // Listen for messages from iframe
             this._messageHandler = (event) => this._onMessage(event);
@@ -260,8 +274,10 @@
         NormalModeViewer,
         OverlayViewer,
         FragSelector,
+        setTheme,
+        getTheme,
         version: '1.0.0',
-        CDN_BASE
+        CDN_BASE,
     };
 
 })(typeof window !== 'undefined' ? window : this);
