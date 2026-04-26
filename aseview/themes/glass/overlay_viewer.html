@@ -1,0 +1,2551 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay Viewer</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js"></script>
+
+  <style>
+    :root {
+      --accent: #0a84ff;
+      --accent-dim: rgba(10,132,255,0.15);
+      --text: #1c1c1e;
+      --text-muted: #48484a;
+      --text-faint: #8e8e93;
+      --font: -apple-system, 'SF Pro Text', 'SF Pro Display', BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      --font-mono: 'SF Mono', ui-monospace, monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font);
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      color: var(--text);
+      /* Colorful background so glass is visible */
+      background:
+        radial-gradient(ellipse 80% 60% at 10% 15%,  rgba(180,210,255,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 90% 80%, rgba(200,180,255,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 55% 25%, rgba(255,220,170,0.10) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 35% at 20% 85%, rgba(170,230,200,0.09) 0%, transparent 45%),
+        radial-gradient(ellipse 60% 50% at 80% 5%,  rgba(255,200,210,0.10) 0%, transparent 50%),
+        #f5f5f7;
+    }
+
+    .app {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── SIDEBAR — true liquid glass ── */
+    .sidebar {
+      width: 300px;
+      /* multi-layer glass */
+      background: transparent 0%,
+          rgba(255,255,255,0.12) 50%,
+          rgba(255,255,255,0.20) 100%
+        );
+      backdrop-filter: blur(48px) saturate(200%) brightness(1.08);
+      -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(1.08);
+      /* specular highlight on left+top edge */
+      border-right: 1px solid rgba(255,255,255,0.45);
+      border-top: none;
+      /* outer shadow for depth */
+      box-shadow:
+        4px 0 32px rgba(0,0,0,0.12),
+        inset 1px 0 0 rgba(255,255,255,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.55);
+      display: flex;
+      flex-direction: column;
+      transition: width 0.35s cubic-bezier(.4,0,.2,1);
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+    }
+
+    .sidebar.collapsed { width: 0; border-right: none; }
+    .sidebar-content { padding: 0.875rem; overflow-y: auto; flex: 1; min-width: 300px; }
+    .sidebar-content::-webkit-scrollbar { width: 0; }
+
+    .sidebar-toggle {
+      position: absolute;
+      top: 0.875rem; left: 0.875rem;
+      z-index: 100;
+      background: transparent, rgba(255,255,255,0.28));
+      backdrop-filter: blur(32px) saturate(180%);
+      -webkit-backdrop-filter: blur(32px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 10px;
+      box-shadow:
+        0 4px 16px rgba(0,0,0,0.10),
+        inset 0 1px 0 rgba(255,255,255,0.7);
+      color: var(--text-muted);
+      width: 34px; height: 34px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .sidebar-toggle:hover {
+      background: transparent, rgba(255,255,255,0.45));
+      box-shadow: 0 4px 20px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.8), 0 0 0 3px rgba(10,132,255,0.15);
+      color: var(--accent);
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: transparent 0%, rgba(255,255,255,0.14) 100%);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.42);
+      border-radius: 16px;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+      box-shadow:
+        0 2px 16px rgba(0,0,0,0.07),
+        inset 0 1px 0 rgba(255,255,255,0.62),
+        inset 0 -1px 0 rgba(0,0,0,0.04);
+      transition: box-shadow 0.2s;
+    }
+    .card:hover {
+      box-shadow:
+        0 4px 24px rgba(0,0,0,0.10),
+        inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+
+    .card-header {
+      padding: 0.65rem 0.875rem;
+      background: transparent;
+      display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; user-select: none;
+      transition: background 0.15s;
+    }
+    .card-header:hover { background: rgba(255,255,255,0.22); }
+
+    .card-header h3 {
+      font-size: 12px; font-weight: 600; letter-spacing: -0.01em;
+      display: flex; align-items: center; gap: 0.45rem;
+      color: var(--text);
+    }
+
+    .card-content {
+      padding: 0.75rem;
+      border-top: 1px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.06);
+    }
+    .card-content.collapsed { display: none; }
+    .card-arrow { transition: transform 0.22s; color: var(--text-faint); width: 12px; height: 12px; }
+    .card-arrow.rotated { transform: rotate(-90deg); }
+
+    /* ── CONTROLS ── */
+    .control-group { margin-bottom: 0.75rem; }
+    .control-group:last-child { margin-bottom: 0; }
+    .control-label {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 0.3rem; font-size: 11.5px; font-weight: 500; color: var(--text-muted);
+    }
+
+    /* ── SLIDER ── */
+    .slider-container { display: flex; align-items: center; gap: 0.5rem; }
+    .slider-value { font-size: 11px; color: var(--text-faint); min-width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+
+    .slider {
+      flex: 1; width: 100%; height: 4px;
+      -webkit-appearance: none;
+      background: rgba(60,60,67,0.14);
+      border-radius: 2px; outline: none; cursor: pointer;
+    }
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: transparent;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.8), inset 0 1px 0 rgba(255,255,255,0.9);
+      cursor: pointer; transition: transform 0.1s, box-shadow 0.15s;
+    }
+    .slider::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 3px 12px rgba(10,132,255,0.28), 0 0 0 3px rgba(10,132,255,0.15);
+    }
+    .slider::-moz-range-thumb {
+      width: 20px; height: 20px; border-radius: 50%; border: none;
+      background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.22); cursor: pointer;
+    }
+
+    /* ── SELECT ── */
+    .select {
+      width: 100%;
+      background: rgba(255,255,255,0.35);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 10px;
+      color: var(--text); padding: 0.45rem 1.8rem 0.45rem 0.7rem;
+      font-family: var(--font); font-size: 12px;
+      appearance: none; cursor: pointer; outline: none;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.5);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6H0z' fill='%2348484a'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 0.65rem center;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .select:focus {
+      border-color: rgba(10,132,255,0.5);
+      box-shadow: 0 0 0 3px rgba(10,132,255,0.15), inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+
+    /* ── TOGGLE SWITCH ── */
+    .switch { position: relative; display: inline-block; width: 44px; height: 26px; }
+    .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .slider-switch {
+      position: absolute; cursor: pointer; inset: 0;
+      background: rgba(120,120,128,0.28);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 13px;
+      border: 1px solid rgba(255,255,255,0.4);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.12);
+      transition: background 0.25s;
+    }
+    .slider-switch:before {
+      content: "";
+      position: absolute;
+      height: 22px; width: 22px; left: 1px; top: 1px;
+      background: transparent;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.20), 0 0 0 0.5px rgba(0,0,0,0.04);
+      transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+    }
+    input:checked + .slider-switch {
+      background: rgba(10,132,255,0.55);
+      border-color: rgba(10,132,255,0.35);
+      box-shadow: 0 0 8px rgba(10,132,255,0.15), inset 0 1px 3px rgba(0,0,0,0.06);
+    }
+    input:checked + .slider-switch:before {
+      transform: translateX(18px);
+      background: linear-gradient(145deg, #ffffff, #f5f5f5);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.20), 0 0 0 0.5px rgba(0,0,0,0.04);
+    }
+
+    /* ── BUTTONS ── */
+    .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 0.375rem; }
+
+    .btn {
+      background: transparent, rgba(255,255,255,0.22));
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 10px;
+      color: var(--text-muted);
+      padding: 0.42rem 0.65rem;
+      font-size: 11.5px; font-weight: 500; font-family: var(--font);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 0.3rem;
+      transition: all 0.18s;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.65);
+      white-space: nowrap;
+    }
+    .btn:hover {
+      background: transparent, rgba(255,255,255,0.40));
+      color: var(--accent);
+      box-shadow: 0 2px 12px rgba(10,132,255,0.14), inset 0 1px 0 rgba(255,255,255,0.8);
+      border-color: rgba(10,132,255,0.25);
+    }
+    .btn.active {
+      background: transparent, rgba(10,132,255,0.72));
+      backdrop-filter: blur(20px);
+      border-color: rgba(10,132,255,0.5);
+      color: white;
+      box-shadow: 0 2px 16px rgba(10,132,255,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+
+    /* ── ANIM BUTTONS ── */
+    .animation-btn-group, .anim-group { display: flex; gap: 6px; margin-bottom: 0.75rem; }
+    .anim-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px;
+      background: transparent, rgba(255,255,255,0.22));
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.5); border-radius: 10px;
+      color: var(--text-muted); cursor: pointer;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.65);
+      transition: all 0.18s;
+    }
+    .anim-btn:hover {
+      background: transparent, rgba(255,255,255,0.40));
+      color: var(--accent);
+      box-shadow: 0 2px 12px rgba(10,132,255,0.15), inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+    .anim-btn svg { width: 15px; height: 15px; }
+    .anim-btn.playing {
+      background: transparent, rgba(10,132,255,0.72));
+      border-color: rgba(10,132,255,0.5); color: white;
+      box-shadow: 0 2px 16px rgba(10,132,255,0.35);
+    }
+
+    /* ── COLOR PICKER ── */
+    .color-picker { display: flex; align-items: center; gap: 0.5rem; }
+    .color-input {
+      width: 32px; height: 22px;
+      border: 1px solid rgba(255,255,255,0.5); border-radius: 7px;
+      cursor: pointer; padding: 1px; background: none;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+    }
+    .color-input::-webkit-color-swatch-wrapper { padding: 2px; }
+    .color-input::-webkit-color-swatch { border: none; border-radius: 5px; }
+    .color-value { font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+
+    /* ── TOOLBAR ── */
+    .toolbar { position: absolute; top: 0.875rem; right: 0.875rem; display: flex; gap: 0.375rem; z-index: 50; }
+    .toolbar-btn {
+      width: 34px; height: 34px;
+      background: transparent, rgba(255,255,255,0.22));
+      backdrop-filter: blur(32px) saturate(180%); -webkit-backdrop-filter: blur(32px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.55); border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.7);
+      color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.18s;
+    }
+    .toolbar-btn:hover {
+      background: transparent, rgba(255,255,255,0.45));
+      color: var(--accent);
+      box-shadow: 0 4px 20px rgba(10,132,255,0.15), inset 0 1px 0 rgba(255,255,255,0.8), 0 0 0 3px rgba(10,132,255,0.12);
+    }
+    .toolbar-btn svg { width: 14px; height: 14px; }
+
+    /* ── MAIN + VIEWER ── */
+    .main-content { flex: 1; display: flex; flex-direction: column; position: relative; min-height: 0; width: 100%; }
+    .viewer-container { flex: 1; display: flex; background: transparent; position: relative; min-height: 0; width: 100%; }
+    .viewer { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; width: 100%; height: 100%; }
+
+    #molecule-canvas { width: 100%; height: 100%; display: block; cursor: grab; position: absolute; top: 0; left: 0; }
+    #molecule-canvas:active { cursor: grabbing; }
+
+    .icon { width: 13px; height: 13px; display: inline-block; flex-shrink: 0; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.25s ease; }
+
+    .help-text {
+      position: absolute; bottom: 12px; left: 12px;
+      color: var(--text-faint); font-size: 11px;
+      background: transparent, rgba(255,255,255,0.25));
+      backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+      border: 1px solid rgba(255,255,255,0.5);
+      padding: 4px 14px; border-radius: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.7);
+      z-index: 5;
+    }
+
+    /* Energy plot */
+    .energy-plot-container {
+      position: absolute; bottom: 10px; left: 10px; right: 10px;
+      height: 120px; min-height: 80px; max-height: 400px;
+      background: transparent, rgba(255,255,255,0.20));
+      backdrop-filter: blur(32px) saturate(180%); -webkit-backdrop-filter: blur(32px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.5); border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.65);
+      padding: 10px; padding-top: 18px; box-sizing: border-box;
+    }
+    .energy-plot-resize-handle {
+      position: absolute; top: 0; left: 0; right: 0; height: 18px;
+      cursor: ns-resize; display: flex; align-items: center; justify-content: center;
+    }
+    .energy-plot-resize-handle::after {
+      content: ''; width: 36px; height: 3px;
+      background: rgba(60,60,67,0.18); border-radius: 2px;
+    }
+    .energy-plot-resize-handle:hover::after { background: var(--accent); }
+    #energy-plot-canvas { width: 100%; height: 100%; }
+
+    /* Periodicity */
+    .periodicity-item {
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(255,255,255,0.28); border: 1px solid rgba(255,255,255,0.45);
+      border-radius: 8px; padding: 0.45rem 0.65rem; margin-bottom: 0.4rem;
+    }
+
+    /* Molecule item (overlay) */
+    .molecule-item {
+      background: transparent, rgba(255,255,255,0.15));
+      border: 1px solid rgba(255,255,255,0.45); border-radius: 14px;
+      padding: 0.75rem; margin-bottom: 0.625rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+    .molecule-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.625rem; }
+    .molecule-name { font-weight: 600; font-size: 12.5px; color: var(--text); }
+
+    /* Fragment selector */
+    .viewer-panel { position: relative; overflow: hidden; display: flex; flex-direction: column; flex: 1; }
+    #panel-2d, #panel-3d { background: transparent; }
+
+    .panel-label {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      font-size: 11px; font-weight: 500; color: var(--text-muted);
+      background: transparent, rgba(255,255,255,0.25));
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.5);
+      padding: 3px 14px; border-radius: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.7);
+      z-index: 10; pointer-events: none; white-space: nowrap;
+    }
+
+    #splitter { width: 4px; background: rgba(60,60,67,0.12); cursor: col-resize; flex-shrink: 0; z-index: 20; transition: background 0.15s; }
+    #splitter:hover, #splitter.active { background: var(--accent); }
+
+    #lewis-svg { width: 100%; height: 100%; display: block; cursor: grab; user-select: none; -webkit-user-select: none; }
+    #molecule-canvas-3d { width: 100%; height: 100%; display: block; cursor: grab; position: absolute; top: 0; left: 0; }
+    #molecule-canvas-3d:active { cursor: grabbing; }
+    #sel-overlay-container, #sel-overlay-container-3d { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; overflow: hidden; }
+    #lewis-svg.mode-navigate { cursor: grab; }
+    #lewis-svg.mode-navigate.panning { cursor: grabbing; }
+    #lewis-svg.mode-click, #lewis-svg.mode-rect, #lewis-svg.mode-lasso { cursor: crosshair; }
+    #molecule-canvas-3d.mode-navigate, #molecule-canvas-3d.mode-click { cursor: default; }
+    #molecule-canvas-3d.mode-rect, #molecule-canvas-3d.mode-lasso { cursor: crosshair; }
+
+    #atom-tooltip {
+      position: fixed;
+      background: transparent, rgba(255,255,255,0.35));
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.55); color: var(--text);
+      font-size: 11px; padding: 4px 12px; border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.7);
+      pointer-events: none; display: none; z-index: 1000; white-space: nowrap;
+    }
+
+    .mode-toolbar {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      z-index: 15; display: flex; gap: 3px;
+      background: transparent, rgba(255,255,255,0.25));
+      backdrop-filter: blur(32px) saturate(180%); -webkit-backdrop-filter: blur(32px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.5);
+      padding: 4px; border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+    .mode-btn {
+      background: none; border: none; border-radius: 10px;
+      color: var(--text-muted);
+      padding: 4px 12px; font-size: 11px; font-weight: 500; font-family: var(--font);
+      cursor: pointer; transition: all 0.15s;
+      white-space: nowrap; display: flex; align-items: center; gap: 4px;
+    }
+    .mode-btn:hover { background: rgba(255,255,255,0.5); color: var(--text); }
+    .mode-btn.active {
+      background: transparent, rgba(255,255,255,0.5));
+      color: var(--accent);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+
+    .help-hint { position: absolute; bottom: 10px; right: 10px; font-size: 10px; color: var(--text-faint); pointer-events: none; line-height: 1.7; text-align: right; }
+    #selected-count { color: var(--accent); font-weight: 600; }
+
+    #add-polyhedron-pair-btn {
+      background: rgba(255,255,255,0.3) !important;
+      border: 1.5px dashed rgba(60,60,67,0.2) !important;
+      border-radius: 8px !important; color: var(--text-faint) !important;
+      font-family: var(--font) !important; font-size: 11px !important;
+    }
+    #add-polyhedron-pair-btn:hover {
+      border-color: rgba(10,132,255,0.4) !important;
+      color: var(--accent) !important;
+      background: rgba(10,132,255,0.08) !important;
+    }
+
+    .btn-row { display: flex; gap: 0.375rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .index-box {
+      font-family: var(--font-mono); font-size: 10px;
+      background: rgba(255,255,255,0.30); border: 1px solid rgba(255,255,255,0.45);
+      border-radius: 8px; padding: 0.4rem 0.6rem;
+      min-height: 44px; max-height: 80px; overflow-y: auto; color: var(--text-muted);
+      white-space: pre-wrap; word-break: break-all; resize: none; width: 100%;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .animation-controls {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 10px;
+      background: transparent, rgba(255,255,255,0.25));
+      backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+      border: 1px solid rgba(255,255,255,0.5);
+      padding: 10px 18px; border-radius: 28px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.7);
+      z-index: 5;
+    }
+  </style>
+</head>
+
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-content">
+                <!-- Advanced Settings -->
+                <div class="card">
+                    <div class="card-header" onclick="toggleCard('advanced')">
+                        <h3>
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Advanced Settings
+                        </h3>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" id="advanced-arrow">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    <div class="card-content" id="advanced-content">
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Bond Threshold Scale</span>
+                                <span class="slider-value" id="bond-threshold-value">1.0</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.5" max="3" step="0.1" value="1.0" class="slider"
+                                    id="bond-threshold">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Bond Thickness</span>
+                                <span class="slider-value" id="bond-thickness-value">0.10</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.05" max="0.17" step="0.01" value="0.1" class="slider"
+                                    id="bond-thickness">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Atom Size</span>
+                                <span class="slider-value" id="atom-size-value">0.4×</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.2" max="2" step="0.1" value="0.4" class="slider"
+                                    id="atom-size">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Background Color</span>
+                            </div>
+                            <div class="color-picker">
+                                <input type="color" value="#ffffff" class="color-input" id="background-color">
+                                <span class="color-value" id="background-color-value">#ffffff</span>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Style</span>
+                            </div>
+                            <select class="select" id="style">
+                                <option value="default">Default</option>
+                                <option value="2d">2D</option>
+                                <option value="cartoon" selected>Cartoon</option>
+                                <option value="neon">Neon</option>
+                                <option value="glossy">Glossy</option>
+                                <option value="metallic">Metallic</option>
+                                <option value="bubble">Bubble</option>
+                                <option value="rowan">Rowan</option>
+                                <option value="grey">Grey</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Color by</span>
+                            </div>
+                            <select class="select" id="color-by">
+                                <option value="Atom">Atom</option>
+                                <option value="Molecule">Molecule</option>
+                                <option value="Colormap">Colormap (Gradient)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group" id="colormap-group" style="display: none;">
+                            <div class="control-label">
+                                <span>Colormap</span>
+                            </div>
+                            <select class="select" id="colormap-select">
+                                <option value="viridis">Viridis</option>
+                                <option value="plasma">Plasma</option>
+                                <option value="coolwarm">Coolwarm</option>
+                                <option value="jet">Jet</option>
+                                <option value="rainbow">Rainbow</option>
+                                <option value="grayscale">Grayscale</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Display Settings -->
+                <div class="card">
+                    <div class="card-header" onclick="toggleCard('display')">
+                        <h3>
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            Display Settings
+                        </h3>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" id="display-arrow">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    <div class="card-content" id="display-content">
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Cell</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-cell" checked>
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group" id="cell-color-group" style="display: none;">
+                            <div class="control-label"><span>Cell Color</span></div>
+                            <div class="color-picker">
+                                <input type="color" value="#808080" class="color-input" id="cell-color">
+                                <span class="color-value" id="cell-color-value">#808080</span>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Bond</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-bond" checked>
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Shading</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-shading">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Align Molecules (Kabsch)</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="align-molecules">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Axis</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-axis" checked>
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>View Mode</span>
+                            </div>
+                            <div class="button-group">
+                                <button class="btn" id="orthographic-btn">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                    </svg>
+                                    Orthographic
+                                </button>
+                                <button class="btn active" id="perspective-btn">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 22V12h6v10" />
+                                    </svg>
+                                    Perspective
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interaction Settings -->
+                <div class="card">
+                    <div class="card-header" onclick="toggleCard('interaction')">
+                        <h3>
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                            </svg>
+                            Interaction Settings
+                        </h3>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" id="interaction-arrow">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    <div class="card-content" id="interaction-content">
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Rotation Mode</span>
+                            </div>
+                            <div class="button-group">
+                                <button class="btn active" id="trackball-btn">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                    </svg>
+                                    TrackBall
+                                </button>
+                                <button class="btn" id="orbit-btn">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 22V12h6v10" />
+                                    </svg>
+                                    Orbit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Molecules -->
+                <div class="card">
+                    <div class="card-header" onclick="toggleCard('molecules')">
+                        <h3>
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                            </svg>
+                            Molecules
+                        </h3>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" id="molecules-arrow">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    <div class="card-content" id="molecules-content">
+                        <div class="molecule-item">
+                            <div class="molecule-header">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="color" value="#3b82f6" class="color-input"
+                                        style="width: 24px; height: 24px;" id="molecule-1-color">
+                                    <span class="molecule-name">Protein A</span>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="molecule-1-visible" checked>
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                            <div class="control-group">
+                                <div class="control-label">
+                                    <span>Opacity</span>
+                                    <span class="slider-value" id="molecule-1-opacity-value">80%</span>
+                                </div>
+                                <div class="slider-container">
+                                    <input type="range" min="0" max="1" step="0.1" value="0.8" class="slider"
+                                        id="molecule-1-opacity">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="molecule-item">
+                            <div class="molecule-header">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="color" value="#ef4444" class="color-input"
+                                        style="width: 24px; height: 24px;" id="molecule-2-color">
+                                    <span class="molecule-name">Ligand B</span>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="molecule-2-visible" checked>
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                            <div class="control-group">
+                                <div class="control-label">
+                                    <span>Opacity</span>
+                                    <span class="slider-value" id="molecule-2-opacity-value">90%</span>
+                                </div>
+                                <div class="slider-container">
+                                    <input type="range" min="0" max="1" step="0.1" value="0.9" class="slider"
+                                        id="molecule-2-opacity">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="molecule-item">
+                            <div class="molecule-header">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="color" value="#06b6d4" class="color-input"
+                                        style="width: 24px; height: 24px;" id="molecule-3-color">
+                                    <span class="molecule-name">Water</span>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="molecule-3-visible">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                            <div class="control-group">
+                                <div class="control-label">
+                                    <span>Opacity</span>
+                                    <span class="slider-value" id="molecule-3-opacity-value">50%</span>
+                                </div>
+                                <div class="slider-container">
+                                    <input type="range" min="0" max="1" step="0.1" value="0.5" class="slider"
+                                        id="molecule-3-opacity">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <button class="sidebar-toggle" id="sidebar-toggle">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+
+            <div class="toolbar">
+                <button class="toolbar-btn" id="download-btn">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="viewer-container">
+                <div class="viewer" id="viewer">
+                    <canvas id="molecule-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        // Global variables
+        let molecularData = [];
+        let sidebarOpen = true;
+        let cards = {
+            advanced: true,
+            display: true,
+            interaction: true,
+            molecules: true
+        };
+
+        let periodicities = [];
+
+        // Molecule display settings (color, opacity, visibility for each molecule)
+        let moleculeSettings = [];
+
+        let settings = {
+            bondThreshold: 1.0,
+            bondThickness: 0.1,
+            atomSize: 0.4,
+            animationSpeed: 30,
+            forceScale: 0.5,
+            backgroundColor: 'transparent',
+            style: 'cartoon',
+            showCell: true,
+            cellColor: '#808080',
+            showBond: true,
+            showShading: false,
+            showEnergyPlot: false,
+            showForces: false,
+            showAxis: true,
+            viewMode: 'Perspective',
+            rotationMode: 'TrackBall',
+            colorBy: 'Atom',
+            colormap: 'viridis',
+            alignMolecules: false  // Kabsch rotation + Hungarian reordering
+        };
+
+        // Update UI and rendering from settings (called via postMessage API)
+        function updateFromSettings() {
+            // Update select elements
+            const styleSelect = document.getElementById('style');
+            if (styleSelect) styleSelect.value = settings.style || 'cartoon';
+
+            const colorBySelect = document.getElementById('color-by');
+            if (colorBySelect) colorBySelect.value = settings.colorBy || 'Atom';
+
+            const colormapSelect = document.getElementById('colormap-select');
+            if (colormapSelect) colormapSelect.value = settings.colormap || 'viridis';
+
+            // Update checkboxes
+            const checkboxMappings = {
+                'show-cell': 'showCell',
+                'show-bond': 'showBond',
+                'show-shading': 'showShading',
+                'show-axis': 'showAxis',
+                'align-molecules': 'alignMolecules'
+            };
+
+            for (const [elemId, settingKey] of Object.entries(checkboxMappings)) {
+                const elem = document.getElementById(elemId);
+                if (elem) elem.checked = !!settings[settingKey];
+            }
+
+            // Update sliders
+            const atomSizeSlider = document.getElementById('atom-size');
+            if (atomSizeSlider) {
+                atomSizeSlider.value = settings.atomSize || 0.4;
+                const valueEl = document.getElementById('atom-size-value');
+                if (valueEl) valueEl.textContent = atomSizeSlider.value;
+            }
+
+            const bondThresholdSlider = document.getElementById('bond-threshold');
+            if (bondThresholdSlider) {
+                bondThresholdSlider.value = settings.bondThreshold || 1.0;
+                const valueEl = document.getElementById('bond-threshold-value');
+                if (valueEl) valueEl.textContent = bondThresholdSlider.value;
+            }
+
+            const bondThicknessSlider = document.getElementById('bond-thickness');
+            if (bondThicknessSlider) {
+                bondThicknessSlider.value = settings.bondThickness || 0.1;
+                const valueEl = document.getElementById('bond-thickness-value');
+                if (valueEl) valueEl.textContent = bondThicknessSlider.value;
+            }
+
+            // Update cell color picker
+            const cellColorPicker = document.getElementById('cell-color');
+            if (cellColorPicker && settings.cellColor) {
+                cellColorPicker.value = settings.cellColor;
+                const cellColorValue = document.getElementById('cell-color-value');
+                if (cellColorValue) cellColorValue.textContent = settings.cellColor;
+            }
+
+            // Update color picker
+            const bgColorPicker = document.getElementById('background-color');
+            if (bgColorPicker && settings.backgroundColor) {
+                bgColorPicker.value = settings.backgroundColor;
+                const viewerContainer = document.querySelector('.viewer-container');
+                if (viewerContainer) {
+                    viewerContainer.style.background = `linear-gradient(135deg, ${settings.backgroundColor}, ${darkenColorHex(settings.backgroundColor, 20)})`;
+                }
+            }
+
+            // Apply rendering changes
+            if (typeof updateShading === 'function') updateShading();
+            if (typeof renderMolecule === 'function') renderMolecule();
+        }
+
+        // Check if styles.js is loaded
+        if (typeof atomInfo === 'undefined') {
+            console.error('styles.js not loaded! atomInfo is undefined');
+        }
+        if (typeof createAtomStyleDefault === 'undefined') {
+            console.error('styles.js not loaded! createAtomStyleDefault is undefined');
+        }
+
+        const atomFactories = {
+            'default': (pos, symbol, atomScale) => createAtomStyleDefault(pos, symbol, atomScale),
+            '2d': (pos, symbol, atomScale) => createAtomStyle2D(pos, symbol, atomScale),
+            'cartoon': (pos, symbol, atomScale) => createAtomStyleCartoon(pos, symbol, atomScale),
+            'neon': (pos, symbol, atomScale) => createAtomStyleNeon(pos, symbol, atomScale),
+            'glossy': (pos, symbol, atomScale) => createAtomStyleGlossy(pos, symbol, atomScale),
+            'metallic': (pos, symbol, atomScale) => createAtomStyleMetallic(pos, symbol, atomScale),
+            'rowan': (pos, symbol, atomScale) => createAtomStyleRowan(pos, symbol, atomScale),
+            'bubble': (pos, symbol, atomScale) => createAtomStyleBubble(pos, symbol, atomScale),
+            'grey': (pos, symbol, atomScale, helpers) => createAtomStyleGrey(pos, symbol, atomScale, helpers.greyColorMap[symbol] ?? 0x808080)
+        };
+
+        const bondFactories = {
+            'default': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'default'),
+            '2d': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyle2D(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'cartoon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleCartoon(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'neon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy'),
+            'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic'),
+            'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap)
+        };
+
+        let scene = null;
+        let camera = null;
+        let renderer = null;
+        let controls = null;
+        let moleculeGroup = null;
+        let directionalLight = null;
+        let cameraNeedsFit = true;
+
+        // Axis helper scene
+        let axisScene = null;
+        let axisCamera = null;
+        let axisGroup = null;
+
+        // Animation state
+        let animationState = {
+            isPlaying: false,
+            currentFrame: 0,
+            animationInterval: null
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initSettingsFromUI();
+            setupEventListeners();
+            initRenderer();
+        });
+
+        // Initialize settings from UI values on page load
+        function initSettingsFromUI() {
+            const bondThresholdSlider = document.getElementById('bond-threshold');
+            if (bondThresholdSlider) {
+                settings.bondThreshold = parseFloat(bondThresholdSlider.value);
+            }
+
+            const bondThicknessSlider = document.getElementById('bond-thickness');
+            if (bondThicknessSlider) {
+                settings.bondThickness = parseFloat(bondThicknessSlider.value);
+            }
+
+            const atomSizeSlider = document.getElementById('atom-size');
+            if (atomSizeSlider) {
+                settings.atomSize = parseFloat(atomSizeSlider.value);
+            }
+
+            const bgColorInput = document.getElementById('background-color');
+            if (bgColorInput) {
+                settings.backgroundColor = bgColorInput.value;
+            }
+
+            const styleSelect = document.getElementById('style');
+            if (styleSelect) {
+                settings.style = styleSelect.value;
+            }
+
+            const showCellCheckbox = document.getElementById('show-cell');
+            if (showCellCheckbox) {
+                settings.showCell = showCellCheckbox.checked;
+            }
+
+            const showBondCheckbox = document.getElementById('show-bond');
+            if (showBondCheckbox) {
+                settings.showBond = showBondCheckbox.checked;
+            }
+
+            const showShadingCheckbox = document.getElementById('show-shading');
+            if (showShadingCheckbox) {
+                settings.showShading = showShadingCheckbox.checked;
+            }
+        }
+
+        function initRenderer() {
+            const viewer = document.getElementById('viewer');
+            if (!viewer) return;
+
+            const placeholderCanvas = document.getElementById('molecule-canvas');
+            const helpText = document.getElementById('help-text');
+            if (placeholderCanvas && placeholderCanvas.parentElement === viewer) {
+                placeholderCanvas.remove();
+            }
+
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true,
+                preserveDrawingBuffer: true  // Required for canvas capture (PNG export)
+            });
+            renderer.domElement.id = 'molecule-canvas';
+            renderer.sortObjects = true;
+            renderer.setPixelRatio(window.devicePixelRatio || 1);
+            renderer.setSize(Math.max(viewer.clientWidth, 1), Math.max(viewer.clientHeight, 1));
+
+            // Enable better rendering for special effects like neon
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            if (helpText && helpText.parentElement === viewer) {
+                viewer.insertBefore(renderer.domElement, helpText);
+            } else {
+                viewer.appendChild(renderer.domElement);
+            }
+
+            scene = new THREE.Scene();
+            updateBackgroundColor();
+
+            setupCamera();
+            setupControls();
+
+            // Lighting setup - matching old version
+            directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 10);
+            scene.add(directionalLight);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+            scene.add(ambientLight);
+
+            setupAxisHelper();
+
+            window.addEventListener('resize', handleResize);
+            handleResize();
+            animate();
+        }
+
+        function setupCamera() {
+            const viewer = document.getElementById('viewer');
+            if (!viewer) return;
+
+            const width = Math.max(viewer.clientWidth, 1);
+            const height = Math.max(viewer.clientHeight, 1);
+            const aspect = width / height;
+
+            let newCamera;
+            if (settings.viewMode === 'Orthographic') {
+                const frustumSize = 20;
+                newCamera = new THREE.OrthographicCamera(
+                    (frustumSize * aspect) / -2,
+                    (frustumSize * aspect) / 2,
+                    frustumSize / 2,
+                    frustumSize / -2,
+                    -1000,
+                    1000
+                );
+            } else {
+                newCamera = new THREE.PerspectiveCamera(55, aspect, 0.1, 2000);
+            }
+
+            if (camera) {
+                newCamera.position.copy(camera.position);
+                newCamera.zoom = camera.zoom;
+                newCamera.updateProjectionMatrix();
+            } else {
+                newCamera.position.set(0, 0, 10);
+            }
+
+            camera = newCamera;
+        }
+
+        function setupControls() {
+            if (!renderer || !camera) return;
+
+            const target = controls ? controls.target.clone() : new THREE.Vector3();
+            if (controls) {
+                controls.dispose();
+            }
+
+            if (settings.rotationMode === 'Orbit') {
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+            } else {
+                controls = new THREE.TrackballControls(camera, renderer.domElement);
+                controls.rotateSpeed = 2.0;
+                controls.zoomSpeed = 1.2;
+                controls.panSpeed = 0.8;
+                controls.staticMoving = true;
+            }
+
+            controls.target.copy(target);
+            controls.update();
+        }
+
+        function handleResize() {
+            if (!renderer || !camera) return;
+            const viewer = document.getElementById('viewer');
+            if (!viewer) return;
+            const width = Math.max(viewer.clientWidth, 1);
+            const height = Math.max(viewer.clientHeight, 1);
+            renderer.setSize(width, height);
+
+            if (camera.isPerspectiveCamera) {
+                camera.aspect = width / height;
+            } else {
+                const frustumSize = 20;
+                const aspect = width / height;
+                camera.left = (frustumSize * aspect) / -2;
+                camera.right = (frustumSize * aspect) / 2;
+                camera.top = frustumSize / 2;
+                camera.bottom = frustumSize / -2;
+            }
+
+            camera.updateProjectionMatrix();
+            if (controls && typeof controls.handleResize === 'function') {
+                controls.handleResize();
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls && typeof controls.update === 'function') {
+                controls.update();
+            }
+            // Light behavior depends on shading setting
+            if (directionalLight && camera) {
+                if (settings.showShading) {
+                    // Light position relative to camera for consistent shading direction
+                    // Light stays in camera space, so shading direction is fixed from viewer's perspective
+                    const offset = new THREE.Vector3(5, 8, 5);
+                    const lightPos = camera.position.clone().add(
+                        offset.applyQuaternion(camera.quaternion)
+                    );
+                    directionalLight.position.copy(lightPos);
+                } else {
+                    // Light follows camera for flat lighting (no shading)
+                    directionalLight.position.copy(camera.position);
+                }
+            }
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+
+                // Render axis helper in bottom-left corner (transparent overlay)
+                if (settings.showAxis && axisScene && axisCamera && axisGroup) {
+                    // Rotate axis group inversely to camera - shows world axes from camera's view
+                    axisGroup.quaternion.copy(camera.quaternion).invert();
+
+                    // Save current state
+                    const currentViewport = renderer.getViewport(new THREE.Vector4());
+                    const currentAutoClear = renderer.autoClear;
+
+                    // Set viewport for axis helper (bottom-left corner)
+                    const axisViewportSize = 150;
+                    const axisMarginX = 15;
+                    const axisMarginY = 20;
+                    renderer.setViewport(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
+                    renderer.setScissor(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
+                    renderer.setScissorTest(true);
+
+                    // Disable auto clear to preserve main scene, only clear depth
+                    renderer.autoClear = false;
+                    renderer.clearDepth();
+
+                    // Render axis scene (transparent background)
+                    renderer.render(axisScene, axisCamera);
+
+                    // Restore state
+                    renderer.autoClear = currentAutoClear;
+                    renderer.setScissorTest(false);
+                    renderer.setViewport(currentViewport);
+                }
+            }
+        }
+
+        function setupAxisHelper() {
+            // Create a separate scene for the axis helper
+            axisScene = new THREE.Scene();
+            axisScene.background = null;  // Transparent background
+
+            // Create orthographic camera for axis helper (centered on origin)
+            const axisViewSize = 100;
+            axisCamera = new THREE.OrthographicCamera(-axisViewSize, axisViewSize, axisViewSize, -axisViewSize, -200, 200);
+            axisCamera.position.set(0, 0, 100);
+
+            // Create a group to hold all axis objects (will be rotated)
+            axisGroup = new THREE.Group();
+
+            // Axis colors
+            const colors = {
+                x: 0xff4444,  // Red
+                y: 0x44cc44,  // Green
+                z: 0x4488ff   // Blue
+            };
+
+            const axisLength = 50;
+            const arrowHeadLength = 12;
+            const arrowHeadWidth = 6;
+
+            // Create arrows for each axis starting from origin
+            const xDir = new THREE.Vector3(1, 0, 0);
+            const yDir = new THREE.Vector3(0, 1, 0);
+            const zDir = new THREE.Vector3(0, 0, 1);
+            const origin = new THREE.Vector3(0, 0, 0);
+
+            const xArrow = new THREE.ArrowHelper(xDir, origin, axisLength, colors.x, arrowHeadLength, arrowHeadWidth);
+            const yArrow = new THREE.ArrowHelper(yDir, origin, axisLength, colors.y, arrowHeadLength, arrowHeadWidth);
+            const zArrow = new THREE.ArrowHelper(zDir, origin, axisLength, colors.z, arrowHeadLength, arrowHeadWidth);
+
+            // Make arrows thicker
+            xArrow.line.material.linewidth = 2;
+            yArrow.line.material.linewidth = 2;
+            zArrow.line.material.linewidth = 2;
+
+            axisGroup.add(xArrow);
+            axisGroup.add(yArrow);
+            axisGroup.add(zArrow);
+
+            // Create text labels using sprites
+            const createTextSprite = (text, color) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Convert hex color to CSS
+                const cssColor = '#' + color.toString(16).padStart(6, '0');
+                ctx.fillStyle = cssColor;
+                ctx.fillText(text, 32, 32);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+                const sprite = new THREE.Sprite(material);
+                sprite.scale.set(14, 14, 1);
+                return sprite;
+            };
+
+            const xLabel = createTextSprite('X', colors.x);
+            const yLabel = createTextSprite('Y', colors.y);
+            const zLabel = createTextSprite('Z', colors.z);
+
+            xLabel.position.set(axisLength + 10, 0, 0);
+            yLabel.position.set(0, axisLength + 10, 0);
+            zLabel.position.set(0, 0, axisLength + 10);
+
+            axisGroup.add(xLabel);
+            axisGroup.add(yLabel);
+            axisGroup.add(zLabel);
+
+            axisScene.add(axisGroup);
+
+            // Add ambient light to axis scene
+            const axisAmbient = new THREE.AmbientLight(0xffffff, 1.0);
+            axisScene.add(axisAmbient);
+        }
+
+        // Overlay Viewer - renderMolecule function
+        // This renders all molecules simultaneously with different colors and opacity
+
+        function renderMolecule() {
+            if (!scene || !camera || !renderer) return;
+            if (!molecularData || molecularData.length === 0) return;
+
+            if (moleculeGroup) {
+                scene.remove(moleculeGroup);
+                disposeObject3D(moleculeGroup);
+            }
+
+            moleculeGroup = new THREE.Group();
+
+            const styleName = (settings.style || 'cartoon').toLowerCase();
+            const atomScale = Math.max(settings.atomSize, 0.05);
+            const bondRadius = Math.max(settings.bondThickness, 0.005);
+            const bondCutoff = settings.bondThreshold;
+            const colorBy = settings.colorBy || 'Atom';
+
+            const atomFactory = atomFactories[styleName] || atomFactories['default'];
+            const bondFactory = bondFactories[styleName] || bondFactories['default'];
+
+            // Performance: compute total atom count for LOD
+            let totalAtomCount = 0;
+            molecularData.forEach(mol => {
+                if (mol && mol.positions) totalAtomCount += mol.positions.length;
+            });
+            const perfMode = settings.performanceMode || 'auto';
+            const lodSegments = getLODSegments(totalAtomCount, perfMode);
+            clearPerformanceCache();
+
+            // Render each molecule
+            molecularData.forEach((molecule, molIndex) => {
+                if (!molecule || !molecule.positions || !molecule.symbols) return;
+
+                // Get molecule settings (color, opacity, visibility)
+                const molSettings = moleculeSettings[molIndex] || {};
+                if (molSettings.visible === false) return;  // Skip if hidden
+
+                // Determine molecule color based on colorBy mode
+                let moleculeColor;
+                if (colorBy === 'Colormap') {
+                    moleculeColor = getColormapColor(molIndex, molecularData.length, settings.colormap);
+                } else {
+                    moleculeColor = molSettings.color || 0x3b82f6;  // Default blue
+                }
+                const opacity = molSettings.opacity !== undefined ? molSettings.opacity : 0.8;
+
+                let positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
+                let symbols = molecule.symbols.slice(); // Copy symbols array
+
+                // Alignment: align to first molecule using Kabsch + Hungarian
+                if (settings.alignMolecules && molIndex > 0 && molecularData[0]) {
+                    const refMol = molecularData[0];
+                    const refPositions = refMol.positions;
+                    const refSymbols = refMol.symbols;
+                    const targetPositions = molecule.positions;
+                    const targetSymbols = molecule.symbols;
+
+                    const aligned = alignMolecule(refPositions, refSymbols, targetPositions, targetSymbols);
+                    positions = aligned.positions.map(p => new THREE.Vector3(p[0], p[1], p[2]));
+                    symbols = aligned.symbols;
+                }
+                // Center first molecule if alignment is enabled
+                else if (settings.alignMolecules && molIndex === 0 && positions.length > 0) {
+                    const center = new THREE.Vector3();
+                    positions.forEach(p => center.add(p));
+                    center.divideScalar(positions.length);
+                    positions = positions.map(p => p.clone().sub(center));
+                }
+
+                // Create molecule group
+                const molGroup = new THREE.Group();
+                molGroup.userData.moleculeIndex = molIndex;
+
+                // Grey color map for grey style
+                const uniqueSymbols = [...new Set(symbols)];
+                const greyColorMap = {};
+                if (uniqueSymbols.length > 0) {
+                    uniqueSymbols.forEach((sym, idx) => {
+                        const lightness = (idx + 1) / (uniqueSymbols.length + 1);
+                        greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
+                    });
+                }
+                const helpers = { greyColorMap, _lod: lodSegments };
+
+                // Render bonds using spatial grid
+                if (settings.showBond) {
+                    const bondPairs = findBondsSpatialGrid(positions, symbols, bondCutoff);
+                    const blackBondStyles = ['rowan', 'cartoon'];
+                    const isBlackBondStyle = blackBondStyles.includes(styleName);
+
+                    for (let b = 0; b < bondPairs.length; b++) {
+                        const { i, j } = bondPairs[b];
+                        let bondMesh = bondFactory(
+                            positions[i],
+                            positions[j],
+                            symbols[i],
+                            symbols[j],
+                            bondRadius,
+                            atomScale,
+                            helpers
+                        );
+
+                        if (bondMesh) {
+                            if ((colorBy === 'Molecule' || colorBy === 'Colormap') && !isBlackBondStyle) {
+                                bondMesh.traverse((child) => {
+                                    if (child.isMesh && child.material) {
+                                        child.material.color.setHex(moleculeColor);
+                                    }
+                                });
+                            }
+
+                            if (opacity < 1.0) {
+                                bondMesh.traverse((child) => {
+                                    if (child.isMesh && child.material) {
+                                        child.material.transparent = true;
+                                        child.material.opacity = opacity;
+                                    }
+                                });
+                            }
+
+                            molGroup.add(bondMesh);
+                        }
+                    }
+                }
+
+                // Render atoms
+                for (let i = 0; i < positions.length; i++) {
+                    let atomMesh = atomFactory(positions[i], symbols[i], atomScale, helpers);
+
+                    if (!atomMesh) {
+                        atomMesh = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
+                    }
+
+                    if (atomMesh) {
+                        if (colorBy === 'Molecule' || colorBy === 'Colormap') {
+                            atomMesh.traverse((child) => {
+                                if (child.isMesh && child.material) {
+                                    child.material.color.setHex(moleculeColor);
+                                }
+                            });
+                        }
+
+                        if (opacity < 1.0) {
+                            atomMesh.traverse((child) => {
+                                if (child.isMesh && child.material) {
+                                    child.material.transparent = true;
+                                    child.material.opacity = opacity;
+                                }
+                            });
+                        }
+
+                        molGroup.add(atomMesh);
+                    }
+                }
+
+                // Render unit cell
+                if (settings.showCell && molecule.cell) {
+                    const cellVectors = molecule.cell.map(c => new THREE.Vector3(...c));
+                    const points = [
+                        new THREE.Vector3(0, 0, 0), cellVectors[0],
+                        new THREE.Vector3(0, 0, 0), cellVectors[1],
+                        new THREE.Vector3(0, 0, 0), cellVectors[2],
+                        cellVectors[0], cellVectors[0].clone().add(cellVectors[1]),
+                        cellVectors[0], cellVectors[0].clone().add(cellVectors[2]),
+                        cellVectors[1], cellVectors[1].clone().add(cellVectors[0]),
+                        cellVectors[1], cellVectors[1].clone().add(cellVectors[2]),
+                        cellVectors[2], cellVectors[2].clone().add(cellVectors[0]),
+                        cellVectors[2], cellVectors[2].clone().add(cellVectors[1]),
+                        cellVectors[0].clone().add(cellVectors[1]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+                        cellVectors[0].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
+                        cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
+                    ];
+                    const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const cellColor = new THREE.Color(settings.cellColor);
+                    const cellMaterial = new THREE.LineBasicMaterial({ color: cellColor });
+                    const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
+                    cellMesh.renderOrder = 2;
+                    molGroup.add(cellMesh);
+                }
+
+                moleculeGroup.add(molGroup);
+            });
+
+            scene.add(moleculeGroup);
+
+            if (cameraNeedsFit) {
+                fitCameraToMolecule(moleculeGroup);
+            }
+        }
+
+        function disposeObject3D(obj) {
+            if (!obj) return;
+
+            obj.traverse((child) => {
+                if (child.geometry && !child.geometry._isCached) {
+                    child.geometry.dispose();
+                }
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(mat => {
+                            if (!mat._isCached) mat.dispose();
+                        });
+                    } else if (!child.material._isCached) {
+                        child.material.dispose();
+                    }
+                }
+            });
+        }
+
+        function fitCameraToMolecule(group) {
+            if (!group || !camera || !controls) return;
+
+            const box = new THREE.Box3().setFromObject(group);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov ? camera.fov * (Math.PI / 180) : 1;
+            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+            cameraZ *= 2.5;
+
+            camera.position.set(center.x + cameraZ * 0.5, center.y + cameraZ * 0.5, center.z + cameraZ);
+            camera.near = cameraZ / 100;
+            camera.far = cameraZ * 100;
+
+            if (camera.isOrthographicCamera) {
+                camera.left = -maxDim;
+                camera.right = maxDim;
+                camera.top = maxDim;
+                camera.bottom = -maxDim;
+            }
+
+            controls.target.copy(center);
+            controls.update();
+            camera.lookAt(center);
+            camera.updateProjectionMatrix();
+            cameraNeedsFit = false;
+        }
+
+        function updateBackgroundColor() {
+            if (!scene || !renderer) return;
+            const color = new THREE.Color(settings.backgroundColor || 'transparent');
+            scene.background = color;
+            renderer.setClearColor(color, 1);
+        }
+
+        function updateShading() {
+            // This function controls shading (lighting), not cast shadows
+            // When enabled: light offset from camera creates visible shading on spheres
+            // When disabled: light follows camera for flat appearance
+
+            renderMolecule();
+        }
+
+        function updateFrameDisplay() {
+            const frameSlider = document.getElementById('frame-slider');
+            const frameValue = document.getElementById('frame-value');
+
+            if (frameSlider && molecularData) {
+                const totalFrames = molecularData.length;
+                frameSlider.max = totalFrames;
+                frameSlider.value = animationState.currentFrame + 1;  // 1-indexed for display
+
+                if (frameValue) {
+                    frameValue.textContent = `${animationState.currentFrame + 1} / ${totalFrames}`;
+                }
+            }
+        }
+
+        function toggleAnimation() {
+            if (!molecularData || molecularData.length <= 1) {
+                console.log('No animation frames available');
+                return;
+            }
+
+            const playBtn = document.getElementById('play-btn');
+
+            if (animationState.isPlaying) {
+                // Pause
+                animationState.isPlaying = false;
+                if (animationState.animationInterval) {
+                    clearInterval(animationState.animationInterval);
+                    animationState.animationInterval = null;
+                }
+
+                // Update button icon to play
+                if (playBtn) {
+                    playBtn.innerHTML = `
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            `;
+                }
+            } else {
+                // Play
+                animationState.isPlaying = true;
+                const fps = settings.animationSpeed || 30;
+                const interval = 1000 / fps;
+
+                animationState.animationInterval = setInterval(() => {
+                    animationState.currentFrame = (animationState.currentFrame + 1) % molecularData.length;
+                    updateFrameDisplay();
+                    renderMolecule();
+                }, interval);
+
+                // Update button icon to pause
+                if (playBtn) {
+                    playBtn.innerHTML = `
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            `;
+                }
+            }
+        }
+
+        function getCurrentFrameAsXYZ() {
+            if (!molecularData || molecularData.length === 0) {
+                return '';
+            }
+
+            const frameIndex = animationState.currentFrame % molecularData.length;
+            const molecule = molecularData[frameIndex];
+
+            if (!molecule || !molecule.positions || !molecule.symbols) {
+                return '';
+            }
+
+            const numAtoms = molecule.symbols.length;
+            let xyzString = `${numAtoms}\n`;
+
+            // Comment line (can include energy, frame number, etc.)
+            xyzString += `Frame ${frameIndex + 1}`;
+            if (molecule.energy !== undefined) {
+                xyzString += ` Energy: ${molecule.energy}`;
+            }
+            xyzString += '\n';
+
+            // Atom lines: symbol x y z
+            for (let i = 0; i < numAtoms; i++) {
+                const symbol = molecule.symbols[i];
+                const pos = molecule.positions[i];
+                xyzString += `${symbol}  ${pos[0].toFixed(6)}  ${pos[1].toFixed(6)}  ${pos[2].toFixed(6)}\n`;
+            }
+
+            return xyzString;
+        }
+
+        function copyCurrentFrameToClipboard() {
+            const xyzString = getCurrentFrameAsXYZ();
+
+            if (!xyzString) {
+                alert('No molecular data to copy');
+                return;
+            }
+
+            // Try to copy to clipboard
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(xyzString).then(() => {
+                    // Show success feedback
+                    const copyBtn = document.getElementById('copy-btn');
+                    if (copyBtn) {
+                        const originalHTML = copyBtn.innerHTML;
+                        copyBtn.innerHTML = `
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                `;
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalHTML;
+                        }, 1000);
+                    }
+                    console.log('Copied XYZ to clipboard');
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    alert('Failed to copy to clipboard');
+                });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = xyzString;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('Copied to clipboard!');
+                } catch (err) {
+                    alert('Failed to copy to clipboard');
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        function setMolecularData(data) {
+            molecularData = Array.isArray(data) ? data : [data];
+            cameraNeedsFit = true;
+
+            // Initialize molecule settings with default colors
+            const defaultColors = [
+                '#3b82f6', // Blue
+                '#ef4444', // Red
+                '#06b6d4', // Cyan
+                '#10b981', // Green
+                '#f59e0b', // Amber
+                '#8b5cf6', // Purple
+                '#ec4899', // Pink
+                '#14b8a6', // Teal
+            ];
+
+            moleculeSettings = molecularData.map((mol, index) => ({
+                color: parseInt(defaultColors[index % defaultColors.length].replace('#', '0x')),
+                opacity: index < 2 ? 0.8 : 0.5,  // First two molecules more opaque
+                visible: index < 3  // First three visible by default
+            }));
+
+            // Update molecule UI
+            updateMoleculeUI();
+
+            // Reset animation state
+            animationState.currentFrame = 0;
+            animationState.isPlaying = false;
+            if (animationState.animationInterval) {
+                clearInterval(animationState.animationInterval);
+                animationState.animationInterval = null;
+            }
+
+            // Update frame display
+            updateFrameDisplay();
+
+            // Show/hide animation controls based on number of frames
+            const animationCard = document.querySelector('.card:has(#play-btn)');
+            if (animationCard) {
+                animationCard.style.display = molecularData.length > 1 ? 'block' : 'none';
+            }
+
+            // Show/hide cell color control based on whether any molecule has cell data
+            const hasCell = molecularData.some(mol => mol && mol.cell);
+            const cellColorGroup = document.getElementById('cell-color-group');
+            if (cellColorGroup) {
+                cellColorGroup.style.display = hasCell ? 'block' : 'none';
+            }
+
+            renderMolecule();
+        }
+
+        function updateMoleculeUI() {
+            const moleculesContent = document.getElementById('molecules-content');
+            if (!moleculesContent) return;
+
+            moleculesContent.innerHTML = '';
+
+            molecularData.forEach((mol, index) => {
+                const molSettings = moleculeSettings[index];
+                const colorHex = '#' + molSettings.color.toString(16).padStart(6, '0');
+                const opacityPercent = Math.round(molSettings.opacity * 100);
+                const moleculeName = mol.name || `Molecule ${index + 1}`;
+
+                const moleculeItem = document.createElement('div');
+                moleculeItem.className = 'molecule-item';
+                moleculeItem.innerHTML = `
+            <div class="molecule-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="color" value="${colorHex}" class="color-input" style="width: 24px; height: 24px;" 
+                           id="molecule-${index}-color" data-mol-index="${index}">
+                    <span class="molecule-name">${moleculeName}</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="molecule-${index}-visible" data-mol-index="${index}" 
+                           ${molSettings.visible ? 'checked' : ''}>
+                    <span class="slider-switch"></span>
+                </label>
+            </div>
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Opacity</span>
+                    <span class="slider-value" id="molecule-${index}-opacity-value">${opacityPercent}%</span>
+                </div>
+                <div class="slider-container">
+                    <input type="range" min="0" max="1" step="0.1" value="${molSettings.opacity}" 
+                           class="slider" id="molecule-${index}-opacity" data-mol-index="${index}">
+                </div>
+            </div>
+        `;
+
+                moleculesContent.appendChild(moleculeItem);
+
+                // Add event listeners
+                const colorInput = document.getElementById(`molecule-${index}-color`);
+                const visibleInput = document.getElementById(`molecule-${index}-visible`);
+                const opacityInput = document.getElementById(`molecule-${index}-opacity`);
+
+                if (colorInput) {
+                    colorInput.addEventListener('input', function () {
+                        const molIndex = parseInt(this.dataset.molIndex);
+                        moleculeSettings[molIndex].color = parseInt(this.value.replace('#', '0x'));
+                        renderMolecule();
+                    });
+                }
+
+                if (visibleInput) {
+                    visibleInput.addEventListener('change', function () {
+                        const molIndex = parseInt(this.dataset.molIndex);
+                        moleculeSettings[molIndex].visible = this.checked;
+                        renderMolecule();
+                    });
+                }
+
+                if (opacityInput) {
+                    opacityInput.addEventListener('input', function () {
+                        const molIndex = parseInt(this.dataset.molIndex);
+                        const opacity = parseFloat(this.value);
+                        moleculeSettings[molIndex].opacity = opacity;
+                        const valueEl = document.getElementById(`molecule-${molIndex}-opacity-value`);
+                        if (valueEl) valueEl.textContent = Math.round(opacity * 100) + '%';
+                        renderMolecule();
+                    });
+                }
+            });
+        }
+
+        function addPeriodicity() {
+            const select = document.getElementById('periodicity-select');
+            const value = select.value;
+            if (!periodicities.includes(value)) {
+                periodicities.push(value);
+                renderPeriodicities();
+                renderMolecule();  // Re-render with new periodicity
+            }
+        }
+
+        function removePeriodicity(value) {
+            periodicities = periodicities.filter(p => p !== value);
+            renderPeriodicities();
+            renderMolecule();  // Re-render without periodicity
+        }
+
+        function renderPeriodicities() {
+            const container = document.getElementById('periodicities-list');
+            container.innerHTML = '';
+            periodicities.forEach(periodicity => {
+                const item = document.createElement('div');
+                item.className = 'periodicity-item';
+                item.innerHTML = `
+            <span class="periodicity-value">${periodicity}</span>
+            <button class="btn" onclick="removePeriodicity('${periodicity}')" style="padding: 0.25rem; min-width: 30px;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        `;
+                container.appendChild(item);
+            });
+        }
+
+        /**
+         * Apply periodic boundary conditions to create replicated atoms
+         * @param {Array} positions - Original atom positions
+         * @param {Array} symbols - Original atom symbols
+         * @param {Array} cell - Unit cell vectors
+         * @param {Array} periodicities - List of periodicity directions (e.g., ['+x', '±y'])
+         * @returns {Object} Extended positions and symbols
+         */
+        function applyPeriodicBoundaries(positions, symbols, cell, periodicities) {
+            if (!cell || periodicities.length === 0) {
+                return { positions, symbols };
+            }
+
+            const cellVectors = cell.map(c => new THREE.Vector3(...c));
+            const extendedPositions = [...positions];
+            const extendedSymbols = [...symbols];
+
+            periodicities.forEach(periodicity => {
+                const currentCount = extendedPositions.length;
+
+                // Parse periodicity string (e.g., '+x', '±y', '-z')
+                const direction = periodicity.slice(-1).toLowerCase();  // 'x', 'y', or 'z'
+                const sign = periodicity.slice(0, -1);  // '+', '-', or '±'
+
+                const axisIndex = { 'x': 0, 'y': 1, 'z': 2 }[direction];
+                const cellVector = cellVectors[axisIndex];
+
+                // Determine which directions to replicate
+                const directions = [];
+                if (sign === '+' || sign === '±') directions.push(1);
+                if (sign === '-' || sign === '±') directions.push(-1);
+
+                // Replicate atoms in specified directions
+                directions.forEach(dir => {
+                    for (let i = 0; i < currentCount; i++) {
+                        const newPos = extendedPositions[i].clone().add(cellVector.clone().multiplyScalar(dir));
+                        extendedPositions.push(newPos);
+                        extendedSymbols.push(extendedSymbols[i]);
+                    }
+                });
+            });
+
+            return { positions: extendedPositions, symbols: extendedSymbols };
+        }
+
+        function setupEventListeners() {
+            // Helper function to safely add event listener
+            function safeAddListener(id, event, handler) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener(event, handler);
+                }
+            }
+
+            safeAddListener('sidebar-toggle', 'click', toggleSidebar);
+
+            safeAddListener('bond-threshold', 'input', function () {
+                const valueEl = document.getElementById('bond-threshold-value');
+                if (valueEl) valueEl.textContent = this.value;
+                settings.bondThreshold = parseFloat(this.value);
+                renderMolecule();
+            });
+
+            safeAddListener('bond-thickness', 'input', function () {
+                const valueEl = document.getElementById('bond-thickness-value');
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
+                settings.bondThickness = parseFloat(this.value);
+                renderMolecule();
+            });
+
+            safeAddListener('atom-size', 'input', function () {
+                const valueEl = document.getElementById('atom-size-value');
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + '×';
+                settings.atomSize = parseFloat(this.value);
+                renderMolecule();
+            });
+
+            safeAddListener('animation-speed', 'input', function () {
+                const valueEl = document.getElementById('animation-speed-value');
+                if (valueEl) valueEl.textContent = this.value;
+                settings.animationSpeed = parseInt(this.value, 10);
+
+                // If animation is playing, restart with new speed
+                if (animationState.isPlaying) {
+                    toggleAnimation();  // Pause
+                    toggleAnimation();  // Play with new speed
+                }
+            });
+
+            safeAddListener('force-scale', 'input', function () {
+                const valueEl = document.getElementById('force-scale-value');
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + '×';
+                settings.forceScale = parseFloat(this.value);
+                if (settings.showForces) {
+                    renderMolecule();
+                }
+            });
+
+            safeAddListener('frame-slider', 'input', function () {
+                const frameNum = parseInt(this.value, 10);
+                animationState.currentFrame = frameNum - 1;  // 0-indexed
+                updateFrameDisplay();
+                renderMolecule();
+            });
+
+            safeAddListener('background-color', 'input', function () {
+                const valueEl = document.getElementById('background-color-value');
+                if (valueEl) valueEl.textContent = this.value;
+                const viewerContainer = document.querySelector('.viewer-container');
+                if (viewerContainer) {
+                    viewerContainer.style.background = `linear-gradient(135deg, ${this.value}, ${darkenColorHex(this.value, 20)})`;
+                }
+                settings.backgroundColor = this.value;
+                updateBackgroundColor();
+            });
+
+            safeAddListener('style', 'change', function () {
+                settings.style = this.value;
+                renderMolecule();
+            });
+
+            safeAddListener('color-by', 'change', function () {
+                settings.colorBy = this.value;
+                // Show/hide colormap selector based on colorBy mode
+                const colormapGroup = document.getElementById('colormap-group');
+                if (colormapGroup) {
+                    colormapGroup.style.display = this.value === 'Colormap' ? 'block' : 'none';
+                }
+                renderMolecule();
+            });
+
+            safeAddListener('colormap-select', 'change', function () {
+                settings.colormap = this.value;
+                if (settings.colorBy === 'Colormap') {
+                    renderMolecule();
+                }
+            });
+
+            safeAddListener('show-cell', 'change', function () {
+                settings.showCell = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('cell-color', 'input', function () {
+                const valueEl = document.getElementById('cell-color-value');
+                if (valueEl) valueEl.textContent = this.value;
+                settings.cellColor = this.value;
+                renderMolecule();
+            });
+
+            safeAddListener('show-bond', 'change', function () {
+                settings.showBond = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('align-molecules', 'change', function () {
+                settings.alignMolecules = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-shading', 'change', function () {
+                settings.showShading = this.checked;
+                updateShading();
+            });
+
+            safeAddListener('show-axis', 'change', function () {
+                settings.showAxis = this.checked;
+                render();
+            });
+
+            safeAddListener('show-energy-plot', 'change', function () {
+                settings.showEnergyPlot = this.checked;
+            });
+
+            safeAddListener('show-forces', 'change', function () {
+                settings.showForces = this.checked;
+                renderMolecule();
+            });
+
+            if (document.getElementById('orthographic-btn') && document.getElementById('perspective-btn')) {
+                setupButtonGroup('view-mode', ['orthographic-btn', 'perspective-btn']);
+            }
+            if (document.getElementById('trackball-btn') && document.getElementById('orbit-btn')) {
+                setupButtonGroup('rotation-mode', ['trackball-btn', 'orbit-btn']);
+            }
+
+            safeAddListener('add-periodicity-btn', 'click', addPeriodicity);
+            safeAddListener('play-btn', 'click', toggleAnimation);
+            safeAddListener('copy-btn', 'click', copyCurrentFrameToClipboard);
+            safeAddListener('video-btn', 'click', function () {
+                alert('GIF export not available in Overlay Viewer');
+            });
+            safeAddListener('download-btn', 'click', saveAsPNG);
+        }
+
+        function saveAsPNG() {
+            if (!renderer || !scene || !camera) {
+                alert('Renderer not ready');
+                return;
+            }
+
+            // Store original background
+            const originalBackground = scene.background;
+
+            // Set transparent background
+            scene.background = null;
+            renderer.setClearColor(0x000000, 0); // Transparent
+
+            // Render one frame
+            renderer.render(scene, camera);
+
+            // Get canvas data as PNG
+            renderer.domElement.toBlob(function (blob) {
+                // Restore original background
+                scene.background = originalBackground;
+                updateBackgroundColor();
+
+                // Download the image
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'overlay_molecules.png';
+                link.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+
+        function setupButtonGroup(groupName, buttonIds) {
+            buttonIds.forEach(id => {
+                const button = document.getElementById(id);
+                button.addEventListener('click', function () {
+                    buttonIds.forEach(btnId => {
+                        document.getElementById(btnId).classList.remove('active');
+                    });
+                    this.classList.add('active');
+
+                    if (groupName === 'rotation-mode') {
+                        settings.rotationMode = (id === 'trackball-btn') ? 'TrackBall' : 'Orbit';
+                        setupControls();
+                    } else if (groupName === 'view-mode') {
+                        settings.viewMode = (id === 'orthographic-btn') ? 'Orthographic' : 'Perspective';
+                        setupCamera();
+                        setupControls();
+                        cameraNeedsFit = true;
+                        renderMolecule();
+                    }
+                });
+            });
+        }
+
+        function toggleSidebar() {
+            sidebarOpen = !sidebarOpen;
+            const sidebar = document.getElementById('sidebar');
+            if (sidebarOpen) {
+                sidebar.style.width = '320px';
+                sidebar.classList.remove('collapsed');
+            } else {
+                sidebar.style.width = '0';
+                sidebar.classList.add('collapsed');
+            }
+
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 350);
+        }
+
+        function toggleCard(cardId) {
+            cards[cardId] = !cards[cardId];
+            const content = document.getElementById(cardId + '-content');
+            const arrow = document.getElementById(cardId + '-arrow');
+
+            if (cards[cardId]) {
+                content.classList.remove('collapsed');
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                content.classList.add('collapsed');
+                arrow.style.transform = 'rotate(-90deg)';
+            }
+        }
+
+        function darkenColorHex(color, percent) {
+            let R = parseInt(color.substring(1, 3), 16);
+            let G = parseInt(color.substring(3, 5), 16);
+            let B = parseInt(color.substring(5, 7), 16);
+
+            R = Math.floor(R * (100 - percent) / 100);
+            G = Math.floor(G * (100 - percent) / 100);
+            B = Math.floor(B * (100 - percent) / 100);
+
+            return `#${R.toString(16).padStart(2, '0')}${G.toString(16).padStart(2, '0')}${B.toString(16).padStart(2, '0')}`;
+        }
+
+        // Colormap functions for gradient coloring
+        const colormaps = {
+            viridis: (t) => {
+                // Viridis colormap approximation
+                const r = Math.round(255 * Math.max(0, Math.min(1, 0.267004 + t * (0.004874 + t * (0.329415 + t * (-0.053599 + t * 0.450398))))));
+                const g = Math.round(255 * Math.max(0, Math.min(1, 0.004874 + t * (0.873449 + t * (-0.226173 + t * 0.348009)))));
+                const b = Math.round(255 * Math.max(0, Math.min(1, 0.329415 + t * (0.565522 + t * (-0.814363 + t * 0.919661)))));
+                return (r << 16) | (g << 8) | b;
+            },
+            plasma: (t) => {
+                // Plasma colormap approximation
+                const r = Math.round(255 * Math.max(0, Math.min(1, 0.050383 + t * (2.540837 + t * (-2.123601 + t * 0.532199)))));
+                const g = Math.round(255 * Math.max(0, Math.min(1, 0.029803 + t * (0.256073 + t * (0.741527 + t * (-0.027503))))));
+                const b = Math.round(255 * Math.max(0, Math.min(1, 0.527975 + t * (0.735683 + t * (-1.935073 + t * 0.671619)))));
+                return (r << 16) | (g << 8) | b;
+            },
+            coolwarm: (t) => {
+                // Cool (blue) to Warm (red)
+                const r = Math.round(255 * Math.max(0, Math.min(1, t < 0.5 ? 0.23 + t * 1.0 : 0.73 + (t - 0.5) * 0.54)));
+                const g = Math.round(255 * Math.max(0, Math.min(1, t < 0.5 ? 0.3 + t * 0.8 : 0.7 - (t - 0.5) * 1.0)));
+                const b = Math.round(255 * Math.max(0, Math.min(1, t < 0.5 ? 0.75 - t * 0.5 : 0.5 - (t - 0.5) * 0.8)));
+                return (r << 16) | (g << 8) | b;
+            },
+            jet: (t) => {
+                // Jet colormap (blue -> cyan -> yellow -> red)
+                let r, g, b;
+                if (t < 0.125) { r = 0; g = 0; b = 0.5 + t * 4; }
+                else if (t < 0.375) { r = 0; g = (t - 0.125) * 4; b = 1; }
+                else if (t < 0.625) { r = (t - 0.375) * 4; g = 1; b = 1 - (t - 0.375) * 4; }
+                else if (t < 0.875) { r = 1; g = 1 - (t - 0.625) * 4; b = 0; }
+                else { r = 1 - (t - 0.875) * 4; g = 0; b = 0; }
+                return (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
+            },
+            rainbow: (t) => {
+                // HSL rainbow
+                const h = t * 300; // 0 to 300 degrees (red to magenta)
+                const s = 1, l = 0.5;
+                const c = (1 - Math.abs(2 * l - 1)) * s;
+                const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+                const m = l - c / 2;
+                let r, g, b;
+                if (h < 60) { r = c; g = x; b = 0; }
+                else if (h < 120) { r = x; g = c; b = 0; }
+                else if (h < 180) { r = 0; g = c; b = x; }
+                else if (h < 240) { r = 0; g = x; b = c; }
+                else if (h < 300) { r = x; g = 0; b = c; }
+                else { r = c; g = 0; b = x; }
+                return (Math.round((r + m) * 255) << 16) | (Math.round((g + m) * 255) << 8) | Math.round((b + m) * 255);
+            },
+            grayscale: (t) => {
+                const v = Math.round(255 * t);
+                return (v << 16) | (v << 8) | v;
+            }
+        };
+
+        function getColormapColor(index, total, cmapName) {
+            const t = total > 1 ? index / (total - 1) : 0.5;
+            const cmap = colormaps[cmapName] || colormaps.viridis;
+            return cmap(t);
+        }
+
+        // ========== Molecular Alignment Algorithms ==========
+
+        // Calculate centroid of positions
+        function centroid(positions) {
+            const n = positions.length;
+            if (n === 0) return [0, 0, 0];
+            let cx = 0, cy = 0, cz = 0;
+            for (const p of positions) {
+                cx += p[0]; cy += p[1]; cz += p[2];
+            }
+            return [cx / n, cy / n, cz / n];
+        }
+
+        // Center positions at origin
+        function centerPositions(positions) {
+            const c = centroid(positions);
+            return positions.map(p => [p[0] - c[0], p[1] - c[1], p[2] - c[2]]);
+        }
+
+        // Matrix multiplication (3x3 * 3x1)
+        function matVecMul(M, v) {
+            return [
+                M[0][0] * v[0] + M[0][1] * v[1] + M[0][2] * v[2],
+                M[1][0] * v[0] + M[1][1] * v[1] + M[1][2] * v[2],
+                M[2][0] * v[0] + M[2][1] * v[1] + M[2][2] * v[2]
+            ];
+        }
+
+        // Matrix multiplication (3x3 * 3x3)
+        function matMul(A, B) {
+            const C = [[0,0,0], [0,0,0], [0,0,0]];
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    for (let k = 0; k < 3; k++) {
+                        C[i][j] += A[i][k] * B[k][j];
+                    }
+                }
+            }
+            return C;
+        }
+
+        // Transpose 3x3 matrix
+        function transpose(M) {
+            return [
+                [M[0][0], M[1][0], M[2][0]],
+                [M[0][1], M[1][1], M[2][1]],
+                [M[0][2], M[1][2], M[2][2]]
+            ];
+        }
+
+        // Compute covariance matrix H = P^T * Q
+        function covarianceMatrix(P, Q) {
+            const H = [[0,0,0], [0,0,0], [0,0,0]];
+            const n = P.length;
+            for (let k = 0; k < n; k++) {
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        H[i][j] += P[k][i] * Q[k][j];
+                    }
+                }
+            }
+            return H;
+        }
+
+        // Simple SVD for 3x3 matrix using Jacobi iteration
+        // Returns {U, S, V} where A = U * diag(S) * V^T
+        function svd3x3(A) {
+            // Use iterative approach for 3x3 SVD
+            // Compute A^T * A
+            const AtA = matMul(transpose(A), A);
+
+            // Power iteration to find eigenvalues/vectors of AtA
+            // This is simplified - for production use a proper SVD library
+            let V = [[1,0,0], [0,1,0], [0,0,1]];
+            const S = [0, 0, 0];
+
+            // Jacobi eigenvalue algorithm for symmetric matrix
+            function jacobiRotate(M, V) {
+                const tol = 1e-10;
+                const maxIter = 50;
+
+                for (let iter = 0; iter < maxIter; iter++) {
+                    // Find largest off-diagonal element
+                    let maxVal = 0, p = 0, q = 1;
+                    for (let i = 0; i < 3; i++) {
+                        for (let j = i + 1; j < 3; j++) {
+                            if (Math.abs(M[i][j]) > maxVal) {
+                                maxVal = Math.abs(M[i][j]);
+                                p = i; q = j;
+                            }
+                        }
+                    }
+                    if (maxVal < tol) break;
+
+                    // Compute rotation angle
+                    const theta = 0.5 * Math.atan2(2 * M[p][q], M[q][q] - M[p][p]);
+                    const c = Math.cos(theta), s = Math.sin(theta);
+
+                    // Create rotation matrix
+                    const G = [[1,0,0], [0,1,0], [0,0,1]];
+                    G[p][p] = c; G[q][q] = c;
+                    G[p][q] = s; G[q][p] = -s;
+
+                    // Apply rotation: M = G^T * M * G
+                    M = matMul(matMul(transpose(G), M), G);
+                    V = matMul(V, G);
+                }
+                return { eigenvalues: [M[0][0], M[1][1], M[2][2]], eigenvectors: V };
+            }
+
+            const eigen = jacobiRotate(AtA, V);
+
+            // Sort eigenvalues descending
+            const indices = [0, 1, 2].sort((a, b) => eigen.eigenvalues[b] - eigen.eigenvalues[a]);
+
+            for (let i = 0; i < 3; i++) {
+                S[i] = Math.sqrt(Math.max(0, eigen.eigenvalues[indices[i]]));
+            }
+
+            // Reorder V columns
+            V = [
+                [eigen.eigenvectors[0][indices[0]], eigen.eigenvectors[0][indices[1]], eigen.eigenvectors[0][indices[2]]],
+                [eigen.eigenvectors[1][indices[0]], eigen.eigenvectors[1][indices[1]], eigen.eigenvectors[1][indices[2]]],
+                [eigen.eigenvectors[2][indices[0]], eigen.eigenvectors[2][indices[1]], eigen.eigenvectors[2][indices[2]]]
+            ];
+
+            // Compute U = A * V * S^-1
+            const U = [[0,0,0], [0,0,0], [0,0,0]];
+            const AV = matMul(A, V);
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    U[i][j] = S[j] > 1e-10 ? AV[i][j] / S[j] : 0;
+                }
+            }
+
+            return { U, S, V };
+        }
+
+        // Determinant of 3x3 matrix
+        function det3x3(M) {
+            return M[0][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1])
+                 - M[0][1] * (M[1][0] * M[2][2] - M[1][2] * M[2][0])
+                 + M[0][2] * (M[1][0] * M[2][1] - M[1][1] * M[2][0]);
+        }
+
+        // Kabsch algorithm: find optimal rotation matrix to align Q onto P
+        // P is reference, Q is target to be rotated
+        // P and Q should be centered at origin
+        function kabsch(P, Q) {
+            if (P.length !== Q.length || P.length === 0) {
+                return [[1,0,0], [0,1,0], [0,0,1]]; // Identity
+            }
+
+            // Compute covariance matrix H = P^T * Q
+            // This finds R such that R * Q ≈ P
+            const H = covarianceMatrix(P, Q);
+
+            // SVD of H
+            const { U, S, V } = svd3x3(H);
+
+            // Compute rotation matrix R = V * U^T
+            let R = matMul(V, transpose(U));
+
+            // Ensure proper rotation (det = 1, not -1 for reflection)
+            if (det3x3(R) < 0) {
+                // Flip sign of last column of V
+                V[0][2] = -V[0][2];
+                V[1][2] = -V[1][2];
+                V[2][2] = -V[2][2];
+                R = matMul(V, transpose(U));
+            }
+
+            return R;
+        }
+
+        // Full alignment: iterative Kabsch + Hungarian
+        // 1. Center both molecules
+        // 2. Initial Kabsch rotation (rough alignment)
+        // 3. Hungarian reordering on rotated positions
+        // 4. Final Kabsch with reordered atoms
+        function alignMolecule(refPositions, refSymbols, targetPositions, targetSymbols) {
+            const n = refPositions.length;
+            if (n === 0 || targetPositions.length !== n) {
+                return {
+                    positions: targetPositions.map(p => [...p]),
+                    symbols: targetSymbols.slice(),
+                    rotation: [[1,0,0], [0,1,0], [0,0,1]]
+                };
+            }
+
+            // Step 1: Center both molecules
+            const refCentered = centerPositions(refPositions);
+            const targetCentered = centerPositions(targetPositions);
+
+            // Step 2: Initial Kabsch rotation (same atom order, rough alignment)
+            const R1 = kabsch(refCentered, targetCentered);
+            const rotatedTarget = targetCentered.map(p => matVecMul(R1, p));
+
+            // Step 3: Hungarian reordering on rotated positions
+            // This matches atoms after rough alignment for better pairing
+            const { reorderedIndices } = hungarianReorderWithIndices(
+                refCentered, rotatedTarget, refSymbols, targetSymbols
+            );
+
+            // Step 4: Reorder original centered target using the indices
+            const reorderedTarget = reorderedIndices.map(i =>
+                i >= 0 ? targetCentered[i] : [0, 0, 0]
+            );
+            const reorderedSymbols = reorderedIndices.map(i =>
+                i >= 0 ? targetSymbols[i] : 'X'
+            );
+
+            // Step 5: Final Kabsch rotation with properly ordered atoms
+            const R2 = kabsch(refCentered, reorderedTarget);
+            const alignedPositions = reorderedTarget.map(p => matVecMul(R2, p));
+
+            return {
+                positions: alignedPositions,
+                symbols: reorderedSymbols,
+                rotation: R2
+            };
+        }
+
+        // Hungarian reordering that returns indices for remapping
+        function hungarianReorderWithIndices(P, Q, symbolsP, symbolsQ) {
+            const n = P.length;
+            if (n === 0) return { reorderedIndices: [] };
+
+            // Group Q atoms by element
+            const groups = {};
+            for (let i = 0; i < n; i++) {
+                const sym = symbolsQ[i];
+                if (!groups[sym]) groups[sym] = [];
+                groups[sym].push(i);
+            }
+
+            const used = new Set();
+            const reorderedIndices = new Array(n).fill(-1);
+
+            // For each atom in P, find best matching atom in Q (same element)
+            for (let i = 0; i < n; i++) {
+                const symP = symbolsP[i];
+                const candidates = groups[symP] || [];
+
+                let bestJ = -1, bestDist = Infinity;
+                for (const j of candidates) {
+                    if (used.has(j)) continue;
+                    const dx = P[i][0] - Q[j][0];
+                    const dy = P[i][1] - Q[j][1];
+                    const dz = P[i][2] - Q[j][2];
+                    const dist = dx*dx + dy*dy + dz*dz;
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        bestJ = j;
+                    }
+                }
+
+                if (bestJ >= 0) {
+                    reorderedIndices[i] = bestJ;
+                    used.add(bestJ);
+                }
+            }
+
+            return { reorderedIndices };
+        }
+
+        // ========== End Alignment Algorithms ==========
+
+        window.setMolecularData = setMolecularData;
+        window.removePeriodicity = removePeriodicity;
+
+        // PostMessage API for iframe embedding
+        window.addEventListener('message', function(event) {
+            const msg = event.data;
+            if (!msg || !msg.type) return;
+
+            switch (msg.type) {
+                case 'setData':
+                    if (msg.data) {
+                        setMolecularData(msg.data);
+                    }
+                    break;
+                case 'setSettings':
+                    if (msg.settings) {
+                        Object.assign(settings, msg.settings);
+                        if (typeof updateFromSettings === 'function') {
+                            updateFromSettings();
+                        }
+                    }
+                    break;
+                case 'ready':
+                    // Respond that viewer is ready
+                    if (event.source) {
+                        event.source.postMessage({ type: 'ready', viewer: 'overlay' }, '*');
+                    }
+                    break;
+            }
+        });
+
+        // Notify parent that viewer is loaded
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'viewerLoaded', viewer: 'overlay' }, '*');
+        }
+    </script>
+</body>
+
+</html>
