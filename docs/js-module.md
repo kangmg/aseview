@@ -350,6 +350,27 @@ viewer.setVibrationData(atoms, {
 });
 ```
 
+### Theming
+
+Select a visual theme via the `theme` option or the global `setTheme()` helper:
+
+```javascript
+// Per-viewer
+const viewer = new ASEView.MolecularViewer('#container', { theme: 'spring' });
+
+// Global (affects all viewers created afterwards)
+ASEView.setTheme('spring');
+ASEView.getTheme();  // 'spring'
+
+const v1 = new ASEView.MolecularViewer('#c1');    // spring
+const v2 = new ASEView.NormalModeViewer('#c2');   // spring
+```
+
+| Theme | Description |
+|-------|-------------|
+| `dark` | Default — deep grey background |
+| `spring` | Light pastel theme |
+
 ### Settings (Constructor Options)
 
 All viewers accept an options object as the second argument:
@@ -368,6 +389,7 @@ viewer.setSettings({ style: 'glossy', atomSize: 0.6 });
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
+| `theme` | string | `'dark'` | Visual theme (`'dark'`, `'spring'`, …) |
 | `style` | string | `'cartoon'` | Rendering style |
 | `backgroundColor` | string | `'#1f2937'` | Background color (hex) |
 | `atomSize` | float | `0.4` | Atom radius scale |

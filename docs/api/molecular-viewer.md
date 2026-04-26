@@ -13,6 +13,7 @@ MolecularViewer(data, **kwargs)
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `data` | `Atoms`, `List[Atoms]`, `Dict`, `str` | Molecular data to visualize | Required |
+| `theme` | `str` | Visual theme (`"dark"`, `"spring"`, …). `None` uses the global default. | `None` |
 
 ### Keyword Arguments (Settings)
 

@@ -54,6 +54,7 @@ aseview [OPTIONS] FILES...
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--style` | Visual style | `cartoon` |
+| `--theme`, `-t` | Visual theme | global default (`dark`) |
 
 #### Available Styles
 
@@ -66,6 +67,13 @@ aseview [OPTIONS] FILES...
 | `metallic` | Metallic appearance |
 | `rowan` | Rowan-inspired style |
 | `grey` | Greyscale rendering |
+
+#### Available Themes
+
+| Theme | Description |
+|-------|-------------|
+| `dark` | Default dark theme with deep grey background |
+| `spring` | Light pastel theme |
 
 ### Overlay Options
 

@@ -321,6 +321,15 @@
     </select>
   </div>
 
+  <!-- Theme selector -->
+  <div class="toolbar-group">
+    <label class="lbl" for="theme-type">Theme</label>
+    <select class="sel" id="theme-type">
+      <option value="dark">dark</option>
+      <option value="spring">spring</option>
+    </select>
+  </div>
+
   <!-- Format selector -->
   <div class="toolbar-group">
     <label class="lbl" for="format-type">Format</label>
@@ -622,8 +631,10 @@ function createViewer(type) {
     fi.accept = '.xyz,.json';
   }
 
+  const theme = document.getElementById('theme-type').value;
+
   try {
-    currentViewer = new ASEView[type]('#viewer-container');
+    currentViewer = new ASEView[type]('#viewer-container', { theme });
     setStatus('Viewer ready — load a file or try the sample', 'ok');
   } catch (e) {
     setStatus('Failed to create viewer: ' + e.message, 'err');
@@ -815,6 +826,10 @@ function updateHelpBody(type) {
 // ─────────────────────────────────────────────────────────────
 document.getElementById('viewer-type').addEventListener('change', function () {
   createViewer(this.value);
+});
+
+document.getElementById('theme-type').addEventListener('change', function () {
+  createViewer(currentType);
 });
 
 document.getElementById('upload-btn').addEventListener('click', () => {
