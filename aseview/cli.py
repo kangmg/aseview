@@ -22,6 +22,12 @@ from rich.panel import Panel
 from rich.text import Text
 from rich import print as rprint
 
+from .wrapper import list_themes as _list_themes
+
+_THEME_HELP = "Visual theme ({}). Defaults to current global theme.".format(
+    ", ".join(_list_themes())
+)
+
 app = typer.Typer(
     name="aseview",
     help="Molecular structure viewer for ASE-supported file formats",
@@ -311,7 +317,7 @@ def main(
         None,
         "--theme",
         "-t",
-        help="Visual theme (e.g. dark, spring). Defaults to current global theme.",
+        help=_THEME_HELP,
     ),
 ):
     """
@@ -376,9 +382,7 @@ def main(
 
     \b
     Themes (--theme / -t):
-      aseview mol.xyz --theme dark      # Dark theme (default)
-      aseview mol.xyz --theme spring    # Spring theme
-      aseview mol.xyz -t spring -o out.html
+      _THEME_EXAMPLES_
 
     \b
     Output Options:
@@ -508,6 +512,14 @@ def main(
         console.print(f"  [green]✓[/green] Saved to [bold]{output}[/bold]")
     else:
         serve_html(html_content, port=port, open_browser=not no_browser)
+
+
+_theme_examples = "\n      ".join(
+    "aseview mol.xyz --theme {}{}".format(t, "  # default" if i == 0 else "")
+    for i, t in enumerate(_list_themes())
+)
+_theme_examples += "\n      aseview mol.xyz -t {} -o out.html".format(_list_themes()[0])
+main.__doc__ = main.__doc__.replace("_THEME_EXAMPLES_", _theme_examples)
 
 
 def cli():
