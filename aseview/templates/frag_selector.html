@@ -663,9 +663,17 @@
         const molData = Array.isArray(_allMolData) ? _allMolData[0] : (_allMolData || {symbols:[], positions:[]});
 
         const fragSettings = Object.assign({
+            backgroundColor: '#1f2937',
+            style: 'cartoon',
+            atomSize: 0.4,
+            bondThickness: 0.1,
+            bondThreshold: 1.0,
+            showBond: true,
             showCell: true,
             cellColor: '#808080',
             showAxis: true,
+            showShading: true,
+            colorScheme: 'Jmol',
         }, _readInjectedJSON('__frag_settings__', {}));
 
         // ─────────────────────────────────────────────────────────────────────
@@ -2155,6 +2163,10 @@
         // ═════════════════════════════════════════════════════════════════════
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Sync styles.js global with fragSettings
+            if (typeof atomColorScheme !== 'undefined') {
+                atomColorScheme = (fragSettings.colorScheme || 'Jmol').toLowerCase();
+            }
             init3D();
             initSVGInteraction();
             initSplitter();
