@@ -22,6 +22,12 @@ from rich.panel import Panel
 from rich.text import Text
 from rich import print as rprint
 
+from .wrapper import list_themes as _list_themes
+
+_THEME_HELP = "Visual theme ({}). Defaults to current global theme.".format(
+    ", ".join(_list_themes())
+)
+
 app = typer.Typer(
     name="aseview",
     help="Molecular structure viewer for ASE-supported file formats",
@@ -307,6 +313,12 @@ def main(
         "--kill",
         help="Kill existing process on the port before starting",
     ),
+    theme: Optional[str] = typer.Option(
+        None,
+        "--theme",
+        "-t",
+        help=_THEME_HELP,
+    ),
 ):
     """
     Molecular structure viewer for ASE-supported file formats.
@@ -367,6 +379,10 @@ def main(
       aseview mol.xyz --style glossy    # Shiny surface
       aseview mol.xyz --style metallic  # Metallic appearance
       aseview mol.xyz --style rowan     # Rowan style
+
+    \b
+    Themes (--theme / -t):
+      _THEME_EXAMPLES_
 
     \b
     Output Options:
@@ -454,7 +470,7 @@ def main(
         viewer_kwargs["colormap"] = cmap
 
     if viewer_type == "molecular":
-        viewer_obj = MolecularViewer(all_atoms, **viewer_kwargs)
+        viewer_obj = MolecularViewer(all_atoms, theme=theme, **viewer_kwargs)
     elif viewer_type == "normal":
         if hess:
             # Use Hessian file for normal mode viewer
@@ -462,15 +478,15 @@ def main(
                 console.print(f"[red]Error: Hessian file not found: {hess}[/red]")
                 raise typer.Exit(1)
             try:
-                viewer_obj = NormalViewer.from_file(all_atoms[0], hess, **viewer_kwargs)
+                viewer_obj = NormalViewer.from_file(all_atoms[0], hess, theme=theme, **viewer_kwargs)
                 console.print(f"  [green]✓[/green] Loaded Hessian from [bold]{hess}[/bold]")
             except Exception as e:
                 console.print(f"[red]Error parsing Hessian file: {e}[/red]")
                 raise typer.Exit(1)
         else:
-            viewer_obj = NormalViewer(all_atoms[0], **viewer_kwargs)
+            viewer_obj = NormalViewer(all_atoms[0], theme=theme, **viewer_kwargs)
     elif viewer_type == "overlay":
-        viewer_obj = OverlayViewer(all_atoms, **viewer_kwargs)
+        viewer_obj = OverlayViewer(all_atoms, theme=theme, **viewer_kwargs)
     elif viewer_type in ("frag", "fragment", "fragselector"):
         frag_kwargs = {"style": style}
         if bond_threshold is not None:
@@ -480,7 +496,7 @@ def main(
                 f"  [yellow]Note:[/yellow] FragSelector uses only the first frame "
                 f"({n_frames} frames loaded)"
             )
-        viewer_obj = FragSelector(all_atoms[0], **frag_kwargs)
+        viewer_obj = FragSelector(all_atoms[0], theme=theme, **frag_kwargs)
     else:
         console.print(f"[red]Error: Unknown viewer type: {viewer_type}[/red]")
         console.print("  Valid types: molecular, overlay, normal, frag")
@@ -496,6 +512,14 @@ def main(
         console.print(f"  [green]✓[/green] Saved to [bold]{output}[/bold]")
     else:
         serve_html(html_content, port=port, open_browser=not no_browser)
+
+
+_theme_examples = "\n      ".join(
+    "aseview mol.xyz --theme {}{}".format(t, "  # default" if i == 0 else "")
+    for i, t in enumerate(_list_themes())
+)
+_theme_examples += "\n      aseview mol.xyz -t {} -o out.html".format(_list_themes()[0])
+main.__doc__ = main.__doc__.replace("_THEME_EXAMPLES_", _theme_examples)
 
 
 def cli():

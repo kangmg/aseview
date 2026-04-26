@@ -83,6 +83,7 @@ venv.bak/
 # Project specific
 *.html
 !aseview/templates/*.html
+!aseview/themes/*/*.html
 !docs/*.html
 !docs/assets/viewers/*.html
 !docs/playground/*.html

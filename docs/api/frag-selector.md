@@ -26,6 +26,7 @@ FragSelector(data, **kwargs)
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `data` | `Atoms` or `str` | A single ASE Atoms object or a path to a structure file. Multi-frame files are accepted — only the **first frame** is used. | Required |
+| `theme` | `str` | Visual theme (`"dark"`, `"spring"`, …). `None` uses the global default. | `None` |
 
 ### Keyword Arguments (Settings)
 

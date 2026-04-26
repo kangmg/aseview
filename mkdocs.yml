@@ -53,6 +53,7 @@ nav:
     - NormalViewer: api/normal-viewer.md
     - FragSelector: api/frag-selector.md
   - JavaScript Module: js-module.md
+  - Theming: theming.md
   - Examples:
     - Basic Visualization: examples/basic.md
     - Trajectory Animation: examples/trajectory.md

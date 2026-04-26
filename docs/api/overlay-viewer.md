@@ -14,6 +14,7 @@ OverlayViewer(data, index_list=None, **kwargs)
 |-----------|------|-------------|---------|
 | `data` | `Atoms`, `List[Atoms]`, `Dict`, `str` | One or more molecular structures | Required |
 | `index_list` | `None`, `list[int]`, `list[list[int]]` | Atom selection — see table below | `None` |
+| `theme` | `str` | Visual theme (`"dark"`, `"spring"`, …). `None` uses the global default. | `None` |
 
 #### index_list Modes
 

@@ -11,6 +11,25 @@ def test_import_package():
     assert hasattr(aseview, "OverlayViewer")
     assert hasattr(aseview, "FragSelector")
     assert hasattr(aseview, "MolecularData")
+    assert hasattr(aseview, "set_theme")
+    assert hasattr(aseview, "get_theme")
+    assert hasattr(aseview, "list_themes")
+
+
+def test_theme_api():
+    """Theme management functions should work correctly."""
+    import aseview
+    original = aseview.get_theme()
+    assert isinstance(original, str)
+
+    themes = aseview.list_themes()
+    assert isinstance(themes, list)
+    assert "dark" in themes
+
+    aseview.set_theme("dark")
+    assert aseview.get_theme() == "dark"
+
+    aseview.set_theme(original)  # restore
 
 
 def test_import_wrapper():
@@ -22,6 +41,10 @@ def test_import_wrapper():
         OverlayViewer,
         FragSelector,
         MolecularData,
+        set_theme,
+        get_theme,
+        list_themes,
+        _resolve_template,
     )
 
 

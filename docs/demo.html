@@ -97,6 +97,25 @@
             border-radius: 0 8px 8px 0;
             font-size: 0.9rem;
         }
+        .theme-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1.25rem 0;
+        }
+        .theme-bar label { color: #94a3b8; font-size: 0.85rem; }
+        .theme-btn {
+            padding: 0.3rem 0.9rem;
+            border-radius: 6px;
+            border: 1px solid #475569;
+            background: #1e293b;
+            color: #cbd5e1;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .theme-btn:hover { background: #334155; border-color: #64748b; }
+        .theme-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
     </style>
 </head>
 <body>
@@ -106,6 +125,13 @@
     <div class="note">
         Each viewer below loads the <strong>same template</strong> used by the Python package via iframe.
         This ensures consistent UI and features across Python and JavaScript.
+    </div>
+
+    <!-- Theme switcher -->
+    <div class="theme-bar">
+        <label>Global Theme:</label>
+        <button class="theme-btn active" id="btn-dark" onclick="switchTheme('dark')">dark</button>
+        <button class="theme-btn" id="btn-spring" onclick="switchTheme('spring')">spring</button>
     </div>
 
     <!-- Example 1: MolecularViewer -->
@@ -254,9 +280,22 @@ viewer.setVibrationData(atoms, vibrationData);</pre>
             });
         }
 
-        // Example 1: MolecularViewer
-        const viewer1 = new ASEView.MolecularViewer('#viewer1');
-        viewer1.setData({
+        // Theme switcher — re-creates all viewers with the new theme
+        let allViewers = {};
+
+        function switchTheme(name) {
+            ASEView.setTheme(name);
+            document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + name).classList.add('active');
+            initViewers();
+        }
+
+        function initViewers() {
+            const theme = ASEView.getTheme();
+
+            // Example 1: MolecularViewer
+            allViewers.v1 = new ASEView.MolecularViewer('#viewer1', { theme });
+            allViewers.v1.setData({
             symbols: ['C', 'C', 'O', 'H', 'H', 'H', 'H', 'H', 'H'],
             positions: [
                 [-0.047, 0.666, 0.000],
@@ -271,34 +310,37 @@ viewer.setVibrationData(atoms, vibrationData);</pre>
             ]
         });
 
-        // Example 2: OverlayViewer
-        const viewer2 = new ASEView.OverlayViewer('#viewer2');
-        const water1 = {
-            symbols: ['O', 'H', 'H'],
-            positions: [[0, 0, 0.117], [0, 0.757, -0.469], [0, -0.757, -0.469]]
-        };
-        const water2 = {
-            symbols: ['O', 'H', 'H'],
-            positions: [[0, 0, 0.050], [0, 0.900, -0.400], [0, -0.900, -0.400]]
-        };
-        viewer2.setStructures(water1, water2);
+            // Example 2: OverlayViewer
+            allViewers.v2 = new ASEView.OverlayViewer('#viewer2', { theme });
+            const water1 = {
+                symbols: ['O', 'H', 'H'],
+                positions: [[0, 0, 0.117], [0, 0.757, -0.469], [0, -0.757, -0.469]]
+            };
+            const water2 = {
+                symbols: ['O', 'H', 'H'],
+                positions: [[0, 0, 0.050], [0, 0.900, -0.400], [0, -0.900, -0.400]]
+            };
+            allViewers.v2.setStructures(water1, water2);
 
-        // Example 3: NormalModeViewer
-        const viewer3 = new ASEView.NormalModeViewer('#viewer3');
-        const atoms = {
-            symbols: ['O', 'H', 'H'],
-            positions: [[0, 0, 0.117], [0, 0.757, -0.469], [0, -0.757, -0.469]]
-        };
-        const vibrationData = {
-            modeVectors: [
-                [[0, 0, -0.07], [0, 0.42, 0.56], [0, -0.42, 0.56]],
-                [[0, 0.07, 0], [0, -0.56, 0.42], [0, 0.56, 0.42]],
-                [[0.07, 0, 0], [-0.56, 0, 0], [-0.56, 0, 0]]
-            ],
-            frequencies: ["1595.32", "3657.05", "3755.93"],
-            isImaginary: [false, false, false]
-        };
-        viewer3.setVibrationData(atoms, vibrationData);
+            // Example 3: NormalModeViewer
+            allViewers.v3 = new ASEView.NormalModeViewer('#viewer3', { theme });
+            const atoms = {
+                symbols: ['O', 'H', 'H'],
+                positions: [[0, 0, 0.117], [0, 0.757, -0.469], [0, -0.757, -0.469]]
+            };
+            const vibrationData = {
+                modeVectors: [
+                    [[0, 0, -0.07], [0, 0.42, 0.56], [0, -0.42, 0.56]],
+                    [[0, 0.07, 0], [0, -0.56, 0.42], [0, 0.56, 0.42]],
+                    [[0.07, 0, 0], [-0.56, 0, 0], [-0.56, 0, 0]]
+                ],
+                frequencies: ["1595.32", "3657.05", "3755.93"],
+                isImaginary: [false, false, false]
+            };
+            allViewers.v3.setVibrationData(atoms, vibrationData);
+        }
+
+        initViewers();
     </script>
 </body>
 </html>

@@ -9,7 +9,31 @@ import subprocess
 import pytest
 
 JS_DIR = os.path.join(os.path.dirname(__file__), "..", "aseview", "static", "js")
+THEMES_DIR = os.path.join(os.path.dirname(__file__), "..", "aseview", "themes")
+# Legacy fallback directory kept for backward compat
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "..", "aseview", "templates")
+
+TEMPLATE_NAMES = [
+    "molecular_viewer.html",
+    "normal_viewer.html",
+    "overlay_viewer.html",
+    "frag_selector.html",
+]
+
+def _available_theme_files():
+    """Return (theme, filename) pairs for all installed themes."""
+    result = []
+    if not os.path.isdir(THEMES_DIR):
+        return result
+    for theme in sorted(os.listdir(THEMES_DIR)):
+        theme_path = os.path.join(THEMES_DIR, theme)
+        if not os.path.isdir(theme_path):
+            continue
+        for name in TEMPLATE_NAMES:
+            path = os.path.join(theme_path, name)
+            if os.path.exists(path):
+                result.append((theme, name, path))
+    return result
 
 
 def _has_node():
@@ -156,36 +180,25 @@ class TestJSFiles:
 
 
 class TestHTMLTemplateScripts:
-    @pytest.fixture(
-        params=[
-            "molecular_viewer.html",
-            "normal_viewer.html",
-            "overlay_viewer.html",
-            "frag_selector.html",
-        ]
-    )
-    def template_file(self, request):
-        path = os.path.join(TEMPLATE_DIR, request.param)
-        if not os.path.exists(path):
-            pytest.skip(f"{request.param} not found")
-        return path
+    """Test all HTML templates across every installed theme."""
 
-    def test_script_blocks_balanced(self, template_file):
+    @pytest.fixture(params=_available_theme_files(), ids=lambda t: f"{t[0]}/{t[1]}")
+    def theme_template(self, request):
+        return request.param  # (theme, name, path)
+
+    def test_script_blocks_balanced(self, theme_template):
         """All inline <script> blocks should have balanced brackets."""
-        blocks = _extract_script_blocks(template_file)
+        _theme, _name, path = theme_template
+        blocks = _extract_script_blocks(path)
         for i, block in enumerate(blocks):
-            _check_bracket_balance(
-                block, f"{template_file} <script> block #{i}"
-            )
+            _check_bracket_balance(block, f"{path} <script> block #{i}")
 
-    def test_performance_functions_present(self, template_file):
+    def test_performance_functions_present(self, theme_template):
         """Templates should reference performance utility functions."""
-        with open(template_file, "r", encoding="utf-8") as f:
+        _theme, _name, path = theme_template
+        with open(path, "r", encoding="utf-8") as f:
             content = f.read()
-        # styles.js (which defines these functions) is inlined or linked
-        # The template should reference at least the spatial grid function
         if "renderMolecule" in content:
             assert (
-                "findBondsSpatialGrid" in content
-                or "bondPairs" in content
-            ), f"{template_file} should use spatial grid bond detection"
+                "findBondsSpatialGrid" in content or "bondPairs" in content
+            ), f"{path} should use spatial grid bond detection"
