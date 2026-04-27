@@ -75,6 +75,34 @@ viewer = MolecularViewer(
 viewer.show()
 ```
 
+### Choose a Theme
+
+Themes control the full look and feel of the viewer (colours, background, UI style):
+
+```python
+import aseview
+
+# Per-viewer
+viewer = aseview.MolecularViewer(atoms, theme='spring')
+viewer = aseview.MolecularViewer(atoms, theme='glass')
+
+# Global — affects all subsequent viewers
+aseview.set_theme('spring')
+viewer = aseview.MolecularViewer(atoms)   # uses spring
+
+# List available themes
+print(aseview.list_themes())  # ['dark', 'glass', 'spring']
+```
+
+CLI:
+
+```bash
+aseview molecule.xyz --theme spring
+aseview molecule.xyz -t glass
+```
+
+See the [Theming guide](../theming.md) for the full API and how to create custom themes.
+
 ## SSH Remote Usage
 
 When running on a remote server:
