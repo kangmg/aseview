@@ -1241,14 +1241,26 @@
         function checkConstraintsInData() {
             if (!molecularData || molecularData.length === 0) return false;
             for (const frame of molecularData) {
+                // Format 1: aseview/Python — top-level index array [0, 3, 7]
                 if (frame.fixed && Array.isArray(frame.fixed) && frame.fixed.length > 0) {
-                    fixedStats.hasFixed  = true;
-                    fixedStats.indices   = new Set(frame.fixed);
+                    fixedStats.hasFixed = true;
+                    fixedStats.indices  = new Set(frame.fixed);
                     return true;
                 }
+                // Format 2: ase-ts / ASE todict() — boolean mask in arrays.fixed
+                // e.g. { arrays: { fixed: [false, true, false, true] } }
+                if (frame.arrays && Array.isArray(frame.arrays.fixed) && frame.arrays.fixed.length > 0) {
+                    const indices = [];
+                    frame.arrays.fixed.forEach((val, i) => { if (val) indices.push(i); });
+                    if (indices.length > 0) {
+                        fixedStats.hasFixed = true;
+                        fixedStats.indices  = new Set(indices);
+                        return true;
+                    }
+                }
             }
-            fixedStats.hasFixed  = false;
-            fixedStats.indices   = new Set();
+            fixedStats.hasFixed = false;
+            fixedStats.indices  = new Set();
             return false;
         }
 
