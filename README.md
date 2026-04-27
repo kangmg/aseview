@@ -59,6 +59,10 @@ aseview molecule.xyz --hess orca.hess
 # Save as HTML file
 aseview molecule.xyz -o output.html
 
+# Choose a visual theme
+aseview molecule.xyz --theme spring
+aseview molecule.xyz -t glass -o out.html
+
 # Kill existing server on port
 aseview molecule.xyz -k
 
@@ -282,6 +286,57 @@ viewer.save_html('selector.html')
 | NormalViewer | Normal mode vibration visualization |
 | OverlayViewer | Compare multiple structures overlaid |
 | FragSelector | Interactive 2D+3D atom selection with rect/lasso |
+
+## Themes
+
+aseview ships with multiple visual themes. Each theme is a complete HTML template set that controls the viewer's colour scheme, background, and UI style.
+
+| Theme | Description |
+|-------|-------------|
+| `dark` | Default dark theme with deep grey background |
+| `spring` | Light pastel theme with bright, airy colours |
+| `glass` | Frosted-glass aesthetic with translucent UI panels |
+
+### CLI
+
+```bash
+aseview molecule.xyz --theme spring
+aseview molecule.xyz -t glass -o out.html
+```
+
+### Python API
+
+```python
+import aseview
+
+# Per-viewer
+viewer = aseview.MolecularViewer(atoms, theme='spring')
+viewer = aseview.OverlayViewer([a, b], theme='glass')
+viewer = aseview.NormalViewer(atoms, theme='dark')
+viewer = aseview.FragSelector(atoms, theme='spring')
+
+# Global — all subsequent viewers use this theme
+aseview.set_theme('spring')
+viewer1 = aseview.MolecularViewer(atoms)   # spring
+viewer2 = aseview.FragSelector(atoms)       # spring
+
+# Inspect
+aseview.list_themes()   # ['dark', 'glass', 'spring']
+aseview.get_theme()     # current default
+```
+
+### JavaScript Module
+
+```javascript
+// Per-viewer
+const v = new ASEView.MolecularViewer('#container', { theme: 'spring' });
+
+// Global
+ASEView.setTheme('glass');
+const v2 = new ASEView.OverlayViewer('#container');  // glass
+```
+
+See the [Theming guide](https://kangmg.github.io/aseview/theming/) for instructions on creating custom themes.
 
 ## JavaScript Module
 

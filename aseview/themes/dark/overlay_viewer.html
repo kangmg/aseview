@@ -2315,8 +2315,8 @@
             // SVD of H
             const { U, S, V } = svd3x3(H);
 
-            // Compute rotation matrix R = V * U^T
-            let R = matMul(V, transpose(U));
+            // Compute rotation matrix R = U * V^T  (H = P^T*Q, maximize tr(R^T*H) => R = U*V^T)
+            let R = matMul(U, transpose(V));
 
             // Ensure proper rotation (det = 1, not -1 for reflection)
             if (det3x3(R) < 0) {
@@ -2324,7 +2324,7 @@
                 V[0][2] = -V[0][2];
                 V[1][2] = -V[1][2];
                 V[2][2] = -V[2][2];
-                R = matMul(V, transpose(U));
+                R = matMul(U, transpose(V));
             }
 
             return R;

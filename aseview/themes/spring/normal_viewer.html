@@ -2385,12 +2385,13 @@
             // Render one frame
             renderer.render(scene, camera);
 
+            // Restore background immediately so the animation loop
+            // keeps the correct colour while toBlob() runs asynchronously
+            scene.background = originalBackground;
+            updateBackgroundColor();
+
             // Get canvas data as PNG
             renderer.domElement.toBlob(function (blob) {
-                // Restore original background
-                scene.background = originalBackground;
-                updateBackgroundColor();
-
                 // Generate filename
                 let filename;
                 if (downloadCounters.png === 0) {

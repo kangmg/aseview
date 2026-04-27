@@ -132,6 +132,7 @@
         <label>Global Theme:</label>
         <button class="theme-btn active" id="btn-dark" onclick="switchTheme('dark')">dark</button>
         <button class="theme-btn" id="btn-spring" onclick="switchTheme('spring')">spring</button>
+        <button class="theme-btn" id="btn-glass" onclick="switchTheme('glass')">glass</button>
     </div>
 
     <!-- Example 1: MolecularViewer -->
@@ -291,6 +292,10 @@ viewer.setVibrationData(atoms, vibrationData);</pre>
         }
 
         function initViewers() {
+            // Dispose old viewers to remove stale message handlers
+            Object.values(allViewers).forEach(v => v && v.dispose && v.dispose());
+            allViewers = {};
+
             const theme = ASEView.getTheme();
 
             // Example 1: MolecularViewer
