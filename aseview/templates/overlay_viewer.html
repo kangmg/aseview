@@ -1077,7 +1077,7 @@
             controls.target.copy(target);
             controls.update();
 
-            if (camera.isOrthographicCamera) {
+            if (camera.isOrthographicCamera && settings.rotationMode !== 'Orbit') {
                 const viewerEl = document.getElementById('viewer');
                 const cw = viewerEl ? viewerEl.clientWidth : 800;
                 controls.panSpeed = cw / Math.max(camera.position.distanceTo(controls.target), 0.1);
@@ -1106,6 +1106,9 @@
             camera.updateProjectionMatrix();
             if (controls && typeof controls.handleResize === 'function') {
                 controls.handleResize();
+            }
+            if (camera.isOrthographicCamera && settings.rotationMode !== 'Orbit' && controls) {
+                controls.panSpeed = width / Math.max(camera.position.distanceTo(controls.target), 0.1);
             }
         }
 
