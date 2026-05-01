@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -8,7 +8,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
-    <script src="https://raw.githack.com/kangmg/aseview/main/aseview/static/js/styles.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js"></script>
     <style>
         :root {
             --sidebar-bg: #1f2937;
@@ -429,7 +430,6 @@
             z-index: 5;
         }
     </style>
-<script src="__GIFSHOT_SRC__"></script>
 </head>
 
 <body>
@@ -489,7 +489,7 @@
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Atom Size</span>
-                                <span class="slider-value" id="atom-size-value">0.4Ã—</span>
+                                <span class="slider-value" id="atom-size-value">0.4×</span>
                             </div>
                             <div class="slider-container">
                                 <input type="range" min="0.1" max="2" step="0.1" value="0.4" class="slider"
@@ -511,7 +511,7 @@
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Force Scale</span>
-                                <span class="slider-value" id="force-scale-value">0.5Ã—</span>
+                                <span class="slider-value" id="force-scale-value">0.5×</span>
                             </div>
                             <div class="slider-container">
                                 <input type="range" min="0.1" max="5" step="0.1" value="0.5" class="slider"
@@ -604,7 +604,7 @@
                         </div>
                         <div class="control-group" id="hbond-threshold-group" style="display:none;">
                             <div class="control-label">
-                                <span>H-Bond Threshold (Ã…)</span>
+                                <span>H-Bond Threshold (Å)</span>
                                 <span class="slider-value" id="hbond-threshold-value">2.5</span>
                             </div>
                             <div class="slider-container">
@@ -792,6 +792,17 @@
                             </div>
                         </div>
 
+                        <!-- Fixed Atoms toggle - only visible when FixAtoms constraints are present -->
+                        <div class="control-group" id="show-constraint-section" style="display: none;">
+                            <div class="control-label">
+                                <span>Fixed Atoms</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-constraint">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="control-group">
                             <div class="control-label">
                                 <span>View Mode</span>
@@ -826,9 +837,9 @@
                                     <option value="+x">+x</option>
                                     <option value="+y">+y</option>
                                     <option value="+z">+z</option>
-                                    <option value="Â±x">Â±x</option>
-                                    <option value="Â±y">Â±y</option>
-                                    <option value="Â±z">Â±z</option>
+                                    <option value="±x">±x</option>
+                                    <option value="±y">±y</option>
+                                    <option value="±z">±z</option>
                                 </select>
                                 <button class="btn" id="add-periodicity-btn" style="padding: 0.5rem; min-width: 40px;">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -1067,7 +1078,8 @@
             showRings: false,
             ringOpacity: 0.30,
             ringColor: null,          // null = auto (dominant-atom color)
-            colorBy: 'Element',  // 'Element', 'Charge', or 'Constraint'
+            colorBy: 'Element',  // 'Element' or 'Charge'
+            showConstraint: false,
             colorScheme: 'Jmol', // 'Jmol' or 'CPK'
             normalizeCharges: false,
             showChargeLabels: false,
@@ -1098,7 +1110,8 @@
                 'show-forces': 'showForces',
                 'show-axis': 'showAxis',
                 'normalize-charges': 'normalizeCharges',
-                'show-charge-labels': 'showChargeLabels'
+                'show-charge-labels': 'showChargeLabels',
+                'show-constraint': 'showConstraint'
             };
 
             for (const [elemId, settingKey] of Object.entries(checkboxMappings)) {
@@ -1221,14 +1234,26 @@
         function checkConstraintsInData() {
             if (!molecularData || molecularData.length === 0) return false;
             for (const frame of molecularData) {
+                // Format 1: aseview/Python — top-level index array [0, 3, 7]
                 if (frame.fixed && Array.isArray(frame.fixed) && frame.fixed.length > 0) {
-                    fixedStats.hasFixed  = true;
-                    fixedStats.indices   = new Set(frame.fixed);
+                    fixedStats.hasFixed = true;
+                    fixedStats.indices  = new Set(frame.fixed);
                     return true;
                 }
+                // Format 2: ase-ts / ASE todict() — boolean mask in arrays.fixed
+                // e.g. { arrays: { fixed: [false, true, false, true] } }
+                if (frame.arrays && Array.isArray(frame.arrays.fixed) && frame.arrays.fixed.length > 0) {
+                    const indices = [];
+                    frame.arrays.fixed.forEach((val, i) => { if (val) indices.push(i); });
+                    if (indices.length > 0) {
+                        fixedStats.hasFixed = true;
+                        fixedStats.indices  = new Set(indices);
+                        return true;
+                    }
+                }
             }
-            fixedStats.hasFixed  = false;
-            fixedStats.indices   = new Set();
+            fixedStats.hasFixed = false;
+            fixedStats.indices  = new Set();
             return false;
         }
 
@@ -1267,32 +1292,34 @@
             const normalizeSection = document.getElementById('normalize-charges-section');
             const labelsSection = document.getElementById('show-charge-labels-section');
             const colorbarSection = document.getElementById('charge-colorbar-section');
+            const constraintSection = document.getElementById('show-constraint-section');
             const select = document.getElementById('color-by-select');
 
             if (!colorBySection || !select) return;
 
-            // Rebuild dynamic options (Charge / Constraint) based on data availability
+            // Rebuild Charge option dynamically
             [...select.options].forEach(o => { if (o.value !== 'Element') o.remove(); });
             if (chargeStats.hasCharges) {
                 const opt = document.createElement('option');
                 opt.value = 'Charge'; opt.text = 'Charge';
                 select.add(opt);
             }
-            if (fixedStats.hasFixed) {
-                const opt = document.createElement('option');
-                opt.value = 'Constraint'; opt.text = 'Constraint';
-                select.add(opt);
-            }
 
-            // If selected value no longer valid, reset to Element
-            if ((settings.colorBy === 'Charge' && !chargeStats.hasCharges) ||
-                (settings.colorBy === 'Constraint' && !fixedStats.hasFixed)) {
+            // If selected colorBy is no longer valid, reset to Element
+            if (settings.colorBy === 'Charge' && !chargeStats.hasCharges) {
                 settings.colorBy = 'Element';
             }
             select.value = settings.colorBy;
 
-            const hasAny = chargeStats.hasCharges || fixedStats.hasFixed;
-            colorBySection.style.display = hasAny ? 'block' : 'none';
+            // Fixed Atoms toggle: show only when constraints are present
+            if (constraintSection) {
+                constraintSection.style.display = fixedStats.hasFixed ? 'block' : 'none';
+                if (!fixedStats.hasFixed) settings.showConstraint = false;
+                const cb = document.getElementById('show-constraint');
+                if (cb) cb.checked = !!settings.showConstraint;
+            }
+
+            colorBySection.style.display = chargeStats.hasCharges ? 'block' : 'none';
 
             // Charge-specific sub-controls
             const showChargeOptions = settings.colorBy === 'Charge';
@@ -1735,13 +1762,20 @@
                 controls = new THREE.OrbitControls(camera, renderer.domElement);
             } else {
                 controls = new THREE.TrackballControls(camera, renderer.domElement);
-                controls.rotateSpeed = 5.0;
+                controls.rotateSpeed = 2.0;
                 controls.zoomSpeed = 1.2;
                 controls.panSpeed = 0.8;
+                controls.staticMoving = true;
             }
 
             controls.target.copy(target);
             controls.update();
+
+            if (camera.isOrthographicCamera && settings.rotationMode !== 'Orbit') {
+                const viewerEl = document.getElementById('viewer');
+                const cw = viewerEl ? viewerEl.clientWidth : 800;
+                controls.panSpeed = cw / Math.max(camera.position.distanceTo(controls.target), 0.1);
+            }
         }
 
         function handleResize() {
@@ -1766,6 +1800,9 @@
             camera.updateProjectionMatrix();
             if (controls && typeof controls.handleResize === 'function') {
                 controls.handleResize();
+            }
+            if (camera.isOrthographicCamera && settings.rotationMode !== 'Orbit' && controls) {
+                controls.panSpeed = width / Math.max(camera.position.distanceTo(controls.target), 0.1);
             }
         }
 
@@ -2001,7 +2038,7 @@
 
                 // Arrow
                 const arrow = document.createElement('span');
-                arrow.textContent = 'â†’';
+                arrow.textContent = '→';
                 arrow.style.cssText = 'color:#6b7280;font-size:11px;flex-shrink:0;';
 
                 // Neighbor chip
@@ -2012,7 +2049,7 @@
 
                 // Remove button
                 const removeBtn = document.createElement('button');
-                removeBtn.textContent = 'Ã—';
+                removeBtn.textContent = '×';
                 removeBtn.style.cssText = `
                     margin-left:auto;background:transparent;border:none;
                     color:#6b7280;font-size:14px;cursor:pointer;padding:0 2px;
@@ -2191,7 +2228,7 @@
             // Get charges for current frame (if available)
             const frameCharges = molecule.charges || [];
             const useChargeColor     = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
-            const useConstraintColor = settings.colorBy === 'Constraint' && fixedStats.hasFixed;
+            const useConstraintColor = settings.showConstraint && fixedStats.hasFixed;
 
             // Pre-calculate per-atom colors
             const atomChargeColors = [];
@@ -2202,7 +2239,7 @@
                 }
             }
 
-            // Use spatial grid for O(n) bond detection instead of O(nÂ²)
+            // Use spatial grid for O(n) bond detection instead of O(n²)
             const bondPairs = findBondsSpatialGrid(positions, symbols, bondCutoff);
 
             if (settings.showBond) {
@@ -2220,10 +2257,6 @@
                             atomChargeColors[j],
                             styleName
                         );
-                    } else if (useConstraintColor && !fixedBondStyles.includes(styleName)) {
-                        const c1 = fixedStats.indices.has(i) ? 0x808080 : getAtomColorByScheme(symbols[i]);
-                        const c2 = fixedStats.indices.has(j) ? 0x808080 : getAtomColorByScheme(symbols[j]);
-                        bond = createBondWithColor(positions[i], positions[j], bondRadius, c1, c2, styleName);
                     } else {
                         bond = bondFactory(
                             positions[i],
@@ -2263,9 +2296,6 @@
 
                 if (useChargeColor) {
                     atom = createAtomWithColor(positions[i], symbols[i], atomScale, atomChargeColors[i], styleName, lodSegments);
-                } else if (useConstraintColor) {
-                    const color = fixedStats.indices.has(i) ? 0x808080 : getAtomColorByScheme(symbols[i]);
-                    atom = createAtomWithColor(positions[i], symbols[i], atomScale, color, styleName, lodSegments);
                 } else {
                     atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
                     if (!atom) {
@@ -2276,6 +2306,24 @@
                 if (atom) {
                     atom.renderOrder = 0;
                     moleculeGroup.add(atom);
+                }
+            }
+
+            // Highlight fixed atoms with yellow semi-transparent sphere overlay
+            if (useConstraintColor && fixedStats.indices.size > 0) {
+                const fixedMat = new THREE.MeshBasicMaterial({
+                    color: 0xeab308, transparent: true, opacity: 0.72, depthWrite: false,
+                });
+                for (const idx of fixedStats.indices) {
+                    if (idx >= positions.length) continue;
+                    const info = atomInfo[symbols[idx]] || atomInfo['default'];
+                    const r = info.radius * atomScale * 1.50;
+                    const mesh = new THREE.Mesh(
+                        new THREE.SphereGeometry(r, 16, 12), fixedMat
+                    );
+                    mesh.position.copy(positions[idx]);
+                    mesh.renderOrder = 5;
+                    moleculeGroup.add(mesh);
                 }
             }
 
@@ -2307,8 +2355,8 @@
                 }
             }
 
-            // â”€â”€ Polyhedron & Ring: build adjacency from bond pairs â”€â”€â”€â”€â”€â”€
-            // Reuse spatial grid bond detection result to avoid redundant O(nÂ²)
+            // ── Polyhedron & Ring: build adjacency from bond pairs ──────
+            // Reuse spatial grid bond detection result to avoid redundant O(n²)
             const adjacency = Array.from({ length: positions.length }, () => []);
             if (settings.showPolyhedron || settings.showRings) {
                 for (let b = 0; b < bondPairs.length; b++) {
@@ -2318,17 +2366,17 @@
                 }
             }
 
-            // â”€â”€ Polyhedron (solid) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── Polyhedron (solid) ──────────────────────────────────────
             if (settings.showPolyhedron && typeof createPolyhedronFaces === 'function') {
                 const pairs = settings.polyhedronPairs || [];
                 if (pairs.length === 0) {
-                    // No pairs defined â†’ draw all atoms with CNâ‰¥4 (fallback / discovery mode)
+                    // No pairs defined → draw all atoms with CN≥4 (fallback / discovery mode)
                     for (let i = 0; i < positions.length; i++) {
                         const neighbors = adjacency[i];
                         if (neighbors.length < 4) continue;
                         const neighborPositions = neighbors.map(ni => positions[ni]);
                         const neighborColors = neighbors.map(ni =>
-                            (atomInfo[symbols[ni]] || atomInfo['default']).color);
+                            getAtomColorByScheme(symbols[ni]));
                         const polyMesh = createPolyhedronFaces(
                             positions[i], neighborPositions, neighborColors,
                             settings.polyhedronOpacity, settings.showPolyhedronEdge, settings.polyhedronEdgeOpacity);
@@ -2344,7 +2392,7 @@
                             if (nbrs.length < 4) continue;
                             const neighborPositions = nbrs.map(ni => positions[ni]);
                             const neighborColors = nbrs.map(ni =>
-                                (atomInfo[symbols[ni]] || atomInfo['default']).color);
+                                getAtomColorByScheme(symbols[ni]));
                             const polyMesh = createPolyhedronFaces(
                                 positions[i], neighborPositions, neighborColors,
                                 settings.polyhedronOpacity, settings.showPolyhedronEdge, settings.polyhedronEdgeOpacity);
@@ -2354,7 +2402,7 @@
                 }
             }
 
-            // â”€â”€ Ring Highlight (molecule) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── Ring Highlight (molecule) ───────────────────────────────
             if (settings.showRings && typeof createRingFace === 'function') {
                 const rings = findRings(positions, symbols, adjacency);
                 for (const ring of rings) {
@@ -2749,7 +2797,7 @@
          * @param {Array} positions - Original atom positions
          * @param {Array} symbols - Original atom symbols
          * @param {Array} cell - Unit cell vectors
-         * @param {Array} periodicities - List of periodicity directions (e.g., ['+x', 'Â±y'])
+         * @param {Array} periodicities - List of periodicity directions (e.g., ['+x', '±y'])
          * @returns {Object} Extended positions and symbols
          */
         function applyPeriodicBoundaries(positions, symbols, cell, periodicities) {
@@ -2764,17 +2812,17 @@
             periodicities.forEach(periodicity => {
                 const currentCount = extendedPositions.length;
 
-                // Parse periodicity string (e.g., '+x', 'Â±y', '-z')
+                // Parse periodicity string (e.g., '+x', '±y', '-z')
                 const direction = periodicity.slice(-1).toLowerCase();  // 'x', 'y', or 'z'
-                const sign = periodicity.slice(0, -1);  // '+', '-', or 'Â±'
+                const sign = periodicity.slice(0, -1);  // '+', '-', or '±'
 
                 const axisIndex = { 'x': 0, 'y': 1, 'z': 2 }[direction];
                 const cellVector = cellVectors[axisIndex];
 
                 // Determine which directions to replicate
                 const directions = [];
-                if (sign === '+' || sign === 'Â±') directions.push(1);
-                if (sign === '-' || sign === 'Â±') directions.push(-1);
+                if (sign === '+' || sign === '±') directions.push(1);
+                if (sign === '-' || sign === '±') directions.push(-1);
 
                 // Replicate atoms in specified directions
                 directions.forEach(dir => {
@@ -2825,7 +2873,7 @@
 
             safeAddListener('atom-size', 'input', function () {
                 const valueEl = document.getElementById('atom-size-value');
-                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + 'Ã—';
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + '×';
                 settings.atomSize = parseFloat(this.value);
                 renderMolecule();
             });
@@ -2844,7 +2892,7 @@
 
             safeAddListener('force-scale', 'input', function () {
                 const valueEl = document.getElementById('force-scale-value');
-                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + 'Ã—';
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(1) + '×';
                 settings.forceScale = parseFloat(this.value);
                 if (settings.showForces) {
                     renderMolecule();
@@ -2887,6 +2935,11 @@
 
             safeAddListener('show-cell', 'change', function () {
                 settings.showCell = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-constraint', 'change', function () {
+                settings.showConstraint = this.checked;
                 renderMolecule();
             });
 
@@ -3110,12 +3163,13 @@
             // Render one frame
             renderer.render(scene, camera);
 
+            // Restore background immediately so the animation loop
+            // keeps the correct colour while toBlob() runs asynchronously
+            scene.background = originalBackground;
+            updateBackgroundColor();
+
             // Get canvas data as PNG
             renderer.domElement.toBlob(function (blob) {
-                // Restore original background
-                scene.background = originalBackground;
-                updateBackgroundColor();
-
                 // Generate filename with counter to avoid overwriting
                 let filename;
                 if (downloadCounters.png === 0) {
