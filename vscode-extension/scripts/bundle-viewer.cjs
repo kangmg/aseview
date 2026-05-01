@@ -50,23 +50,30 @@ html = inlineScript(html,
 );
 console.log('  + TrackballControls.js');
 
-// 4. Inline styles.js
-html = inlineScript(html,
+// 4. Inline styles.js (handle both CDN URL variants)
+const stylesCode = readMedia('styles.js');
+const stylesUrls = [
+  'https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js',
   'https://raw.githack.com/kangmg/aseview/main/aseview/static/js/styles.js',
-  readMedia('styles.js')
-);
+];
+let stylesInlined = false;
+for (const url of stylesUrls) {
+  const next = inlineScript(html, url, stylesCode);
+  if (next !== html) { html = next; stylesInlined = true; break; }
+}
+if (!stylesInlined) console.warn('  WARNING: styles.js CDN tag not found');
 console.log('  + styles.js');
 
-// 5. Replace gifshot placeholder with inline gifshot code
+// 5. Inline gifshot (handle direct CDN tag or __GIFSHOT_SRC__ placeholder)
 const gifshotCode = readMedia('gifshot.min.js');
+const gifshotCdn = 'https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js';
 const gifshotPlaceholder = '<script src="__GIFSHOT_SRC__"></script>';
 if (html.includes(gifshotPlaceholder)) {
   html = html.replace(gifshotPlaceholder, `<script>\n${gifshotCode}\n</script>`);
   console.log('  + gifshot.min.js (placeholder)');
 } else {
-  // Fallback: inject before </head>
-  html = html.replace('</head>', `<script>\n${gifshotCode}\n</script>\n</head>`);
-  console.log('  + gifshot.min.js (injected before </head>)');
+  html = inlineScript(html, gifshotCdn, gifshotCode);
+  console.log('  + gifshot.min.js');
 }
 
 // 6. Also inject download relay (postMessage to parent for GIF/PNG saving)
