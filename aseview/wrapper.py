@@ -7,6 +7,7 @@ import json
 import os
 from typing import Dict, Any, List, Union
 from ase import Atoms
+import numpy as np
 
 # ── Theme management ──────────────────────────────────────────────────────────
 _THEME = 'dark'
