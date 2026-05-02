@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Pre-commit hook: sync vscode bundle when source files change.
+# Install: git config core.hooksPath .github/hooks
+
+SOURCES=(
+  "aseview/templates/molecular_viewer.html"
+  "aseview/static/js/styles.js"
+  "aseview/static/js/vendor/TrackballControls.js"
+  "vscode-extension/scripts/bundle-viewer.cjs"
+)
+
+# Check if any source file is staged
+changed=0
+for f in "${SOURCES[@]}"; do
+  if git diff --cached --name-only | grep -qF "$f"; then
+    changed=1
+    break
+  fi
+done
+
+if [ "$changed" -eq 0 ]; then
+  exit 0
+fi
+
+echo "[pre-commit] Source files changed — syncing vscode bundle..."
+
+# Sync files
+cp aseview/templates/molecular_viewer.html vscode-extension/media/molecular_viewer.html
+cp aseview/static/js/styles.js             vscode-extension/media/styles.js
+cp aseview/static/js/vendor/TrackballControls.js vscode-extension/media/TrackballControls.js
+
+# Regenerate bundle
+if ! command -v node &>/dev/null; then
+  echo "[pre-commit] WARNING: node not found, skipping bundle regeneration."
+  echo "[pre-commit] Run 'node vscode-extension/scripts/bundle-viewer.cjs' manually."
+  exit 0
+fi
+
+(cd vscode-extension && node scripts/bundle-viewer.cjs) || {
+  echo "[pre-commit] ERROR: bundle-viewer.cjs failed."
+  exit 1
+}
+
+# Stage the updated files
+git add \
+  vscode-extension/media/molecular_viewer.html \
+  vscode-extension/media/styles.js \
+  vscode-extension/media/TrackballControls.js \
+  vscode-extension/media/molecular_viewer_bundle.html
+
+echo "[pre-commit] vscode bundle updated and staged."
