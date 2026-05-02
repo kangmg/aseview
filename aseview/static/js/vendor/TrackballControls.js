@@ -250,8 +250,8 @@
 
 						if ( scope.object.isOrthographicCamera ) {
 
-							const scale_x = ( scope.object.right - scope.object.left ) / scope.object.zoom / _eye.length();
-							const scale_y = ( scope.object.top - scope.object.bottom ) / scope.object.zoom / _eye.length();
+							const scale_x = ( scope.object.right - scope.object.left ) / scope.object.zoom / scope.domElement.clientWidth;
+							const scale_y = ( scope.object.top - scope.object.bottom ) / scope.object.zoom / scope.domElement.clientWidth;
 							mouseChange.x *= scale_x;
 							mouseChange.y *= scale_y;
 

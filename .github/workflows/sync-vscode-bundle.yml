@@ -1,0 +1,58 @@
+name: Sync VS Code Bundle
+
+# Regenerate vscode-extension/media/molecular_viewer_bundle.html whenever
+# the source template, styles, or controls change, and commit the result back
+# to the same branch.  The [skip ci] tag on the auto-commit prevents loops.
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'aseview/templates/molecular_viewer.html'
+      - 'aseview/static/js/styles.js'
+      - 'vscode-extension/scripts/bundle-viewer.cjs'
+
+jobs:
+  sync-bundle:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Use the default GITHUB_TOKEN so the bot can push back.
+          # fetch-depth 1 is enough; we only need the latest state.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Sync source files into vscode media
+        run: |
+          cp aseview/templates/molecular_viewer.html \
+             vscode-extension/media/molecular_viewer.html
+          cp aseview/static/js/styles.js \
+             vscode-extension/media/styles.js
+
+      - name: Regenerate self-contained bundle
+        working-directory: vscode-extension
+        run: node scripts/bundle-viewer.cjs
+
+      - name: Commit updated bundle (if changed)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add \
+            vscode-extension/media/molecular_viewer.html \
+            vscode-extension/media/styles.js \
+            vscode-extension/media/molecular_viewer_bundle.html
+          if git diff --staged --quiet; then
+            echo "Bundle already up to date, nothing to commit."
+          else
+            git commit -m "chore: sync vscode bundle [skip ci]"
+            git push
+          fi
