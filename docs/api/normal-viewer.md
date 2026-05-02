@@ -17,7 +17,7 @@ NormalViewer(atoms, vibrations=None, mode_vectors=None, frequencies=None, n_fram
 | `mode_vectors` | `List` | Mode displacement vectors | `None` |
 | `frequencies` | `List` | Frequencies in cm⁻¹ | `None` |
 | `n_frames` | `int` | Animation frames per cycle | `30` |
-| `theme` | `str` | Visual theme (`"dark"`, `"spring"`, …). `None` uses the global default. | `None` |
+| `theme` | `str` | Visual theme (`"dark"`, `"spring"`, `"glass"`, `"darkgreen"`, `"simple"`, …). `None` uses the global default. | `None` |
 
 !!! note
     Provide either `vibrations` OR both `mode_vectors` and `frequencies`.

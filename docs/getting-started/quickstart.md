@@ -91,7 +91,7 @@ aseview.set_theme('spring')
 viewer = aseview.MolecularViewer(atoms)   # uses spring
 
 # List available themes
-print(aseview.list_themes())  # ['dark', 'glass', 'spring']
+print(aseview.list_themes())  # ['dark', 'darkgreen', 'glass', 'simple', 'spring']
 ```
 
 CLI:

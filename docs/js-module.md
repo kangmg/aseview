@@ -369,7 +369,10 @@ const v2 = new ASEView.NormalModeViewer('#c2');   // spring
 | Theme | Description |
 |-------|-------------|
 | `dark` | Default — deep grey background |
-| `spring` | Light pastel theme |
+| `spring` | Light pastel theme with bright, airy colors |
+| `glass` | Glassmorphism theme with frosted translucent panels |
+| `darkgreen` | Dark GitHub-style theme with green accent |
+| `simple` | Light macOS-style theme with colorful gradient background |
 
 ### Settings (Constructor Options)
 
@@ -389,7 +392,7 @@ viewer.setSettings({ style: 'glossy', atomSize: 0.6 });
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `theme` | string | `'dark'` | Visual theme (`'dark'`, `'spring'`, …) |
+| `theme` | string | `'dark'` | Visual theme (`'dark'`, `'spring'`, `'glass'`, `'darkgreen'`, `'simple'`, …) |
 | `style` | string | `'cartoon'` | Rendering style |
 | `backgroundColor` | string | `'#1f2937'` | Background color (hex) |
 | `atomSize` | float | `0.4` | Atom radius scale |

@@ -8,6 +8,9 @@ aseview supports multiple visual themes. Themes are complete HTML template sets 
 |-------|-------------|
 | `dark` | Default dark theme with deep grey background |
 | `spring` | Light pastel theme with bright, airy colors |
+| `glass` | Glassmorphism theme with frosted translucent panels |
+| `darkgreen` | Dark GitHub-style theme with green accent |
+| `simple` | Light macOS-style theme with colorful gradient background |
 
 ## Python API
 
@@ -40,7 +43,7 @@ viewer2 = FragSelector(atoms)       # spring
 ### Inspect available themes
 
 ```python
-aseview.list_themes()   # ['dark', 'spring']
+aseview.list_themes()   # ['dark', 'darkgreen', 'glass', 'simple', 'spring']
 aseview.get_theme()     # 'dark'  (current default)
 ```
 
@@ -83,7 +86,7 @@ If you are building a VS Code extension that wraps aseview, expose theme as a co
       "aseview.theme": {
         "type": "string",
         "default": "dark",
-        "enum": ["dark", "spring"],
+        "enum": ["dark", "spring", "glass", "darkgreen", "simple"],
         "description": "Visual theme for the ASEView viewer"
       }
     }

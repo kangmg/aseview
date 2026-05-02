@@ -32,13 +32,7 @@
       -webkit-font-smoothing: antialiased;
       color: var(--text);
       /* Colorful background so glass is visible */
-      background:
-        radial-gradient(ellipse 80% 60% at 10% 15%,  rgba(180,210,255,0.18) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 90% 80%, rgba(200,180,255,0.12) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 40% at 55% 25%, rgba(255,220,170,0.10) 0%, transparent 50%),
-        radial-gradient(ellipse 40% 35% at 20% 85%, rgba(170,230,200,0.09) 0%, transparent 45%),
-        radial-gradient(ellipse 60% 50% at 80% 5%,  rgba(255,200,210,0.10) 0%, transparent 50%),
-        #f5f5f7;
+      background: #d9d9db;
     }
 
     .app {
@@ -371,7 +365,7 @@
     /* Periodicity */
     .periodicity-item {
       display: flex; justify-content: space-between; align-items: center;
-      background: rgba(255,255,255,0.28); border: 1px solid rgba(255,255,255,0.45);
+      background: rgba(255,255,255,0.65); border: 1px solid rgba(255,255,255,0.75);
       border-radius: 8px; padding: 0.45rem 0.65rem; margin-bottom: 0.4rem;
     }
 
@@ -1241,26 +1235,14 @@
         function checkConstraintsInData() {
             if (!molecularData || molecularData.length === 0) return false;
             for (const frame of molecularData) {
-                // Format 1: aseview/Python — top-level index array [0, 3, 7]
                 if (frame.fixed && Array.isArray(frame.fixed) && frame.fixed.length > 0) {
-                    fixedStats.hasFixed = true;
-                    fixedStats.indices  = new Set(frame.fixed);
+                    fixedStats.hasFixed  = true;
+                    fixedStats.indices   = new Set(frame.fixed);
                     return true;
                 }
-                // Format 2: ase-ts / ASE todict() — boolean mask in arrays.fixed
-                // e.g. { arrays: { fixed: [false, true, false, true] } }
-                if (frame.arrays && Array.isArray(frame.arrays.fixed) && frame.arrays.fixed.length > 0) {
-                    const indices = [];
-                    frame.arrays.fixed.forEach((val, i) => { if (val) indices.push(i); });
-                    if (indices.length > 0) {
-                        fixedStats.hasFixed = true;
-                        fixedStats.indices  = new Set(indices);
-                        return true;
-                    }
-                }
             }
-            fixedStats.hasFixed = false;
-            fixedStats.indices  = new Set();
+            fixedStats.hasFixed  = false;
+            fixedStats.indices   = new Set();
             return false;
         }
 
@@ -1777,12 +1759,6 @@
 
             controls.target.copy(target);
             controls.update();
-
-            if (camera.isOrthographicCamera && settings.rotationMode !== 'Orbit') {
-                const viewerEl = document.getElementById('viewer');
-                const cw = viewerEl ? viewerEl.clientWidth : 800;
-                controls.panSpeed = cw / Math.max(camera.position.distanceTo(controls.target), 0.1);
-            }
         }
 
         function handleResize() {
@@ -1807,9 +1783,6 @@
             camera.updateProjectionMatrix();
             if (controls && typeof controls.handleResize === 'function') {
                 controls.handleResize();
-            }
-            if (camera.isOrthographicCamera && settings.rotationMode !== 'Orbit' && controls) {
-                controls.panSpeed = width / Math.max(camera.position.distanceTo(controls.target), 0.1);
             }
         }
 
@@ -3170,13 +3143,12 @@
             // Render one frame
             renderer.render(scene, camera);
 
-            // Restore background immediately so the animation loop
-            // keeps the correct colour while toBlob() runs asynchronously
-            scene.background = originalBackground;
-            updateBackgroundColor();
-
             // Get canvas data as PNG
             renderer.domElement.toBlob(function (blob) {
+                // Restore original background
+                scene.background = originalBackground;
+                updateBackgroundColor();
+
                 // Generate filename with counter to avoid overwriting
                 let filename;
                 if (downloadCounters.png === 0) {

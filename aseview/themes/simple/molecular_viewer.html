@@ -4,13 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Normal Mode Viewer</title>
-    
+    <title>Molecular Viewer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js"></script>
+    
 
   <style>
     :root {
@@ -32,7 +32,13 @@
       -webkit-font-smoothing: antialiased;
       color: var(--text);
       /* Colorful background so glass is visible */
-      background: #d9d9db;
+      background:
+        radial-gradient(ellipse 80% 60% at 10% 15%,  rgba(180,210,255,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 90% 80%, rgba(200,180,255,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 55% 25%, rgba(255,220,170,0.10) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 35% at 20% 85%, rgba(170,230,200,0.09) 0%, transparent 45%),
+        radial-gradient(ellipse 60% 50% at 80% 5%,  rgba(255,200,210,0.10) 0%, transparent 50%),
+        #f5f5f7;
     }
 
     .app {
@@ -365,7 +371,7 @@
     /* Periodicity */
     .periodicity-item {
       display: flex; justify-content: space-between; align-items: center;
-      background: rgba(255,255,255,0.65); border: 1px solid rgba(255,255,255,0.75);
+      background: rgba(255,255,255,0.28); border: 1px solid rgba(255,255,255,0.45);
       border-radius: 8px; padding: 0.45rem 0.65rem; margin-bottom: 0.4rem;
     }
 
@@ -502,11 +508,21 @@
                     <div class="card-content" id="advanced-content">
                         <div class="control-group">
                             <div class="control-label">
+                                <span>Color Scheme</span>
+                            </div>
+                            <select class="select" id="color-scheme-select">
+                                <option value="Jmol">Jmol</option>
+                                <option value="CPK">CPK</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
                                 <span>Bond Threshold Scale</span>
-                                <span class="slider-value" id="bond-threshold-value">1.5</span>
+                                <span class="slider-value" id="bond-threshold-value">1.0</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.5" max="3" step="0.1" value="1.5" class="slider"
+                                <input type="range" min="0.5" max="3" step="0.1" value="1.0" class="slider"
                                     id="bond-threshold">
                             </div>
                         </div>
@@ -514,10 +530,10 @@
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Bond Thickness</span>
-                                <span class="slider-value" id="bond-thickness-value">0.20</span>
+                                <span class="slider-value" id="bond-thickness-value">0.10</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.05" max="1" step="0.05" value="0.2" class="slider"
+                                <input type="range" min="0.05" max="0.5" step="0.01" value="0.1" class="slider"
                                     id="bond-thickness">
                             </div>
                         </div>
@@ -525,10 +541,10 @@
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Atom Size</span>
-                                <span class="slider-value" id="atom-size-value">1.0×</span>
+                                <span class="slider-value" id="atom-size-value">0.4×</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.2" max="2" step="0.1" value="1.0" class="slider"
+                                <input type="range" min="0.1" max="2" step="0.1" value="0.4" class="slider"
                                     id="atom-size">
                             </div>
                         </div>
@@ -546,11 +562,32 @@
 
                         <div class="control-group">
                             <div class="control-label">
+                                <span>Force Scale</span>
+                                <span class="slider-value" id="force-scale-value">0.5×</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.1" max="5" step="0.1" value="0.5" class="slider"
+                                    id="force-scale">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
                                 <span>Background Color</span>
                             </div>
                             <div class="color-picker">
                                 <input type="color" value="#ffffff" class="color-input" id="background-color">
                                 <span class="color-value" id="background-color-value">#ffffff</span>
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="cell-color-group" style="display: none;">
+                            <div class="control-label">
+                                <span>Cell Color</span>
+                            </div>
+                            <div class="color-picker">
+                                <input type="color" value="#808080" class="color-input" id="cell-color">
+                                <span class="color-value" id="cell-color-value">#808080</span>
                             </div>
                         </div>
 
@@ -598,16 +635,6 @@
                             </div>
                         </div>
 
-                        <div class="control-group" id="cell-color-group">
-                            <div class="control-label">
-                                <span>Cell Color</span>
-                            </div>
-                            <div class="color-picker">
-                                <input type="color" value="#808080" class="color-input" id="cell-color">
-                                <span class="color-value" id="cell-color-value">#808080</span>
-                            </div>
-                        </div>
-
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Bond</span>
@@ -623,6 +650,46 @@
                                 <span>H-Bond</span>
                                 <label class="switch">
                                     <input type="checkbox" id="show-hbond">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group" id="hbond-threshold-group" style="display:none;">
+                            <div class="control-label">
+                                <span>H-Bond Threshold (Å)</span>
+                                <span class="slider-value" id="hbond-threshold-value">2.5</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="1.5" max="4.0" step="0.1" value="2.5" class="slider"
+                                    id="hbond-threshold">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Shading</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-shading">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Energy Plot</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-energy-plot">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Forces</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-forces">
                                     <span class="slider-switch"></span>
                                 </label>
                             </div>
@@ -718,6 +785,75 @@
                                     id="ring-opacity">
                             </div>
                         </div>
+                        <div class="control-group" id="ring-color-group" style="display:none;">
+                            <div class="control-label">
+                                <span>Ring Color</span>
+                                <button class="btn" id="ring-color-auto-btn" style="padding:2px 8px; font-size:11px;">Auto</button>
+                            </div>
+                            <div class="color-picker">
+                                <input type="color" value="#60a5fa" class="color-input" id="ring-color">
+                                <span class="color-value" id="ring-color-value">Auto</span>
+                            </div>
+                        </div>
+
+                        <!-- Color By section - only visible when charges are present -->
+                        <div class="control-group" id="color-by-section" style="display: none;">
+                            <div class="control-label">
+                                <span>Color By</span>
+                            </div>
+                            <select class="select" id="color-by-select">
+                                <option value="Element">Element</option>
+                                <option value="Charge">Charge</option>
+                            </select>
+                        </div>
+
+                        <!-- Normalize Charges toggle - only visible when colorBy is Charge -->
+                        <div class="control-group" id="normalize-charges-section" style="display: none;">
+                            <div class="control-label">
+                                <span>Normalize</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="normalize-charges">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Show Charge Labels toggle - only visible when colorBy is Charge -->
+                        <div class="control-group" id="show-charge-labels-section" style="display: none;">
+                            <div class="control-label">
+                                <span>Show Labels</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-charge-labels">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Color bar for charge scale -->
+                        <div class="control-group" id="charge-colorbar-section" style="display: none;">
+                            <div style="width: 100%; padding: 0.25rem 0;">
+                                <div id="charge-colorbar"
+                                    style="height: 12px; border-radius: 6px; background: transparent;">
+                                </div>
+                                <div
+                                    style="display: flex; justify-content: space-between; font-size: 10px; color: #9ca3af; margin-top: 2px;">
+                                    <span id="charge-min">-1.0</span>
+                                    <span>0</span>
+                                    <span id="charge-max">+1.0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fixed Atoms toggle - only visible when FixAtoms constraints are present -->
+                        <div class="control-group" id="show-constraint-section" style="display: none;">
+                            <div class="control-label">
+                                <span>Fixed Atoms</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-constraint">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
 
                         <div class="control-group">
                             <div class="control-label">
@@ -740,6 +876,39 @@
                                     </svg>
                                     Perspective
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Add Periodicity -->
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Add Periodicity</span>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <select class="select" id="periodicity-select" style="flex: 1;">
+                                    <option value="+x">+x</option>
+                                    <option value="+y">+y</option>
+                                    <option value="+z">+z</option>
+                                    <option value="±x">±x</option>
+                                    <option value="±y">±y</option>
+                                    <option value="±z">±z</option>
+                                </select>
+                                <button class="btn" id="add-periodicity-btn" style="padding: 0.5rem; min-width: 40px;">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Added Periodicities -->
+                        <div class="control-group" id="periodicities-container">
+                            <div class="control-label">
+                                <span>Periodicities</span>
+                            </div>
+                            <div id="periodicities-list">
+                                <!-- Periodicity items will be added here -->
                             </div>
                         </div>
                     </div>
@@ -781,50 +950,6 @@
                                     </svg>
                                     Orbit
                                 </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Normal Modes -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>
-                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            Normal Modes
-                        </h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="control-group">
-                            <div class="control-label">
-                                <span>Select Mode</span>
-                            </div>
-                            <select class="select" id="normal-mode">
-                                <option value="0">No vibration data loaded</option>
-                            </select>
-                        </div>
-
-                        <div class="control-group">
-                            <div class="control-label">
-                                <span>Amplitude</span>
-                                <span class="slider-value" id="amplitude-value">0.75</span>
-                            </div>
-                            <div class="slider-container">
-                                <input type="range" min="0.1" max="2.0" step="0.05" value="0.75" class="slider"
-                                    id="amplitude-slider">
-                            </div>
-                        </div>
-
-                        <div class="control-group">
-                            <div class="control-label">
-                                <span>Show Vectors</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="show-vectors">
-                                    <span class="slider-switch"></span>
-                                </label>
                             </div>
                         </div>
                     </div>
@@ -907,9 +1032,16 @@
                 <div class="viewer" id="viewer">
                     <canvas id="molecule-canvas"></canvas>
                 </div>
+                <!-- Energy Plot -->
+                <div class="energy-plot-container" id="energy-plot-container" style="display: none;">
+                    <div class="energy-plot-resize-handle" id="energy-plot-resize-handle"></div>
+                    <canvas id="energy-plot-canvas"></canvas>
+                </div>
             </div>
         </div>
     </div>
+
+    
 
     <script>
 
@@ -925,21 +1057,22 @@
         let periodicities = [];
 
         // File naming for downloads
-        let downloadBaseName = 'vibration';
-        let downloadCounters = { png: 0, gif: 0 };
+        let downloadBaseName = 'molecule';  // Can be set via setDownloadName()
+        let downloadCounters = { png: 0, gif: 0 };  // Track download counts
 
         let settings = {
             bondThreshold: 1.0,
+            hBondThreshold: 2.5,
             bondThickness: 0.1,
             atomSize: 0.4,
             animationSpeed: 30,
             forceScale: 0.5,
             backgroundColor: 'transparent',
+            cellColor: '#808080',
             style: 'cartoon',
             showCell: true,
             showBond: true,
             showHBond: false,
-            showShadow: false,
             showShading: true,
             showEnergyPlot: false,
             showForces: false,
@@ -948,13 +1081,18 @@
             polyhedronOpacity: 0.25,
             showPolyhedronEdge: true,
             polyhedronEdgeOpacity: 0.70,
-            polyhedronPairs: [],
+            polyhedronPairs: [],          // [{center:'Si', neighbor:'O'}, ...]
             showRings: false,
             ringOpacity: 0.30,
-            showModeVector: false,
+            ringColor: null,          // null = auto (dominant-atom color)
+            colorBy: 'Element',  // 'Element' or 'Charge'
+            showConstraint: false,
+            colorScheme: 'Jmol', // 'Jmol' or 'CPK'
+            normalizeCharges: false,
+            showChargeLabels: false,
+            chargeColormap: 'coolwarm',
             viewMode: 'Perspective',
-            rotationMode: 'TrackBall',
-            cellColor: '#808080'
+            rotationMode: 'TrackBall'
         };
 
         // Update UI and rendering from settings (called via postMessage API)
@@ -963,15 +1101,24 @@
             const styleSelect = document.getElementById('style');
             if (styleSelect) styleSelect.value = settings.style || 'cartoon';
 
+            const colorBySelect = document.getElementById('color-by-select');
+            if (colorBySelect) colorBySelect.value = settings.colorBy || 'Element';
+
+            const colorSchemeSelect = document.getElementById('color-scheme-select');
+            if (colorSchemeSelect) colorSchemeSelect.value = settings.colorScheme || 'Jmol';
+
             // Update checkboxes
             const checkboxMappings = {
                 'show-cell': 'showCell',
                 'show-bond': 'showBond',
                 'show-hbond': 'showHBond',
                 'show-shading': 'showShading',
+                'show-energy-plot': 'showEnergyPlot',
+                'show-forces': 'showForces',
                 'show-axis': 'showAxis',
-                'show-shadow': 'showShadow',
-                'show-mode-vector': 'showModeVector'
+                'normalize-charges': 'normalizeCharges',
+                'show-charge-labels': 'showChargeLabels',
+                'show-constraint': 'showConstraint'
             };
 
             for (const [elemId, settingKey] of Object.entries(checkboxMappings)) {
@@ -994,6 +1141,17 @@
                 if (valueEl) valueEl.textContent = bondThresholdSlider.value;
             }
 
+            const hbondThresholdSlider = document.getElementById('hbond-threshold');
+            if (hbondThresholdSlider) {
+                hbondThresholdSlider.value = settings.hBondThreshold || 2.5;
+                const valueEl = document.getElementById('hbond-threshold-value');
+                if (valueEl) valueEl.textContent = hbondThresholdSlider.value;
+            }
+            const hbondThresholdGroup = document.getElementById('hbond-threshold-group');
+            if (hbondThresholdGroup) {
+                hbondThresholdGroup.style.display = settings.showHBond ? 'block' : 'none';
+            }
+
             const bondThicknessSlider = document.getElementById('bond-thickness');
             if (bondThicknessSlider) {
                 bondThicknessSlider.value = settings.bondThickness || 0.1;
@@ -1008,7 +1166,14 @@
                 if (valueEl) valueEl.textContent = animSpeedSlider.value;
             }
 
-            // Update color picker
+            const forceScaleSlider = document.getElementById('force-scale');
+            if (forceScaleSlider) {
+                forceScaleSlider.value = settings.forceScale || 0.5;
+                const valueEl = document.getElementById('force-scale-value');
+                if (valueEl) valueEl.textContent = forceScaleSlider.value;
+            }
+
+            // Update color pickers
             const bgColorPicker = document.getElementById('background-color');
             if (bgColorPicker && settings.backgroundColor) {
                 bgColorPicker.value = settings.backgroundColor;
@@ -1021,12 +1186,19 @@
             const cellColorPicker = document.getElementById('cell-color');
             if (cellColorPicker && settings.cellColor) {
                 cellColorPicker.value = settings.cellColor;
-                const cellColorValue = document.getElementById('cell-color-value');
-                if (cellColorValue) cellColorValue.textContent = settings.cellColor;
+                const valueEl = document.getElementById('cell-color-value');
+                if (valueEl) valueEl.textContent = settings.cellColor;
+            }
+
+            // Update energy plot visibility
+            const plotContainer = document.getElementById('energy-plot-container');
+            if (plotContainer) {
+                plotContainer.style.display = settings.showEnergyPlot ? 'block' : 'none';
             }
 
             // Apply rendering changes
             if (typeof updateShading === 'function') updateShading();
+            if (typeof updateChargeUI === 'function') updateChargeUI();
             if (typeof renderMolecule === 'function') renderMolecule();
         }
 
@@ -1062,6 +1234,349 @@
             'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap)
         };
 
+        // Charge coloring utilities
+        let chargeStats = { hasCharges: false, min: 0, max: 0, maxPositive: 0, minNegative: 0 };
+        let fixedStats  = { hasFixed: false, indices: new Set() };
+
+        function checkConstraintsInData() {
+            if (!molecularData || molecularData.length === 0) return false;
+            for (const frame of molecularData) {
+                // Format 1: aseview/Python — top-level index array [0, 3, 7]
+                if (frame.fixed && Array.isArray(frame.fixed) && frame.fixed.length > 0) {
+                    fixedStats.hasFixed = true;
+                    fixedStats.indices  = new Set(frame.fixed);
+                    return true;
+                }
+                // Format 2: ase-ts / ASE todict() — boolean mask in arrays.fixed
+                // e.g. { arrays: { fixed: [false, true, false, true] } }
+                if (frame.arrays && Array.isArray(frame.arrays.fixed) && frame.arrays.fixed.length > 0) {
+                    const indices = [];
+                    frame.arrays.fixed.forEach((val, i) => { if (val) indices.push(i); });
+                    if (indices.length > 0) {
+                        fixedStats.hasFixed = true;
+                        fixedStats.indices  = new Set(indices);
+                        return true;
+                    }
+                }
+            }
+            fixedStats.hasFixed = false;
+            fixedStats.indices  = new Set();
+            return false;
+        }
+
+        function checkChargesInData() {
+            if (!molecularData || molecularData.length === 0) return false;
+
+            let hasCharges = false;
+            let allCharges = [];
+
+            for (const frame of molecularData) {
+                if (frame.charges && Array.isArray(frame.charges) && frame.charges.length > 0) {
+                    hasCharges = true;
+                    allCharges = allCharges.concat(frame.charges);
+                }
+            }
+
+            if (hasCharges && allCharges.length > 0) {
+                chargeStats.hasCharges = true;
+                chargeStats.min = Math.min(...allCharges);
+                chargeStats.max = Math.max(...allCharges);
+                chargeStats.absMax = Math.max(Math.abs(chargeStats.min), Math.abs(chargeStats.max));
+                // Track positive and negative ranges separately
+                const positiveCharges = allCharges.filter(c => c > 0);
+                const negativeCharges = allCharges.filter(c => c < 0);
+                chargeStats.maxPositive = positiveCharges.length > 0 ? Math.max(...positiveCharges) : 0;
+                chargeStats.minNegative = negativeCharges.length > 0 ? Math.min(...negativeCharges) : 0;
+            } else {
+                chargeStats.hasCharges = false;
+            }
+
+            return hasCharges;
+        }
+
+        function updateChargeUI() {
+            const colorBySection = document.getElementById('color-by-section');
+            const normalizeSection = document.getElementById('normalize-charges-section');
+            const labelsSection = document.getElementById('show-charge-labels-section');
+            const colorbarSection = document.getElementById('charge-colorbar-section');
+            const constraintSection = document.getElementById('show-constraint-section');
+            const select = document.getElementById('color-by-select');
+
+            if (!colorBySection || !select) return;
+
+            // Rebuild Charge option dynamically
+            [...select.options].forEach(o => { if (o.value !== 'Element') o.remove(); });
+            if (chargeStats.hasCharges) {
+                const opt = document.createElement('option');
+                opt.value = 'Charge'; opt.text = 'Charge';
+                select.add(opt);
+            }
+
+            // If selected colorBy is no longer valid, reset to Element
+            if (settings.colorBy === 'Charge' && !chargeStats.hasCharges) {
+                settings.colorBy = 'Element';
+            }
+            select.value = settings.colorBy;
+
+            // Fixed Atoms toggle: show only when constraints are present
+            if (constraintSection) {
+                constraintSection.style.display = fixedStats.hasFixed ? 'block' : 'none';
+                if (!fixedStats.hasFixed) settings.showConstraint = false;
+                const cb = document.getElementById('show-constraint');
+                if (cb) cb.checked = !!settings.showConstraint;
+            }
+
+            colorBySection.style.display = chargeStats.hasCharges ? 'block' : 'none';
+
+            // Charge-specific sub-controls
+            const showChargeOptions = settings.colorBy === 'Charge';
+            if (normalizeSection) normalizeSection.style.display = showChargeOptions ? 'block' : 'none';
+            if (labelsSection)    labelsSection.style.display    = showChargeOptions ? 'block' : 'none';
+            if (colorbarSection)  colorbarSection.style.display  = showChargeOptions ? 'block' : 'none';
+            if (showChargeOptions) updateColorbarLabels();
+        }
+
+        function updateColorbarLabels() {
+            const minLabel = document.getElementById('charge-min');
+            const maxLabel = document.getElementById('charge-max');
+
+            if (!minLabel || !maxLabel) return;
+
+            let minVal, maxVal;
+            if (settings.normalizeCharges) {
+                // Normalize mode: show -1.0 to +1.0 (full range used)
+                minVal = -1.0;
+                maxVal = 1.0;
+            } else {
+                // Non-normalize mode: show symmetric range based on absMax
+                const absMax = chargeStats.absMax || 1.0;
+                minVal = -absMax;
+                maxVal = absMax;
+            }
+
+            minLabel.textContent = minVal.toFixed(2);
+            maxLabel.textContent = (maxVal > 0 ? '+' : '') + maxVal.toFixed(2);
+        }
+
+        // Coolwarm colormap: red (negative) -> white (zero) -> blue (positive)
+        function getChargeColor(charge, normalize = false) {
+            // Standard convention: red = negative, blue = positive
+            const negativeColor = new THREE.Color(0xb40426);  // Red
+            const neutralColor = new THREE.Color(0xf7f7f7);   // White
+            const positiveColor = new THREE.Color(0x3b4cc0);  // Blue
+
+            let resultColor = new THREE.Color();
+            let t;
+
+            if (normalize) {
+                // Normalize: scale each direction to its max (full color range)
+                if (charge >= 0) {
+                    const maxPos = chargeStats.maxPositive || 1.0;
+                    t = maxPos > 0 ? Math.min(charge / maxPos, 1) : 0;
+                    resultColor.lerpColors(neutralColor, positiveColor, t);
+                } else {
+                    const minNeg = chargeStats.minNegative || -1.0;
+                    t = minNeg < 0 ? Math.min(Math.abs(charge) / Math.abs(minNeg), 1) : 0;
+                    resultColor.lerpColors(neutralColor, negativeColor, t);
+                }
+            } else {
+                // Non-normalize: use symmetric range based on absMax
+                const absMax = chargeStats.absMax || 1.0;
+                if (charge >= 0) {
+                    t = absMax > 0 ? Math.min(charge / absMax, 1) : 0;
+                    resultColor.lerpColors(neutralColor, positiveColor, t);
+                } else {
+                    t = absMax > 0 ? Math.min(Math.abs(charge) / absMax, 1) : 0;
+                    resultColor.lerpColors(neutralColor, negativeColor, t);
+                }
+            }
+
+            return resultColor.getHex();
+        }
+
+        // Create atom with custom color (for charge coloring)
+        function createAtomWithColor(pos, symbol, atomScale, colorHex, styleName, lodSegments) {
+            const info = atomInfo[symbol] || atomInfo['default'];
+            const scaledRadius = info.radius * atomScale;
+            const seg = (lodSegments && lodSegments.sphere) || 32;
+
+            // Create geometry based on style
+            let geometry, material, mesh;
+
+            switch (styleName) {
+                case 'neon':
+                    geometry = getCachedSphereGeometry(scaledRadius, seg);
+                    material = new THREE.MeshBasicMaterial({
+                        color: colorHex,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.position.copy(pos);
+
+                    // Add glow effect
+                    const glowGeometry = getCachedSphereGeometry(scaledRadius * 1.3, seg);
+                    const glowMaterial = new THREE.MeshBasicMaterial({
+                        color: colorHex,
+                        transparent: true,
+                        opacity: 0.3
+                    });
+                    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                    glow.position.copy(pos);
+
+                    const group = new THREE.Group();
+                    group.add(glow);
+                    group.add(mesh);
+                    return group;
+
+                case 'glossy':
+                    geometry = getCachedSphereGeometry(scaledRadius, seg);
+                    material = new THREE.MeshPhongMaterial({
+                        color: colorHex,
+                        specular: 0x444444,
+                        shininess: 100
+                    });
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.position.copy(pos);
+                    return mesh;
+
+                case 'metallic':
+                    geometry = getCachedSphereGeometry(scaledRadius, seg);
+                    material = new THREE.MeshStandardMaterial({
+                        color: colorHex,
+                        metalness: 0.8,
+                        roughness: 0.2
+                    });
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.position.copy(pos);
+                    return mesh;
+
+                default:  // cartoon, default, etc.
+                    geometry = getCachedSphereGeometry(scaledRadius, seg);
+                    material = new THREE.MeshLambertMaterial({ color: colorHex });
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.position.copy(pos);
+                    return mesh;
+            }
+        }
+
+        // Create charge label sprite
+        function createChargeLabelSprite(charge, position, atomScale, normalize) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            // Format charge value
+            const sign = charge >= 0 ? '+' : '';
+            const text = sign + charge.toFixed(3);
+
+            // Draw text with outline for visibility
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Outline
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 4;
+            ctx.strokeText(text, 64, 32);
+
+            // Label color matches atom color (reflects normalization)
+            const colorHex = getChargeColor(charge, normalize || false);
+            const labelColor = new THREE.Color(colorHex);
+            ctx.fillStyle = '#' + labelColor.getHexString();
+            ctx.fillText(text, 64, 32);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthTest: false
+            });
+            const sprite = new THREE.Sprite(material);
+
+            // Position above the atom
+            const offset = atomScale * 0.8;
+            sprite.position.set(position.x, position.y + offset, position.z);
+            sprite.scale.set(1.2, 0.6, 1);
+
+            return sprite;
+        }
+
+        // Create bond with custom colors (for charge coloring)
+        function createBondWithColor(pos1, pos2, bondRadius, color1Hex, color2Hex, styleName) {
+            const group = new THREE.Group();
+
+            const midpoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
+            const direction = new THREE.Vector3().subVectors(pos2, pos1);
+            const length = direction.length();
+            const halfLength = length / 2;
+
+            // Darken colors for bonds
+            const darkenFactor = 0.7;
+            const bondColor1 = new THREE.Color(color1Hex).multiplyScalar(darkenFactor).getHex();
+            const bondColor2 = new THREE.Color(color2Hex).multiplyScalar(darkenFactor).getHex();
+
+            let material1, material2;
+
+            switch (styleName) {
+                case 'neon':
+                    // Use lines for neon style
+                    const points1 = [pos1, midpoint];
+                    const geometry1 = new THREE.BufferGeometry().setFromPoints(points1);
+                    material1 = new THREE.LineBasicMaterial({ color: bondColor1, linewidth: 2 });
+                    group.add(new THREE.Line(geometry1, material1));
+
+                    const points2 = [midpoint, pos2];
+                    const geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
+                    material2 = new THREE.LineBasicMaterial({ color: bondColor2, linewidth: 2 });
+                    group.add(new THREE.Line(geometry2, material2));
+                    return group;
+
+                case 'cartoon':
+                    material1 = new THREE.MeshToonMaterial({ color: bondColor1 });
+                    material2 = new THREE.MeshToonMaterial({ color: bondColor2 });
+                    break;
+
+                case 'metallic':
+                    material1 = new THREE.MeshStandardMaterial({ color: bondColor1, metalness: 0.8, roughness: 0.2 });
+                    material2 = new THREE.MeshStandardMaterial({ color: bondColor2, metalness: 0.8, roughness: 0.2 });
+                    break;
+
+                case 'glossy':
+                    material1 = new THREE.MeshPhongMaterial({ color: bondColor1, shininess: 100, specular: 0x444444 });
+                    material2 = new THREE.MeshPhongMaterial({ color: bondColor2, shininess: 100, specular: 0x444444 });
+                    break;
+
+                case 'bubble':
+                    material1 = new THREE.MeshPhongMaterial({ color: bondColor1, transparent: true, opacity: 0.6, shininess: 100, specular: 0xffffff });
+                    material2 = new THREE.MeshPhongMaterial({ color: bondColor2, transparent: true, opacity: 0.6, shininess: 100, specular: 0xffffff });
+                    break;
+
+                default:
+                    material1 = new THREE.MeshPhongMaterial({ color: bondColor1, shininess: 30 });
+                    material2 = new THREE.MeshPhongMaterial({ color: bondColor2, shininess: 30 });
+            }
+
+            // First half
+            const cylGeom1 = new THREE.CylinderGeometry(bondRadius, bondRadius, halfLength, 16);
+            const cylinder1 = new THREE.Mesh(cylGeom1, material1);
+            const half1Mid = new THREE.Vector3().addVectors(pos1, midpoint).multiplyScalar(0.5);
+            cylinder1.position.copy(half1Mid);
+            cylinder1.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+            group.add(cylinder1);
+
+            // Second half
+            const cylGeom2 = new THREE.CylinderGeometry(bondRadius, bondRadius, halfLength, 16);
+            const cylinder2 = new THREE.Mesh(cylGeom2, material2);
+            const half2Mid = new THREE.Vector3().addVectors(midpoint, pos2).multiplyScalar(0.5);
+            cylinder2.position.copy(half2Mid);
+            cylinder2.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+            group.add(cylinder2);
+
+            return group;
+        }
+
         let scene = null;
         let camera = null;
         let renderer = null;
@@ -1083,9 +1598,78 @@
         };
 
         document.addEventListener('DOMContentLoaded', function () {
+            initSettingsFromUI();
             setupEventListeners();
             initRenderer();
         });
+
+        // Initialize settings from UI values on page load
+        function initSettingsFromUI() {
+            const bondThresholdSlider = document.getElementById('bond-threshold');
+            if (bondThresholdSlider) {
+                settings.bondThreshold = parseFloat(bondThresholdSlider.value);
+            }
+
+            const hbondThresholdSlider = document.getElementById('hbond-threshold');
+            if (hbondThresholdSlider) {
+                settings.hBondThreshold = parseFloat(hbondThresholdSlider.value);
+            }
+
+            const bondThicknessSlider = document.getElementById('bond-thickness');
+            if (bondThicknessSlider) {
+                settings.bondThickness = parseFloat(bondThicknessSlider.value);
+            }
+
+            const atomSizeSlider = document.getElementById('atom-size');
+            if (atomSizeSlider) {
+                settings.atomSize = parseFloat(atomSizeSlider.value);
+            }
+
+            const animSpeedSlider = document.getElementById('animation-speed');
+            if (animSpeedSlider) {
+                settings.animationSpeed = parseInt(animSpeedSlider.value, 10);
+            }
+
+            const forceScaleSlider = document.getElementById('force-scale');
+            if (forceScaleSlider) {
+                settings.forceScale = parseFloat(forceScaleSlider.value);
+            }
+
+            const bgColorInput = document.getElementById('background-color');
+            if (bgColorInput) {
+                settings.backgroundColor = bgColorInput.value;
+            }
+
+            const cellColorInput = document.getElementById('cell-color');
+            if (cellColorInput) {
+                settings.cellColor = cellColorInput.value;
+            }
+
+            const styleSelect = document.getElementById('style');
+            if (styleSelect) {
+                settings.style = styleSelect.value;
+            }
+
+            const showCellCheckbox = document.getElementById('show-cell');
+            if (showCellCheckbox) {
+                settings.showCell = showCellCheckbox.checked;
+            }
+
+            const showBondCheckbox = document.getElementById('show-bond');
+            if (showBondCheckbox) {
+                settings.showBond = showBondCheckbox.checked;
+            }
+
+            const showShadingCheckbox = document.getElementById('show-shading');
+            if (showShadingCheckbox) {
+                settings.showShading = showShadingCheckbox.checked;
+            }
+
+            const showForcesCheckbox = document.getElementById('show-forces');
+            if (showForcesCheckbox) {
+                settings.showForces = showForcesCheckbox.checked;
+            }
+        }
 
         function initRenderer() {
             const viewer = document.getElementById('viewer');
@@ -1097,15 +1681,15 @@
                 placeholderCanvas.remove();
             }
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true,
+                preserveDrawingBuffer: true  // Required for canvas capture (PNG/GIF export)
+            });
             renderer.domElement.id = 'molecule-canvas';
             renderer.sortObjects = true;
             renderer.setPixelRatio(window.devicePixelRatio || 1);
             renderer.setSize(Math.max(viewer.clientWidth, 1), Math.max(viewer.clientHeight, 1));
-
-            // Enable shadow mapping
-            renderer.shadowMap.enabled = false;  // Will be enabled when showShadow is true
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
             // Enable better rendering for special effects like neon
             renderer.outputEncoding = THREE.sRGBEncoding;
@@ -1123,7 +1707,7 @@
             setupCamera();
             setupControls();
 
-            // Lighting setup - matching molecular_viewer
+            // Lighting setup - matching old version
             directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
             directionalLight.position.set(10, 10, 10);
             scene.add(directionalLight);
@@ -1131,6 +1715,7 @@
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
             scene.add(ambientLight);
 
+            // Setup axis helper (XYZ indicator in corner)
             setupAxisHelper();
 
             window.addEventListener('resize', handleResize);
@@ -1192,6 +1777,12 @@
 
             controls.target.copy(target);
             controls.update();
+
+            if (camera.isOrthographicCamera && settings.rotationMode !== 'Orbit') {
+                const viewerEl = document.getElementById('viewer');
+                const cw = viewerEl ? viewerEl.clientWidth : 800;
+                controls.panSpeed = cw / Math.max(camera.position.distanceTo(controls.target), 0.1);
+            }
         }
 
         function handleResize() {
@@ -1217,60 +1808,8 @@
             if (controls && typeof controls.handleResize === 'function') {
                 controls.handleResize();
             }
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            if (controls && typeof controls.update === 'function') {
-                controls.update();
-            }
-            // Light behavior depends on shading setting (matching molecular_viewer)
-            if (directionalLight && camera) {
-                if (settings.showShading) {
-                    // Light position relative to camera for consistent shading direction
-                    // Light stays in camera space, so shading direction is fixed from viewer's perspective
-                    const offset = new THREE.Vector3(5, 8, 5);
-                    const lightPos = camera.position.clone().add(
-                        offset.applyQuaternion(camera.quaternion)
-                    );
-                    directionalLight.position.copy(lightPos);
-                } else {
-                    // Light follows camera for flat lighting (no shading)
-                    directionalLight.position.copy(camera.position);
-                }
-            }
-            if (renderer && scene && camera) {
-                renderer.render(scene, camera);
-
-                // Render axis helper in bottom-left corner (transparent overlay)
-                if (settings.showAxis && axisScene && axisCamera && axisGroup) {
-                    // Rotate axis group inversely to camera - shows world axes from camera's view
-                    axisGroup.quaternion.copy(camera.quaternion).invert();
-
-                    // Save current state
-                    const currentViewport = renderer.getViewport(new THREE.Vector4());
-                    const currentAutoClear = renderer.autoClear;
-
-                    // Set viewport for axis helper (bottom-left corner)
-                    const axisViewportSize = 150;
-                    const axisMarginX = 15;
-                    const axisMarginY = 20;
-                    renderer.setViewport(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
-                    renderer.setScissor(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
-                    renderer.setScissorTest(true);
-
-                    // Disable auto clear to preserve main scene, only clear depth
-                    renderer.autoClear = false;
-                    renderer.clearDepth();
-
-                    // Render axis scene (transparent background)
-                    renderer.render(axisScene, axisCamera);
-
-                    // Restore state
-                    renderer.autoClear = currentAutoClear;
-                    renderer.setScissorTest(false);
-                    renderer.setViewport(currentViewport);
-                }
+            if (camera.isOrthographicCamera && settings.rotationMode !== 'Orbit' && controls) {
+                controls.panSpeed = width / Math.max(camera.position.distanceTo(controls.target), 0.1);
             }
         }
 
@@ -1280,7 +1819,7 @@
             axisScene.background = null;  // Transparent background
 
             // Create orthographic camera for axis helper (centered on origin)
-            const axisViewSize = 100;
+            const axisViewSize = 100;  // How much world units to show
             axisCamera = new THREE.OrthographicCamera(-axisViewSize, axisViewSize, axisViewSize, -axisViewSize, -200, 200);
             axisCamera.position.set(0, 0, 100);
 
@@ -1359,6 +1898,61 @@
             axisScene.add(axisAmbient);
         }
 
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls && typeof controls.update === 'function') {
+                controls.update();
+            }
+            // Light behavior depends on shading setting
+            if (directionalLight && camera) {
+                if (settings.showShading) {
+                    // Light position relative to camera for consistent shading direction
+                    // Light stays in camera space, so shading direction is fixed from viewer's perspective
+                    const offset = new THREE.Vector3(5, 8, 5);
+                    const lightPos = camera.position.clone().add(
+                        offset.applyQuaternion(camera.quaternion)
+                    );
+                    directionalLight.position.copy(lightPos);
+                } else {
+                    // Light follows camera for flat lighting (no shading)
+                    directionalLight.position.copy(camera.position);
+                }
+            }
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+
+                // Render axis helper in bottom-left corner (transparent overlay)
+                if (settings.showAxis && axisScene && axisCamera && axisGroup) {
+                    // Rotate axis group inversely to camera - shows world axes from camera's view
+                    axisGroup.quaternion.copy(camera.quaternion).invert();
+
+                    // Save current state
+                    const currentViewport = renderer.getViewport(new THREE.Vector4());
+                    const currentAutoClear = renderer.autoClear;
+
+                    // Set viewport for axis helper (bottom-left corner)
+                    const axisViewportSize = 150;
+                    const axisMarginX = 15;
+                    const axisMarginY = 20;
+                    renderer.setViewport(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
+                    renderer.setScissor(axisMarginX, axisMarginY, axisViewportSize, axisViewportSize);
+                    renderer.setScissorTest(true);
+
+                    // Disable auto clear to preserve main scene, only clear depth
+                    renderer.autoClear = false;
+                    renderer.clearDepth();
+
+                    // Render axis scene (transparent background)
+                    renderer.render(axisScene, axisCamera);
+
+                    // Restore state
+                    renderer.autoClear = currentAutoClear;
+                    renderer.setScissorTest(false);
+                    renderer.setViewport(currentViewport);
+                }
+            }
+        }
+
         function disposeObject3D(object) {
             object.traverse(child => {
                 if (child.geometry && !child.geometry._isCached) {
@@ -1379,7 +1973,9 @@
             });
         }
 
-
+        /**
+         * Get unique element symbols from the current frame.
+         */
         function getUniqueSymbols() {
             if (!molecularData || molecularData.length === 0) return [];
             const frameIdx = (animationState && animationState.currentFrame) || 0;
@@ -1387,6 +1983,11 @@
             return [...new Set(molecule.symbols || [])].sort();
         }
 
+        /**
+         * Make a styled element chip button that cycles through available elements on click.
+         * @param {string} sym - current element symbol
+         * @param {Function} onCycle - called with (newSym) when user cycles the element
+         */
         function makeElemChip(sym, onCycle) {
             const info = atomInfo[sym] || atomInfo['default'];
             const hex = '#' + info.color.toString(16).padStart(6, '0');
@@ -1424,6 +2025,9 @@
             return chip;
         }
 
+        /**
+         * Rebuild the polyhedron-pairs-list UI from settings.polyhedronPairs.
+         */
         function updatePolyhedronPairsUI() {
             const list = document.getElementById('polyhedron-pairs-list');
             if (!list) return;
@@ -1433,20 +2037,24 @@
                 const row = document.createElement('div');
                 row.style.cssText = 'display:flex;align-items:center;gap:5px;';
 
+                // Center chip
                 const centerChip = makeElemChip(pair.center, newSym => {
                     settings.polyhedronPairs[idx].center = newSym;
                     renderMolecule();
                 });
 
+                // Arrow
                 const arrow = document.createElement('span');
                 arrow.textContent = '→';
                 arrow.style.cssText = 'color:#6b7280;font-size:11px;flex-shrink:0;';
 
+                // Neighbor chip
                 const neighborChip = makeElemChip(pair.neighbor, newSym => {
                     settings.polyhedronPairs[idx].neighbor = newSym;
                     renderMolecule();
                 });
 
+                // Remove button
                 const removeBtn = document.createElement('button');
                 removeBtn.textContent = '×';
                 removeBtn.style.cssText = `
@@ -1470,14 +2078,22 @@
             });
         }
 
+        /**
+         * Find smallest rings (SSSR-like) in the molecular graph.
+         * @param {THREE.Vector3[]} positions
+         * @param {string[]} symbols
+         * @param {number[][]} adjacency - adjacency list
+         * @returns {number[][]} array of rings, each ring is an ordered array of atom indices
+         */
         function findRings(positions, symbols, adjacency) {
-
             const MIN_RING = 4;
             const MAX_RING = 8;
             const rings = [];
-            const ringSets = new Set();
+            const ringSets = new Set();  // for deduplication
 
+            // BFS shortest path between two neighbors of start that doesn't use start
             function bfsPath(start, src, dst, adj) {
+                // Find shortest path from src to dst NOT through start
                 const queue = [[src, [src]]];
                 const visited = new Set([start, src]);
                 while (queue.length > 0) {
@@ -1493,10 +2109,12 @@
                 return null;
             }
 
+            // For each edge (i, j), find shortest alternative path: i -> ... -> j without direct bond
             for (let i = 0; i < adjacency.length; i++) {
                 for (const j of adjacency[i]) {
-                    if (j <= i) continue;
+                    if (j <= i) continue;  // process each edge once
 
+                    // Temporarily remove edge i-j from adjacency
                     const adjI = adjacency[i].filter(x => x !== j);
                     const adjJ = adjacency[j].filter(x => x !== i);
                     const tempAdj = adjacency.map((_, k) => {
@@ -1511,6 +2129,7 @@
                     const ringSize = path.length;
                     if (ringSize < MIN_RING || ringSize > MAX_RING) continue;
 
+                    // Canonical form: rotate to smallest index first, then ensure second < last
                     const minIdx = path.indexOf(Math.min(...path));
                     let canonical = [...path.slice(minIdx), ...path.slice(0, minIdx)];
                     if (canonical[1] > canonical[canonical.length - 1]) {
@@ -1523,6 +2142,7 @@
                     }
                 }
             }
+
             return rings;
         }
 
@@ -1530,6 +2150,9 @@
 
             if (!scene || !camera || !renderer) return;
             if (!molecularData || molecularData.length === 0) return;
+
+            // Sync color scheme global (styles.js) with current setting
+            atomColorScheme = (settings.colorScheme || 'Jmol').toLowerCase();
 
             if (moleculeGroup) {
                 scene.remove(moleculeGroup);
@@ -1602,10 +2225,25 @@
                     cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
                 ];
                 const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                const cellMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(settings.cellColor || '#808080') });
+                const cellColor = new THREE.Color(settings.cellColor);
+                const cellMaterial = new THREE.LineBasicMaterial({ color: cellColor });
                 const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
                 cellMesh.renderOrder = 2;
                 moleculeGroup.add(cellMesh);
+            }
+
+            // Get charges for current frame (if available)
+            const frameCharges = molecule.charges || [];
+            const useChargeColor     = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
+            const useConstraintColor = settings.showConstraint && fixedStats.hasFixed;
+
+            // Pre-calculate per-atom colors
+            const atomChargeColors = [];
+            if (useChargeColor) {
+                for (let i = 0; i < positions.length; i++) {
+                    const charge = frameCharges[i] || 0;
+                    atomChargeColors[i] = getChargeColor(charge, settings.normalizeCharges);
+                }
             }
 
             // Use spatial grid for O(n) bond detection instead of O(n²)
@@ -1613,25 +2251,32 @@
 
             if (settings.showBond) {
                 let bondCount = 0;
+                const fixedBondStyles = ['rowan', 'neon', 'cartoon', '2d'];
                 for (let b = 0; b < bondPairs.length; b++) {
                     const { i, j } = bondPairs[b];
-                    const bond = bondFactory(
-                        positions[i],
-                        positions[j],
-                        symbols[i],
-                        symbols[j],
-                        bondRadius,
-                        atomScale,
-                        helpers
-                    );
+                    let bond;
+                    if (useChargeColor && !fixedBondStyles.includes(styleName)) {
+                        bond = createBondWithColor(
+                            positions[i],
+                            positions[j],
+                            bondRadius,
+                            atomChargeColors[i],
+                            atomChargeColors[j],
+                            styleName
+                        );
+                    } else {
+                        bond = bondFactory(
+                            positions[i],
+                            positions[j],
+                            symbols[i],
+                            symbols[j],
+                            bondRadius,
+                            atomScale,
+                            helpers
+                        );
+                    }
                     if (bond) {
                         bond.renderOrder = 1;
-                        bond.traverse((child) => {
-                            if (child.isMesh) {
-                                child.castShadow = settings.showShadow;
-                                child.receiveShadow = settings.showShadow;
-                            }
-                        });
                         moleculeGroup.add(bond);
                         bondCount++;
                     }
@@ -1640,7 +2285,9 @@
             }
 
             if (settings.showHBond) {
-                const hbondPairs = detectHydrogenBonds(positions, symbols, bondPairs);
+                const hbondPairs = detectHydrogenBonds(positions, symbols, bondPairs, {
+                    hBondThreshold: settings.hBondThreshold
+                });
                 for (let b = 0; b < hbondPairs.length; b++) {
                     const { h, a } = hbondPairs[b];
                     const hbond = createHydrogenBond(positions[h], positions[a]);
@@ -1652,19 +2299,50 @@
             }
 
             for (let i = 0; i < positions.length; i++) {
-                let atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
-                if (!atom) {
-                    atom = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
+                let atom;
+
+                if (useChargeColor) {
+                    atom = createAtomWithColor(positions[i], symbols[i], atomScale, atomChargeColors[i], styleName, lodSegments);
+                } else {
+                    atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
+                    if (!atom) {
+                        atom = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
+                    }
                 }
+
                 if (atom) {
                     atom.renderOrder = 0;
-                    atom.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = settings.showShadow;
-                            child.receiveShadow = settings.showShadow;
-                        }
-                    });
                     moleculeGroup.add(atom);
+                }
+            }
+
+            // Highlight fixed atoms with yellow semi-transparent sphere overlay
+            if (useConstraintColor && fixedStats.indices.size > 0) {
+                const fixedMat = new THREE.MeshBasicMaterial({
+                    color: 0xeab308, transparent: true, opacity: 0.72, depthWrite: false,
+                });
+                for (const idx of fixedStats.indices) {
+                    if (idx >= positions.length) continue;
+                    const info = atomInfo[symbols[idx]] || atomInfo['default'];
+                    const r = info.radius * atomScale * 1.50;
+                    const mesh = new THREE.Mesh(
+                        new THREE.SphereGeometry(r, 16, 12), fixedMat
+                    );
+                    mesh.position.copy(positions[idx]);
+                    mesh.renderOrder = 5;
+                    moleculeGroup.add(mesh);
+                }
+            }
+
+            // Add charge labels if enabled
+            if (settings.showChargeLabels && useChargeColor && frameCharges.length > 0) {
+                for (let i = 0; i < positions.length; i++) {
+                    const charge = frameCharges[i] || 0;
+                    const label = createChargeLabelSprite(charge, positions[i], atomScale, settings.normalizeCharges);
+                    if (label) {
+                        label.renderOrder = 4;
+                        moleculeGroup.add(label);
+                    }
                 }
             }
 
@@ -1685,6 +2363,7 @@
             }
 
             // ── Polyhedron & Ring: build adjacency from bond pairs ──────
+            // Reuse spatial grid bond detection result to avoid redundant O(n²)
             const adjacency = Array.from({ length: positions.length }, () => []);
             if (settings.showPolyhedron || settings.showRings) {
                 for (let b = 0; b < bondPairs.length; b++) {
@@ -1698,6 +2377,7 @@
             if (settings.showPolyhedron && typeof createPolyhedronFaces === 'function') {
                 const pairs = settings.polyhedronPairs || [];
                 if (pairs.length === 0) {
+                    // No pairs defined → draw all atoms with CN≥4 (fallback / discovery mode)
                     for (let i = 0; i < positions.length; i++) {
                         const neighbors = adjacency[i];
                         if (neighbors.length < 4) continue;
@@ -1710,6 +2390,8 @@
                         if (polyMesh) { polyMesh.renderOrder = -1; moleculeGroup.add(polyMesh); }
                     }
                 } else {
+                    // Pair-based: for each (center, neighbor) pair, draw polyhedra where
+                    // center atom element matches and neighbor filter by neighbor element.
                     for (const { center, neighbor } of pairs) {
                         for (let i = 0; i < positions.length; i++) {
                             if (symbols[i] !== center) continue;
@@ -1731,6 +2413,7 @@
             if (settings.showRings && typeof createRingFace === 'function') {
                 const rings = findRings(positions, symbols, adjacency);
                 for (const ring of rings) {
+                    // Determine color from most-common element in ring
                     const symCount = {};
                     for (const idx of ring) {
                         const s = symbols[idx];
@@ -1738,7 +2421,10 @@
                     }
                     const dominantSym = Object.entries(symCount)
                         .sort((a, b) => b[1] - a[1])[0][0];
-                    const ringColor = (atomInfo[dominantSym] || atomInfo['default']).color;
+                    const ringColor = settings.ringColor !== null
+                        ? parseInt(settings.ringColor.replace('#', ''), 16)
+                        : (atomInfo[dominantSym] || atomInfo['default']).color;
+
                     const ringPositions = ring.map(idx => positions[idx]);
                     const face = createRingFace(ringPositions, ringColor, settings.ringOpacity);
                     if (face) {
@@ -1749,6 +2435,7 @@
             }
 
             scene.add(moleculeGroup);
+
 
             if (cameraNeedsFit) {
                 fitCameraToMolecule(moleculeGroup);
@@ -1791,40 +2478,10 @@
             renderer.setClearColor(color, 1);
         }
 
-        function updateShadow() {
-            if (!renderer) return;
-
-            if (settings.showShadow) {
-                // Enable shadows and add directional light
-                renderer.shadowMap.enabled = true;
-
-                if (!directionalLight) {
-                    directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-                    directionalLight.position.set(50, 50, 50);
-                    directionalLight.castShadow = true;
-                    directionalLight.shadow.mapSize.width = 2048;
-                    directionalLight.shadow.mapSize.height = 2048;
-                    directionalLight.shadow.camera.near = 0.5;
-                    directionalLight.shadow.camera.far = 500;
-                    directionalLight.shadow.camera.left = -50;
-                    directionalLight.shadow.camera.right = 50;
-                    directionalLight.shadow.camera.top = 50;
-                    directionalLight.shadow.camera.bottom = -50;
-                    directionalLight.shadow.bias = -0.0001;
-                    scene.add(directionalLight);
-                } else {
-                    directionalLight.castShadow = true;
-                }
-            } else {
-                // Disable shadows and remove directional light
-                renderer.shadowMap.enabled = false;
-
-                if (directionalLight) {
-                    scene.remove(directionalLight);
-                    directionalLight = null;
-                }
-            }
-
+        function updateShading() {
+            // This function controls shading (lighting), not cast shadows
+            // When enabled: light offset from camera creates visible shading on spheres
+            // When disabled: light follows camera for flat appearance
             renderMolecule();
         }
 
@@ -1878,6 +2535,10 @@
                     animationState.currentFrame = (animationState.currentFrame + 1) % molecularData.length;
                     updateFrameDisplay();
                     renderMolecule();
+                    // Update energy plot marker
+                    if (settings.showEnergyPlot && energyPlotData.hasEnergy) {
+                        drawEnergyPlot();
+                    }
                 }, interval);
 
                 // Update button icon to pause
@@ -2061,7 +2722,47 @@
                 animationCard.style.display = molecularData.length > 1 ? 'block' : 'none';
             }
 
+            // Show/hide cell color control based on whether any molecule has a cell
+            const hasCell = molecularData.some(mol => mol && mol.cell);
+            const cellColorGroup = document.getElementById('cell-color-group');
+            if (cellColorGroup) {
+                cellColorGroup.style.display = hasCell ? 'block' : 'none';
+            }
+
+            // Extract energy data for plotting
+            extractEnergyData();
+
+            // Check for charge / constraint data and update UI
+            checkChargesInData();
+            checkConstraintsInData();
+            updateChargeUI();
+
+            // Show/hide energy plot checkbox based on energy availability
+            if (!energyPlotData.hasEnergy) {
+                const energyCheckbox = document.getElementById('show-energy-plot');
+                if (energyCheckbox) {
+                    energyCheckbox.checked = false;
+                    energyCheckbox.parentElement.parentElement.parentElement.style.opacity = '0.5';
+                }
+            } else {
+                const energyCheckbox = document.getElementById('show-energy-plot');
+                if (energyCheckbox) {
+                    energyCheckbox.parentElement.parentElement.parentElement.style.opacity = '1';
+                }
+            }
+
             renderMolecule();
+
+            // Draw energy plot if enabled
+            if (settings.showEnergyPlot && energyPlotData.hasEnergy) {
+                drawEnergyPlot();
+            }
+        }
+
+        function setDownloadName(name) {
+            downloadBaseName = name;
+            downloadCounters = { png: 0, gif: 0 };  // Reset counters
+            console.log('Download base name set to:', name);
         }
 
         function addPeriodicity() {
@@ -2161,6 +2862,15 @@
                 renderMolecule();
             });
 
+            safeAddListener('hbond-threshold', 'input', function () {
+                const valueEl = document.getElementById('hbond-threshold-value');
+                if (valueEl) valueEl.textContent = this.value;
+                settings.hBondThreshold = parseFloat(this.value);
+                if (settings.showHBond) {
+                    renderMolecule();
+                }
+            });
+
             safeAddListener('bond-thickness', 'input', function () {
                 const valueEl = document.getElementById('bond-thickness-value');
                 if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
@@ -2196,20 +2906,15 @@
                 }
             });
 
-            safeAddListener('amplitude-slider', 'input', function () {
-                const valueEl = document.getElementById('amplitude-value');
-                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
-                vibrationData.amplitude = parseFloat(this.value);
-                if (!animationState.isPlaying) {
-                    renderVibrationFrame();
-                }
-            });
-
             safeAddListener('frame-slider', 'input', function () {
                 const frameNum = parseInt(this.value, 10);
                 animationState.currentFrame = frameNum - 1;  // 0-indexed
                 updateFrameDisplay();
                 renderMolecule();
+                // Update energy plot
+                if (settings.showEnergyPlot && energyPlotData.hasEnergy) {
+                    drawEnergyPlot();
+                }
             });
 
             safeAddListener('background-color', 'input', function () {
@@ -2223,6 +2928,13 @@
                 updateBackgroundColor();
             });
 
+            safeAddListener('cell-color', 'input', function () {
+                const valueEl = document.getElementById('cell-color-value');
+                if (valueEl) valueEl.textContent = this.value;
+                settings.cellColor = this.value;
+                renderMolecule();
+            });
+
             safeAddListener('style', 'change', function () {
                 settings.style = this.value;
                 renderMolecule();
@@ -2233,10 +2945,8 @@
                 renderMolecule();
             });
 
-            safeAddListener('cell-color', 'input', function () {
-                const valueEl = document.getElementById('cell-color-value');
-                if (valueEl) valueEl.textContent = this.value;
-                settings.cellColor = this.value;
+            safeAddListener('show-constraint', 'change', function () {
+                settings.showConstraint = this.checked;
                 renderMolecule();
             });
 
@@ -2247,16 +2957,25 @@
 
             safeAddListener('show-hbond', 'change', function () {
                 settings.showHBond = this.checked;
+                const hbondThresholdGroup = document.getElementById('hbond-threshold-group');
+                if (hbondThresholdGroup) hbondThresholdGroup.style.display = this.checked ? 'block' : 'none';
                 renderMolecule();
             });
 
-            safeAddListener('show-shadow', 'change', function () {
-                settings.showShadow = this.checked;
-                updateShadow();
+            safeAddListener('show-shading', 'change', function () {
+                settings.showShading = this.checked;
+                updateShading();
             });
 
             safeAddListener('show-energy-plot', 'change', function () {
                 settings.showEnergyPlot = this.checked;
+                const plotContainer = document.getElementById('energy-plot-container');
+                if (plotContainer) {
+                    plotContainer.style.display = this.checked ? 'block' : 'none';
+                    if (this.checked) {
+                        drawEnergyPlot();
+                    }
+                }
             });
 
             safeAddListener('show-forces', 'change', function () {
@@ -2282,6 +3001,7 @@
                 if (pairsGroup) pairsGroup.style.display = this.checked ? 'block' : 'none';
                 if (this.checked) {
                     updatePolyhedronPairsUI();
+                    // Add default pair if none defined
                     if (settings.polyhedronPairs.length === 0) {
                         const syms = getUniqueSymbols();
                         if (syms.length >= 2) {
@@ -2295,6 +3015,7 @@
                 renderMolecule();
             });
 
+            // Add Pair button
             safeAddListener('add-polyhedron-pair-btn', 'click', function () {
                 const syms = getUniqueSymbols();
                 const center = syms[0] || 'X';
@@ -2327,8 +3048,10 @@
 
             safeAddListener('show-rings', 'change', function () {
                 settings.showRings = this.checked;
-                const group = document.getElementById('ring-opacity-group');
-                if (group) group.style.display = this.checked ? 'block' : 'none';
+                const opacityGroup = document.getElementById('ring-opacity-group');
+                if (opacityGroup) opacityGroup.style.display = this.checked ? 'block' : 'none';
+                const colorGroup = document.getElementById('ring-color-group');
+                if (colorGroup) colorGroup.style.display = this.checked ? 'block' : 'none';
                 renderMolecule();
             });
 
@@ -2339,13 +3062,45 @@
                 renderMolecule();
             });
 
-            safeAddListener('show-vectors', 'change', function () {
-                settings.showModeVector = this.checked;
-                if (vibrationData.modeVectors) {
-                    renderVibrationFrame();
-                } else {
-                    renderMolecule();
-                }
+            safeAddListener('ring-color', 'input', function () {
+                settings.ringColor = this.value;
+                const valueEl = document.getElementById('ring-color-value');
+                if (valueEl) valueEl.textContent = this.value;
+                renderMolecule();
+            });
+
+            safeAddListener('ring-color-auto-btn', 'click', function () {
+                settings.ringColor = null;
+                const valueEl = document.getElementById('ring-color-value');
+                if (valueEl) valueEl.textContent = 'Auto';
+                renderMolecule();
+            });
+
+            // Color by selection (Element / Charge / Constraint)
+            safeAddListener('color-by-select', 'change', function () {
+                settings.colorBy = this.value;
+                updateChargeUI();
+                renderMolecule();
+            });
+
+            // Color scheme selection (Jmol / CPK)
+            safeAddListener('color-scheme-select', 'change', function () {
+                settings.colorScheme = this.value;
+                atomColorScheme = this.value.toLowerCase(); // sync styles.js global
+                renderMolecule();
+            });
+
+            // Normalize charges toggle
+            safeAddListener('normalize-charges', 'change', function () {
+                settings.normalizeCharges = this.checked;
+                updateColorbarLabels();
+                renderMolecule();
+            });
+
+            // Show charge labels toggle
+            safeAddListener('show-charge-labels', 'change', function () {
+                settings.showChargeLabels = this.checked;
+                renderMolecule();
             });
 
             if (document.getElementById('orthographic-btn') && document.getElementById('perspective-btn')) {
@@ -2361,6 +3116,42 @@
             safeAddListener('copy-all-btn', 'click', copyAllFramesToClipboard);
             safeAddListener('video-btn', 'click', saveAsGIF);
             safeAddListener('download-btn', 'click', saveAsPNG);
+
+            // Energy plot resize handle
+            setupEnergyPlotResize();
+        }
+
+        function setupEnergyPlotResize() {
+            const handle = document.getElementById('energy-plot-resize-handle');
+            const container = document.getElementById('energy-plot-container');
+            if (!handle || !container) return;
+
+            let isResizing = false;
+            let startY = 0;
+            let startHeight = 0;
+
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startY = e.clientY;
+                startHeight = container.offsetHeight;
+                document.body.style.cursor = 'ns-resize';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                const deltaY = startY - e.clientY;
+                const newHeight = Math.min(400, Math.max(80, startHeight + deltaY));
+                container.style.height = newHeight + 'px';
+                drawEnergyPlot();
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    document.body.style.cursor = '';
+                }
+            });
         }
 
         function saveAsPNG() {
@@ -2374,18 +3165,19 @@
 
             // Set transparent background
             scene.background = null;
-            renderer.setClearColor(0x000000, 0);
+            renderer.setClearColor(0x000000, 0); // Transparent
 
             // Render one frame
             renderer.render(scene, camera);
 
+            // Restore background immediately so the animation loop
+            // keeps the correct colour while toBlob() runs asynchronously
+            scene.background = originalBackground;
+            updateBackgroundColor();
+
             // Get canvas data as PNG
             renderer.domElement.toBlob(function (blob) {
-                // Restore original background
-                scene.background = originalBackground;
-                updateBackgroundColor();
-
-                // Generate filename
+                // Generate filename with counter to avoid overwriting
                 let filename;
                 if (downloadCounters.png === 0) {
                     filename = `${downloadBaseName}.png`;
@@ -2394,8 +3186,10 @@
                 }
                 downloadCounters.png++;
 
-                // Download
+                // Try multiple download methods for better compatibility
                 const url = URL.createObjectURL(blob);
+
+                // Method 1: Try standard download attribute
                 const link = document.createElement('a');
                 link.href = url;
                 link.download = filename;
@@ -2406,20 +3200,43 @@
                     link.click();
                     console.log('PNG download initiated:', filename);
                 } catch (e) {
-                    console.error('Download failed:', e);
-                    window.open(url, '_blank');
+                    console.log('Standard download failed, trying alternative:', e);
+                    // Method 2: Try opening in new window (for Jupyter)
+                    try {
+                        const win = window.open(url, '_blank');
+                        if (!win) {
+                            // Method 3: Try data URL
+                            const reader = new FileReader();
+                            reader.onload = function () {
+                                const dataUrl = reader.result;
+                                const newLink = document.createElement('a');
+                                newLink.href = dataUrl;
+                                newLink.download = filename;
+                                document.body.appendChild(newLink);
+                                newLink.click();
+                                document.body.removeChild(newLink);
+                            };
+                            reader.readAsDataURL(blob);
+                        }
+                    } catch (e2) {
+                        console.error('All download methods failed:', e2);
+                        alert('Download failed. Please try saving the HTML file and opening it directly in a browser.');
+                    }
                 }
 
+                // Cleanup
                 setTimeout(() => {
-                    if (link.parentNode) document.body.removeChild(link);
+                    if (link.parentNode) {
+                        document.body.removeChild(link);
+                    }
                     URL.revokeObjectURL(url);
                 }, 1000);
             }, 'image/png');
         }
 
         function saveAsGIF() {
-            if (!vibrationData.modeVectors || vibrationData.modeVectors.length === 0) {
-                alert('No vibration data available for GIF');
+            if (!molecularData || molecularData.length <= 1) {
+                alert('No animation frames available for GIF');
                 return;
             }
 
@@ -2428,8 +3245,10 @@
                 return;
             }
 
+            // Check if gifshot is loaded
             if (typeof gifshot === 'undefined') {
                 alert('GIF library not loaded');
+                console.error('gifshot is undefined');
                 return;
             }
 
@@ -2437,41 +3256,42 @@
             const originalHTML = videoBtn ? videoBtn.innerHTML : '';
 
             try {
-                const nFrames = vibrationData.nFrames;
                 const fps = settings.animationSpeed || 30;
                 const interval = 1 / fps;
 
-                // Warn for large frame counts
-                if (nFrames > 60) {
-                    if (!confirm(`This will capture ${nFrames} frames. This may take a while and use significant memory. Continue?`)) {
-                        return;
-                    }
-                }
+                console.log('Creating GIF at', fps, 'fps');
+                console.log('Total frames:', molecularData.length);
 
+                // Show progress message
                 if (videoBtn) {
-                    videoBtn.innerHTML = '<span style="font-size: 10px;">...</span>';
+                    videoBtn.innerHTML = '<span style="font-size: 10px;">Processing...</span>';
                     videoBtn.disabled = true;
                 }
 
-                // Store current phase
-                const originalPhase = vibrationData.phase;
+                // Store current frame
+                const originalFrame = animationState.currentFrame;
 
-                // Capture all frames
+                // Capture all frames as data URLs
                 const images = [];
-                for (let i = 0; i < nFrames; i++) {
-                    vibrationData.phase = (i / nFrames) * 2 * Math.PI;
-                    renderVibrationFrame();
+                for (let i = 0; i < molecularData.length; i++) {
+                    animationState.currentFrame = i;
+                    renderMolecule();
                     renderer.render(scene, camera);
 
+                    // Get frame as data URL
                     const dataURL = renderer.domElement.toDataURL('image/png');
                     images.push(dataURL);
+
+                    console.log('Captured frame', i + 1, 'of', molecularData.length);
                 }
 
-                // Restore original phase
-                vibrationData.phase = originalPhase;
-                renderVibrationFrame();
+                // Restore original frame
+                animationState.currentFrame = originalFrame;
+                renderMolecule();
 
-                // Create GIF
+                console.log('Creating GIF from', images.length, 'frames...');
+
+                // Create GIF using gifshot
                 gifshot.createGIF({
                     images: images,
                     gifWidth: renderer.domElement.clientWidth,
@@ -2483,6 +3303,9 @@
                     numWorkers: 2
                 }, function (obj) {
                     if (!obj.error) {
+                        console.log('GIF created successfully');
+
+                        // Generate filename with counter to avoid overwriting
                         let filename;
                         if (downloadCounters.gif === 0) {
                             filename = `${downloadBaseName}.gif`;
@@ -2491,27 +3314,53 @@
                         }
                         downloadCounters.gif++;
 
+                        // Try multiple download methods for better compatibility
                         const link = document.createElement('a');
                         link.href = obj.image;
                         link.download = filename;
+                        link.style.display = 'none';
                         document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
 
-                        console.log('GIF saved:', filename);
+                        try {
+                            link.click();
+                        } catch (e) {
+                            // Try opening in new window (for Jupyter)
+                            try {
+                                const win = window.open(obj.image, '_blank');
+                                if (!win) {
+                                    alert('Download blocked. Please allow popups or save the HTML file and open it directly in a browser.');
+                                }
+                            } catch (e2) {
+                                console.error('All download methods failed:', e2);
+                                alert('Download failed. Please try saving the HTML file and opening it directly in a browser.');
+                            }
+                        }
+
+                        // Cleanup
+                        setTimeout(() => {
+                            if (link.parentNode) {
+                                document.body.removeChild(link);
+                            }
+                        }, 1000);
+
+                        // Restore button
+                        if (videoBtn) {
+                            videoBtn.innerHTML = originalHTML;
+                            videoBtn.disabled = false;
+                        }
                     } else {
                         console.error('GIF creation error:', obj.error);
-                        alert('Failed to create GIF');
-                    }
-
-                    if (videoBtn) {
-                        videoBtn.innerHTML = originalHTML;
-                        videoBtn.disabled = false;
+                        alert('Failed to create GIF: ' + obj.error);
+                        if (videoBtn) {
+                            videoBtn.innerHTML = originalHTML;
+                            videoBtn.disabled = false;
+                        }
                     }
                 });
-            } catch (e) {
-                console.error('GIF creation error:', e);
-                alert('Failed to create GIF: ' + e.message);
+
+            } catch (error) {
+                console.error('GIF creation error:', error);
+                alert('Failed to create GIF: ' + error.message);
                 if (videoBtn) {
                     videoBtn.innerHTML = originalHTML;
                     videoBtn.disabled = false;
@@ -2584,384 +3433,211 @@
             return `#${R.toString(16).padStart(2, '0')}${G.toString(16).padStart(2, '0')}${B.toString(16).padStart(2, '0')}`;
         }
 
-        // ========== Normal Mode / Vibration Support ==========
+        // ========== Energy Plot Functions ==========
 
-        // Vibration state
-        let vibrationData = {
-            equilibriumPositions: null,  // Original atom positions
-            modeVectors: null,           // [nModes][nAtoms][3] displacement vectors
-            frequencies: null,           // Array of frequency strings
-            isImaginary: null,           // Array of booleans
-            currentModeIndex: 0,
-            nFrames: 30,
-            phase: 0,                    // Current phase in animation cycle (0 to 2*PI)
-            amplitude: 0.75              // Displacement amplitude
+        let energyPlotData = {
+            energies: [],
+            minEnergy: 0,
+            maxEnergy: 0,
+            hasEnergy: false
         };
 
-        /**
-         * Initialize the normal mode viewer with vibration data
-         * Called from Python after data injection
-         */
-        function initNormalModeViewer(atomsData, vibData) {
-            console.log('Initializing Normal Mode Viewer');
-            console.log('Atoms data:', atomsData);
-            console.log('Vibration data:', vibData);
-
-            // Store equilibrium structure
-            if (atomsData) {
-                vibrationData.equilibriumPositions = atomsData.positions.map(p => [...p]);
-                molecularData = [atomsData];
-                cameraNeedsFit = true;
-            }
-
-            // Store vibration data if available
-            if (vibData && vibData.modeVectors) {
-                vibrationData.modeVectors = vibData.modeVectors;
-                vibrationData.frequencies = vibData.frequencies || [];
-                vibrationData.isImaginary = vibData.isImaginary || [];
-                vibrationData.nFrames = vibData.nFrames || 30;
-
-                // Populate mode selector dropdown
-                populateModeSelector();
-
-                // Show normal modes card
-                const modesCard = document.querySelector('.card:has(#normal-mode)');
-                if (modesCard) {
-                    modesCard.style.display = 'block';
-                }
-            } else {
-                // Hide normal modes card if no vibration data
-                const modesCard = document.querySelector('.card:has(#normal-mode)');
-                if (modesCard) {
-                    modesCard.style.display = 'none';
-                }
-            }
-
-            // Update frame display
-            updateFrameDisplay();
-            renderMolecule();
-        }
-
-        /**
-         * Populate the mode selector dropdown with frequencies
-         */
-        function populateModeSelector() {
-            const select = document.getElementById('normal-mode');
-            if (!select || !vibrationData.frequencies) return;
-
-            select.innerHTML = '';
-
-            vibrationData.frequencies.forEach((freq, idx) => {
-                const option = document.createElement('option');
-                option.value = idx;
-
-                // Format frequency display
-                const isImag = vibrationData.isImaginary && vibrationData.isImaginary[idx];
-                const freqStr = freq.toString().includes('i') ? freq : `${freq} cm⁻¹`;
-
-                option.textContent = `Mode ${idx + 1}: ${freqStr}`;
-                // Red for imaginary, green for real frequencies
-                option.style.color = isImag ? '#ef4444' : '#22c55e';
-                select.appendChild(option);
-            });
-
-            // Set up event listener for mode selection
-            select.addEventListener('change', function () {
-                vibrationData.currentModeIndex = parseInt(this.value, 10);
-                vibrationData.phase = 0;
-                renderMolecule();
-            });
-        }
-
-        /**
-         * Get displaced positions for current animation frame
-         */
-        function getDisplacedPositions() {
-            if (!vibrationData.equilibriumPositions || !vibrationData.modeVectors) {
-                return null;
-            }
-
-            const modeIdx = vibrationData.currentModeIndex;
-            const modeVector = vibrationData.modeVectors[modeIdx];
-
-            if (!modeVector) return null;
-
-            const amplitude = vibrationData.amplitude;
-            const phase = vibrationData.phase;
-            const displacement = Math.sin(phase) * amplitude;
-
-            const displacedPositions = vibrationData.equilibriumPositions.map((pos, i) => {
-                const vec = modeVector[i] || [0, 0, 0];
-                return [
-                    pos[0] + vec[0] * displacement,
-                    pos[1] + vec[1] * displacement,
-                    pos[2] + vec[2] * displacement
-                ];
-            });
-
-            return displacedPositions;
-        }
-
-        /**
-         * Override toggleAnimation for vibration mode
-         */
-        const originalToggleAnimation = toggleAnimation;
-        toggleAnimation = function () {
-            // Check if we're in vibration mode
-            if (vibrationData.modeVectors && vibrationData.modeVectors.length > 0) {
-                toggleVibrationAnimation();
-            } else {
-                // Fall back to trajectory animation
-                originalToggleAnimation();
-            }
-        };
-
-        /**
-         * Toggle vibration animation (sinusoidal)
-         */
-        function toggleVibrationAnimation() {
-            const playBtn = document.getElementById('play-btn');
-
-            if (animationState.isPlaying) {
-                // Pause
-                animationState.isPlaying = false;
-                if (animationState.animationInterval) {
-                    clearInterval(animationState.animationInterval);
-                    animationState.animationInterval = null;
-                }
-
-                // Update button icon to play
-                if (playBtn) {
-                    playBtn.innerHTML = `
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            `;
-                }
-            } else {
-                // Play
-                animationState.isPlaying = true;
-                const fps = settings.animationSpeed || 30;
-                const interval = 1000 / fps;
-                const phaseStep = (2 * Math.PI) / vibrationData.nFrames;
-
-                animationState.animationInterval = setInterval(() => {
-                    vibrationData.phase += phaseStep;
-                    if (vibrationData.phase >= 2 * Math.PI) {
-                        vibrationData.phase -= 2 * Math.PI;
-                    }
-
-                    // Update frame display (convert phase to frame number)
-                    const frameNum = Math.round((vibrationData.phase / (2 * Math.PI)) * vibrationData.nFrames);
-                    animationState.currentFrame = frameNum;
-                    updateFrameDisplay();
-
-                    renderVibrationFrame();
-                }, interval);
-
-                // Update button icon to pause
-                if (playBtn) {
-                    playBtn.innerHTML = `
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            `;
-                }
-            }
-        }
-
-        /**
-         * Render a single vibration frame with displaced positions
-         */
-        function renderVibrationFrame() {
-            if (!scene || !camera || !renderer) return;
-            if (!molecularData || molecularData.length === 0) return;
-
-            const displacedPositions = getDisplacedPositions();
-            if (!displacedPositions) {
-                renderMolecule();
+        function extractEnergyData() {
+            if (!molecularData || molecularData.length === 0) {
+                energyPlotData.hasEnergy = false;
                 return;
             }
 
-            // Create temporary molecule data with displaced positions
-            const molecule = { ...molecularData[0] };
-            molecule.positions = displacedPositions;
+            energyPlotData.energies = [];
+            let hasAnyEnergy = false;
 
-            // Render with displaced positions
-            renderMoleculeWithData(molecule);
+            for (let i = 0; i < molecularData.length; i++) {
+                const mol = molecularData[i];
+                if (mol.energy !== undefined && mol.energy !== null) {
+                    energyPlotData.energies.push(mol.energy);
+                    hasAnyEnergy = true;
+                } else {
+                    energyPlotData.energies.push(null);
+                }
+            }
+
+            energyPlotData.hasEnergy = hasAnyEnergy;
+
+            if (hasAnyEnergy) {
+                const validEnergies = energyPlotData.energies.filter(e => e !== null);
+                energyPlotData.minEnergy = Math.min(...validEnergies);
+                energyPlotData.maxEnergy = Math.max(...validEnergies);
+            }
         }
 
-        /**
-         * Render molecule with specific data (for vibration animation)
-         */
-        function renderMoleculeWithData(molecule) {
-            if (!scene || !camera || !renderer) return;
+        function drawEnergyPlot() {
+            const canvas = document.getElementById('energy-plot-canvas');
+            const container = document.getElementById('energy-plot-container');
+            if (!canvas || !container) return;
 
-            if (moleculeGroup) {
-                scene.remove(moleculeGroup);
-                disposeObject3D(moleculeGroup);
+            // Extract energy data if not done yet
+            if (energyPlotData.energies.length !== molecularData.length) {
+                extractEnergyData();
             }
 
-            moleculeGroup = new THREE.Group();
-
-            let positions = molecule.positions.map(pos => new THREE.Vector3(...pos));
-            let symbols = molecule.symbols;
-
-            // Apply periodic boundary conditions if requested
-            if (periodicities.length > 0 && molecule.cell) {
-                const extended = applyPeriodicBoundaries(positions, symbols, molecule.cell, periodicities);
-                positions = extended.positions;
-                symbols = extended.symbols;
+            if (!energyPlotData.hasEnergy) {
+                container.style.display = 'none';
+                const checkbox = document.getElementById('show-energy-plot');
+                if (checkbox) checkbox.checked = false;
+                settings.showEnergyPlot = false;
+                console.log('No energy data available');
+                return;
             }
 
-            const styleName = (settings.style || 'cartoon').toLowerCase();
-            const atomFactory = atomFactories[styleName] || atomFactories['default'];
-            const bondFactory = bondFactories[styleName] || bondFactories['default'];
+            const ctx = canvas.getContext('2d');
+            const rect = container.getBoundingClientRect();
 
-            const atomScale = Math.max(settings.atomSize, 0.05);
-            const bondRadius = Math.max(settings.bondThickness, 0.005);
-            const bondCutoff = settings.bondThreshold;
+            // Set canvas size for sharp rendering
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = (rect.width - 20) * dpr;
+            canvas.height = (rect.height - 20) * dpr;
+            canvas.style.width = (rect.width - 20) + 'px';
+            canvas.style.height = (rect.height - 20) + 'px';
+            ctx.scale(dpr, dpr);
 
-            // Performance: compute LOD segments
-            const perfMode2 = settings.performanceMode || 'auto';
-            const lodSegments2 = getLODSegments(positions.length, perfMode2);
-            clearPerformanceCache();
+            const width = rect.width - 20;
+            const height = rect.height - 20;
+            const padding = { left: 50, right: 20, top: 15, bottom: 25 };
+            const plotWidth = width - padding.left - padding.right;
+            const plotHeight = height - padding.top - padding.bottom;
 
-            const uniqueSymbols = [...new Set(symbols)];
-            const greyColorMap = {};
-            uniqueSymbols.forEach((sym, idx) => {
-                const lightness = (idx + 1) / (uniqueSymbols.length + 1);
-                greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
-            });
-            const helpers = { greyColorMap, _lod: lodSegments2 };
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
 
-            // Create atoms
-            positions.forEach((pos, i) => {
-                const symbol = symbols[i];
-                const atomMesh = atomFactory(pos, symbol, atomScale, helpers);
-                if (atomMesh) {
-                    atomMesh.userData.atomIndex = i;
-                    atomMesh.userData.symbol = symbol;
-                    moleculeGroup.add(atomMesh);
-                }
-            });
-
-            // Create bonds using spatial grid
-            if (settings.showBond) {
-                const bp = findBondsSpatialGrid(positions, symbols, bondCutoff);
-                for (let b = 0; b < bp.length; b++) {
-                    const { i, j } = bp[b];
-                    const bondMesh = bondFactory(
-                        positions[i], positions[j],
-                        symbols[i], symbols[j],
-                        bondRadius, atomScale, helpers
-                    );
-                    if (bondMesh) moleculeGroup.add(bondMesh);
-                }
+            // Draw background grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = padding.top + (plotHeight / 4) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(width - padding.right, y);
+                ctx.stroke();
             }
 
-            // Add unit cell if available (inline)
-            if (settings.showCell && molecule.cell) {
-                const cellVectors = molecule.cell.map(c => new THREE.Vector3(...c));
-                const points = [
-                    new THREE.Vector3(0, 0, 0), cellVectors[0],
-                    new THREE.Vector3(0, 0, 0), cellVectors[1],
-                    new THREE.Vector3(0, 0, 0), cellVectors[2],
-                    cellVectors[0], cellVectors[0].clone().add(cellVectors[1]),
-                    cellVectors[0], cellVectors[0].clone().add(cellVectors[2]),
-                    cellVectors[1], cellVectors[1].clone().add(cellVectors[0]),
-                    cellVectors[1], cellVectors[1].clone().add(cellVectors[2]),
-                    cellVectors[2], cellVectors[2].clone().add(cellVectors[0]),
-                    cellVectors[2], cellVectors[2].clone().add(cellVectors[1]),
-                    cellVectors[0].clone().add(cellVectors[1]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
-                    cellVectors[0].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2]),
-                    cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
-                ];
-                const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                const cellMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(settings.cellColor || '#808080') });
-                const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
-                cellMesh.renderOrder = 2;
-                moleculeGroup.add(cellMesh);
-            }
+            // Calculate scale
+            const energies = energyPlotData.energies;
+            const n = energies.length;
+            let minE = energyPlotData.minEnergy;
+            let maxE = energyPlotData.maxEnergy;
 
-            // Add mode vector arrows if enabled (bidirectional: red +, blue -)
-            if (settings.showModeVector && vibrationData.modeVectors) {
-                const modeIdx = vibrationData.currentModeIndex;
-                const modeVector = vibrationData.modeVectors[modeIdx];
+            // Add some padding to range
+            const range = maxE - minE || 1;
+            minE -= range * 0.1;
+            maxE += range * 0.1;
 
-                if (modeVector && modeVector.length === positions.length) {
-                    const positiveColor = 0xff0000;  // Red for positive direction
-                    const negativeColor = 0x0000ff;  // Blue for negative direction
-                    const arrowScale = vibrationData.amplitude * 2;
+            // Draw energy line
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            let started = false;
 
-                    for (let i = 0; i < positions.length; i++) {
-                        const vec = modeVector[i];
-                        if (!vec) continue;
+            for (let i = 0; i < n; i++) {
+                if (energies[i] === null) continue;
+                const x = padding.left + (i / (n - 1 || 1)) * plotWidth;
+                const y = padding.top + plotHeight - ((energies[i] - minE) / (maxE - minE)) * plotHeight;
 
-                        const dir = new THREE.Vector3(vec[0], vec[1], vec[2]);
-                        const length = dir.length() * arrowScale;
-
-                        if (length > 0.01) {  // Skip very small vectors
-                            dir.normalize();
-
-                            // Positive direction arrow (red)
-                            const arrowPositive = new THREE.ArrowHelper(
-                                dir,
-                                positions[i],
-                                length,
-                                positiveColor,
-                                length * 0.3,  // Head length
-                                length * 0.15  // Head width
-                            );
-                            moleculeGroup.add(arrowPositive);
-
-                            // Negative direction arrow (blue)
-                            const negDir = dir.clone().negate();
-                            const arrowNegative = new THREE.ArrowHelper(
-                                negDir,
-                                positions[i],
-                                length,
-                                negativeColor,
-                                length * 0.3,  // Head length
-                                length * 0.15  // Head width
-                            );
-                            moleculeGroup.add(arrowNegative);
-                        }
-                    }
+                if (!started) {
+                    ctx.moveTo(x, y);
+                    started = true;
+                } else {
+                    ctx.lineTo(x, y);
                 }
             }
+            ctx.stroke();
 
-            scene.add(moleculeGroup);
+            // Draw data points
+            ctx.fillStyle = '#3b82f6';
+            for (let i = 0; i < n; i++) {
+                if (energies[i] === null) continue;
+                const x = padding.left + (i / (n - 1 || 1)) * plotWidth;
+                const y = padding.top + plotHeight - ((energies[i] - minE) / (maxE - minE)) * plotHeight;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw current frame marker
+            drawEnergyPlotMarker();
+
+            // Draw axes labels
+            ctx.fillStyle = '#9ca3af';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(maxE.toFixed(2), padding.left - 5, padding.top + 5);
+            ctx.fillText(minE.toFixed(2), padding.left - 5, height - padding.bottom);
+
+            ctx.textAlign = 'center';
+            ctx.fillText('Frame', width / 2, height - 5);
+
+            // Y-axis label
+            ctx.save();
+            ctx.translate(12, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Energy (eV)', 0, 0);
+            ctx.restore();
         }
 
-        // Override updateFrameDisplay for vibration mode
-        const originalUpdateFrameDisplay = updateFrameDisplay;
-        updateFrameDisplay = function () {
-            const frameValue = document.getElementById('frame-value');
-            const frameSlider = document.getElementById('frame-slider');
+        function drawEnergyPlotMarker() {
+            const canvas = document.getElementById('energy-plot-canvas');
+            const container = document.getElementById('energy-plot-container');
+            if (!canvas || !container || !energyPlotData.hasEnergy) return;
 
-            if (vibrationData.modeVectors && vibrationData.modeVectors.length > 0) {
-                // Vibration mode: show frame in cycle
-                const totalFrames = vibrationData.nFrames;
-                const currentFrame = animationState.currentFrame + 1;
+            const ctx = canvas.getContext('2d');
+            const rect = container.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
 
-                if (frameValue) {
-                    frameValue.textContent = `${currentFrame} / ${totalFrames}`;
-                }
-                if (frameSlider) {
-                    frameSlider.max = totalFrames;
-                    frameSlider.value = currentFrame;
-                }
-            } else {
-                // Trajectory mode: use original
-                originalUpdateFrameDisplay();
+            const width = rect.width - 20;
+            const height = rect.height - 20;
+            const padding = { left: 50, right: 20, top: 15, bottom: 25 };
+            const plotWidth = width - padding.left - padding.right;
+            const plotHeight = height - padding.top - padding.bottom;
+
+            const energies = energyPlotData.energies;
+            const n = energies.length;
+            const frameIdx = animationState.currentFrame;
+
+            if (n <= 1 || frameIdx < 0 || frameIdx >= n) return;
+
+            // Draw current frame marker (vertical line)
+            const x = padding.left + (frameIdx / (n - 1 || 1)) * plotWidth;
+
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, padding.top);
+            ctx.lineTo(x, height - padding.bottom);
+            ctx.stroke();
+
+            // Draw marker point if energy exists
+            if (energies[frameIdx] !== null) {
+                let minE = energyPlotData.minEnergy;
+                let maxE = energyPlotData.maxEnergy;
+                const range = maxE - minE || 1;
+                minE -= range * 0.1;
+                maxE += range * 0.1;
+
+                const y = padding.top + plotHeight - ((energies[frameIdx] - minE) / (maxE - minE)) * plotHeight;
+
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Show energy value
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(energies[frameIdx].toFixed(4) + ' eV', x, padding.top - 3);
             }
-        };
+        }
 
-        // Export functions for Python injection
         window.setMolecularData = setMolecularData;
-        window.initNormalModeViewer = initNormalModeViewer;
         window.removePeriodicity = removePeriodicity;
 
         // PostMessage API for iframe embedding
@@ -2975,11 +3651,6 @@
                         setMolecularData(msg.data);
                     }
                     break;
-                case 'initNormalMode':
-                    if (msg.atoms && msg.vibrationData) {
-                        initNormalModeViewer(msg.atoms, msg.vibrationData);
-                    }
-                    break;
                 case 'setSettings':
                     if (msg.settings) {
                         Object.assign(settings, msg.settings);
@@ -2990,7 +3661,7 @@
                     break;
                 case 'ready':
                     if (event.source) {
-                        event.source.postMessage({ type: 'ready', viewer: 'normal' }, '*');
+                        event.source.postMessage({ type: 'ready', viewer: 'molecular' }, '*');
                     }
                     break;
             }
@@ -2998,7 +3669,7 @@
 
         // Notify parent that viewer is loaded
         if (window.parent !== window) {
-            window.parent.postMessage({ type: 'viewerLoaded', viewer: 'normal' }, '*');
+            window.parent.postMessage({ type: 'viewerLoaded', viewer: 'molecular' }, '*');
         }
     </script>
 </body>

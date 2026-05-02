@@ -73,7 +73,10 @@ aseview [OPTIONS] FILES...
 | Theme | Description |
 |-------|-------------|
 | `dark` | Default dark theme with deep grey background |
-| `spring` | Light pastel theme |
+| `spring` | Light pastel theme with bright, airy colors |
+| `glass` | Glassmorphism theme with frosted translucent panels |
+| `darkgreen` | Dark GitHub-style theme with green accent |
+| `simple` | Light macOS-style theme with colorful gradient background |
 
 ### Overlay Options
 
