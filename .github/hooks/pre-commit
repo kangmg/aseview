@@ -5,7 +5,6 @@
 SOURCES=(
   "aseview/templates/molecular_viewer.html"
   "aseview/static/js/styles.js"
-  "aseview/static/js/vendor/TrackballControls.js"
   "vscode-extension/scripts/bundle-viewer.cjs"
 )
 
@@ -27,7 +26,6 @@ echo "[pre-commit] Source files changed — syncing vscode bundle..."
 # Sync files
 cp aseview/templates/molecular_viewer.html vscode-extension/media/molecular_viewer.html
 cp aseview/static/js/styles.js             vscode-extension/media/styles.js
-cp aseview/static/js/vendor/TrackballControls.js vscode-extension/media/TrackballControls.js
 
 # Regenerate bundle
 if ! command -v node &>/dev/null; then
@@ -45,7 +43,6 @@ fi
 git add \
   vscode-extension/media/molecular_viewer.html \
   vscode-extension/media/styles.js \
-  vscode-extension/media/TrackballControls.js \
   vscode-extension/media/molecular_viewer_bundle.html
 
 echo "[pre-commit] vscode bundle updated and staged."
