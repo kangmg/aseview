@@ -3029,50 +3029,6 @@
             }, 1000);
         }
 
-        const hostCopyRequests = new Map();
-
-        function getHostCopyFrames(allFrames) {
-            return getFrameEntries(allFrames).map(({ molecule }) => molecule);
-        }
-
-        function handleHostCopyResult(msg) {
-            if (!msg || !msg.requestId || !hostCopyRequests.has(msg.requestId)) return;
-
-            const pending = hostCopyRequests.get(msg.requestId);
-            hostCopyRequests.delete(msg.requestId);
-            clearTimeout(pending.timeout);
-
-            if (msg.ok) {
-                flashCopyButton(pending.buttonId);
-                console.log(msg.message || pending.successMessage);
-            } else {
-                alert(msg.message || 'Failed to copy to clipboard');
-            }
-        }
-
-        function requestHostCopy(format, frames, fallbackText, buttonId, successMessage) {
-            if (!window.parent || window.parent === window) return false;
-            if (!frames || frames.length === 0) return false;
-
-            const requestId = `copy-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-            const timeout = setTimeout(() => {
-                if (!hostCopyRequests.has(requestId)) return;
-                hostCopyRequests.delete(requestId);
-                writeClipboardText(fallbackText, buttonId, successMessage);
-            }, 10000);
-
-            hostCopyRequests.set(requestId, { timeout, buttonId, successMessage });
-            window.parent.postMessage({
-                type: 'copyStructure',
-                requestId,
-                format,
-                frames,
-                fallbackText,
-                message: successMessage
-            }, '*');
-            return true;
-        }
-
         function writeClipboardText(text, buttonId, successMessage) {
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(() => {
@@ -3120,11 +3076,7 @@
             const label = COPY_FORMAT_LABELS[format] || format;
             const scope = allFrames ? `${payload.frameCount} frame${payload.frameCount === 1 ? '' : 's'}` : 'current frame';
             const message = `Copied ${scope} as ${label}`;
-            const buttonId = allFrames ? 'copy-all-btn' : 'copy-btn';
-            if (requestHostCopy(format, getHostCopyFrames(allFrames), payload.text, buttonId, message)) {
-                return;
-            }
-            writeClipboardText(payload.text, buttonId, message);
+            writeClipboardText(payload.text, allFrames ? 'copy-all-btn' : 'copy-btn', message);
         }
 
         function getCurrentFrameAsXYZ() {
@@ -4107,9 +4059,6 @@
                     if (event.source) {
                         event.source.postMessage({ type: 'ready', viewer: 'molecular' }, '*');
                     }
-                    break;
-                case 'copyStructureResult':
-                    handleHostCopyResult(msg);
                     break;
             }
         });
