@@ -63,8 +63,10 @@ class MolecularData:
         data = {"positions": positions, "symbols": symbols}
 
         # Add cell information if present
-        if atoms.pbc.any():
-            data["cell"] = atoms.get_cell().tolist()
+        cell = atoms.get_cell()
+        if cell.rank > 0:
+            data["cell"] = cell.tolist()
+            data["pbc"] = atoms.pbc.tolist()
 
         # Add forces if present (from calculator or arrays)
         try:
@@ -133,7 +135,12 @@ class MolecularData:
 
         if "cell" in data:
             atoms.set_cell(data["cell"])
-            atoms.pbc = [True, True, True]
+            atoms.pbc = data.get("pbc", [True, True, True])
+
+        if "fixed" in data and data["fixed"]:
+            from ase.constraints import FixAtoms
+
+            atoms.set_constraint(FixAtoms(indices=data["fixed"]))
 
         return atoms
 

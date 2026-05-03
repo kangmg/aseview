@@ -9,8 +9,14 @@ type ViewerFrame = {
   symbols: string[];
   positions: number[][];
   cell?: number[][];
+  pbc?: boolean[];
   forces?: number[][];
   charges?: number[];
+  fixed?: number[];
+  arrays?: {
+    fixed?: boolean[];
+    move_mask?: Array<boolean | boolean[]>;
+  };
   energy?: number;
   name?: string;
 };
@@ -129,31 +135,106 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
     webviewPanel.webview.onDidReceiveMessage(async (msg: unknown) => {
       if (!msg || typeof msg !== "object") { return; }
       const m = msg as Record<string, unknown>;
-      if (m["type"] !== "saveFile") { return; }
+      const type = m["type"];
 
-      const dataUrl = m["dataUrl"] as string | undefined;
-      const suggestedName = typeof m["filename"] === "string" ? m["filename"] : "download";
-      if (!dataUrl) { return; }
+      if (type === "saveFile") {
+        await this.handleSaveFileMessage(m);
+        return;
+      }
 
-      const saveUri = await vscode.window.showSaveDialog({
-        defaultUri: vscode.Uri.file(suggestedName),
-        filters: suggestedName.endsWith(".gif")
-          ? { "GIF Image": ["gif"] }
-          : { "PNG Image": ["png"] },
-      });
-      if (!saveUri) { return; }
-
-      try {
-        const base64 = dataUrl.replace(/^data:[^;]+;base64,/, "");
-        const buffer = Buffer.from(base64, "base64");
-        await fs.writeFile(saveUri.fsPath, buffer);
-        void vscode.window.showInformationMessage(`Saved: ${path.basename(saveUri.fsPath)}`);
-      } catch (err) {
-        void vscode.window.showErrorMessage(`Failed to save file: ${asError(err).message}`);
+      if (type === "copyStructure") {
+        await this.handleCopyStructureMessage(m, webviewPanel);
       }
     });
 
     await refreshPanel();
+  }
+
+  private async handleSaveFileMessage(m: Record<string, unknown>): Promise<void> {
+    const dataUrl = m["dataUrl"] as string | undefined;
+    const suggestedName = typeof m["filename"] === "string" ? m["filename"] : "download";
+    if (!dataUrl) { return; }
+
+    const saveUri = await vscode.window.showSaveDialog({
+      defaultUri: vscode.Uri.file(suggestedName),
+      filters: suggestedName.endsWith(".gif")
+        ? { "GIF Image": ["gif"] }
+        : { "PNG Image": ["png"] },
+    });
+    if (!saveUri) { return; }
+
+    try {
+      const base64 = dataUrl.replace(/^data:[^;]+;base64,/, "");
+      const buffer = Buffer.from(base64, "base64");
+      await fs.writeFile(saveUri.fsPath, buffer);
+      void vscode.window.showInformationMessage(`Saved: ${path.basename(saveUri.fsPath)}`);
+    } catch (err) {
+      void vscode.window.showErrorMessage(`Failed to save file: ${asError(err).message}`);
+    }
+  }
+
+  private async handleCopyStructureMessage(
+    m: Record<string, unknown>,
+    panel: vscode.WebviewPanel
+  ): Promise<void> {
+    const requestId = typeof m["requestId"] === "string" ? m["requestId"] : undefined;
+    const fallbackText = typeof m["fallbackText"] === "string" ? m["fallbackText"] : "";
+    const successMessage =
+      typeof m["message"] === "string" ? m["message"] : "Copied structure";
+
+    try {
+      const text = await this.renderCopyStructureText(m, fallbackText);
+      if (!text.trim()) {
+        throw new Error("No molecular data to copy.");
+      }
+      await vscode.env.clipboard.writeText(text);
+      void panel.webview.postMessage({
+        type: "copyStructureResult",
+        requestId,
+        ok: true,
+        message: successMessage,
+      });
+    } catch (err) {
+      void panel.webview.postMessage({
+        type: "copyStructureResult",
+        requestId,
+        ok: false,
+        message: `Failed to copy structure: ${asError(err).message}`,
+      });
+    }
+  }
+
+  private async renderCopyStructureText(
+    m: Record<string, unknown>,
+    fallbackText: string
+  ): Promise<string> {
+    const format = typeof m["format"] === "string" ? m["format"] : "";
+    const aseTsFormat = normalizeAseTsWriteFormat(format);
+    if (!aseTsFormat) {
+      if (fallbackText) { return fallbackText; }
+      throw new Error(`Unsupported copy format: ${format}`);
+    }
+
+    const frames = coerceViewerFrames(m["frames"]);
+    if (frames.length === 0) {
+      if (fallbackText) { return fallbackText; }
+      throw new Error("No frames were provided for copy.");
+    }
+    const workerPath = vscode.Uri.joinPath(
+      this.context.extensionUri,
+      "node",
+      "write_with_ase_ts.bundle.cjs"
+    ).fsPath;
+
+    try {
+      return await this.writeWithAseTsWorker(workerPath, frames, aseTsFormat);
+    } catch (err) {
+      if (fallbackText) {
+        console.warn(`Falling back to webview serializer: ${asError(err).message}`);
+        return fallbackText;
+      }
+      throw err;
+    }
   }
 
   public async refresh(uri: vscode.Uri): Promise<boolean> {
@@ -293,6 +374,57 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
     });
   }
 
+  private writeWithAseTsWorker(
+    workerScriptPath: string,
+    frames: ViewerFrame[],
+    format: string
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [workerScriptPath, "--format", format], {
+        windowsHide: true,
+      });
+
+      let stdout = "";
+      let stderr = "";
+      const timeoutMs = 45000;
+      const timeout = setTimeout(() => {
+        child.kill();
+        reject(new Error(`ase-ts writer timed out after ${timeoutMs / 1000}s.`));
+      }, timeoutMs);
+
+      child.stdout.setEncoding("utf8");
+      child.stderr.setEncoding("utf8");
+
+      child.stdout.on("data", (chunk: string) => {
+        stdout += chunk;
+      });
+      child.stderr.on("data", (chunk: string) => {
+        stderr += chunk;
+      });
+
+      child.on("error", (err) => {
+        clearTimeout(timeout);
+        reject(new Error(`Failed to start ase-ts writer: ${err.message}`));
+      });
+
+      child.on("close", (code) => {
+        clearTimeout(timeout);
+        if (code !== 0) {
+          const details = [stderr.trim(), stdout.trim()].filter(Boolean).join("\n");
+          reject(new Error(details || `ase-ts writer failed with exit code ${code}.`));
+          return;
+        }
+        resolve(stdout);
+      });
+
+      child.stdin.on("error", (err) => {
+        clearTimeout(timeout);
+        reject(new Error(`Failed to send ase-ts writer input: ${err.message}`));
+      });
+      child.stdin.end(JSON.stringify({ frames }));
+    });
+  }
+
   private renderAseviewHtml(
     filePath: string,
     frames: ViewerFrame[],
@@ -349,7 +481,7 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
         });
       }
 
-      // Receive bundle HTML or save-file relay from iframe
+      // Receive bundle HTML, file-save relay, and copy requests from the iframe.
       window.addEventListener('message', function(e) {
         const msg = e.data;
         if (!msg) return;
@@ -362,9 +494,19 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
           return;
         }
 
-        // Save-file relay from iframe
-        if (msg.type === 'saveFile') {
+        // Relays from iframe to the extension host
+        if (msg.type === 'saveFile' || msg.type === 'copyStructure') {
           vscodeApi.postMessage(msg);
+          return;
+        }
+
+        // Copy result from extension host back down to the iframe
+        if (msg.type === 'copyStructureResult') {
+          document.querySelectorAll('iframe').forEach(function(frame) {
+            if (frame.contentWindow) {
+              frame.contentWindow.postMessage(msg, '*');
+            }
+          });
         }
       });
 
@@ -656,6 +798,120 @@ function normalizeViewerType(input: string): "molecular" | "overlay" | "frag" | 
     return input;
   }
   return "molecular";
+}
+
+function normalizeAseTsWriteFormat(input: string): string | undefined {
+  const normalized = input.trim().toLowerCase();
+  if (normalized === "xyz" || normalized === "extxyz" || normalized === "cif") {
+    return normalized;
+  }
+  if (normalized === "poscar" || normalized === "vasp" || normalized === "vasp-poscar") {
+    return "vasp";
+  }
+  return undefined;
+}
+
+function coerceViewerFrames(value: unknown): ViewerFrame[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const frames: ViewerFrame[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+
+    const record = item as Record<string, unknown>;
+    const symbols = Array.isArray(record["symbols"]) ? record["symbols"].map(String) : [];
+    const positions = coerceVec3Array(record["positions"]);
+    if (symbols.length === 0 || positions.length !== symbols.length) {
+      continue;
+    }
+
+    const frame: ViewerFrame = { symbols, positions };
+    const cell = coerceVec3Array(record["cell"]);
+    if (cell.length >= 3) {
+      frame.cell = cell.slice(0, 3);
+    }
+    if (Array.isArray(record["pbc"])) {
+      frame.pbc = record["pbc"].slice(0, 3).map(coerceBoolean);
+    }
+    if (Array.isArray(record["fixed"])) {
+      const fixed = record["fixed"]
+        .map((x) => Number(x))
+        .filter((x) => Number.isInteger(x) && x >= 0 && x < symbols.length);
+      if (fixed.length > 0) {
+        frame.fixed = [...new Set(fixed)].sort((a, b) => a - b);
+      }
+    }
+
+    const arraysRecord =
+      record["arrays"] && typeof record["arrays"] === "object"
+        ? (record["arrays"] as Record<string, unknown>)
+        : undefined;
+    if (arraysRecord) {
+      const arrays: ViewerFrame["arrays"] = {};
+      if (Array.isArray(arraysRecord["fixed"])) {
+        arrays.fixed = arraysRecord["fixed"].slice(0, symbols.length).map(coerceBoolean);
+      }
+      if (Array.isArray(arraysRecord["move_mask"])) {
+        arrays.move_mask = arraysRecord["move_mask"].slice(0, symbols.length).map((entry) => {
+          if (Array.isArray(entry)) {
+            return entry.slice(0, 3).map(coerceBoolean);
+          }
+          return coerceBoolean(entry);
+        });
+      }
+      if (arrays.fixed || arrays.move_mask) {
+        frame.arrays = arrays;
+      }
+    }
+
+    if (typeof record["name"] === "string") {
+      frame.name = record["name"];
+    }
+    frames.push(frame);
+  }
+
+  return frames;
+}
+
+function coerceVec3Array(value: unknown): number[][] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const vectors: number[][] = [];
+  for (const entry of value) {
+    if (!Array.isArray(entry) || entry.length < 3) {
+      return [];
+    }
+    const vec = entry.slice(0, 3).map((x) => Number(x));
+    if (vec.some((x) => !Number.isFinite(x))) {
+      return [];
+    }
+    vectors.push(vec);
+  }
+  return vectors;
+}
+
+function coerceBoolean(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "f" || normalized === "false" || normalized === "0") {
+      return false;
+    }
+    if (normalized === "t" || normalized === "true" || normalized === "1") {
+      return true;
+    }
+  }
+  return Boolean(value);
 }
 
 export function activate(context: vscode.ExtensionContext): void {

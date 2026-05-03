@@ -318,6 +318,19 @@
 
     /* ── MAIN + VIEWER ── */
     .main-content { flex: 1; display: flex; flex-direction: row; position: relative; min-height: 0; width: 100%; overflow: hidden; }
+    .animation-btn-group, .anim-group { align-items: center; }
+    .copy-format-chip {
+      height: 28px; min-width: 58px; padding: 2px 10px;
+      border-radius: 9999px; border: 1px solid rgba(255,255,255,0.65);
+      background: rgba(255,255,255,0.28);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      color: var(--text-muted); font-size: 11px; font-weight: 600; font-family: var(--font);
+      box-shadow: 0 1px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.7);
+      cursor: pointer; transition: all 0.18s;
+    }
+    .copy-format-chip:hover { color: var(--accent); border-color: rgba(10,132,255,0.35); background: rgba(255,255,255,0.45); }
+    .toolbar .copy-format-chip { align-self: center; }
+
     .viewer-container { flex: 1; display: flex; background: transparent; position: relative; min-height: 0; width: 100%; }
     .viewer { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; width: 100%; height: 100%; }
 
@@ -521,7 +534,8 @@
                         </div>
                         <div class="control-group" style="margin-top:0.75rem;">
                             <div class="control-label" style="margin-bottom:0.3rem;">
-                                <span>Copy xyz</span>
+                                <span>Copy</span>
+                                <button class="copy-format-chip" id="copy-format-chip" title="Change copy format">xyz</button>
                             </div>
                             <div class="btn-row">
                                 <button class="btn" id="xyz-byfrag-btn" style="flex:1;" title="Multi-frame XYZ: one frame per fragment (selected first)">by frag</button>
@@ -1411,57 +1425,485 @@
         /** Format one XYZ atom line with aligned, sign-spaced columns.
          *  Symbol: left-justified in 3 chars.  Each coord: 11-char field,
          *  positive numbers get a leading space so decimals stay aligned. */
-        function fmtXyzLine(sym, x, y, z) {
-            const fc = v => ((v < 0 ? '' : ' ') + v.toFixed(6)).padStart(11);
-            return `${sym.padEnd(3)}  ${fc(x)} ${fc(y)} ${fc(z)}`;
+        const COPY_FORMAT_LABELS = {
+            xyz: 'XYZ',
+            extxyz: 'ExtXYZ',
+            cif: 'CIF',
+            'vasp-poscar': 'VASP POSCAR'
+        };
+        const COPY_FORMAT_CHIP_LABELS = {
+            xyz: 'xyz',
+            extxyz: 'extxyz',
+            cif: 'cif',
+            'vasp-poscar': 'POSCAR'
+        };
+        const COPY_FORMAT_ORDER = ['xyz', 'extxyz', 'cif', 'vasp-poscar'];
+        let selectedCopyFormat = 'xyz';
+
+        function getSelectedCopyFormat() {
+            return selectedCopyFormat;
         }
 
-        /** Multi-frame (trajectory) XYZ: two frames — frame 1 = user-selected atoms,
-         *  frame 2 = remaining atoms. */
-        function buildXyzByFrag() {
-            if (!molData) return '';
-            const { symbols, positions } = molData;
-            const n = symbols.length;
+        function updateCopyFormatChip() {
+            const chip = document.getElementById('copy-format-chip');
+            if (!chip) return;
 
-            const selAtoms   = Array.from({ length: n }, (_, i) => i).filter(i =>  selectedAtoms.has(i));
-            const unselAtoms = Array.from({ length: n }, (_, i) => i).filter(i => !selectedAtoms.has(i));
+            const label = COPY_FORMAT_CHIP_LABELS[selectedCopyFormat] || selectedCopyFormat;
+            chip.textContent = label;
+            chip.title = `Copy format: ${COPY_FORMAT_LABELS[selectedCopyFormat] || selectedCopyFormat}`;
+        }
 
-            const lines = [];
-            for (const [frag, label] of [[selAtoms, 'selected'], [unselAtoms, 'unselected']]) {
-                if (frag.length === 0) continue;
-                lines.push(String(frag.length));
-                lines.push(label);
-                for (const i of frag) {
-                    const [x, y, z] = positions[i];
-                    lines.push(fmtXyzLine(symbols[i], x, y, z));
+        function cycleCopyFormat() {
+            const currentIndex = COPY_FORMAT_ORDER.indexOf(selectedCopyFormat);
+            selectedCopyFormat = COPY_FORMAT_ORDER[(currentIndex + 1) % COPY_FORMAT_ORDER.length];
+            updateCopyFormatChip();
+        }
+
+        function formatFloat(value, precision = 10) {
+            const number = Number(value);
+            return Number.isFinite(number) ? number.toFixed(precision) : (0).toFixed(precision);
+        }
+
+        function formatBool(value) {
+            return value ? 'T' : 'F';
+        }
+
+        function isValidMoleculeFrame(molecule) {
+            return !!(
+                molecule &&
+                Array.isArray(molecule.symbols) &&
+                Array.isArray(molecule.positions) &&
+                molecule.symbols.length === molecule.positions.length
+            );
+        }
+
+        function getFrameEntries() {
+            return isValidMoleculeFrame(molData) ? [{ molecule: molData, frameIndex: 0 }] : [];
+        }
+
+        function getFixedIndexSet(molecule) {
+            const fixed = new Set();
+
+            if (Array.isArray(molecule.fixed)) {
+                molecule.fixed.forEach(index => {
+                    const atomIndex = Number(index);
+                    if (Number.isInteger(atomIndex) && atomIndex >= 0) fixed.add(atomIndex);
+                });
+            }
+
+            if (molecule.arrays && Array.isArray(molecule.arrays.fixed)) {
+                molecule.arrays.fixed.forEach((value, index) => {
+                    if (value) fixed.add(index);
+                });
+            }
+
+            return fixed;
+        }
+
+        function normalizeMoveMaskValue(value) {
+            if (Array.isArray(value) && value.length >= 3) {
+                return value.slice(0, 3).map(Boolean);
+            }
+            if (typeof value === 'boolean') {
+                return [value, value, value];
+            }
+            return null;
+        }
+
+        function getAtomMoveMask(molecule, index, fixedSet) {
+            if (fixedSet.has(index)) return [false, false, false];
+
+            const arrays = molecule.arrays || {};
+            if (Array.isArray(arrays.move_mask) && arrays.move_mask.length > index) {
+                const mask = normalizeMoveMaskValue(arrays.move_mask[index]);
+                if (mask) return mask;
+            }
+
+            return [true, true, true];
+        }
+
+        function getMoveMaskInfo(molecule) {
+            const fixedSet = getFixedIndexSet(molecule);
+            const masks = [];
+            let hasConstraint = false;
+            let hasPartial = false;
+
+            for (let i = 0; i < molecule.symbols.length; i++) {
+                const mask = getAtomMoveMask(molecule, i, fixedSet);
+                masks.push(mask);
+                if (!mask.every(Boolean)) hasConstraint = true;
+                if (!(mask.every(Boolean) || mask.every(value => !value))) hasPartial = true;
+            }
+
+            return { masks, hasConstraint, hasPartial };
+        }
+
+        function determinant3(cell) {
+            return (
+                cell[0][0] * (cell[1][1] * cell[2][2] - cell[1][2] * cell[2][1]) -
+                cell[0][1] * (cell[1][0] * cell[2][2] - cell[1][2] * cell[2][0]) +
+                cell[0][2] * (cell[1][0] * cell[2][1] - cell[1][1] * cell[2][0])
+            );
+        }
+
+        function getValidCell(molecule) {
+            if (!molecule || !Array.isArray(molecule.cell) || molecule.cell.length < 3) return null;
+
+            const cell = molecule.cell.slice(0, 3).map(vector => {
+                if (!Array.isArray(vector) || vector.length < 3) return null;
+                return vector.slice(0, 3).map(Number);
+            });
+
+            if (cell.some(vector => !vector || vector.some(value => !Number.isFinite(value)))) return null;
+            if (Math.abs(determinant3(cell)) < 1e-10) return null;
+            return cell;
+        }
+
+        function getPbcFlags(molecule, hasCell) {
+            if (Array.isArray(molecule.pbc)) {
+                return [0, 1, 2].map(index => !!molecule.pbc[index]);
+            }
+            return hasCell ? [true, true, true] : [false, false, false];
+        }
+
+        function vectorLength(vector) {
+            return Math.sqrt(vector.reduce((sum, value) => sum + value * value, 0));
+        }
+
+        function dot(a, b) {
+            return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+        }
+
+        function angleDegrees(a, b) {
+            const denominator = vectorLength(a) * vectorLength(b);
+            if (denominator <= 1e-12) return 90;
+            const cosine = Math.max(-1, Math.min(1, dot(a, b) / denominator));
+            return Math.acos(cosine) * 180 / Math.PI;
+        }
+
+        function getCellParameters(cell) {
+            const a = cell[0];
+            const b = cell[1];
+            const c = cell[2];
+            return [
+                vectorLength(a),
+                vectorLength(b),
+                vectorLength(c),
+                angleDegrees(b, c),
+                angleDegrees(a, c),
+                angleDegrees(a, b)
+            ];
+        }
+
+        function invert3(cell) {
+            const det = determinant3(cell);
+            if (Math.abs(det) < 1e-10) return null;
+            return [
+                [
+                    (cell[1][1] * cell[2][2] - cell[1][2] * cell[2][1]) / det,
+                    (cell[0][2] * cell[2][1] - cell[0][1] * cell[2][2]) / det,
+                    (cell[0][1] * cell[1][2] - cell[0][2] * cell[1][1]) / det
+                ],
+                [
+                    (cell[1][2] * cell[2][0] - cell[1][0] * cell[2][2]) / det,
+                    (cell[0][0] * cell[2][2] - cell[0][2] * cell[2][0]) / det,
+                    (cell[0][2] * cell[1][0] - cell[0][0] * cell[1][2]) / det
+                ],
+                [
+                    (cell[1][0] * cell[2][1] - cell[1][1] * cell[2][0]) / det,
+                    (cell[0][1] * cell[2][0] - cell[0][0] * cell[2][1]) / det,
+                    (cell[0][0] * cell[1][1] - cell[0][1] * cell[1][0]) / det
+                ]
+            ];
+        }
+
+        function multiplyRowVectorMatrix(vector, matrix) {
+            return [
+                vector[0] * matrix[0][0] + vector[1] * matrix[1][0] + vector[2] * matrix[2][0],
+                vector[0] * matrix[0][1] + vector[1] * matrix[1][1] + vector[2] * matrix[2][1],
+                vector[0] * matrix[0][2] + vector[1] * matrix[1][2] + vector[2] * matrix[2][2]
+            ];
+        }
+
+        function wrapFractional(value) {
+            const wrapped = value - Math.floor(value);
+            return Math.abs(wrapped - 1) < 1e-10 ? 0 : wrapped;
+        }
+
+        function countSymbols(symbols) {
+            const counts = {};
+            symbols.forEach(symbol => {
+                counts[symbol] = (counts[symbol] || 0) + 1;
+            });
+            return counts;
+        }
+
+        function getFormulaSum(symbols) {
+            const counts = countSymbols(symbols);
+            return Object.keys(counts).sort().map(symbol => `${symbol}${counts[symbol]}`).join(' ');
+        }
+
+        function getAtomLabels(symbols) {
+            const counts = {};
+            return symbols.map(symbol => {
+                counts[symbol] = (counts[symbol] || 0) + 1;
+                return `${symbol}${counts[symbol]}`;
+            });
+        }
+
+        function getElementGroups(symbols) {
+            const order = [];
+            const groups = {};
+            symbols.forEach((symbol, index) => {
+                if (!groups[symbol]) {
+                    groups[symbol] = [];
+                    order.push(symbol);
+                }
+                groups[symbol].push(index);
+            });
+            return order.map(symbol => ({ symbol, indices: groups[symbol] }));
+        }
+
+        function getFrameTitle(molecule, frameIndex) {
+            const name = molecule && molecule.name ? String(molecule.name).trim() : '';
+            return (name || `aseview frame ${frameIndex + 1}`).replace(/\s+/g, ' ').slice(0, 80);
+        }
+
+        function serializeFrameAsXYZ(molecule, frameIndex) {
+            const lines = [String(molecule.symbols.length)];
+            let comment = `Frame ${frameIndex + 1}`;
+            if (molecule.energy !== undefined) {
+                comment += ` Energy: ${molecule.energy}`;
+            }
+            lines.push(comment);
+
+            for (let i = 0; i < molecule.symbols.length; i++) {
+                const position = molecule.positions[i];
+                lines.push(`${molecule.symbols[i]}  ${formatFloat(position[0], 6)}  ${formatFloat(position[1], 6)}  ${formatFloat(position[2], 6)}`);
+            }
+
+            return lines.join('\n') + '\n';
+        }
+
+        function serializeFrameAsExtXYZ(molecule, frameIndex) {
+            const moveMaskInfo = getMoveMaskInfo(molecule);
+            const cell = getValidCell(molecule);
+            const pbc = getPbcFlags(molecule, !!cell);
+            let properties = 'species:S:1:pos:R:3';
+            if (moveMaskInfo.hasConstraint) {
+                properties += moveMaskInfo.hasPartial ? ':move_mask:L:3' : ':move_mask:L:1';
+            }
+
+            const header = [];
+            if (cell) {
+                header.push(`Lattice="${cell.flat().map(value => formatFloat(value, 10)).join(' ')}"`);
+            }
+            header.push(`Properties=${properties}`);
+            if (cell) {
+                header.push(`pbc="${pbc.map(formatBool).join(' ')}"`);
+            }
+            header.push(`frame=${frameIndex + 1}`);
+            if (molecule.energy !== undefined && Number.isFinite(Number(molecule.energy))) {
+                header.push(`energy=${formatFloat(molecule.energy, 12)}`);
+            }
+
+            const lines = [String(molecule.symbols.length), header.join(' ')];
+            for (let i = 0; i < molecule.symbols.length; i++) {
+                const position = molecule.positions[i];
+                let line = `${molecule.symbols[i]}  ${formatFloat(position[0], 8)}  ${formatFloat(position[1], 8)}  ${formatFloat(position[2], 8)}`;
+                if (moveMaskInfo.hasConstraint) {
+                    const mask = moveMaskInfo.masks[i];
+                    line += moveMaskInfo.hasPartial
+                        ? `  ${mask.map(formatBool).join('  ')}`
+                        : `  ${formatBool(mask.every(Boolean))}`;
+                }
+                lines.push(line);
+            }
+
+            return lines.join('\n') + '\n';
+        }
+
+        function serializeFrameAsCIF(molecule, frameIndex) {
+            const cell = getValidCell(molecule);
+            const labels = getAtomLabels(molecule.symbols);
+            const lines = [
+                `data_frame_${frameIndex + 1}`,
+                `_chemical_formula_sum              "${getFormulaSum(molecule.symbols)}"`
+            ];
+
+            if (cell) {
+                const [a, b, c, alpha, beta, gamma] = getCellParameters(cell);
+                lines.push(
+                    `_cell_length_a       ${formatFloat(a, 12)}`,
+                    `_cell_length_b       ${formatFloat(b, 12)}`,
+                    `_cell_length_c       ${formatFloat(c, 12)}`,
+                    `_cell_angle_alpha    ${formatFloat(alpha, 12)}`,
+                    `_cell_angle_beta     ${formatFloat(beta, 12)}`,
+                    `_cell_angle_gamma    ${formatFloat(gamma, 12)}`,
+                    '',
+                    `_space_group_name_H-M_alt    "P 1"`,
+                    `_space_group_IT_number       1`,
+                    '',
+                    'loop_',
+                    '  _space_group_symop_operation_xyz',
+                    "  'x, y, z'",
+                    '',
+                    'loop_',
+                    '  _atom_site_type_symbol',
+                    '  _atom_site_label',
+                    '  _atom_site_symmetry_multiplicity',
+                    '  _atom_site_fract_x',
+                    '  _atom_site_fract_y',
+                    '  _atom_site_fract_z',
+                    '  _atom_site_occupancy'
+                );
+
+                const inverse = invert3(cell);
+                for (let i = 0; i < molecule.symbols.length; i++) {
+                    const scaled = multiplyRowVectorMatrix(molecule.positions[i].map(Number), inverse).map(wrapFractional);
+                    lines.push(`  ${molecule.symbols[i]}   ${labels[i]}        1.0  ${formatFloat(scaled[0], 12)}  ${formatFloat(scaled[1], 12)}  ${formatFloat(scaled[2], 12)}  1.0000`);
+                }
+            } else {
+                lines.push(
+                    'loop_',
+                    '  _atom_site_type_symbol',
+                    '  _atom_site_label',
+                    '  _atom_site_symmetry_multiplicity',
+                    '  _atom_site_Cartn_x',
+                    '  _atom_site_Cartn_y',
+                    '  _atom_site_Cartn_z',
+                    '  _atom_site_occupancy'
+                );
+
+                for (let i = 0; i < molecule.symbols.length; i++) {
+                    const position = molecule.positions[i];
+                    lines.push(`  ${molecule.symbols[i]}   ${labels[i]}        1.0  ${formatFloat(position[0], 12)}  ${formatFloat(position[1], 12)}  ${formatFloat(position[2], 12)}  1.0000`);
                 }
             }
-            return lines.join('\n');
+
+            return lines.join('\n') + '\n';
         }
 
-        /** Single XYZ with atoms reordered: user-selected atoms first (index order),
-         *  then unselected atoms.
-         *  Comment line: Frags= [0:N_sel, N_sel:N_total] */
+        function serializeFrameAsVaspPoscar(molecule, frameIndex) {
+            const cell = getValidCell(molecule);
+            if (!cell) {
+                throw new Error('VASP POSCAR copy requires unit cell data.');
+            }
+
+            const moveMaskInfo = getMoveMaskInfo(molecule);
+            const groups = getElementGroups(molecule.symbols);
+            const lines = [
+                getFrameTitle(molecule, frameIndex),
+                '1.0000000000000000'
+            ];
+
+            cell.forEach(vector => {
+                lines.push(`  ${vector.map(value => formatFloat(value, 16).padStart(22)).join('  ')}`);
+            });
+            lines.push(`  ${groups.map(group => group.symbol).join('  ')}`);
+            lines.push(`  ${groups.map(group => group.indices.length).join('  ')}`);
+            if (moveMaskInfo.hasConstraint) {
+                lines.push('Selective dynamics');
+            }
+            lines.push('Cartesian');
+
+            groups.forEach(group => {
+                group.indices.forEach(index => {
+                    const position = molecule.positions[index];
+                    let line = `  ${position.map(value => formatFloat(value, 16).padStart(22)).join('  ')}`;
+                    if (moveMaskInfo.hasConstraint) {
+                        line += `   ${moveMaskInfo.masks[index].map(formatBool).join('   ')}`;
+                    }
+                    lines.push(line);
+                });
+            });
+
+            return lines.join('\n') + '\n';
+        }
+
+        function serializeCopyPayloadFromEntries(entries, format) {
+            if (!entries || entries.length === 0) return { text: '', frameCount: 0 };
+
+            let text = '';
+            entries.forEach(({ molecule, frameIndex }, outputIndex) => {
+                if (format === 'xyz') {
+                    text += serializeFrameAsXYZ(molecule, frameIndex);
+                } else if (format === 'extxyz') {
+                    text += serializeFrameAsExtXYZ(molecule, frameIndex);
+                } else if (format === 'cif') {
+                    text += serializeFrameAsCIF(molecule, frameIndex);
+                } else if (format === 'vasp-poscar') {
+                    text += serializeFrameAsVaspPoscar(molecule, frameIndex);
+                } else {
+                    throw new Error(`Unsupported copy format: ${format}`);
+                }
+
+                if (format !== 'xyz' && format !== 'extxyz' && outputIndex < entries.length - 1) {
+                    text += '\n';
+                }
+            });
+
+            return { text, frameCount: entries.length };
+        }
+
+        function cloneMoleculeForIndices(source, indices, label) {
+            const molecule = {
+                symbols: indices.map(index => source.symbols[index]),
+                positions: indices.map(index => source.positions[index]),
+                name: label
+            };
+
+            if (source.cell) molecule.cell = source.cell;
+            if (source.pbc) molecule.pbc = source.pbc;
+
+            const sourceMaskInfo = getMoveMaskInfo(source);
+            if (sourceMaskInfo.hasConstraint) {
+                const fixed = [];
+                const moveMask = [];
+                let hasPartial = false;
+                indices.forEach((sourceIndex, newIndex) => {
+                    const mask = sourceMaskInfo.masks[sourceIndex] || [true, true, true];
+                    moveMask.push(mask);
+                    if (mask.every(value => !value)) fixed.push(newIndex);
+                    if (!(mask.every(Boolean) || mask.every(value => !value))) hasPartial = true;
+                });
+                if (fixed.length > 0) molecule.fixed = fixed;
+                if (hasPartial) molecule.arrays = { move_mask: moveMask };
+            }
+
+            return molecule;
+        }
+
+        function getFragmentIndexGroups() {
+            if (!molData || !Array.isArray(molData.symbols)) return { selected: [], unselected: [] };
+            const n = molData.symbols.length;
+            return {
+                selected: Array.from({ length: n }, (_, i) => i).filter(i => selectedAtoms.has(i)),
+                unselected: Array.from({ length: n }, (_, i) => i).filter(i => !selectedAtoms.has(i))
+            };
+        }
+
+        function buildXyzByFrag() {
+            if (!molData) return '';
+            const groups = getFragmentIndexGroups();
+            const entries = [];
+            if (groups.selected.length > 0) {
+                entries.push({ molecule: cloneMoleculeForIndices(molData, groups.selected, 'selected'), frameIndex: 0 });
+            }
+            if (groups.unselected.length > 0) {
+                entries.push({ molecule: cloneMoleculeForIndices(molData, groups.unselected, 'unselected'), frameIndex: entries.length });
+            }
+            return serializeCopyPayloadFromEntries(entries, getSelectedCopyFormat()).text;
+        }
+
         function buildXyzReindexed() {
             if (!molData) return '';
-            const { symbols, positions } = molData;
-            const n = symbols.length;
-
-            const selAtoms   = Array.from({ length: n }, (_, i) => i).filter(i =>  selectedAtoms.has(i));
-            const unselAtoms = Array.from({ length: n }, (_, i) => i).filter(i => !selectedAtoms.has(i));
-            const orderedAtoms = [...selAtoms, ...unselAtoms];
-            const nSel   = selAtoms.length;
-            const nTotal = orderedAtoms.length;
-
-            const lines = [];
-            lines.push(String(nTotal));
-            lines.push(`Frags= [0:${nSel}, ${nSel}:${nTotal}]`);
-            for (const i of orderedAtoms) {
-                const [x, y, z] = positions[i];
-                lines.push(fmtXyzLine(symbols[i], x, y, z));
-            }
-            return lines.join('\n');
+            const groups = getFragmentIndexGroups();
+            const orderedAtoms = [...groups.selected, ...groups.unselected];
+            const molecule = cloneMoleculeForIndices(molData, orderedAtoms, `Frags= [0:${groups.selected.length}, ${groups.selected.length}:${orderedAtoms.length}]`);
+            return serializeCopyPayloadFromEntries([{ molecule, frameIndex: 0 }], getSelectedCopyFormat()).text;
         }
+
 
         // ═════════════════════════════════════════════════════════════════════
         // ── SVG / 2D interaction (mode-aware) ────────────────────────────────
@@ -2197,6 +2639,12 @@
             document.getElementById('copy-unselected-btn').addEventListener('click', () => {
                 copyText(document.getElementById('unselected-indices').value);
             });
+
+            const copyFormatChip = document.getElementById('copy-format-chip');
+            if (copyFormatChip) {
+                copyFormatChip.addEventListener('click', cycleCopyFormat);
+                updateCopyFormatChip();
+            }
 
             // Copy XYZ buttons
             document.getElementById('xyz-byfrag-btn').addEventListener('click', () => {

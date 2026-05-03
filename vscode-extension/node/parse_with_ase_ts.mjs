@@ -52,6 +52,47 @@ function toNumberArray(value, label) {
   });
 }
 
+function toBooleanValue(value, label) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["t", "true", "1"].includes(normalized)) {
+      return true;
+    }
+    if (["f", "false", "0"].includes(normalized)) {
+      return false;
+    }
+  }
+  throw new Error(`Expected ${label} to contain boolean-like values.`);
+}
+
+function toBooleanArray(value, label) {
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected ${label} to be an array.`);
+  }
+  return value.map((item, index) => toBooleanValue(item, `${label}[${index}]`));
+}
+
+function toMoveMaskArray(value, label) {
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected ${label} to be an array.`);
+  }
+  return value.map((item, index) => {
+    if (Array.isArray(item)) {
+      if (item.length < 3) {
+        throw new Error(`Expected ${label}[${index}] to contain 3 values.`);
+      }
+      return item.slice(0, 3).map((x, axis) => toBooleanValue(x, `${label}[${index}][${axis}]`));
+    }
+    return toBooleanValue(item, `${label}[${index}]`);
+  });
+}
+
 function toVec3Array(value, label) {
   if (!Array.isArray(value)) {
     throw new Error(`Expected ${label} to be an array.`);
@@ -82,6 +123,7 @@ function atomsToViewerFrame(atoms) {
     const cell = atoms.getCell?.();
     if (cell) {
       frame.cell = toVec3Array(cell, "cell");
+      frame.pbc = pbc.map((value) => Boolean(value));
     }
   }
 
@@ -99,6 +141,37 @@ function atomsToViewerFrame(atoms) {
     : atoms.getInitialCharges?.();
   if (chargesRaw) {
     frame.charges = toNumberArray(chargesRaw, "charges");
+  }
+
+  const fixedRaw = has("fixed") ? getArray("fixed", true) : undefined;
+  if (fixedRaw) {
+    const fixedMask = toBooleanArray(fixedRaw, "fixed");
+    const fixed = [];
+    fixedMask.forEach((value, index) => {
+      if (value) {
+        fixed.push(index);
+      }
+    });
+    if (fixed.length > 0) {
+      frame.fixed = fixed;
+      frame.arrays = { ...(frame.arrays ?? {}), fixed: fixedMask };
+    }
+  }
+
+  const moveMaskRaw = has("move_mask") ? getArray("move_mask", true) : undefined;
+  if (moveMaskRaw) {
+    const moveMask = toMoveMaskArray(moveMaskRaw, "move_mask");
+    frame.arrays = { ...(frame.arrays ?? {}), move_mask: moveMask };
+    const fixed = [];
+    moveMask.forEach((value, index) => {
+      const mask = Array.isArray(value) ? value : [value, value, value];
+      if (mask.every((axis) => axis === false)) {
+        fixed.push(index);
+      }
+    });
+    if (fixed.length > 0 && !frame.fixed) {
+      frame.fixed = fixed;
+    }
   }
 
   const info = atoms.info ?? {};

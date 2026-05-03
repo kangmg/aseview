@@ -143,7 +143,9 @@
   "scripts": {
     "compile": "tsc -p .",
     "watch": "tsc -watch -p .",
-    "build-worker": "esbuild node/parse_with_ase_ts.mjs --bundle --platform=node --format=cjs --outfile=node/parse_with_ase_ts.bundle.cjs",
+    "build-parse-worker": "esbuild node/parse_with_ase_ts.mjs --bundle --platform=node --format=cjs --outfile=node/parse_with_ase_ts.bundle.cjs",
+    "build-write-worker": "esbuild node/write_with_ase_ts.mjs --bundle --platform=node --format=cjs --outfile=node/write_with_ase_ts.bundle.cjs",
+    "build-worker": "npm run build-parse-worker && npm run build-write-worker",
     "bundle-viewer": "node scripts/bundle-viewer.cjs",
     "build": "npm run compile && npm run build-worker && npm run bundle-viewer",
     "package": "npm run build && vsce package"
@@ -152,7 +154,7 @@
     "@types/node": "^20.12.12",
     "@types/vscode": "^1.86.0",
     "@vscode/vsce": "^2.28.0",
-    "ase-ts": "^0.1.0",
+    "ase-ts": "^0.1.3",
     "esbuild": "^0.28.0",
     "typescript": "^5.5.4"
   }
