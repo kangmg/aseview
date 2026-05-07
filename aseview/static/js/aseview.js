@@ -18,6 +18,9 @@
     const THEMES_BASE    = 'https://raw.githack.com/kangmg/aseview/main/aseview/themes';
     const FALLBACK_BASE  = 'https://raw.githack.com/kangmg/aseview/main/aseview/templates';
     const CDN_BASE       = THEMES_BASE;   // kept for external access via ASEView.CDN_BASE
+    const DEFAULT_VIEWER_OPTIONS = {
+        bondThreshold: 1.2,
+    };
 
     let _defaultTheme = 'dark';
 
@@ -40,9 +43,9 @@
                 throw new Error('ASEView: Container element not found');
             }
 
-            this.options = options;
+            this.options = Object.assign({}, DEFAULT_VIEWER_OPTIONS, options);
             this.templateName = templateName;
-            this._theme = options.theme || _defaultTheme;
+            this._theme = this.options.theme || _defaultTheme;
             this.iframe = null;
             this.isReady = false;
             this.pendingMessages = [];
@@ -81,13 +84,12 @@
 
             if (msg.type === 'viewerLoaded') {
                 this.isReady = true;
-                // Send any pending messages
-                this.pendingMessages.forEach(m => this._postMessage(m));
-                this.pendingMessages = [];
-                // Apply initial settings if any
+                // Apply initial settings before queued data messages.
                 if (Object.keys(this.options).length > 0) {
                     this._postMessage({ type: 'setSettings', settings: this.options });
                 }
+                this.pendingMessages.forEach(m => this._postMessage(m));
+                this.pendingMessages = [];
             }
         }
 
@@ -276,7 +278,8 @@
         FragSelector,
         setTheme,
         getTheme,
-        version: '1.0.0',
+        DEFAULT_OPTIONS: Object.assign({}, DEFAULT_VIEWER_OPTIONS),
+        version: '0.5',
         CDN_BASE,
     };
 

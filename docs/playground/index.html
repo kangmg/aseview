@@ -1013,7 +1013,10 @@ function createViewer(type) {
   document.body.dataset.viewerTheme = theme;
 
   try {
-    currentViewer = new ASEView[type]('#viewer-container', { theme });
+    currentViewer = new ASEView[type]('#viewer-container', {
+      theme,
+      bondThreshold: 1.2
+    });
     setStatus('Viewer ready — load a file or try the sample', 'ok');
   } catch (e) {
     setStatus('Failed to create viewer: ' + e.message, 'err');
