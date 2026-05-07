@@ -2,11 +2,20 @@
 
 Molecular structure viewer for ASE (Atomic Simulation Environment).
 
-[![Docs](https://img.shields.io/badge/docs-online-blue)](https://kangmg.github.io/aseview) &nbsp;·&nbsp; [![Playground](https://img.shields.io/badge/playground-try_it-orange)](https://kangmg.github.io/aseview/playground/) &nbsp;·&nbsp; [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kangmg/aseview)
+[![PyPI](https://img.shields.io/pypi/v/aseview)](https://pypi.org/project/aseview/) &nbsp;·&nbsp; [![Docs](https://img.shields.io/badge/docs-online-blue)](https://kangmg.github.io/aseview) &nbsp;·&nbsp; [![Playground](https://img.shields.io/badge/playground-try_it-orange)](https://kangmg.github.io/aseview/playground/) &nbsp;·&nbsp; [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kangmg/aseview)
+
+## Features
+
+- Interactive structure, trajectory, overlay, normal-mode, and fragment-selection viewers
+- ASE-backed Python API and CLI, plus a browser-only JavaScript module
+- Cell/PBC display, bonds, hydrogen bonds, charges, forces, and fixed-atom constraint highlighting
+- Energy and max-force (Fmax) trajectory plots with independent force-plot toggling
+- Radius Contrast control for reducing or restoring element-radius size differences
+- Clipboard export for current frame or full trajectory as `xyz`, `extxyz`, `cif`, or `POSCAR`
 
 ## Installation
 
-Recommended :
+Recommended:
 
 ```bash
 uv venv -p 3.11
@@ -229,8 +238,13 @@ viewer = MolecularViewer(
     style='neon',           # default, cartoon, neon, glossy, metallic, rowan, grey
     bondThreshold=1.2,      # bond detection scale factor
     atomSize=0.5,
+    radiusContrast=0.8,     # 0.0 = uniform radii, 1.0 = element radii
+    radiusContrastMode='log',  # log or linear interpolation
     showCell=False,
     backgroundColor='#000000',
+    showEnergyPlot=True,
+    showForceMaxPlot=True,
+    showConstraint=True,    # highlight FixAtoms constraints
     showPolyhedron=True,    # coordination polyhedra (solid-state, CN >= 4)
     polyhedronOpacity=0.25,
     showRings=True,         # ring face highlighting (molecules, 4-8 atom rings)
@@ -287,6 +301,22 @@ viewer.save_html('selector.html')
 | OverlayViewer | Compare multiple structures overlaid |
 | FragSelector | Interactive 2D+3D atom selection with rect/lasso |
 
+## VS Code Extension
+
+The `vscode-extension/` package provides a native VS Code custom editor for structure files. It uses `ase-ts` for parsing and writing, so it does not require a Python runtime inside VS Code.
+
+Supported default file patterns include `*.xyz`, `*.extxyz`, `*.cif`, `*.pdb`, `*.vasp`, `POSCAR`, and `CONTCAR`.
+
+```bash
+cd vscode-extension
+npm install
+npm run compile
+npm run package
+```
+
+Install the generated `.vsix` from VS Code with **Extensions -> Install from VSIX...**.
+On GitHub releases, the VS Code workflow builds the same package and attaches `aseview.vsix` to the release assets.
+
 ## Themes
 
 aseview ships with multiple visual themes. Each theme is a complete HTML template set that controls the viewer's colour scheme, background, and UI style.
@@ -294,6 +324,8 @@ aseview ships with multiple visual themes. Each theme is a complete HTML templat
 | Theme | Description |
 |-------|-------------|
 | `dark` | Default dark theme with deep grey background |
+| `darkgreen` | Dark theme with green accent colours |
+| `simple` | Minimal, low-distraction theme |
 | `spring` | Light pastel theme with bright, airy colours |
 | `glass` | Frosted-glass aesthetic with translucent UI panels |
 
@@ -321,7 +353,7 @@ viewer1 = aseview.MolecularViewer(atoms)   # spring
 viewer2 = aseview.FragSelector(atoms)       # spring
 
 # Inspect
-aseview.list_themes()   # ['dark', 'glass', 'spring']
+aseview.list_themes()   # ['dark', 'darkgreen', 'glass', 'simple', 'spring']
 aseview.get_theme()     # current default
 ```
 
@@ -363,7 +395,16 @@ See the [JavaScript Module documentation](https://kangmg.github.io/aseview/js-mo
 
 ## Supported Formats
 
-All formats supported by ASE: xyz, cif, pdb, POSCAR, extxyz, etc.
+Input files are handled through ASE in Python and `ase-ts` in the VS Code extension. Common formats include `xyz`, `extxyz`, `cif`, `pdb`, `vasp`, `POSCAR`, and `CONTCAR`.
+
+Viewer clipboard export supports:
+
+| Export format | Notes |
+|---------------|-------|
+| `xyz` | Simple coordinates for current frame or trajectory |
+| `extxyz` | Includes cell metadata and fixed/move-mask constraint data when present |
+| `cif` | Includes cell/periodic structure data; constraints are ignored because CIF has no standard FixAtoms field |
+| `POSCAR` | Includes cell and selective-dynamics flags for fixed/move-mask constraints |
 
 ## License
 

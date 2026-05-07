@@ -515,10 +515,10 @@
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Bond Threshold Scale</span>
-                                <span class="slider-value" id="bond-threshold-value">1.0</span>
+                                <span class="slider-value" id="bond-threshold-value">1.2</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.5" max="3" step="0.1" value="1.0" class="slider"
+                                <input type="range" min="0.5" max="3" step="0.1" value="1.2" class="slider"
                                     id="bond-threshold">
                             </div>
                         </div>
@@ -879,7 +879,7 @@
         let moleculeSettings = [];
 
         let settings = {
-            bondThreshold: 1.0,
+            bondThreshold: 1.2,
             bondThickness: 0.1,
             atomSize: 0.4,
             animationSpeed: 30,
@@ -936,7 +936,7 @@
 
             const bondThresholdSlider = document.getElementById('bond-threshold');
             if (bondThresholdSlider) {
-                bondThresholdSlider.value = settings.bondThreshold || 1.0;
+                bondThresholdSlider.value = settings.bondThreshold || 1.2;
                 const valueEl = document.getElementById('bond-threshold-value');
                 if (valueEl) valueEl.textContent = bondThresholdSlider.value;
             }

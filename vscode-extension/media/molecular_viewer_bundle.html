@@ -3598,10 +3598,10 @@ function createHydrogenBond(p1, p2) {
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Bond Threshold Scale</span>
-                                <span class="slider-value" id="bond-threshold-value">1.0</span>
+                                <span class="slider-value" id="bond-threshold-value">1.2</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.5" max="3" step="0.1" value="1.0" class="slider"
+                                <input type="range" min="0.5" max="3" step="0.1" value="1.2" class="slider"
                                     id="bond-threshold">
                             </div>
                         </div>
@@ -4212,7 +4212,7 @@ function createHydrogenBond(p1, p2) {
         let downloadCounters = { png: 0, gif: 0 };  // Track download counts
 
         let settings = {
-            bondThreshold: 1.0,
+            bondThreshold: 1.2,
             hBondThreshold: 2.5,
             bondThickness: 0.1,
             atomSize: 0.4,
@@ -4299,7 +4299,7 @@ function createHydrogenBond(p1, p2) {
 
             const bondThresholdSlider = document.getElementById('bond-threshold');
             if (bondThresholdSlider) {
-                bondThresholdSlider.value = settings.bondThreshold || 1.0;
+                bondThresholdSlider.value = settings.bondThreshold || 1.2;
                 const valueEl = document.getElementById('bond-threshold-value');
                 if (valueEl) valueEl.textContent = bondThresholdSlider.value;
             }

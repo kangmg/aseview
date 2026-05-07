@@ -8,18 +8,77 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #0f172a;
-      --surface:   #1e293b;
-      --surface2:  #273449;
-      --border:    #334155;
-      --accent:    #3b82f6;
-      --accent-h:  #2563eb;
-      --text:      #e2e8f0;
-      --muted:     #94a3b8;
-      --success:   #22c55e;
-      --error:     #ef4444;
-      --warn:      #f59e0b;
-      --radius:    0.5rem;
+      --bg:        #0f1115;
+      --surface:   #171a20;
+      --surface2:  #20242b;
+      --border:    #303640;
+      --accent:    #79b8ff;
+      --accent-h:  #5f9fe3;
+      --accent-2:  #f0b45d;
+      --viewer-bg: #101318;
+      --text:      #edf2f7;
+      --muted:     #98a3ad;
+      --success:   #34c981;
+      --error:     #ef5b5b;
+      --warn:      #e5a43d;
+      --shadow:    0 18px 50px rgba(12, 16, 20, 0.28);
+      --radius:    8px;
+    }
+
+    body[data-viewer-theme="spring"] {
+      --bg:        #f5f7ef;
+      --surface:   #fffffb;
+      --surface2:  #edf3e4;
+      --border:    #d8e2ca;
+      --accent:    #5e8d46;
+      --accent-h:  #4b7437;
+      --accent-2:  #b87936;
+      --viewer-bg: #f6f8ee;
+      --text:      #1f2921;
+      --muted:     #647060;
+      --shadow:    0 16px 42px rgba(83, 102, 68, 0.18);
+    }
+
+    body[data-viewer-theme="glass"] {
+      --bg:        #f2f6f7;
+      --surface:   rgba(255, 255, 255, 0.82);
+      --surface2:  rgba(236, 243, 245, 0.9);
+      --border:    #cfdce2;
+      --accent:    #3f7f91;
+      --accent-h:  #2d6878;
+      --accent-2:  #b08342;
+      --viewer-bg: #eef5f7;
+      --text:      #1d2b30;
+      --muted:     #62727a;
+      --shadow:    0 18px 48px rgba(43, 78, 92, 0.16);
+    }
+
+    body[data-viewer-theme="darkgreen"] {
+      --bg:        #0f1712;
+      --surface:   #162018;
+      --surface2:  #1d2b20;
+      --border:    #304435;
+      --accent:    #91ca7c;
+      --accent-h:  #76ad63;
+      --accent-2:  #e2b45f;
+      --viewer-bg: #101811;
+      --text:      #ecf3e8;
+      --muted:     #a3af9d;
+      --shadow:    0 18px 50px rgba(8, 20, 12, 0.34);
+    }
+
+    body[data-viewer-theme="simple"] {
+      --bg:        #f6f6f2;
+      --surface:   #ffffff;
+      --surface2:  #ededeb;
+      --border:    #d7d8d2;
+      --accent:    #4f6762;
+      --accent-h:  #3c514d;
+      --accent-2:  #a97040;
+      --viewer-bg: #f4f4f1;
+      --text:      #242826;
+      --muted:     #6e7470;
+      --shadow:    0 16px 38px rgba(49, 54, 50, 0.14);
     }
 
     body {
@@ -30,6 +89,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      transition: background 0.18s ease, color 0.18s ease;
     }
 
     /* ── Header ── */
@@ -38,12 +98,14 @@
       display: flex;
       align-items: center;
       gap: 1rem;
-      padding: 0.6rem 1.2rem;
+      padding: 0.65rem 1.1rem;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.04);
     }
-    .header-title { font-size: 1.05rem; font-weight: 700; color: #60a5fa; white-space: nowrap; }
+    .header-title { font-size: 1.02rem; font-weight: 700; color: var(--text); white-space: nowrap; }
     .header-sep { color: var(--border); }
+    .header-subtitle { font-size: 0.82rem; color: var(--muted); }
 
     /* ── Toolbar ── */
     .toolbar {
@@ -51,7 +113,7 @@
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.55rem 1.2rem;
+      padding: 0.6rem 1.1rem;
       background: var(--surface2);
       border-bottom: 1px solid var(--border);
       flex-wrap: wrap;
@@ -79,7 +141,8 @@
       cursor: pointer;
       outline: none;
     }
-    select.sel:focus { border-color: var(--accent); }
+    select.sel:hover { border-color: color-mix(in srgb, var(--accent) 48%, var(--border)); }
+    select.sel:focus { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }
 
     .btn {
       display: inline-flex;
@@ -93,10 +156,14 @@
       font-size: 0.82rem;
       cursor: pointer;
       white-space: nowrap;
-      transition: background 0.15s, border-color 0.15s;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
     }
-    .btn:hover { background: var(--border); border-color: var(--accent); }
-    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn:hover { background: var(--surface2); border-color: var(--accent); }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+    body[data-viewer-theme="spring"] .btn.primary,
+    body[data-viewer-theme="simple"] .btn.primary,
+    body[data-viewer-theme="glass"] .btn.primary { color: #ffffff; }
     .btn.primary:hover { background: var(--accent-h); border-color: var(--accent-h); }
 
     #file-input { display: none; }
@@ -105,9 +172,9 @@
       font-size: 0.75rem;
       padding: 0.2rem 0.55rem;
       border-radius: 99px;
-      background: rgba(59,130,246,0.15);
-      border: 1px solid rgba(59,130,246,0.3);
-      color: #93c5fd;
+      background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+      border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+      color: var(--accent);
       white-space: nowrap;
     }
 
@@ -129,7 +196,7 @@
       flex: 1;
       min-height: 0;
       position: relative;
-      background: #111827;
+      background: var(--viewer-bg);
     }
     #viewer-container {
       width: 100%;
@@ -161,7 +228,7 @@
       border-bottom: 1px solid transparent;
     }
     .help-panel:not(.collapsed) .help-toggle { border-bottom-color: var(--border); }
-    .help-toggle:hover { color: var(--text); }
+    .help-toggle:hover { color: var(--text); background: color-mix(in srgb, var(--surface2) 70%, transparent); }
     .help-arrow { transition: transform 0.2s; }
     .help-panel.collapsed .help-arrow { transform: rotate(-90deg); }
 
@@ -179,7 +246,7 @@
       color: var(--accent);
       margin-bottom: 0.4rem;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.04em;
     }
     .help-section p, .help-section li {
       font-size: 0.75rem;
@@ -189,11 +256,11 @@
     .help-section ul { padding-left: 1rem; }
     code {
       font-family: 'Courier New', monospace;
-      background: rgba(255,255,255,0.06);
+      background: color-mix(in srgb, var(--surface2) 72%, transparent);
       border-radius: 3px;
       padding: 1px 4px;
       font-size: 0.72rem;
-      color: #a5f3fc;
+      color: var(--accent);
     }
 
     /* ── Drop overlay ── */
@@ -201,7 +268,7 @@
       display: none;
       position: absolute;
       inset: 0;
-      background: rgba(59,130,246,0.12);
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
       border: 2px dashed var(--accent);
       z-index: 100;
       align-items: center;
@@ -237,7 +304,8 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.55);
+      background: rgba(16, 18, 20, 0.56);
+      backdrop-filter: blur(6px);
       z-index: 300;
       align-items: center;
       justify-content: center;
@@ -247,12 +315,12 @@
     .paste-modal {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 0.75rem;
+      border-radius: var(--radius);
       width: min(640px, 90vw);
       max-height: 80vh;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      box-shadow: var(--shadow);
     }
     .paste-header {
       display: flex;
@@ -297,15 +365,22 @@
       border-top: 1px solid var(--border);
     }
     .paste-hint { font-size: 0.72rem; color: var(--muted); }
+
+    @media (max-width: 760px) {
+      .header, .toolbar { padding-left: 0.8rem; padding-right: 0.8rem; }
+      .toolbar-right { width: 100%; margin-left: 0; justify-content: flex-start; }
+      .help-body { grid-template-columns: 1fr; }
+      .paste-footer { align-items: flex-start; flex-direction: column; gap: 0.6rem; }
+    }
   </style>
 </head>
-<body>
+<body data-viewer-theme="dark">
 
 <!-- ── Header ── -->
 <header class="header">
   <span class="header-title">ASEView</span>
   <span class="header-sep">|</span>
-  <span style="font-size:0.82rem;color:var(--muted);">Playground</span>
+  <span class="header-subtitle">Playground</span>
 </header>
 
 <!-- ── Toolbar ── -->
@@ -935,6 +1010,7 @@ function createViewer(type) {
   }
 
   const theme = document.getElementById('theme-type').value;
+  document.body.dataset.viewerTheme = theme;
 
   try {
     currentViewer = new ASEView[type]('#viewer-container', { theme });

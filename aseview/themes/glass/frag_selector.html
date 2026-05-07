@@ -750,6 +750,7 @@
         const molData = Array.isArray(_allMolData) ? _allMolData[0] : (_allMolData || {symbols:[], positions:[]});
 
         const fragSettings = Object.assign({
+            bondThreshold: 1.2,
             showCell: true,
             cellColor: '#808080',
             showAxis: true,

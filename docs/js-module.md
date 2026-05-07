@@ -396,7 +396,7 @@ viewer.setSettings({ style: 'glossy', atomSize: 0.6 });
 | `style` | string | `'cartoon'` | Rendering style |
 | `backgroundColor` | string | `'#1f2937'` | Background color (hex) |
 | `atomSize` | float | `0.4` | Atom radius scale |
-| `bondThreshold` | float | `1.0` | Bond cutoff (multiple of covalent radii) |
+| `bondThreshold` | float | `1.2` | Bond cutoff (multiple of covalent radii) |
 | `bondThickness` | float | `0.1` | Bond cylinder radius |
 | `showBond` | boolean | `true` | Show bonds |
 | `showCell` | boolean | `true` | Show unit cell box |
