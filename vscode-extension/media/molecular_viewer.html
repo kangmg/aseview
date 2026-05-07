@@ -537,7 +537,6 @@
                             </div>
                         </div>
 
-
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Animation Speed (FPS)</span>
@@ -1383,7 +1382,6 @@
             fixedStats.hasFixed = false;
             return false;
         }
-
 
         function checkChargesInData() {
             if (!molecularData || molecularData.length === 0) return false;
@@ -2371,7 +2369,6 @@
             const fixedIndexSet = getFixedIndexSet(molecule);
             const useChargeColor     = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
             const useConstraintColor = settings.showConstraint && fixedIndexSet.size > 0;
-
 
             // Pre-calculate per-atom colors
             const atomChargeColors = [];

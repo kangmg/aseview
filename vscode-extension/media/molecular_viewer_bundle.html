@@ -3642,7 +3642,6 @@ function createHydrogenBond(p1, p2) {
                             </div>
                         </div>
 
-
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Animation Speed (FPS)</span>
@@ -4488,7 +4487,6 @@ function createHydrogenBond(p1, p2) {
             fixedStats.hasFixed = false;
             return false;
         }
-
 
         function checkChargesInData() {
             if (!molecularData || molecularData.length === 0) return false;
@@ -5476,7 +5474,6 @@ function createHydrogenBond(p1, p2) {
             const fixedIndexSet = getFixedIndexSet(molecule);
             const useChargeColor     = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
             const useConstraintColor = settings.showConstraint && fixedIndexSet.size > 0;
-
 
             // Pre-calculate per-atom colors
             const atomChargeColors = [];
