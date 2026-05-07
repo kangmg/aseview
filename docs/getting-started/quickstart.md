@@ -37,6 +37,9 @@ aseview trajectory.xyz -v overlay --cmap viridis
 ```bash
 # With ORCA Hessian file
 aseview molecule.xyz --hess orca.hess
+
+# With VASP OUTCAR
+aseview POSCAR --hess OUTCAR
 ```
 
 ## Python API Usage

@@ -62,8 +62,9 @@ aseview reactant.xyz product.xyz
 # Overlay with colormap
 aseview trajectory.xyz -v overlay --cmap viridis
 
-# Normal mode visualization with ORCA Hessian
+# Normal mode visualization with ORCA Hessian or VASP OUTCAR
 aseview molecule.xyz --hess orca.hess
+aseview POSCAR --hess OUTCAR
 
 # Save as HTML file
 aseview molecule.xyz -o output.html
@@ -156,21 +157,6 @@ viewer = OverlayViewer(
 viewer.show()
 ```
 
-### Align Molecules (RMSD Minimization)
-
-```python
-from ase.io import read
-from aseview import OverlayViewer
-
-structures = [read(f'conf{i}.xyz') for i in range(5)]
-viewer = OverlayViewer(
-    structures,
-    alignMolecules=True,  # Kabsch rotation + Hungarian reordering
-    colorBy='Molecule'
-)
-viewer.show()
-```
-
 ### Normal Mode Visualization
 
 #### From ASE Vibrations
@@ -208,6 +194,17 @@ from aseview import NormalViewer
 
 atoms = read('molecule.xyz')
 viewer = NormalViewer.from_orca(atoms, 'orca.hess')
+viewer.show()
+```
+
+#### From VASP OUTCAR
+
+```python
+from ase.io import read
+from aseview import NormalViewer
+
+atoms = read('POSCAR')
+viewer = NormalViewer.from_vasp(atoms, 'OUTCAR')
 viewer.show()
 ```
 
