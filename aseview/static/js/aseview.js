@@ -186,8 +186,8 @@
     /**
      * OverlayViewer - Viewer for comparing multiple molecular structures
      *
-     * Features: Structure opacity controls, alignment algorithms (Kabsch, Hungarian),
-     * RMSD calculation, and multi-structure visualization.
+     * Features: Structure opacity controls, visibility toggles,
+     * per-structure colors, and multi-structure visualization.
      */
     class OverlayViewer extends BaseViewer {
         constructor(container, options = {}) {
@@ -216,7 +216,7 @@
      * FragSelector - Interactive fragment selector with synchronized 2D/3D views
      *
      * Features: Click/rect/lasso atom selection, synchronized SVG 2D and THREE.js 3D
-     * panels, fragment export as XYZ, clipboard copy of selected/unselected indices.
+     * panels, structure copy in multiple formats, and clipboard copy of selected/unselected indices.
      */
     class FragSelector extends BaseViewer {
         constructor(container, options = {}) {

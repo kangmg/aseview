@@ -65,7 +65,10 @@ Full-featured molecular structure viewer with sidebar controls.
 - Bond/Cell display toggles
 - Atom size and bond thickness sliders
 - Trajectory animation with playback controls
-- Energy plot visualization
+- Energy and max-force plot visualization
+- Radius contrast control for element-size differences
+- Fixed atom highlighting from constraint metadata
+- Clipboard copy as `xyz`, `extxyz`, `cif`, or `POSCAR`
 - Screenshot and GIF export
 
 === "Full HTML"
@@ -219,9 +222,8 @@ Compare multiple molecular structures by overlaying them.
 **Features:**
 
 - Per-structure opacity controls
-- Alignment algorithms (Kabsch, Hungarian)
-- RMSD calculation and display
 - Multi-structure visualization
+- Per-structure visibility and color controls
 
 === "Full HTML"
 
@@ -321,9 +323,14 @@ Compare multiple molecular structures by overlaying them.
     symbols: ['C', 'H', 'O', ...],           // Required: atom symbols
     positions: [[x, y, z], ...],             // Required: atom positions (Å)
     cell: [[a1, a2, a3], [b1, b2, b3], ...], // Optional: unit cell vectors (3x3)
+    pbc: [true, true, true],                  // Optional: periodic boundary flags
     energy: -123.456,                        // Optional: energy value (eV)
     forces: [[fx, fy, fz], ...],             // Optional: force vectors
     charges: [0.1, -0.2, ...],               // Optional: atomic charges
+    fixed: [false, true, ...],                // Optional: fixed atom mask
+    arrays: {
+        move_mask: [[true, true, true], ...]  // Optional: selective dynamics mask
+    },
     name: "Molecule 1"                       // Optional: display name
 }
 
@@ -404,6 +411,9 @@ viewer.setSettings({ style: 'glossy', atomSize: 0.6 });
 | `showAxis` | boolean | `true` | Show XYZ axis helper |
 | `showForces` | boolean | `false` | Show force vectors |
 | `showEnergyPlot` | boolean | `false` | Show energy vs frame plot |
+| `showForceMaxPlot` | boolean | `true` | Include max force trace when forces are available |
+| `radiusContrast` | float | `1.0` | Atom radius contrast (`0.0` uniform, `1.0` element radii) |
+| `radiusContrastMode` | string | `'log'` | `'linear'` or `'log'` radius mapping |
 | `animationSpeed` | int | `30` | Frames per second |
 | `forceScale` | float | `0.5` | Force vector scale |
 | `viewMode` | string | `'Perspective'` | `'Perspective'` or `'Orthographic'` |
@@ -420,6 +430,7 @@ viewer.setSettings({ style: 'glossy', atomSize: 0.6 });
 | `chargeColormap` | string | `'coolwarm'` | Colormap for charge coloring |
 | `normalizeCharges` | boolean | `false` | Normalize charge color range |
 | `showChargeLabels` | boolean | `false` | Display charge values on atoms |
+| `showConstraint` | boolean | `false` | Highlight fixed atoms with a yellow overlay |
 
 #### NormalModeViewer Settings
 
@@ -443,7 +454,6 @@ Vibration playback parameters (set via `setVibrationData`):
 |-----------|------|---------|-------------|
 | `colorBy` | string | `'Atom'` | `'Atom'`, `'Molecule'`, or `'Colormap'` |
 | `colormap` | string | `'viridis'` | Colormap name (when `colorBy: 'Colormap'`) |
-| `alignMolecules` | boolean | `false` | Kabsch rotation + Hungarian atom reordering |
 | `showShading` | boolean | `false` | Shading (default differs from other viewers) |
 
 **Available colormaps:** `viridis`, `plasma`, `coolwarm`, `jet`, `rainbow`, `grayscale`

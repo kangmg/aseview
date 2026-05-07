@@ -162,6 +162,12 @@ Drag the vertical divider between the two panels to resize them.
 | **Select All** | Add all atoms to the selection |
 | **Clear** | Remove all atoms from the selection |
 | **Invert** | Swap selected ↔ unselected |
+| **Copy format chip** | Cycle structure copy format: `xyz`, `extxyz`, `cif`, `POSCAR` |
+| **by frag** | Copy selected/unselected fragments as separate frames in the selected format |
+| **reindexed** | Copy a single structure reordered with selected atoms first |
+
+`extxyz` and `POSCAR` preserve unit-cell and fixed/move-mask constraint data when present.
+`cif` preserves cell data but ignores constraints.
 
 ### Sidebar — Display card
 

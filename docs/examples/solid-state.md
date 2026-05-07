@@ -4,7 +4,7 @@ Visualize crystals, surfaces, and periodic systems with unit cell display.
 
 ## Live Demo: Cu(111) Surface — Fixed Atoms (FixAtoms Constraint)
 
-Cu(111) 4-layer slab with the bottom 2 layers frozen. Fixed atoms are shown in **grey**, free atoms in their normal element color.
+Cu(111) 4-layer slab with the bottom 2 layers frozen. Fixed atoms keep their element color and are marked with a semi-transparent yellow overlay.
 
 ```python
 from ase.build import fcc111
@@ -22,7 +22,7 @@ fixed_indices = [i for i, pos in enumerate(slab.get_positions())
                  if round(pos[2], 2) in fixed_z]
 slab.set_constraint(FixAtoms(indices=fixed_indices))
 
-viewer = MolecularViewer(slab, style="metallic", colorBy="Constraint", showCell=True)
+viewer = MolecularViewer(slab, style="metallic", showConstraint=True, showCell=True)
 viewer.show()
 ```
 

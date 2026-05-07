@@ -77,14 +77,14 @@ viewer.show()
 
 ## Constraint Visualization
 
-Highlight fixed atoms with `colorBy="Constraint"`. Fixed atoms (from `FixAtoms`) appear in **grey**; free atoms keep their element color. The option is only available when constraints are present.
+Highlight fixed atoms with `showConstraint=True`. Fixed atoms from `FixAtoms` appear with a semi-transparent yellow overlay while keeping their normal element color. The option is only shown when constraints are present.
 
 ```python
 from ase.constraints import FixAtoms
 from aseview import MolecularViewer
 
 atoms.set_constraint(FixAtoms(indices=[0, 1, 2]))
-viewer = MolecularViewer(atoms, colorBy="Constraint")
+viewer = MolecularViewer(atoms, showConstraint=True)
 viewer.show()
 ```
 

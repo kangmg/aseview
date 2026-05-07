@@ -24,6 +24,8 @@ MolecularViewer(data, **kwargs)
 | `atomSize` | `float` | Atom sphere radius scale | `0.4` |
 | `bondThickness` | `float` | Bond cylinder radius | `0.1` |
 | `bondThreshold` | `float` | Bond detection threshold (multiplier for covalent radii sum) | `1.2` |
+| `radiusContrast` | `float` | Relative atom radius contrast (`0.0` = uniform radii, `1.0` = full element radii) | `1.0` |
+| `radiusContrastMode` | `str` | Radius contrast mapping: `"linear"` or `"log"` | `"log"` |
 
 #### Style Settings
 
@@ -55,6 +57,7 @@ MolecularViewer(data, **kwargs)
 | `hBondThreshold` | `float` | H···A distance cutoff (Å) for hydrogen-bond detection | `2.5` |
 | `showShadow` | `bool` | Enable shadows | `False` |
 | `showEnergyPlot` | `bool` | Show energy plot (if energy data available) | `False` |
+| `showForceMaxPlot` | `bool` | Include max force (`fmax`) in the trajectory plot when forces are available | `True` |
 | `showForces` | `bool` | Show force vectors | `False` |
 | `showShading` | `bool` | Enable 3D shading effect | `True` |
 
@@ -93,6 +96,20 @@ MolecularViewer(data, **kwargs)
     viewer = MolecularViewer(atoms, showConstraint=True)
     ```
 
+!!! note "Radius Contrast"
+    `radiusContrast` controls how different the element radii appear relative to one another.
+    Use `0.0` for uniform atom sizes and `1.0` for the built-in element radii.
+    `radiusContrastMode="log"` compresses large radius differences more strongly than `"linear"`.
+
+    ```python
+    viewer = MolecularViewer(atoms, radiusContrast=0.6, radiusContrastMode="log")
+    ```
+
+!!! note "Trajectory Plot"
+    `showEnergyPlot=True` displays energy when each frame provides `atoms.get_potential_energy()`
+    or `atoms.info['energy']`. If forces are present, the plot can also show per-frame
+    max force (`fmax`) with `showForceMaxPlot=True`.
+
 !!! note "Hydrogen Bonds"
     `showHBond=True` detects and renders hydrogen bonds as dashed lines.
     Criteria: donor H bonded to N/O/F, acceptor N/O/F, H···A ≤ `hBondThreshold` (default 2.5 Å),
@@ -109,6 +126,18 @@ MolecularViewer(data, **kwargs)
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `animationSpeed` | `int` | Animation speed (ms per frame) | `30` |
+
+## Clipboard Copy Formats
+
+The animation toolbar can copy the current frame or the full loaded trajectory.
+The copy-format chip cycles through `xyz`, `extxyz`, `cif`, and `POSCAR`.
+
+| Format | Cell Support | Constraint Support |
+|--------|--------------|--------------------|
+| `xyz` | No | No |
+| `extxyz` | Yes | Fixed/move-mask constraint metadata |
+| `cif` | Yes | No — CIF has no standard fixed-atom field |
+| `POSCAR` | Yes | Selective-dynamics flags for fixed/move-mask constraints |
 
 #### View Settings
 
@@ -191,7 +220,20 @@ viewer = MolecularViewer(
     trajectory,
     showForces=True,
     forceScale=2.0,
-    showEnergyPlot=True
+    showEnergyPlot=True,
+    showForceMaxPlot=True
+)
+viewer.show()
+```
+
+### Radius Contrast
+
+```python
+viewer = MolecularViewer(
+    atoms,
+    atomSize=0.45,
+    radiusContrast=0.5,
+    radiusContrastMode="linear",
 )
 viewer.show()
 ```

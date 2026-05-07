@@ -1,6 +1,6 @@
 # Trajectory Animation
 
-Visualize molecular dynamics trajectories with animation and energy plots.
+Visualize molecular dynamics trajectories with animation, energy plots, and max-force traces.
 
 ## Live Demo
 
@@ -41,7 +41,7 @@ Visualize molecular dynamics trajectories with animation and energy plots.
 
 ---
 
-## Energy Plot
+## Energy and Force-Max Plot
 
 Display energy synchronized with animation:
 
@@ -51,6 +51,18 @@ viewer.show()
 ```
 
 Energy is extracted from `atoms.get_potential_energy()` or `atoms.info['energy']`.
+When force arrays are available, the same plot can also show the per-frame maximum force:
+
+```python
+viewer = MolecularViewer(
+    trajectory,
+    showEnergyPlot=True,
+    showForceMaxPlot=True,
+)
+viewer.show()
+```
+
+`showForceMaxPlot` only affects the plotted `fmax` trace. Use `showForces=True` to draw force vectors on atoms.
 
 ---
 
@@ -71,8 +83,12 @@ viewer.show()
 |---------|-------------|
 | **Play/Pause** | Toggle animation |
 | **Frame slider** | Jump to frame |
-| **Copy frame** | Copy current frame as XYZ |
-| **Copy all** | Copy entire trajectory |
+| **Copy format chip** | Cycle copy format: `xyz`, `extxyz`, `cif`, `POSCAR` |
+| **Copy frame** | Copy current frame using the selected format |
+| **Copy all** | Copy entire trajectory using the selected format |
+
+`extxyz` and `POSCAR` include cell and fixed/move-mask constraint data when present.
+`cif` includes cell data but ignores constraints.
 
 ---
 

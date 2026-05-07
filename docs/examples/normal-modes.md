@@ -96,6 +96,8 @@ viewer = NormalViewer.from_file(
 | **Play/Pause** | Toggle animation |
 | **Amplitude slider** | Adjust displacement |
 | **Mode Vectors** | Show/hide displacement arrows |
+| **Copy format chip** | Cycle `xyz`, `extxyz`, `cif`, `POSCAR` |
+| **Copy frame / Copy all** | Copy current displaced frame or all vibration frames |
 
 ---
 

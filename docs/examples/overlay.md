@@ -104,28 +104,12 @@ viewer.show()
 
 ---
 
-## Molecule Alignment (Kabsch)
-
-Align structures for optimal RMSD comparison:
-
-```python
-viewer = OverlayViewer(structures, alignMolecules=True)
-```
-
-This performs:
-1. **Centering**: Both molecules centered at origin
-2. **Hungarian reordering**: Match atoms by element and position
-3. **Kabsch rotation**: Optimal rotation via SVD to minimize RMSD
-
----
-
 ## Interactive Controls
 
 | Control | Description |
 |---------|-------------|
 | **Visibility toggle** | Show/hide individual structures |
 | **Opacity slider** | Adjust transparency |
-| **Align Molecules** | Toggle Kabsch alignment |
 
 ---
 

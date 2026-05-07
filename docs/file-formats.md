@@ -28,6 +28,21 @@ ASE automatically detects file formats using three methods:
 
 ---
 
+## Viewer Clipboard Export
+
+Viewer copy controls support four structure formats:
+
+| Format | Notes |
+|--------|-------|
+| `xyz` | Plain coordinates; no cell or constraints |
+| `extxyz` | Includes cell metadata and fixed/move-mask constraint metadata when present |
+| `cif` | Includes crystallographic cell data; constraints are ignored |
+| `POSCAR` | Includes cell and selective-dynamics flags for fixed/move-mask constraints |
+
+The same format chip is used by MolecularViewer, NormalViewer, OverlayViewer, and FragSelector.
+
+---
+
 ## All Formats by Category
 
 ### Molecular Formats

@@ -708,7 +708,7 @@ def create_fixed_atoms_viewer():
     print(f"Created cu111_fixed.html ({len(fixed_indices)} fixed atoms out of {len(slab)})")
 
 
-
+if __name__ == "__main__":
     print("Generating example viewer HTML files...")
     # Molecules
     create_water_viewer()

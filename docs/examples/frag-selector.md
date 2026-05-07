@@ -65,6 +65,9 @@ print(oh_group.get_chemical_formula())   # HO
 print(ethyl.get_chemical_formula())      # C2H5
 ```
 
+The **Copy** format chip in the selection card also exports structures as `xyz`, `extxyz`, `cif`, or `POSCAR`.
+Use **by frag** to copy selected and unselected fragments as separate frames, or **reindexed** to copy one structure with the selected atoms first.
+
 ---
 
 ## Multi-Fragment Molecules

@@ -145,6 +145,8 @@ viewer.save_html(filename)
 - **Play/Pause**: Toggle vibration animation
 - **Amplitude slider**: Adjust displacement magnitude
 - **Mode vectors toggle**: Show/hide displacement arrows
+- **Copy format chip**: Cycle structure copy format: `xyz`, `extxyz`, `cif`, `POSCAR`
+- **Copy frame / Copy all**: Copy the current displaced structure or all generated vibration frames
 
 ### Mode Vector Display
 

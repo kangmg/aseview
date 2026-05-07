@@ -365,8 +365,12 @@ class MolecularViewer(BaseViewer):
         if os.path.exists(gifshot_path):
             with open(gifshot_path, "r", encoding="utf-8") as f:
                 gifshot_js = f.read()
-            # Add gifshot.js before closing </head> tag
-            html = html.replace("</head>", f"<script>{gifshot_js}</script>\n</head>")
+            gifshot_tag = '<script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>'
+            inline_gifshot_tag = f"<script>{gifshot_js}</script>"
+            if gifshot_tag in html:
+                html = html.replace(gifshot_tag, inline_gifshot_tag)
+            else:
+                html = html.replace("</head>", f"{inline_gifshot_tag}\n</head>")
 
         # Inject molecular data
         if "{{molecular_data}}" in html:
@@ -699,7 +703,12 @@ class NormalViewer(BaseViewer):
         if os.path.exists(gifshot_path):
             with open(gifshot_path, "r", encoding="utf-8") as f:
                 gifshot_js = f.read()
-            html = html.replace("</head>", f"<script>{gifshot_js}</script>\n</head>")
+            gifshot_tag = '<script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>'
+            inline_gifshot_tag = f"<script>{gifshot_js}</script>"
+            if gifshot_tag in html:
+                html = html.replace(gifshot_tag, inline_gifshot_tag)
+            else:
+                html = html.replace("</head>", f"{inline_gifshot_tag}\n</head>")
 
         # Inject data and settings
         settings_json = json.dumps(self.settings)
