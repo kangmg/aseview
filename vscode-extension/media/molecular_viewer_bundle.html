@@ -4993,6 +4993,18 @@ function createHydrogenBond(p1, p2) {
             camera = newCamera;
         }
 
+        function updateOrthographicTrackballPanSpeed() {
+            if (!renderer || !camera || !controls) return;
+            if (!camera.isOrthographicCamera || settings.rotationMode === 'Orbit') return;
+
+            const canvasWidth = renderer.domElement ? renderer.domElement.clientWidth : 0;
+            const viewerEl = document.getElementById('viewer');
+            const fallbackWidth = viewerEl ? viewerEl.clientWidth : 800;
+            const width = Math.max(canvasWidth || fallbackWidth, 1);
+            const distance = Math.max(camera.position.distanceTo(controls.target), 0.1);
+            controls.panSpeed = width / distance;
+        }
+
         function setupControls() {
             if (!renderer || !camera) return;
 
@@ -5014,11 +5026,7 @@ function createHydrogenBond(p1, p2) {
             controls.target.copy(target);
             controls.update();
 
-            if (camera.isOrthographicCamera && settings.rotationMode !== 'Orbit') {
-                const viewerEl = document.getElementById('viewer');
-                const cw = viewerEl ? viewerEl.clientWidth : 800;
-                controls.panSpeed = cw / Math.max(camera.position.distanceTo(controls.target), 0.1);
-            }
+            updateOrthographicTrackballPanSpeed();
         }
 
         function handleResize() {
@@ -5044,9 +5052,7 @@ function createHydrogenBond(p1, p2) {
             if (controls && typeof controls.handleResize === 'function') {
                 controls.handleResize();
             }
-            if (camera.isOrthographicCamera && settings.rotationMode !== 'Orbit' && controls) {
-                controls.panSpeed = width / Math.max(camera.position.distanceTo(controls.target), 0.1);
-            }
+            updateOrthographicTrackballPanSpeed();
         }
 
         function setupAxisHelper() {
@@ -5711,6 +5717,7 @@ function createHydrogenBond(p1, p2) {
             controls.update();
             camera.lookAt(center);
             camera.updateProjectionMatrix();
+            updateOrthographicTrackballPanSpeed();
             cameraNeedsFit = false;
         }
 
