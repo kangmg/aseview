@@ -112,7 +112,17 @@ function getStandardMaterial(color, type) {
     }
 }
 
-function getBondPoints(p1, p2, sym1, sym2, atomScale, style) {
+function getRadiusScaleForSymbol(symbol, helpers) {
+    const scale = helpers?.radiusScaleBySymbol?.[symbol];
+    return Number.isFinite(scale) && scale > 0 ? scale : 1;
+}
+
+function getScaledAtomRadius(symbol, atomScale, helpers) {
+    const info = atomInfo[symbol] || atomInfo.default;
+    return info.radius * atomScale * getRadiusScaleForSymbol(symbol, helpers);
+}
+
+function getBondPoints(p1, p2, sym1, sym2, atomScale, style, helpers) {
     const dir = p2.clone().sub(p1).normalize();
 
     let offsetFactor1 = 0.75;
@@ -126,8 +136,8 @@ function getBondPoints(p1, p2, sym1, sym2, atomScale, style) {
         offsetFactor2 = 0.6;
     }
 
-    const offset1 = (atomInfo[sym1] || atomInfo.default).radius * atomScale * offsetFactor1;
-    const offset2 = (atomInfo[sym2] || atomInfo.default).radius * atomScale * offsetFactor2;
+    const offset1 = getScaledAtomRadius(sym1, atomScale, helpers) * offsetFactor1;
+    const offset2 = getScaledAtomRadius(sym2, atomScale, helpers) * offsetFactor2;
 
     const startPos = p1.clone().add(dir.clone().multiplyScalar(offset1));
     const endPos = p2.clone().sub(dir.clone().multiplyScalar(offset2));
@@ -412,8 +422,8 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     return sprite; // Return sprite directly, not Group
 }
 
-function createBondStyle2D(p1, p2, sym1, sym2, bondThickness, atomScale) {
-    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, '2d');
+function createBondStyle2D(p1, p2, sym1, sym2, bondThickness, atomScale, helpers) {
+    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, '2d', helpers);
     if (!bondPoints) return null;
     const { startPos, endPos, dir } = bondPoints;
 
@@ -437,8 +447,8 @@ function createBondStyle2D(p1, p2, sym1, sym2, bondThickness, atomScale) {
     return bondGroup;
 }
 
-function createBondStyleCartoon(p1, p2, sym1, sym2, bondThickness, atomScale) {
-    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, 'cartoon');
+function createBondStyleCartoon(p1, p2, sym1, sym2, bondThickness, atomScale, helpers) {
+    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, 'cartoon', helpers);
     if (!bondPoints) return null;
     const { startPos, endPos, dir } = bondPoints;
     const distance = startPos.distanceTo(endPos);
@@ -462,8 +472,8 @@ function createBondStyleCartoon(p1, p2, sym1, sym2, bondThickness, atomScale) {
     return bond;
 }
 
-function createBondStyleDefault(p1, p2, sym1, sym2, bondThickness, atomScale, style) {
-    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, style);
+function createBondStyleDefault(p1, p2, sym1, sym2, bondThickness, atomScale, style, helpers) {
+    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, style, helpers);
     if (!bondPoints) return null;
     const { startPos, endPos } = bondPoints;
 
@@ -488,12 +498,9 @@ function createHalfBond(start, end, color, bondThickness, style) {
     return bond;
 }
 
-function createBondStyleNeon(p1, p2, sym1, sym2, bondThickness, atomScale) {
-    // Get atom info
-    const info1 = atomInfo[sym1] || atomInfo['default'];
-    const info2 = atomInfo[sym2] || atomInfo['default'];
-    const radius1 = info1.radius * atomScale;
-    const radius2 = info2.radius * atomScale;
+function createBondStyleNeon(p1, p2, sym1, sym2, bondThickness, atomScale, helpers) {
+    const radius1 = getScaledAtomRadius(sym1, atomScale, helpers);
+    const radius2 = getScaledAtomRadius(sym2, atomScale, helpers);
 
     // Calculate bond vector
     const bondVector = new THREE.Vector3().subVectors(p2, p1);
@@ -557,8 +564,8 @@ function createBondStyleNeon(p1, p2, sym1, sym2, bondThickness, atomScale) {
     return bondGroup;
 }
 
-function createBondStyleRowan(p1, p2, sym1, sym2, bondThickness, atomScale) {
-    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, 'rowan');
+function createBondStyleRowan(p1, p2, sym1, sym2, bondThickness, atomScale, helpers) {
+    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, 'rowan', helpers);
     if (!bondPoints) return null;
     const { startPos, endPos, dir } = bondPoints;
     const distance = startPos.distanceTo(endPos);
@@ -571,8 +578,8 @@ function createBondStyleRowan(p1, p2, sym1, sym2, bondThickness, atomScale) {
     return bond;
 }
 
-function createBondStyleBubble(p1, p2, sym1, sym2, bondThickness, atomScale) {
-    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, 'default');
+function createBondStyleBubble(p1, p2, sym1, sym2, bondThickness, atomScale, helpers) {
+    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, 'default', helpers);
     if (!bondPoints) return null;
     const { startPos, endPos } = bondPoints;
 
@@ -609,12 +616,9 @@ function createHalfBondBubble(start, end, color, bondThickness) {
     return bond;
 }
 
-function createBondStyleGrey(p1, p2, sym1, sym2, bondThickness, atomScale, colorMap) {
-    // Get atom info
-    const info1 = atomInfo[sym1] || atomInfo['default'];
-    const info2 = atomInfo[sym2] || atomInfo['default'];
-    const radius1 = info1.radius * atomScale;
-    const radius2 = info2.radius * atomScale;
+function createBondStyleGrey(p1, p2, sym1, sym2, bondThickness, atomScale, colorMap, helpers) {
+    const radius1 = getScaledAtomRadius(sym1, atomScale, helpers);
+    const radius2 = getScaledAtomRadius(sym2, atomScale, helpers);
 
     // Calculate bond vector
     const bondVector = new THREE.Vector3().subVectors(p2, p1);

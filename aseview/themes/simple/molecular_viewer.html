@@ -376,6 +376,21 @@
 
                         <div class="control-group">
                             <div class="control-label">
+                                <span>Radius Contrast</span>
+                                <span style="display:flex;align-items:center;gap:8px;">
+                                    <button class="copy-format-chip" id="radius-contrast-mode-chip" title="Radius contrast mode">Log</button>
+                                    <span class="slider-value" id="radius-contrast-value">1.00</span>
+                                </span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0" max="1" step="0.01" value="1" class="slider"
+                                    id="radius-contrast">
+                            </div>
+                        </div>
+
+
+                        <div class="control-group">
+                            <div class="control-label">
                                 <span>Animation Speed (FPS)</span>
                                 <span class="slider-value" id="animation-speed-value">30</span>
                             </div>
@@ -502,9 +517,19 @@
 
                         <div class="control-group">
                             <div class="control-label">
-                                <span>Energy Plot</span>
+                                <span>Energy / Force Plot</span>
                                 <label class="switch">
                                     <input type="checkbox" id="show-energy-plot">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="force-max-plot-control">
+                            <div class="control-label">
+                                <span>Force Max Plot</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-force-max-plot" checked>
                                     <span class="slider-switch"></span>
                                 </label>
                             </div>
@@ -893,6 +918,8 @@
             hBondThreshold: 2.5,
             bondThickness: 0.1,
             atomSize: 0.4,
+            radiusContrast: 1.0,
+            radiusContrastMode: 'log',
             animationSpeed: 30,
             forceScale: 0.5,
             backgroundColor: '#f4f4f5',
@@ -903,6 +930,7 @@
             showHBond: false,
             showShading: true,
             showEnergyPlot: false,
+            showForceMaxPlot: true,
             showForces: false,
             showAxis: true,
             showPolyhedron: false,
@@ -942,6 +970,7 @@
                 'show-hbond': 'showHBond',
                 'show-shading': 'showShading',
                 'show-energy-plot': 'showEnergyPlot',
+                'show-force-max-plot': 'showForceMaxPlot',
                 'show-forces': 'showForces',
                 'show-axis': 'showAxis',
                 'normalize-charges': 'normalizeCharges',
@@ -959,7 +988,15 @@
             if (atomSizeSlider) {
                 atomSizeSlider.value = settings.atomSize || 0.4;
                 const valueEl = document.getElementById('atom-size-value');
-                if (valueEl) valueEl.textContent = atomSizeSlider.value;
+                if (valueEl) valueEl.textContent = parseFloat(atomSizeSlider.value).toFixed(1) + '×';
+            }
+
+            const radiusContrastSlider = document.getElementById('radius-contrast');
+            if (radiusContrastSlider) {
+                radiusContrastSlider.value = settings.radiusContrast ?? 1.0;
+                const valueEl = document.getElementById('radius-contrast-value');
+                if (valueEl) valueEl.textContent = parseFloat(radiusContrastSlider.value).toFixed(2);
+                updateRadiusContrastModeChip();
             }
 
             const bondThresholdSlider = document.getElementById('bond-threshold');
@@ -1018,10 +1055,13 @@
                 if (valueEl) valueEl.textContent = settings.cellColor;
             }
 
-            // Update energy plot visibility
+            // Update energy / force plot visibility
             const plotContainer = document.getElementById('energy-plot-container');
             if (plotContainer) {
                 plotContainer.style.display = settings.showEnergyPlot ? 'block' : 'none';
+                if (settings.showEnergyPlot) {
+                    drawEnergyPlot();
+                }
             }
 
             // Apply rendering changes
@@ -1051,34 +1091,105 @@
         };
 
         const bondFactories = {
-            'default': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'default'),
-            '2d': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyle2D(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'cartoon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleCartoon(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'neon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy'),
-            'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic'),
-            'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap)
+            'default': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'default', helpers),
+            '2d': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyle2D(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'cartoon': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleCartoon(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'neon': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy', helpers),
+            'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic', helpers),
+            'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap, helpers)
         };
+
+        const RADIUS_CONTRAST_MODES = ['log', 'linear'];
+        const RADIUS_CONTRAST_LABELS = { log: 'Log', linear: 'Linear' };
+
+        function normalizeRadiusContrastMode(mode) {
+            const normalized = String(mode || '').toLowerCase();
+            return RADIUS_CONTRAST_MODES.includes(normalized) ? normalized : 'log';
+        }
+
+        function getRadiusContrast() {
+            const value = Number(settings.radiusContrast);
+            return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 1;
+        }
+
+        function updateRadiusContrastModeChip() {
+            settings.radiusContrastMode = normalizeRadiusContrastMode(settings.radiusContrastMode);
+            const chip = document.getElementById('radius-contrast-mode-chip');
+            if (!chip) return;
+
+            chip.textContent = RADIUS_CONTRAST_LABELS[settings.radiusContrastMode];
+            chip.title = `Radius contrast mode: ${RADIUS_CONTRAST_LABELS[settings.radiusContrastMode]}`;
+        }
+
+        function cycleRadiusContrastMode() {
+            const currentMode = normalizeRadiusContrastMode(settings.radiusContrastMode);
+            const currentIndex = RADIUS_CONTRAST_MODES.indexOf(currentMode);
+            settings.radiusContrastMode = RADIUS_CONTRAST_MODES[(currentIndex + 1) % RADIUS_CONTRAST_MODES.length];
+            updateRadiusContrastModeChip();
+            renderMolecule();
+        }
+
+        function getElementRadius(symbol) {
+            const info = atomInfo[symbol] || atomInfo['default'];
+            const radius = Number(info?.radius);
+            return Number.isFinite(radius) && radius > 0 ? radius : 1;
+        }
+
+        function getRadiusScaleBySymbol(symbols) {
+            const contrast = getRadiusContrast();
+            if (contrast >= 0.999) return {};
+
+            const uniqueSymbols = [...new Set(symbols)];
+            const radii = uniqueSymbols.map(getElementRadius).filter(radius => Number.isFinite(radius) && radius > 0);
+            if (radii.length === 0) return {};
+
+            const minRadius = Math.min(...radii);
+            const maxRadius = Math.max(...radii);
+            if (Math.abs(maxRadius - minRadius) < 1e-8) return {};
+
+            const mode = normalizeRadiusContrastMode(settings.radiusContrastMode);
+            const referenceRadius = mode === 'linear'
+                ? (minRadius + maxRadius) / 2
+                : Math.sqrt(minRadius * maxRadius);
+
+            const scaleBySymbol = {};
+            uniqueSymbols.forEach(symbol => {
+                const baseRadius = getElementRadius(symbol);
+                const adjustedRadius = mode === 'linear'
+                    ? referenceRadius + (baseRadius - referenceRadius) * contrast
+                    : referenceRadius * Math.pow(baseRadius / referenceRadius, contrast);
+                scaleBySymbol[symbol] = adjustedRadius / baseRadius;
+            });
+            return scaleBySymbol;
+        }
+
+        function getAdjustedAtomScale(symbol, atomScale, radiusScaleBySymbol) {
+            return atomScale * (radiusScaleBySymbol[symbol] ?? 1);
+        }
+
+        function getAdjustedAtomRadius(symbol, atomScale, radiusScaleBySymbol) {
+            return getElementRadius(symbol) * getAdjustedAtomScale(symbol, atomScale, radiusScaleBySymbol);
+        }
 
         // Charge coloring utilities
         let chargeStats = { hasCharges: false, min: 0, max: 0, maxPositive: 0, minNegative: 0 };
-        let fixedStats  = { hasFixed: false, indices: new Set() };
+        let fixedStats  = { hasFixed: false };
 
         function checkConstraintsInData() {
             if (!molecularData || molecularData.length === 0) return false;
             for (const frame of molecularData) {
-                if (frame.fixed && Array.isArray(frame.fixed) && frame.fixed.length > 0) {
-                    fixedStats.hasFixed  = true;
-                    fixedStats.indices   = new Set(frame.fixed);
+                if (getFixedIndexSet(frame).size > 0) {
+                    fixedStats.hasFixed = true;
                     return true;
                 }
             }
-            fixedStats.hasFixed  = false;
-            fixedStats.indices   = new Set();
+            fixedStats.hasFixed = false;
             return false;
         }
+
 
         function checkChargesInData() {
             if (!molecularData || molecularData.length === 0) return false;
@@ -1320,13 +1431,25 @@
         }
 
         // Create bond with custom colors (for charge coloring)
-        function createBondWithColor(pos1, pos2, bondRadius, color1Hex, color2Hex, styleName) {
+        function createBondWithColor(pos1, pos2, sym1, sym2, bondRadius, atomScale, color1Hex, color2Hex, styleName, helpers) {
             const group = new THREE.Group();
 
-            const midpoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
             const direction = new THREE.Vector3().subVectors(pos2, pos1);
             const length = direction.length();
-            const halfLength = length / 2;
+            if (length <= 0) return null;
+
+            const bondDirection = direction.clone().normalize();
+            const radiusScaleBySymbol = helpers?.radiusScaleBySymbol || {};
+            const offsetFactor = styleName === 'neon' ? 0.6 : 0.75;
+            const radius1 = getAdjustedAtomRadius(sym1, atomScale, radiusScaleBySymbol) * offsetFactor;
+            const radius2 = getAdjustedAtomRadius(sym2, atomScale, radiusScaleBySymbol) * offsetFactor;
+            const startPos = pos1.clone().add(bondDirection.clone().multiplyScalar(radius1));
+            const endPos = pos2.clone().sub(bondDirection.clone().multiplyScalar(radius2));
+            const adjustedLength = startPos.distanceTo(endPos);
+            if (adjustedLength <= 0.01) return null;
+
+            const midpoint = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5);
+            const halfLength = adjustedLength / 2;
 
             // Darken colors for bonds
             const darkenFactor = 0.7;
@@ -1338,12 +1461,12 @@
             switch (styleName) {
                 case 'neon':
                     // Use lines for neon style
-                    const points1 = [pos1, midpoint];
+                    const points1 = [startPos, midpoint];
                     const geometry1 = new THREE.BufferGeometry().setFromPoints(points1);
                     material1 = new THREE.LineBasicMaterial({ color: bondColor1, linewidth: 2 });
                     group.add(new THREE.Line(geometry1, material1));
 
-                    const points2 = [midpoint, pos2];
+                    const points2 = [midpoint, endPos];
                     const geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
                     material2 = new THREE.LineBasicMaterial({ color: bondColor2, linewidth: 2 });
                     group.add(new THREE.Line(geometry2, material2));
@@ -1377,17 +1500,17 @@
             // First half
             const cylGeom1 = new THREE.CylinderGeometry(bondRadius, bondRadius, halfLength, 16);
             const cylinder1 = new THREE.Mesh(cylGeom1, material1);
-            const half1Mid = new THREE.Vector3().addVectors(pos1, midpoint).multiplyScalar(0.5);
+            const half1Mid = new THREE.Vector3().addVectors(startPos, midpoint).multiplyScalar(0.5);
             cylinder1.position.copy(half1Mid);
-            cylinder1.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+            cylinder1.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bondDirection);
             group.add(cylinder1);
 
             // Second half
             const cylGeom2 = new THREE.CylinderGeometry(bondRadius, bondRadius, halfLength, 16);
             const cylinder2 = new THREE.Mesh(cylGeom2, material2);
-            const half2Mid = new THREE.Vector3().addVectors(midpoint, pos2).multiplyScalar(0.5);
+            const half2Mid = new THREE.Vector3().addVectors(midpoint, endPos).multiplyScalar(0.5);
             cylinder2.position.copy(half2Mid);
-            cylinder2.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+            cylinder2.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bondDirection);
             group.add(cylinder2);
 
             return group;
@@ -1999,6 +2122,7 @@
             const atomScale = Math.max(settings.atomSize, 0.05);
             const bondRadius = Math.max(settings.bondThickness, 0.005);
             const bondCutoff = settings.bondThreshold;
+            const radiusScaleBySymbol = getRadiusScaleBySymbol(symbols);
 
             // Performance: compute LOD segments based on atom count
             const perfMode = settings.performanceMode || 'auto';
@@ -2013,7 +2137,7 @@
                     greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
                 });
             }
-            const helpers = { greyColorMap, _lod: lodSegments };
+            const helpers = { greyColorMap, _lod: lodSegments, radiusScaleBySymbol };
 
             if (settings.showCell && molecule.cell) {
                 const cellVectors = molecule.cell.map(c => new THREE.Vector3(...c));
@@ -2041,8 +2165,10 @@
 
             // Get charges for current frame (if available)
             const frameCharges = molecule.charges || [];
+            const fixedIndexSet = getFixedIndexSet(molecule);
             const useChargeColor     = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
-            const useConstraintColor = settings.showConstraint && fixedStats.hasFixed;
+            const useConstraintColor = settings.showConstraint && fixedIndexSet.size > 0;
+
 
             // Pre-calculate per-atom colors
             const atomChargeColors = [];
@@ -2066,10 +2192,14 @@
                         bond = createBondWithColor(
                             positions[i],
                             positions[j],
+                            symbols[i],
+                            symbols[j],
                             bondRadius,
+                            atomScale,
                             atomChargeColors[i],
                             atomChargeColors[j],
-                            styleName
+                            styleName,
+                            helpers
                         );
                     } else {
                         bond = bondFactory(
@@ -2107,13 +2237,14 @@
 
             for (let i = 0; i < positions.length; i++) {
                 let atom;
+                const atomRenderScale = getAdjustedAtomScale(symbols[i], atomScale, radiusScaleBySymbol);
 
                 if (useChargeColor) {
-                    atom = createAtomWithColor(positions[i], symbols[i], atomScale, atomChargeColors[i], styleName, lodSegments);
+                    atom = createAtomWithColor(positions[i], symbols[i], atomRenderScale, atomChargeColors[i], styleName, lodSegments);
                 } else {
-                    atom = atomFactory(positions[i], symbols[i], atomScale, helpers);
+                    atom = atomFactory(positions[i], symbols[i], atomRenderScale, helpers);
                     if (!atom) {
-                        atom = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
+                        atom = atomFactories['default'](positions[i], symbols[i], atomRenderScale, helpers);
                     }
                 }
 
@@ -2124,14 +2255,13 @@
             }
 
             // Highlight fixed atoms with yellow semi-transparent sphere overlay
-            if (useConstraintColor && fixedStats.indices.size > 0) {
+            if (useConstraintColor) {
                 const fixedMat = new THREE.MeshBasicMaterial({
                     color: 0xeab308, transparent: true, opacity: 0.72, depthWrite: false,
                 });
-                for (const idx of fixedStats.indices) {
+                for (const idx of fixedIndexSet) {
                     if (idx >= positions.length) continue;
-                    const info = atomInfo[symbols[idx]] || atomInfo['default'];
-                    const r = info.radius * atomScale * 1.50;
+                    const r = getAdjustedAtomRadius(symbols[idx], atomScale, radiusScaleBySymbol) * 1.50;
                     const mesh = new THREE.Mesh(
                         new THREE.SphereGeometry(r, 16, 12), fixedMat
                     );
@@ -2145,7 +2275,8 @@
             if (settings.showChargeLabels && useChargeColor && frameCharges.length > 0) {
                 for (let i = 0; i < positions.length; i++) {
                     const charge = frameCharges[i] || 0;
-                    const label = createChargeLabelSprite(charge, positions[i], atomScale, settings.normalizeCharges);
+                    const atomRenderScale = getAdjustedAtomScale(symbols[i], atomScale, radiusScaleBySymbol);
+                    const label = createChargeLabelSprite(charge, positions[i], atomRenderScale, settings.normalizeCharges);
                     if (label) {
                         label.renderOrder = 4;
                         moleculeGroup.add(label);
@@ -2342,8 +2473,8 @@
                     animationState.currentFrame = (animationState.currentFrame + 1) % molecularData.length;
                     updateFrameDisplay();
                     renderMolecule();
-                    // Update energy plot marker
-                    if (settings.showEnergyPlot && energyPlotData.hasEnergy) {
+                    // Update energy / force plot marker
+                    if (settings.showEnergyPlot && hasAnyPlotData()) {
                         drawEnergyPlot();
                     }
                 }, interval);
@@ -2432,6 +2563,7 @@
 
         function getFixedIndexSet(molecule) {
             const fixed = new Set();
+            if (!molecule || typeof molecule !== 'object') return fixed;
 
             if (Array.isArray(molecule.fixed)) {
                 molecule.fixed.forEach(index => {
@@ -2443,6 +2575,13 @@
             if (molecule.arrays && Array.isArray(molecule.arrays.fixed)) {
                 molecule.arrays.fixed.forEach((value, index) => {
                     if (value) fixed.add(index);
+                });
+            }
+
+            if (molecule.arrays && Array.isArray(molecule.arrays.move_mask)) {
+                molecule.arrays.move_mask.forEach((value, index) => {
+                    const mask = normalizeMoveMaskValue(value);
+                    if (mask && mask.every(axis => axis === false)) fixed.add(index);
                 });
             }
 
@@ -2916,24 +3055,12 @@
             checkConstraintsInData();
             updateChargeUI();
 
-            // Show/hide energy plot checkbox based on energy availability
-            if (!energyPlotData.hasEnergy) {
-                const energyCheckbox = document.getElementById('show-energy-plot');
-                if (energyCheckbox) {
-                    energyCheckbox.checked = false;
-                    energyCheckbox.parentElement.parentElement.parentElement.style.opacity = '0.5';
-                }
-            } else {
-                const energyCheckbox = document.getElementById('show-energy-plot');
-                if (energyCheckbox) {
-                    energyCheckbox.parentElement.parentElement.parentElement.style.opacity = '1';
-                }
-            }
+            updatePlotControlsAvailability();
 
             renderMolecule();
 
-            // Draw energy plot if enabled
-            if (settings.showEnergyPlot && energyPlotData.hasEnergy) {
+            // Draw energy / force plot if enabled
+            if (settings.showEnergyPlot && hasAnyPlotData()) {
                 drawEnergyPlot();
             }
         }
@@ -3064,6 +3191,15 @@
                 renderMolecule();
             });
 
+            safeAddListener('radius-contrast', 'input', function () {
+                const valueEl = document.getElementById('radius-contrast-value');
+                if (valueEl) valueEl.textContent = parseFloat(this.value).toFixed(2);
+                settings.radiusContrast = parseFloat(this.value);
+                renderMolecule();
+            });
+
+            safeAddListener('radius-contrast-mode-chip', 'click', cycleRadiusContrastMode);
+
             safeAddListener('animation-speed', 'input', function () {
                 const valueEl = document.getElementById('animation-speed-value');
                 if (valueEl) valueEl.textContent = this.value;
@@ -3090,8 +3226,8 @@
                 animationState.currentFrame = frameNum - 1;  // 0-indexed
                 updateFrameDisplay();
                 renderMolecule();
-                // Update energy plot
-                if (settings.showEnergyPlot && energyPlotData.hasEnergy) {
+                // Update energy / force plot
+                if (settings.showEnergyPlot && hasAnyPlotData()) {
                     drawEnergyPlot();
                 }
             });
@@ -3154,6 +3290,13 @@
                     if (this.checked) {
                         drawEnergyPlot();
                     }
+                }
+            });
+
+            safeAddListener('show-force-max-plot', 'change', function () {
+                settings.showForceMaxPlot = this.checked;
+                if (settings.showEnergyPlot) {
+                    drawEnergyPlot();
                 }
             });
 
@@ -3613,115 +3756,186 @@
             return `#${R.toString(16).padStart(2, '0')}${G.toString(16).padStart(2, '0')}${B.toString(16).padStart(2, '0')}`;
         }
 
-        // ========== Energy Plot Functions ==========
+        // ========== Energy / Force Plot Functions ==========
 
         let energyPlotData = {
             energies: [],
+            forceMaxima: [],
             minEnergy: 0,
             maxEnergy: 0,
-            hasEnergy: false
+            minForceMax: 0,
+            maxForceMax: 0,
+            hasEnergy: false,
+            hasForceMax: false
         };
+
+        const plotColors = {
+            energy: '#3b82f6',
+            forceMax: '#f97316',
+            marker: '#ef4444',
+            grid: 'rgba(156, 163, 175, 0.18)',
+            text: '#9ca3af',
+            label: '#f9fafb'
+        };
+
+        function getFrameForceMax(mol) {
+            const forces = Array.isArray(mol?.forces)
+                ? mol.forces
+                : (mol?.arrays && Array.isArray(mol.arrays.forces) ? mol.arrays.forces : null);
+            if (!forces) return null;
+
+            let maxForce = 0;
+            let hasForce = false;
+            for (const force of forces) {
+                if (!Array.isArray(force) || force.length < 3) continue;
+                const fx = Number(force[0]);
+                const fy = Number(force[1]);
+                const fz = Number(force[2]);
+                if (!Number.isFinite(fx) || !Number.isFinite(fy) || !Number.isFinite(fz)) continue;
+                maxForce = Math.max(maxForce, Math.hypot(fx, fy, fz));
+                hasForce = true;
+            }
+            return hasForce ? maxForce : null;
+        }
 
         function extractEnergyData() {
             if (!molecularData || molecularData.length === 0) {
                 energyPlotData.hasEnergy = false;
+                energyPlotData.hasForceMax = false;
+                energyPlotData.energies = [];
+                energyPlotData.forceMaxima = [];
                 return;
             }
 
             energyPlotData.energies = [];
+            energyPlotData.forceMaxima = [];
             let hasAnyEnergy = false;
+            let hasAnyForceMax = false;
 
             for (let i = 0; i < molecularData.length; i++) {
                 const mol = molecularData[i];
-                if (mol.energy !== undefined && mol.energy !== null) {
-                    energyPlotData.energies.push(mol.energy);
+                const energy = Number(mol?.energy);
+                if (Number.isFinite(energy)) {
+                    energyPlotData.energies.push(energy);
                     hasAnyEnergy = true;
                 } else {
                     energyPlotData.energies.push(null);
                 }
+
+                const forceMax = getFrameForceMax(mol);
+                if (forceMax !== null) {
+                    energyPlotData.forceMaxima.push(forceMax);
+                    hasAnyForceMax = true;
+                } else {
+                    energyPlotData.forceMaxima.push(null);
+                }
             }
 
             energyPlotData.hasEnergy = hasAnyEnergy;
+            energyPlotData.hasForceMax = hasAnyForceMax;
 
             if (hasAnyEnergy) {
                 const validEnergies = energyPlotData.energies.filter(e => e !== null);
                 energyPlotData.minEnergy = Math.min(...validEnergies);
                 energyPlotData.maxEnergy = Math.max(...validEnergies);
             }
+
+            if (hasAnyForceMax) {
+                const validForces = energyPlotData.forceMaxima.filter(f => f !== null);
+                energyPlotData.minForceMax = Math.min(...validForces);
+                energyPlotData.maxForceMax = Math.max(...validForces);
+            }
         }
 
-        function drawEnergyPlot() {
-            const canvas = document.getElementById('energy-plot-canvas');
-            const container = document.getElementById('energy-plot-container');
-            if (!canvas || !container) return;
+        function hasAnyPlotData() {
+            return energyPlotData.hasEnergy || energyPlotData.hasForceMax;
+        }
 
-            // Extract energy data if not done yet
-            if (energyPlotData.energies.length !== molecularData.length) {
-                extractEnergyData();
+        function hasActivePlotSeries() {
+            return energyPlotData.hasEnergy || (settings.showForceMaxPlot && energyPlotData.hasForceMax);
+        }
+
+        function updatePlotControlsAvailability() {
+            const plotCheckbox = document.getElementById('show-energy-plot');
+            const plotContainer = document.getElementById('energy-plot-container');
+            const hasPlotData = hasAnyPlotData();
+
+            if (plotCheckbox) {
+                plotCheckbox.disabled = !hasPlotData;
+                plotCheckbox.checked = hasPlotData && settings.showEnergyPlot;
+                const group = plotCheckbox.closest('.control-group');
+                if (group) group.style.opacity = hasPlotData ? '1' : '0.5';
             }
 
-            if (!energyPlotData.hasEnergy) {
-                container.style.display = 'none';
-                const checkbox = document.getElementById('show-energy-plot');
-                if (checkbox) checkbox.checked = false;
+            if (!hasPlotData) {
                 settings.showEnergyPlot = false;
-                console.log('No energy data available');
-                return;
+                if (plotContainer) plotContainer.style.display = 'none';
             }
 
-            const ctx = canvas.getContext('2d');
+            const forceCheckbox = document.getElementById('show-force-max-plot');
+            if (forceCheckbox) {
+                forceCheckbox.disabled = !energyPlotData.hasForceMax;
+                forceCheckbox.checked = energyPlotData.hasForceMax && settings.showForceMaxPlot;
+                const group = forceCheckbox.closest('.control-group');
+                if (group) group.style.opacity = energyPlotData.hasForceMax ? '1' : '0.5';
+            }
+        }
+
+        function getPaddedRange(minValue, maxValue) {
+            if (!Number.isFinite(minValue) || !Number.isFinite(maxValue)) {
+                return { min: 0, max: 1 };
+            }
+            const span = maxValue - minValue;
+            const padding = (span === 0 ? Math.max(Math.abs(maxValue), 1) : span) * 0.1;
+            return { min: minValue - padding, max: maxValue + padding };
+        }
+
+        function getPlotLayout(container) {
             const rect = container.getBoundingClientRect();
+            const showEnergy = energyPlotData.hasEnergy;
+            const showForceMax = settings.showForceMaxPlot && energyPlotData.hasForceMax;
+            const width = Math.max(0, rect.width - 20);
+            const height = Math.max(0, rect.height - 20);
+            const padding = {
+                left: showEnergy ? 54 : 22,
+                right: showForceMax ? 66 : 24,
+                top: 32,
+                bottom: 28
+            };
 
-            // Set canvas size for sharp rendering
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = (rect.width - 20) * dpr;
-            canvas.height = (rect.height - 20) * dpr;
-            canvas.style.width = (rect.width - 20) + 'px';
-            canvas.style.height = (rect.height - 20) + 'px';
-            ctx.scale(dpr, dpr);
+            return {
+                width,
+                height,
+                padding,
+                plotWidth: Math.max(1, width - padding.left - padding.right),
+                plotHeight: Math.max(1, height - padding.top - padding.bottom),
+                showEnergy,
+                showForceMax
+            };
+        }
 
-            const width = rect.width - 20;
-            const height = rect.height - 20;
-            const padding = { left: 50, right: 20, top: 15, bottom: 25 };
-            const plotWidth = width - padding.left - padding.right;
-            const plotHeight = height - padding.top - padding.bottom;
+        function valueToPlotY(value, range, layout) {
+            return layout.padding.top + layout.plotHeight - ((value - range.min) / (range.max - range.min || 1)) * layout.plotHeight;
+        }
 
-            // Clear canvas
-            ctx.clearRect(0, 0, width, height);
+        function plotX(index, count, layout) {
+            return layout.padding.left + (index / (count - 1 || 1)) * layout.plotWidth;
+        }
 
-            // Draw background grid
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.lineWidth = 1;
-            for (let i = 0; i <= 4; i++) {
-                const y = padding.top + (plotHeight / 4) * i;
-                ctx.beginPath();
-                ctx.moveTo(padding.left, y);
-                ctx.lineTo(width - padding.right, y);
-                ctx.stroke();
-            }
-
-            // Calculate scale
-            const energies = energyPlotData.energies;
-            const n = energies.length;
-            let minE = energyPlotData.minEnergy;
-            let maxE = energyPlotData.maxEnergy;
-
-            // Add some padding to range
-            const range = maxE - minE || 1;
-            minE -= range * 0.1;
-            maxE += range * 0.1;
-
-            // Draw energy line
-            ctx.strokeStyle = '#3b82f6';
+        function drawSeries(ctx, values, range, layout, color) {
+            const n = values.length;
+            ctx.strokeStyle = color;
             ctx.lineWidth = 2;
             ctx.beginPath();
             let started = false;
 
             for (let i = 0; i < n; i++) {
-                if (energies[i] === null) continue;
-                const x = padding.left + (i / (n - 1 || 1)) * plotWidth;
-                const y = padding.top + plotHeight - ((energies[i] - minE) / (maxE - minE)) * plotHeight;
-
+                if (values[i] === null) {
+                    started = false;
+                    continue;
+                }
+                const x = plotX(i, n, layout);
+                const y = valueToPlotY(values[i], range, layout);
                 if (!started) {
                     ctx.moveTo(x, y);
                     started = true;
@@ -3731,90 +3945,246 @@
             }
             ctx.stroke();
 
-            // Draw data points
-            ctx.fillStyle = '#3b82f6';
+            ctx.fillStyle = color;
             for (let i = 0; i < n; i++) {
-                if (energies[i] === null) continue;
-                const x = padding.left + (i / (n - 1 || 1)) * plotWidth;
-                const y = padding.top + plotHeight - ((energies[i] - minE) / (maxE - minE)) * plotHeight;
+                if (values[i] === null) continue;
+                const x = plotX(i, n, layout);
+                const y = valueToPlotY(values[i], range, layout);
                 ctx.beginPath();
                 ctx.arc(x, y, 3, 0, Math.PI * 2);
                 ctx.fill();
             }
+        }
 
-            // Draw current frame marker
-            drawEnergyPlotMarker();
+        function drawLegendItem(ctx, x, y, color, label) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, y - 4);
+            ctx.lineTo(x + 16, y - 4);
+            ctx.stroke();
+            ctx.fillStyle = plotColors.text;
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(label, x + 21, y);
+            return x + 28 + ctx.measureText(label).width + 14;
+        }
+
+        function drawNoPlotMessage(ctx, layout, message) {
+            ctx.fillStyle = plotColors.text;
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(message, layout.width / 2, layout.height / 2);
+        }
+
+        function roundedRectPath(ctx, x, y, width, height, radius) {
+            const r = Math.min(radius, width / 2, height / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + width - r, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+            ctx.lineTo(x + width, y + height - r);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+            ctx.lineTo(x + r, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        function drawEnergyPlot() {
+            const canvas = document.getElementById('energy-plot-canvas');
+            const container = document.getElementById('energy-plot-container');
+            if (!canvas || !container) return;
+
+            // Extract plot data if not done yet
+            if (energyPlotData.energies.length !== molecularData.length ||
+                energyPlotData.forceMaxima.length !== molecularData.length) {
+                extractEnergyData();
+                updatePlotControlsAvailability();
+            }
+
+            if (!hasAnyPlotData()) {
+                container.style.display = 'none';
+                const checkbox = document.getElementById('show-energy-plot');
+                if (checkbox) checkbox.checked = false;
+                settings.showEnergyPlot = false;
+                console.log('No energy or force data available');
+                return;
+            }
+
+            const ctx = canvas.getContext('2d');
+            const layout = getPlotLayout(container);
+
+            // Set canvas size for sharp rendering
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = layout.width * dpr;
+            canvas.height = layout.height * dpr;
+            canvas.style.width = layout.width + 'px';
+            canvas.style.height = layout.height + 'px';
+            ctx.scale(dpr, dpr);
+
+            // Clear canvas
+            ctx.clearRect(0, 0, layout.width, layout.height);
+
+            // Draw background grid
+            ctx.strokeStyle = plotColors.grid;
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = layout.padding.top + (layout.plotHeight / 4) * i;
+                ctx.beginPath();
+                ctx.moveTo(layout.padding.left, y);
+                ctx.lineTo(layout.width - layout.padding.right, y);
+                ctx.stroke();
+            }
+
+            if (!hasActivePlotSeries()) {
+                drawNoPlotMessage(ctx, layout, 'No active plot series');
+                return;
+            }
+
+            const energies = energyPlotData.energies;
+            const forceMaxima = energyPlotData.forceMaxima;
+            const energyRange = getPaddedRange(energyPlotData.minEnergy, energyPlotData.maxEnergy);
+            const forceRange = getPaddedRange(energyPlotData.minForceMax, energyPlotData.maxForceMax);
+
+            if (layout.showEnergy) {
+                drawSeries(ctx, energies, energyRange, layout, plotColors.energy);
+            }
+
+            if (layout.showForceMax) {
+                drawSeries(ctx, forceMaxima, forceRange, layout, plotColors.forceMax);
+            }
 
             // Draw axes labels
-            ctx.fillStyle = '#9ca3af';
+            ctx.fillStyle = plotColors.text;
             ctx.font = '10px sans-serif';
-            ctx.textAlign = 'right';
-            ctx.fillText(maxE.toFixed(2), padding.left - 5, padding.top + 5);
-            ctx.fillText(minE.toFixed(2), padding.left - 5, height - padding.bottom);
+            if (layout.showEnergy) {
+                ctx.textAlign = 'right';
+                ctx.fillText(energyRange.max.toFixed(2), layout.padding.left - 5, layout.padding.top + 5);
+                ctx.fillText(energyRange.min.toFixed(2), layout.padding.left - 5, layout.height - layout.padding.bottom);
+            }
+            if (layout.showForceMax) {
+                ctx.textAlign = 'left';
+                ctx.fillText(forceRange.max.toFixed(2), layout.width - layout.padding.right + 5, layout.padding.top + 5);
+                ctx.fillText(forceRange.min.toFixed(2), layout.width - layout.padding.right + 5, layout.height - layout.padding.bottom);
+            }
 
             ctx.textAlign = 'center';
-            ctx.fillText('Frame', width / 2, height - 5);
+            ctx.fillText('Frame', layout.width / 2, layout.height - 5);
 
-            // Y-axis label
-            ctx.save();
-            ctx.translate(12, height / 2);
-            ctx.rotate(-Math.PI / 2);
-            ctx.fillText('Energy (eV)', 0, 0);
-            ctx.restore();
+            if (layout.showEnergy) {
+                ctx.save();
+                ctx.translate(12, layout.height / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillText('Energy (eV)', 0, 0);
+                ctx.restore();
+            }
+            if (layout.showForceMax) {
+                ctx.save();
+                ctx.translate(layout.width - 12, layout.height / 2);
+                ctx.rotate(Math.PI / 2);
+                ctx.fillText('Fmax (eV/A)', 0, 0);
+                ctx.restore();
+            }
+
+            let legendX = layout.padding.left;
+            if (layout.showEnergy) {
+                legendX = drawLegendItem(ctx, legendX, 16, plotColors.energy, 'Energy (eV)');
+            }
+            if (layout.showForceMax) {
+                drawLegendItem(ctx, legendX, 16, plotColors.forceMax, 'Fmax (eV/A)');
+            }
+
+            // Draw current frame marker and value annotation
+            drawEnergyPlotMarker();
         }
 
         function drawEnergyPlotMarker() {
             const canvas = document.getElementById('energy-plot-canvas');
             const container = document.getElementById('energy-plot-container');
-            if (!canvas || !container || !energyPlotData.hasEnergy) return;
+            if (!canvas || !container || !hasActivePlotSeries()) return;
 
             const ctx = canvas.getContext('2d');
-            const rect = container.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-
-            const width = rect.width - 20;
-            const height = rect.height - 20;
-            const padding = { left: 50, right: 20, top: 15, bottom: 25 };
-            const plotWidth = width - padding.left - padding.right;
-            const plotHeight = height - padding.top - padding.bottom;
+            const layout = getPlotLayout(container);
 
             const energies = energyPlotData.energies;
+            const forceMaxima = energyPlotData.forceMaxima;
             const n = energies.length;
             const frameIdx = animationState.currentFrame;
 
-            if (n <= 1 || frameIdx < 0 || frameIdx >= n) return;
+            if (frameIdx < 0 || frameIdx >= n) return;
 
             // Draw current frame marker (vertical line)
-            const x = padding.left + (frameIdx / (n - 1 || 1)) * plotWidth;
+            const x = plotX(frameIdx, n, layout);
 
-            ctx.strokeStyle = '#ef4444';
+            ctx.strokeStyle = plotColors.marker;
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(x, padding.top);
-            ctx.lineTo(x, height - padding.bottom);
+            ctx.moveTo(x, layout.padding.top);
+            ctx.lineTo(x, layout.height - layout.padding.bottom);
             ctx.stroke();
 
-            // Draw marker point if energy exists
-            if (energies[frameIdx] !== null) {
-                let minE = energyPlotData.minEnergy;
-                let maxE = energyPlotData.maxEnergy;
-                const range = maxE - minE || 1;
-                minE -= range * 0.1;
-                maxE += range * 0.1;
+            const annotationLines = [];
 
-                const y = padding.top + plotHeight - ((energies[frameIdx] - minE) / (maxE - minE)) * plotHeight;
-
-                ctx.fillStyle = '#ef4444';
+            if (layout.showEnergy && energies[frameIdx] !== null) {
+                const energyRange = getPaddedRange(energyPlotData.minEnergy, energyPlotData.maxEnergy);
+                const y = valueToPlotY(energies[frameIdx], energyRange, layout);
+                ctx.fillStyle = plotColors.energy;
+                ctx.strokeStyle = plotColors.label;
+                ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.arc(x, y, 5, 0, Math.PI * 2);
                 ctx.fill();
-
-                // Show energy value
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 11px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(energies[frameIdx].toFixed(4) + ' eV', x, padding.top - 3);
+                ctx.stroke();
+                annotationLines.push({ color: plotColors.energy, text: `E ${energies[frameIdx].toFixed(4)} eV` });
             }
+
+            if (layout.showForceMax && forceMaxima[frameIdx] !== null) {
+                const forceRange = getPaddedRange(energyPlotData.minForceMax, energyPlotData.maxForceMax);
+                const y = valueToPlotY(forceMaxima[frameIdx], forceRange, layout);
+                ctx.fillStyle = plotColors.forceMax;
+                ctx.strokeStyle = plotColors.label;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                annotationLines.push({ color: plotColors.forceMax, text: `Fmax ${forceMaxima[frameIdx].toFixed(4)} eV/A` });
+            }
+
+            drawMarkerAnnotation(ctx, x, annotationLines, layout);
+        }
+
+        function drawMarkerAnnotation(ctx, x, lines, layout) {
+            if (!lines.length) return;
+
+            ctx.font = 'bold 11px sans-serif';
+            const textWidth = Math.max(...lines.map(line => ctx.measureText(line.text).width));
+            const lineHeight = 14;
+            const boxPadding = 6;
+            const boxWidth = textWidth + 26 + boxPadding * 2;
+            const boxHeight = lines.length * lineHeight + boxPadding * 2;
+            const minX = layout.padding.left;
+            const maxX = layout.width - layout.padding.right - boxWidth;
+            const boxX = Math.max(minX, Math.min(x + 8, maxX));
+            const boxY = layout.padding.top + 4;
+
+            ctx.fillStyle = 'rgba(17, 24, 39, 0.88)';
+            ctx.strokeStyle = 'rgba(249, 250, 251, 0.25)';
+            ctx.lineWidth = 1;
+            roundedRectPath(ctx, boxX, boxY, boxWidth, boxHeight, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            lines.forEach((line, index) => {
+                const y = boxY + boxPadding + index * lineHeight + 10;
+                ctx.fillStyle = line.color;
+                ctx.fillRect(boxX + boxPadding, y - 7, 10, 3);
+                ctx.fillStyle = plotColors.label;
+                ctx.textAlign = 'left';
+                ctx.fillText(line.text, boxX + boxPadding + 16, y);
+            });
         }
 
         window.setMolecularData = setMolecularData;
