@@ -5572,7 +5572,7 @@ function createHydrogenBond(p1, p2) {
                 });
                 for (const idx of fixedIndexSet) {
                     if (idx >= positions.length) continue;
-                    const r = getAdjustedAtomRadius(symbols[idx], atomScale, radiusScaleBySymbol) * 1.50;
+                    const r = getAdjustedAtomRadius(symbols[idx], atomScale, radiusScaleBySymbol) * 1.30;
                     const mesh = new THREE.Mesh(
                         new THREE.SphereGeometry(r, 16, 12), fixedMat
                     );
