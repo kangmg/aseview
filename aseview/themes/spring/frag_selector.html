@@ -243,6 +243,7 @@
     /* Cursor modes */
     #lewis-svg.mode-navigate { cursor: grab; }
     #lewis-svg.mode-navigate.panning { cursor: grabbing; }
+    #lewis-svg.mode-navigate.rotating { cursor: crosshair; }
     #lewis-svg.mode-click, #lewis-svg.mode-rect, #lewis-svg.mode-lasso { cursor: crosshair; }
     #molecule-canvas-3d.mode-navigate, #molecule-canvas-3d.mode-click { cursor: default; }
     #molecule-canvas-3d.mode-rect, #molecule-canvas-3d.mode-lasso { cursor: crosshair; }
@@ -711,7 +712,8 @@
         // ─────────────────────────────────────────────────────────────────────
         // 2D layout state
         // ─────────────────────────────────────────────────────────────────────
-        let svgTx = 0, svgTy = 0, svgScale = 1;
+        let svgTx = 0, svgTy = 0, svgScale = 1, svgAngle = 0;
+        let svgComX = 0, svgComY = 0;   // 2D layout COM (layout units)
         let layout2D = null;   // { coords2d: [[x,y]...], bonds: [[i,j]...], comps: [[idx,...]...] }
 
         // ═════════════════════════════════════════════════════════════════════
@@ -1222,7 +1224,9 @@
 
         function applySVGTransform() {
             const g = document.getElementById('svg-content');
-            if (g) g.setAttribute('transform', `translate(${svgTx},${svgTy}) scale(${svgScale})`);
+            if (g) g.setAttribute('transform',
+                `translate(${svgTx},${svgTy}) scale(${svgScale}) translate(${svgComX},${svgComY}) rotate(${svgAngle}) translate(${-svgComX},${-svgComY})`
+            );
         }
 
         function fitSVG() {
@@ -1233,6 +1237,11 @@
             const H = svg.clientHeight || 400;
             const { coords2d } = layout2D;
             if (!coords2d || coords2d.length === 0) return;
+
+            const n = coords2d.length;
+            svgComX = coords2d.reduce((s, c) => s + c[0], 0) / n;
+            svgComY = coords2d.reduce((s, c) => s + c[1], 0) / n;
+            svgAngle = 0;
 
             const visibleCoords = coords2d.filter((_, i) => !isHydrogenHidden(molData.symbols[i]));
             const fitCoords = visibleCoords.length > 0 ? visibleCoords : coords2d;
@@ -1456,7 +1465,15 @@
             const rect = svg.getBoundingClientRect();
             const px   = clientX - rect.left;
             const py   = clientY - rect.top;
-            return [(px - svgTx) / svgScale, (py - svgTy) / svgScale];
+            // Remove translate + scale
+            const qx = (px - svgTx) / svgScale;
+            const qy = (py - svgTy) / svgScale;
+            // Remove rotation around COM (inverse = rotate by -svgAngle)
+            if (svgAngle === 0) return [qx, qy];
+            const rad = -svgAngle * Math.PI / 180;
+            const cos = Math.cos(rad), sin = Math.sin(rad);
+            const dx = qx - svgComX, dy = qy - svgComY;
+            return [svgComX + cos * dx - sin * dy, svgComY + sin * dx + cos * dy];
         }
 
         /** Ray-casting point-in-polygon test (layout coordinates). */
@@ -2128,6 +2145,10 @@
             let panning  = false;
             let panSX = 0, panSY = 0, panTX0 = 0, panTY0 = 0;
 
+            // Rotate state
+            let rotating = false;
+            let rotComX = 0, rotComY = 0, rotStartAngle = 0, rotAngle0 = 0;
+
             // Selection drag state
             let selDragging  = false;
             let selStartX    = 0, selStartY = 0;
@@ -2157,10 +2178,24 @@
                 e.preventDefault();
 
                 if (currentMode === 'navigate') {
-                    panning = true;
-                    panSX   = e.clientX; panSY = e.clientY;
-                    panTX0  = svgTx;     panTY0 = svgTy;
-                    svg.classList.add('panning');
+                    const onMolecule = !!e.target.closest('.atom-group, .bond-seg');
+                    if (onMolecule) {
+                        panning = true;
+                        panSX  = e.clientX; panSY = e.clientY;
+                        panTX0 = svgTx;     panTY0 = svgTy;
+                        svg.classList.add('panning');
+                    } else {
+                        rotating = true;
+                        const svgRect = svg.getBoundingClientRect();
+                        // COM screen position (SVG viewport coords, stable during drag)
+                        rotComX = svgComX * svgScale + svgTx;
+                        rotComY = svgComY * svgScale + svgTy;
+                        const mx = e.clientX - svgRect.left;
+                        const my = e.clientY - svgRect.top;
+                        rotStartAngle = Math.atan2(my - rotComY, mx - rotComX);
+                        rotAngle0 = svgAngle;
+                        svg.classList.add('rotating');
+                    }
 
                 } else if (currentMode === 'rect') {
                     selDragging = true;
@@ -2183,6 +2218,14 @@
                     svgTy = panTY0 + (e.clientY - panSY);
                     applySVGTransform();
 
+                } else if (rotating && currentMode === 'navigate') {
+                    const svgRect = svg.getBoundingClientRect();
+                    const mx = e.clientX - svgRect.left;
+                    const my = e.clientY - svgRect.top;
+                    const curAngle = Math.atan2(my - rotComY, mx - rotComX);
+                    svgAngle = rotAngle0 + (curAngle - rotStartAngle) * 180 / Math.PI;
+                    applySVGTransform();
+
                 } else if (selDragging && currentMode === 'rect') {
                     updateSelRectOverlay(selStartX, selStartY, e.clientX, e.clientY);
 
@@ -2198,6 +2241,10 @@
                 if (panning) {
                     panning = false;
                     svg.classList.remove('panning');
+                }
+                if (rotating) {
+                    rotating = false;
+                    svg.classList.remove('rotating');
                 }
 
                 if (selDragging) {
