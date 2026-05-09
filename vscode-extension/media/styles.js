@@ -1251,6 +1251,7 @@ function getCachedMaterial(type, colorHex, extraKey) {
                 _matCache[key] = new THREE.ShaderMaterial({
                     uniforms: {
                         uColor: { value: color },
+                        uOpacity: { value: 1.0 },
                         uDark: { value: 0.55 },
                         uCenter: { value: 0.42 },
                         uCenterR: { value: 0.22 },
@@ -1271,6 +1272,7 @@ function getCachedMaterial(type, colorHex, extraKey) {
                         varying vec3 vNormalW;
                         varying vec3 vViewDir;
                         uniform vec3 uColor;
+                        uniform float uOpacity;
                         uniform float uDark;
                         uniform float uCenter;
                         uniform float uCenterR;
@@ -1283,9 +1285,10 @@ function getCachedMaterial(type, colorHex, extraKey) {
                             float spot = 1.0 - smoothstep(1.0 - uCenterR, 1.0, ndv);
                             float lit = mix(uCenter, bright, spot);
                             vec3 col = uColor * lit + uColor * rim * 0.30;
-                            gl_FragColor = vec4(col, 1.0);
+                            gl_FragColor = vec4(col, uOpacity);
                         }
-                    `
+                    `,
+                    transparent: true,
                 });
                 break;
             }

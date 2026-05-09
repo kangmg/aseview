@@ -1563,8 +1563,13 @@
                             if (opacity < 1.0) {
                                 bondMesh.traverse((child) => {
                                     if (child.isMesh && child.material) {
-                                        child.material.transparent = true;
-                                        child.material.opacity = opacity;
+                                        if (child.material.isShaderMaterial && child.material.uniforms && child.material.uniforms.uOpacity) {
+                                            child.material = child.material.clone();
+                                            child.material.uniforms.uOpacity.value = opacity;
+                                        } else {
+                                            child.material.transparent = true;
+                                            child.material.opacity = opacity;
+                                        }
                                     }
                                 });
                             }
@@ -1596,8 +1601,13 @@
                         if (opacity < 1.0) {
                             atomMesh.traverse((child) => {
                                 if (child.isMesh && child.material) {
-                                    child.material.transparent = true;
-                                    child.material.opacity = opacity;
+                                    if (child.material.isShaderMaterial && child.material.uniforms && child.material.uniforms.uOpacity) {
+                                        child.material = child.material.clone();
+                                        child.material.uniforms.uOpacity.value = opacity;
+                                    } else {
+                                        child.material.transparent = true;
+                                        child.material.opacity = opacity;
+                                    }
                                 }
                             });
                         }
