@@ -435,6 +435,33 @@
                     <div class="card-content" id="display-content">
                         <div class="control-group">
                             <div class="control-label">
+                                <span>Color Scheme</span>
+                            </div>
+                            <select class="select" id="color-scheme-select">
+                                <option value="Jmol">Jmol</option>
+                                <option value="CPK">CPK</option>
+                                <option value="PyMOL">PyMOL</option>
+                                <option value="VMD">VMD</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Element Colors</span>
+                                <button class="copy-format-chip" id="reset-element-colors-btn"
+                                    style="font-size:11px;padding:2px 8px;" title="Reset custom element colors">
+                                    Reset
+                                </button>
+                            </div>
+                            <div id="element-color-grid"
+                                style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;"></div>
+                            <input type="color" id="element-color-picker"
+                                style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;border:0;padding:0;"
+                                tabindex="-1" aria-hidden="true">
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
                                 <span>Cell</span>
                                 <label class="switch">
                                     <input type="checkbox" id="show-cell" checked>
@@ -743,6 +770,8 @@
             rotationMode: 'TrackBall',
             colorBy: 'Atom',
             colormap: 'viridis',
+            colorScheme: 'Jmol',
+            elementColorOverrides: {},
             alignMolecules: false  // Kabsch rotation + Hungarian reordering
         };
 
@@ -788,6 +817,17 @@
 
             const colormapSelect = document.getElementById('colormap-select');
             if (colormapSelect) colormapSelect.value = settings.colormap || 'viridis';
+
+            const colorSchemeSelect = document.getElementById('color-scheme-select');
+            if (colorSchemeSelect) colorSchemeSelect.value = settings.colorScheme || 'Jmol';
+            if (typeof atomColorScheme !== 'undefined') {
+                atomColorScheme = (settings.colorScheme || 'Jmol').toLowerCase();
+            }
+            if (!settings.elementColorOverrides || typeof settings.elementColorOverrides !== 'object') {
+                settings.elementColorOverrides = {};
+            }
+            if (typeof applyElementColorOverrides === 'function') applyElementColorOverrides();
+            if (typeof updateElementColorGridUI === 'function') updateElementColorGridUI();
 
             // Update checkboxes
             const checkboxMappings = {
@@ -1260,6 +1300,92 @@
             // Add ambient light to axis scene
             const axisAmbient = new THREE.AmbientLight(0xffffff, 1.0);
             axisScene.add(axisAmbient);
+        }
+
+        function normalizeHexColor(value) {
+            if (typeof value !== 'string') return null;
+            const raw = value.trim();
+            if (/^#[0-9a-fA-F]{6}$/.test(raw)) return raw.toLowerCase();
+            if (/^[0-9a-fA-F]{6}$/.test(raw)) return `#${raw.toLowerCase()}`;
+            if (/^#[0-9a-fA-F]{3}$/.test(raw)) {
+                const hex = raw.slice(1).toLowerCase();
+                return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+            }
+            if (/^[0-9a-fA-F]{3}$/.test(raw)) {
+                const hex = raw.toLowerCase();
+                return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+            }
+            return null;
+        }
+
+        function getUniqueSymbols() {
+            if (!molecularData || molecularData.length === 0) return [];
+            const set = new Set();
+            molecularData.forEach(mol => {
+                if (mol && mol.symbols) mol.symbols.forEach(s => set.add(s));
+            });
+            return [...set].sort();
+        }
+
+        function getElementColorHex(symbol) {
+            const override = settings.elementColorOverrides && settings.elementColorOverrides[symbol];
+            const normalizedOverride = normalizeHexColor(override);
+            if (normalizedOverride) return normalizedOverride;
+            const color = getAtomColorByScheme(symbol);
+            return '#' + color.toString(16).padStart(6, '0');
+        }
+
+        function getTextColorForHex(hex) {
+            const normalized = normalizeHexColor(hex);
+            if (!normalized) return '#ffffff';
+            const r = parseInt(normalized.slice(1, 3), 16);
+            const g = parseInt(normalized.slice(3, 5), 16);
+            const b = parseInt(normalized.slice(5, 7), 16);
+            const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return lum > 0.55 ? '#111827' : '#ffffff';
+        }
+
+        function applyElementColorOverrides() {
+            if (typeof setAtomColorOverrides === 'function') {
+                setAtomColorOverrides(settings.elementColorOverrides || {});
+            }
+        }
+
+        function updateElementColorGridUI() {
+            const grid = document.getElementById('element-color-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            const symbols = getUniqueSymbols();
+            if (symbols.length === 0) {
+                const empty = document.createElement('div');
+                empty.style.cssText = 'width:100%;color:#9ca3af;font-size:11px;';
+                empty.textContent = 'No elements loaded';
+                grid.appendChild(empty);
+                return;
+            }
+            symbols.forEach(sym => {
+                const hex = getElementColorHex(sym);
+                const btn = document.createElement('button');
+                btn.textContent = sym;
+                btn.title = `${sym}: ${hex} (click to change)`;
+                btn.style.cssText = `
+                    padding:2px 8px;border-radius:9999px;min-width:34px;cursor:pointer;
+                    border:2px solid ${hex};font-size:11px;font-weight:600;
+                    background:${hex};color:${getTextColorForHex(hex)};line-height:1.35;
+                    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.18);
+                    transition:filter 0.12s ease, transform 0.12s ease;
+                `;
+                btn.onmouseenter = () => { btn.style.filter = 'brightness(1.08)'; btn.style.transform = 'translateY(-1px)'; };
+                btn.onmouseleave = () => { btn.style.filter = 'none'; btn.style.transform = 'none'; };
+                btn.addEventListener('click', () => {
+                    const picker = document.getElementById('element-color-picker');
+                    if (!picker) return;
+                    picker.dataset.symbol = sym;
+                    picker.value = hex;
+                    picker.click();
+                });
+                grid.appendChild(btn);
+            });
         }
 
         // Overlay Viewer - renderMolecule function
@@ -2166,6 +2292,7 @@
             }
 
             renderMolecule();
+            updateElementColorGridUI();
         }
 
         function updateMoleculeUI() {
@@ -2413,6 +2540,37 @@
                 if (settings.colorBy === 'Colormap') {
                     renderMolecule();
                 }
+            });
+
+            function applyColorSchemeSelectValue(select) {
+                settings.colorScheme = select.value;
+                atomColorScheme = select.value.toLowerCase();
+                applyElementColorOverrides();
+                updateElementColorGridUI();
+                renderMolecule();
+            }
+
+            safeAddListener('color-scheme-select', 'input', function () { applyColorSchemeSelectValue(this); });
+            safeAddListener('color-scheme-select', 'change', function () { applyColorSchemeSelectValue(this); });
+
+            function applyElementColorPickerValue(picker) {
+                const symbol = picker.dataset.symbol;
+                const hex = normalizeHexColor(picker.value);
+                if (!symbol || !hex) return;
+                settings.elementColorOverrides[symbol] = hex;
+                applyElementColorOverrides();
+                updateElementColorGridUI();
+                renderMolecule();
+            }
+
+            safeAddListener('element-color-picker', 'input', function () { applyElementColorPickerValue(this); });
+            safeAddListener('element-color-picker', 'change', function () { applyElementColorPickerValue(this); });
+
+            safeAddListener('reset-element-colors-btn', 'click', function () {
+                settings.elementColorOverrides = {};
+                applyElementColorOverrides();
+                updateElementColorGridUI();
+                renderMolecule();
             });
 
             safeAddListener('show-cell', 'change', function () {
