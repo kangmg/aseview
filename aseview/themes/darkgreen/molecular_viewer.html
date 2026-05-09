@@ -1149,6 +1149,38 @@
             if (blurValue) blurValue.textContent = getBlurStrengthValue().toFixed(1) + 'px';
         }
 
+        function getExportCanvasWithOptionalBlur(sourceCanvas) {
+            if (!sourceCanvas || !settings.showBlur || getBlurStrengthValue() <= 0) return sourceCanvas;
+
+            const width = sourceCanvas.width || sourceCanvas.clientWidth || 0;
+            const height = sourceCanvas.height || sourceCanvas.clientHeight || 0;
+            if (width <= 0 || height <= 0) return sourceCanvas;
+
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = width;
+            exportCanvas.height = height;
+
+            const ctx = exportCanvas.getContext('2d');
+            if (!ctx || typeof ctx.filter === 'undefined') return sourceCanvas;
+
+            const cssWidth = sourceCanvas.clientWidth || width;
+            const cssHeight = sourceCanvas.clientHeight || height;
+            const scaleX = width / Math.max(cssWidth, 1);
+            const scaleY = height / Math.max(cssHeight, 1);
+            const blurPixels = getBlurStrengthValue() * Math.max(scaleX, scaleY);
+
+            try {
+                ctx.clearRect(0, 0, width, height);
+                ctx.filter = `blur(${blurPixels.toFixed(2)}px)`;
+                ctx.drawImage(sourceCanvas, 0, 0, width, height);
+                ctx.filter = 'none';
+                return exportCanvas;
+            } catch (error) {
+                console.warn('Blurred export failed; using raw canvas instead.', error);
+                return sourceCanvas;
+            }
+        }
+
         // Update UI and rendering from settings (called via postMessage API)
         function updateFromSettings() {
             // Update select elements
@@ -3878,7 +3910,8 @@
             updateBackgroundColor();
 
             // Get canvas data as PNG
-            renderer.domElement.toBlob(function (blob) {
+            const exportCanvas = getExportCanvasWithOptionalBlur(renderer.domElement);
+            exportCanvas.toBlob(function (blob) {
                 // Generate filename with counter to avoid overwriting
                 let filename;
                 if (downloadCounters.png === 0) {
@@ -3981,7 +4014,7 @@
                     renderer.render(scene, camera);
 
                     // Get frame as data URL
-                    const dataURL = renderer.domElement.toDataURL('image/png');
+                    const dataURL = getExportCanvasWithOptionalBlur(renderer.domElement).toDataURL('image/png');
                     images.push(dataURL);
 
                     console.log('Captured frame', i + 1, 'of', molecularData.length);
