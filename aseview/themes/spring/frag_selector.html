@@ -796,17 +796,18 @@
             const apo = bondLen / (2 * Math.tan(Math.PI / n));
 
             const anchors = ring.filter(i => fixed.has(i));
-            let cx, cy, startAngle;
+            let cx, cy, startAngle, dir = 1;
 
             if (anchors.length >= 2) {
                 let fa = anchors[0], fb = anchors[1];
+                outerAnchor:
                 for (let ai = 0; ai < anchors.length; ai++) {
                     const ka = ring.indexOf(anchors[ai]);
                     for (let bi = 0; bi < anchors.length; bi++) {
                         if (ai === bi) continue;
                         const kb = ring.indexOf(anchors[bi]);
                         if (Math.abs(ka - kb) === 1 || Math.abs(ka - kb) === n - 1) {
-                            fa = anchors[ai]; fb = anchors[bi]; break;
+                            fa = anchors[ai]; fb = anchors[bi]; break outerAnchor;
                         }
                     }
                 }
@@ -818,14 +819,26 @@
                              my + apo * Math.sin(edgeAngle + Math.PI/2)];
                 const c2 = [mx + apo * Math.cos(edgeAngle - Math.PI/2),
                              my + apo * Math.sin(edgeAngle - Math.PI/2)];
-                const unpl = ring.filter(i => !fixed.has(i));
-                let ux = 0, uy = 0;
-                const ref = unpl.length ? unpl : ring;
-                for (const i of ref) { ux += coords[i][0]; uy += coords[i][1]; }
-                ux /= ref.length; uy /= ref.length;
-                [cx, cy] = Math.hypot(c1[0]-ux,c1[1]-uy) < Math.hypot(c2[0]-ux,c2[1]-uy) ? c1 : c2;
+                // Choose center farther from other already-placed rings, else closer to unplaced PCA atoms
+                const ringSet = new Set(ring);
+                const otherFixed = Array.from(fixed).filter(i => !ringSet.has(i));
+                if (otherFixed.length > 0) {
+                    let ox = 0, oy = 0;
+                    for (const i of otherFixed) { ox += coords[i][0]; oy += coords[i][1]; }
+                    ox /= otherFixed.length; oy /= otherFixed.length;
+                    [cx, cy] = Math.hypot(c1[0]-ox,c1[1]-oy) > Math.hypot(c2[0]-ox,c2[1]-oy) ? c1 : c2;
+                } else {
+                    const unpl = ring.filter(i => !fixed.has(i));
+                    let ux = 0, uy = 0;
+                    const ref = unpl.length ? unpl : ring;
+                    for (const i of ref) { ux += coords[i][0]; uy += coords[i][1]; }
+                    ux /= ref.length; uy /= ref.length;
+                    [cx, cy] = Math.hypot(c1[0]-ux,c1[1]-uy) < Math.hypot(c2[0]-ux,c2[1]-uy) ? c1 : c2;
+                }
                 const ka = ring.indexOf(fa);
-                startAngle = Math.atan2(ay - cy, ax - cx) - (2 * Math.PI * ka / n);
+                const crossVec = (ax - cx) * (by - cy) - (ay - cy) * (bx - cx);
+                dir = crossVec >= 0 ? 1 : -1;
+                startAngle = Math.atan2(ay - cy, ax - cx) - dir * (2 * Math.PI * ka / n);
             } else if (anchors.length === 1) {
                 let pcx = 0, pcy = 0;
                 for (const i of ring) { pcx += coords[i][0]; pcy += coords[i][1]; }
@@ -841,7 +854,7 @@
 
             for (let k = 0; k < n; k++) {
                 if (!fixed.has(ring[k])) {
-                    const angle = startAngle + (2 * Math.PI * k) / n;
+                    const angle = startAngle + dir * (2 * Math.PI * k) / n;
                     coords[ring[k]] = [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
                 }
             }
@@ -944,9 +957,36 @@
             for (const [a, b] of bonds) { adj[a].push(b); adj[b].push(a); }
             const rings = detectRings(nAtoms, bonds, adj);
             const fixed = new Set();
-            for (const ring of rings) {
-                regulariseRing(coords, ring, fixed);
-                for (const i of ring) fixed.add(i);
+            if (rings.length > 0) {
+                const ringAdj = rings.map(() => []);
+                for (let i = 0; i < rings.length; i++) {
+                    const si = new Set(rings[i]);
+                    for (let j = i + 1; j < rings.length; j++) {
+                        if (rings[j].filter(a => si.has(a)).length >= 2) {
+                            ringAdj[i].push(j); ringAdj[j].push(i);
+                        }
+                    }
+                }
+                const visited = new Uint8Array(rings.length);
+                const queue = [0];
+                visited[0] = 1;
+                regulariseRing(coords, rings[0], fixed);
+                for (const a of rings[0]) fixed.add(a);
+                while (queue.length) {
+                    const ri = queue.shift();
+                    for (const rj of ringAdj[ri]) {
+                        if (visited[rj]) continue;
+                        visited[rj] = 1;
+                        regulariseRing(coords, rings[rj], fixed);
+                        for (const a of rings[rj]) fixed.add(a);
+                        queue.push(rj);
+                    }
+                }
+                for (let i = 1; i < rings.length; i++) {
+                    if (visited[i]) continue;
+                    regulariseRing(coords, rings[i], fixed);
+                    for (const a of rings[i]) fixed.add(a);
+                }
             }
             snapChainAngles(coords, adj, nAtoms, fixed);
             return coords;
@@ -970,6 +1010,100 @@
                 comps.push(comp);
             }
             return comps;
+        }
+
+        /** Place H atoms around their parent heavy atoms after heavy-atom layout. */
+        function placeHydrogens(coords, bonds, isH, bondLen) {
+            bondLen = bondLen || 1.5;
+            const n = coords.length;
+            const adj = Array.from({length: n}, () => []);
+            for (const [a, b] of bonds) { adj[a].push(b); adj[b].push(a); }
+            const hByParent = new Map();
+            for (let i = 0; i < n; i++) {
+                if (!isH[i]) continue;
+                const par = adj[i].find(nb => !isH[nb]);
+                if (par === undefined) continue;
+                if (!hByParent.has(par)) hByParent.set(par, []);
+                hByParent.get(par).push(i);
+            }
+            for (const [par, hList] of hByParent) {
+                const pp = coords[par];
+                const heavyNbs = adj[par].filter(nb => !isH[nb]);
+                const nH = hList.length;
+                if (heavyNbs.length === 1) {
+                    const totalDeg = heavyNbs.length + nH;
+                    const step = (2 * Math.PI) / Math.max(totalDeg, 2);
+                    const inAngle = Math.atan2(pp[1] - coords[heavyNbs[0]][1], pp[0] - coords[heavyNbs[0]][0]);
+                    const backAngle = inAngle + Math.PI;
+                    let startShift = 0;
+                    if (nH === 3) {
+                        let bestD2 = -1;
+                        for (let s = 0; s < 18; s++) {
+                            const shift = s * Math.PI / 36;
+                            let minD2 = Infinity;
+                            for (let k = 0; k < 3; k++) {
+                                const a = backAngle + shift + (k + 1) * step;
+                                const hx = pp[0] + bondLen * Math.cos(a);
+                                const hy = pp[1] + bondLen * Math.sin(a);
+                                for (let ci = 0; ci < n; ci++) {
+                                    if (isH[ci] || ci === par) continue;
+                                    const dx = hx - coords[ci][0], dy = hy - coords[ci][1];
+                                    const d2 = dx*dx + dy*dy;
+                                    if (d2 < minD2) minD2 = d2;
+                                }
+                            }
+                            if (minD2 > bestD2) { bestD2 = minD2; startShift = shift; }
+                        }
+                    }
+                    hList.forEach((hi, k) => {
+                        const angle = backAngle + startShift + (k + 1) * step;
+                        coords[hi] = [pp[0] + bondLen * Math.cos(angle), pp[1] + bondLen * Math.sin(angle)];
+                    });
+                } else {
+                    const heavyAngles = heavyNbs.map(nb => Math.atan2(coords[nb][1]-pp[1], coords[nb][0]-pp[0]));
+                    const m = heavyAngles.length;
+                    const sorted = [...heavyAngles].sort((a, b) => a - b);
+                    const gaps = [];
+                    for (let i = 0; i < m; i++) {
+                        const a1 = sorted[i];
+                        const a2 = i + 1 < m ? sorted[i+1] : sorted[0] + 2 * Math.PI;
+                        gaps.push({ start: a1, size: a2 - a1, count: 0 });
+                    }
+                    let distribute = false;
+                    if (m === 2) {
+                        const v1 = [coords[heavyNbs[0]][0]-pp[0], coords[heavyNbs[0]][1]-pp[1]];
+                        const v2 = [coords[heavyNbs[1]][0]-pp[0], coords[heavyNbs[1]][1]-pp[1]];
+                        const dot = v1[0]*v2[0] + v1[1]*v2[1];
+                        const cosA = dot / (Math.hypot(v1[0],v1[1]) * Math.hypot(v2[0],v2[1]));
+                        if (cosA < -0.6) distribute = true;
+                    }
+                    if (distribute) {
+                        for (let i = 0; i < nH; i++) {
+                            let best = 0;
+                            for (let g = 1; g < gaps.length; g++) {
+                                if (gaps[g].size / (gaps[g].count + 1) > gaps[best].size / (gaps[best].count + 1))
+                                    best = g;
+                            }
+                            gaps[best].count++;
+                        }
+                    } else {
+                        let best = 0;
+                        for (let g = 1; g < gaps.length; g++) {
+                            if (gaps[g].size > gaps[best].size) best = g;
+                        }
+                        gaps[best].count = nH;
+                    }
+                    let hIdx = 0;
+                    for (const gap of gaps) {
+                        if (gap.count === 0) continue;
+                        const step = gap.size / (gap.count + 1);
+                        for (let k = 1; k <= gap.count; k++) {
+                            coords[hList[hIdx++]] = [pp[0] + bondLen * Math.cos(gap.start + k * step),
+                                                      pp[1] + bondLen * Math.sin(gap.start + k * step)];
+                        }
+                    }
+                }
+            }
         }
 
         /**
@@ -1006,6 +1140,9 @@
                     .filter(([a, b]) => compSet.has(a) && compSet.has(b))
                     .map(([a, b])    => [globalToLocal.get(a), globalToLocal.get(b)]);
 
+                const localIsH = comp.map(gi => symbols[gi] === 'H');
+                const heavyLocalBonds = localBonds.filter(([a, b]) => !localIsH[a] && !localIsH[b]);
+
                 let local2d;
                 if (comp.length === 1) {
                     local2d = [[0, 0]];
@@ -1014,14 +1151,20 @@
                 } else {
                     // Project to 2D with PCA, then refine with ring regularisation + angle snapping
                     const pca2d = pca3Dto2D(pts3d);
-                    const allX  = pca2d.map(p => p[0]), allY = pca2d.map(p => p[1]);
-                    const span  = Math.max(
-                        Math.max(...allX) - Math.min(...allX),
-                        Math.max(...allY) - Math.min(...allY),
-                        1e-9,
-                    );
-                    const scaled = pca2d.map(p => [p[0] / span, p[1] / span]);
-                    local2d = refine2DLayout(scaled, localBonds, comp.length);
+                    // Scale PCA using heavy bonds so average heavy bond length = 1.5
+                    const scaleBonds = heavyLocalBonds.length > 0 ? heavyLocalBonds : localBonds;
+                    let _totLen = 0;
+                    for (const [_a, _b] of scaleBonds) {
+                        const _dx = pca2d[_a][0] - pca2d[_b][0];
+                        const _dy = pca2d[_a][1] - pca2d[_b][1];
+                        _totLen += Math.sqrt(_dx*_dx + _dy*_dy);
+                    }
+                    const _s = _totLen > 0 ? 1.5 * scaleBonds.length / _totLen : 1;
+                    const scaled = pca2d.map(p => [p[0] * _s, p[1] * _s]);
+                    // Layout heavy atoms only (H atoms keep scaled PCA positions for now)
+                    local2d = refine2DLayout(scaled, heavyLocalBonds, comp.length);
+                    // Place H atoms around their heavy-atom parents
+                    placeHydrogens(local2d, localBonds, localIsH, 1.5);
                 }
 
                 // Centre this component's Y around 0
