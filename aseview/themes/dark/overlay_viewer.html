@@ -911,6 +911,23 @@
             console.error('styles.js not loaded! createAtomStyleDefault is undefined');
         }
 
+        if (typeof toLinearColor !== 'function') {
+            window.toLinearColor = function(color) {
+                const result = color instanceof THREE.Color ? color.clone() : new THREE.Color(color);
+                if (typeof result.convertSRGBToLinear === 'function') {
+                    result.convertSRGBToLinear();
+                }
+                return result;
+            };
+        }
+        if (typeof setMaterialColor !== 'function') {
+            window.setMaterialColor = function(material, color) {
+                if (material && material.color) {
+                    material.color.copy(toLinearColor(color));
+                }
+            };
+        }
+
         const atomFactories = {
             'default': (pos, symbol, atomScale) => createAtomStyleDefault(pos, symbol, atomScale),
             '2d': (pos, symbol, atomScale) => createAtomStyle2D(pos, symbol, atomScale),
@@ -1400,7 +1417,7 @@
                             if ((colorBy === 'Molecule' || colorBy === 'Colormap') && !isBlackBondStyle) {
                                 bondMesh.traverse((child) => {
                                     if (child.isMesh && child.material) {
-                                        child.material.color.setHex(moleculeColor);
+                                        setMaterialColor(child.material, moleculeColor);
                                     }
                                 });
                             }
@@ -1431,7 +1448,7 @@
                         if (colorBy === 'Molecule' || colorBy === 'Colormap') {
                             atomMesh.traverse((child) => {
                                 if (child.isMesh && child.material) {
-                                    child.material.color.setHex(moleculeColor);
+                                    setMaterialColor(child.material, moleculeColor);
                                 }
                             });
                         }
@@ -1467,8 +1484,7 @@
                         cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
                     ];
                     const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                    const cellColor = new THREE.Color(settings.cellColor);
-                    const cellMaterial = new THREE.LineBasicMaterial({ color: cellColor });
+                    const cellMaterial = new THREE.LineBasicMaterial({ color: toLinearColor(settings.cellColor) });
                     const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
                     cellMesh.renderOrder = 2;
                     molGroup.add(cellMesh);
@@ -2589,63 +2605,32 @@
 
         // Colormap functions for gradient coloring
         const colormaps = {
-            viridis: (t) => {
-                // Viridis colormap approximation
-                const r = Math.round(255 * Math.max(0, Math.min(1, 0.267004 + t * (0.004874 + t * (0.329415 + t * (-0.053599 + t * 0.450398))))));
-                const g = Math.round(255 * Math.max(0, Math.min(1, 0.004874 + t * (0.873449 + t * (-0.226173 + t * 0.348009)))));
-                const b = Math.round(255 * Math.max(0, Math.min(1, 0.329415 + t * (0.565522 + t * (-0.814363 + t * 0.919661)))));
-                return (r << 16) | (g << 8) | b;
-            },
-            plasma: (t) => {
-                // Plasma colormap approximation
-                const r = Math.round(255 * Math.max(0, Math.min(1, 0.050383 + t * (2.540837 + t * (-2.123601 + t * 0.532199)))));
-                const g = Math.round(255 * Math.max(0, Math.min(1, 0.029803 + t * (0.256073 + t * (0.741527 + t * (-0.027503))))));
-                const b = Math.round(255 * Math.max(0, Math.min(1, 0.527975 + t * (0.735683 + t * (-1.935073 + t * 0.671619)))));
-                return (r << 16) | (g << 8) | b;
-            },
-            coolwarm: (t) => {
-                // Cool (blue) to Warm (red)
-                const r = Math.round(255 * Math.max(0, Math.min(1, t < 0.5 ? 0.23 + t * 1.0 : 0.73 + (t - 0.5) * 0.54)));
-                const g = Math.round(255 * Math.max(0, Math.min(1, t < 0.5 ? 0.3 + t * 0.8 : 0.7 - (t - 0.5) * 1.0)));
-                const b = Math.round(255 * Math.max(0, Math.min(1, t < 0.5 ? 0.75 - t * 0.5 : 0.5 - (t - 0.5) * 0.8)));
-                return (r << 16) | (g << 8) | b;
-            },
-            jet: (t) => {
-                // Jet colormap (blue -> cyan -> yellow -> red)
-                let r, g, b;
-                if (t < 0.125) { r = 0; g = 0; b = 0.5 + t * 4; }
-                else if (t < 0.375) { r = 0; g = (t - 0.125) * 4; b = 1; }
-                else if (t < 0.625) { r = (t - 0.375) * 4; g = 1; b = 1 - (t - 0.375) * 4; }
-                else if (t < 0.875) { r = 1; g = 1 - (t - 0.625) * 4; b = 0; }
-                else { r = 1 - (t - 0.875) * 4; g = 0; b = 0; }
-                return (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
-            },
-            rainbow: (t) => {
-                // HSL rainbow
-                const h = t * 300; // 0 to 300 degrees (red to magenta)
-                const s = 1, l = 0.5;
-                const c = (1 - Math.abs(2 * l - 1)) * s;
-                const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-                const m = l - c / 2;
-                let r, g, b;
-                if (h < 60) { r = c; g = x; b = 0; }
-                else if (h < 120) { r = x; g = c; b = 0; }
-                else if (h < 180) { r = 0; g = c; b = x; }
-                else if (h < 240) { r = 0; g = x; b = c; }
-                else if (h < 300) { r = x; g = 0; b = c; }
-                else { r = c; g = 0; b = x; }
-                return (Math.round((r + m) * 255) << 16) | (Math.round((g + m) * 255) << 8) | Math.round((b + m) * 255);
-            },
-            grayscale: (t) => {
-                const v = Math.round(255 * t);
-                return (v << 16) | (v << 8) | v;
-            }
+            viridis: ['#440154', '#472d7b', '#3b528b', '#2c728e', '#21918c', '#28ae80', '#5ec962', '#addc30', '#fde725'],
+            plasma: ['#0d0887', '#4c02a1', '#7e03a8', '#aa2395', '#cc4778', '#e66c5c', '#f89540', '#fdc527', '#f0f921'],
+            coolwarm: ['#3b4cc0', '#6282ea', '#8db0fe', '#b9d0f9', '#dddcdc', '#f5c4ac', '#f4987a', '#dd5f4b', '#b40426'],
+            jet: ['#000080', '#0000ff', '#0080ff', '#16ffe1', '#7dff7a', '#e4ff13', '#ff9400', '#ff1e00', '#800000'],
+            grayscale: ['#000000', '#ffffff']
         };
+
+        function interpolateHexColors(stops, t) {
+            const clamped = Math.max(0, Math.min(1, t));
+            const scaled = clamped * (stops.length - 1);
+            const idx = Math.min(stops.length - 2, Math.floor(scaled));
+            const localT = scaled - idx;
+            const c1 = new THREE.Color(stops[idx]);
+            const c2 = new THREE.Color(stops[idx + 1]);
+            return c1.lerp(c2, localT).getHex();
+        }
 
         function getColormapColor(index, total, cmapName) {
             const t = total > 1 ? index / (total - 1) : 0.5;
-            const cmap = colormaps[cmapName] || colormaps.viridis;
-            return cmap(t);
+            if (cmapName === 'rainbow') {
+                const color = new THREE.Color();
+                color.setHSL((1 - t) * 0.75, 1, 0.5);
+                return color.getHex();
+            }
+            const stops = colormaps[cmapName] || colormaps.viridis;
+            return interpolateHexColors(stops, t);
         }
 
         // ========== Molecular Alignment Algorithms ==========

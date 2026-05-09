@@ -691,6 +691,23 @@
         // ─────────────────────────────────────────────────────────────────────
         // atom/bond factory tables  (mirrors molecular_viewer.html)
         // ─────────────────────────────────────────────────────────────────────
+        if (typeof toLinearColor !== 'function') {
+            window.toLinearColor = function(color) {
+                const result = color instanceof THREE.Color ? color.clone() : new THREE.Color(color);
+                if (typeof result.convertSRGBToLinear === 'function') {
+                    result.convertSRGBToLinear();
+                }
+                return result;
+            };
+        }
+        if (typeof setMaterialColor !== 'function') {
+            window.setMaterialColor = function(material, color) {
+                if (material && material.color) {
+                    material.color.copy(toLinearColor(color));
+                }
+            };
+        }
+
         const atomFactories = {
             'default':  (pos, sym, s)          => createAtomStyleDefault(pos, sym, s),
             'cartoon':  (pos, sym, s)          => createAtomStyleCartoon(pos, sym, s),
@@ -2288,7 +2305,7 @@
                     cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
                 ];
                 const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                const cellMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(fragSettings.cellColor) });
+                const cellMaterial = new THREE.LineBasicMaterial({ color: toLinearColor(fragSettings.cellColor) });
                 const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
                 cellMesh.renderOrder = 2;
                 moleculeGroup3D.add(cellMesh);

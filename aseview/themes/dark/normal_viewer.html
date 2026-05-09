@@ -1032,6 +1032,23 @@
             console.error('styles.js not loaded! createAtomStyleDefault is undefined');
         }
 
+        if (typeof toLinearColor !== 'function') {
+            window.toLinearColor = function(color) {
+                const result = color instanceof THREE.Color ? color.clone() : new THREE.Color(color);
+                if (typeof result.convertSRGBToLinear === 'function') {
+                    result.convertSRGBToLinear();
+                }
+                return result;
+            };
+        }
+        if (typeof setMaterialColor !== 'function') {
+            window.setMaterialColor = function(material, color) {
+                if (material && material.color) {
+                    material.color.copy(toLinearColor(color));
+                }
+            };
+        }
+
         const atomFactories = {
             'default': (pos, symbol, atomScale) => createAtomStyleDefault(pos, symbol, atomScale),
             '2d': (pos, symbol, atomScale) => createAtomStyle2D(pos, symbol, atomScale),
@@ -1611,7 +1628,7 @@
                     cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
                 ];
                 const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                const cellMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(settings.cellColor || '#808080') });
+                const cellMaterial = new THREE.LineBasicMaterial({ color: toLinearColor(settings.cellColor || '#808080') });
                 const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
                 cellMesh.renderOrder = 2;
                 moleculeGroup.add(cellMesh);
@@ -3264,7 +3281,7 @@
                     cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
                 ];
                 const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                const cellMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(settings.cellColor || '#808080') });
+                const cellMaterial = new THREE.LineBasicMaterial({ color: toLinearColor(settings.cellColor || '#808080') });
                 const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
                 cellMesh.renderOrder = 2;
                 moleculeGroup.add(cellMesh);

@@ -1078,6 +1078,23 @@
             console.error('styles.js not loaded! createAtomStyleDefault is undefined');
         }
 
+        if (typeof toLinearColor !== 'function') {
+            window.toLinearColor = function(color) {
+                const result = color instanceof THREE.Color ? color.clone() : new THREE.Color(color);
+                if (typeof result.convertSRGBToLinear === 'function') {
+                    result.convertSRGBToLinear();
+                }
+                return result;
+            };
+        }
+        if (typeof setMaterialColor !== 'function') {
+            window.setMaterialColor = function(material, color) {
+                if (material && material.color) {
+                    material.color.copy(toLinearColor(color));
+                }
+            };
+        }
+
         const atomFactories = {
             'default': (pos, symbol, atomScale) => createAtomStyleDefault(pos, symbol, atomScale),
             '2d': (pos, symbol, atomScale) => createAtomStyle2D(pos, symbol, atomScale),
@@ -1334,7 +1351,7 @@
                 case 'neon':
                     geometry = getCachedSphereGeometry(scaledRadius, seg);
                     material = new THREE.MeshBasicMaterial({
-                        color: colorHex,
+                        color: toLinearColor(colorHex),
                         transparent: true,
                         opacity: 0.9
                     });
@@ -1344,7 +1361,7 @@
                     // Add glow effect
                     const glowGeometry = getCachedSphereGeometry(scaledRadius * 1.3, seg);
                     const glowMaterial = new THREE.MeshBasicMaterial({
-                        color: colorHex,
+                        color: toLinearColor(colorHex),
                         transparent: true,
                         opacity: 0.3
                     });
@@ -1359,8 +1376,8 @@
                 case 'glossy':
                     geometry = getCachedSphereGeometry(scaledRadius, seg);
                     material = new THREE.MeshPhongMaterial({
-                        color: colorHex,
-                        specular: 0x444444,
+                        color: toLinearColor(colorHex),
+                        specular: toLinearColor(0x444444),
                         shininess: 100
                     });
                     mesh = new THREE.Mesh(geometry, material);
@@ -1370,7 +1387,7 @@
                 case 'metallic':
                     geometry = getCachedSphereGeometry(scaledRadius, seg);
                     material = new THREE.MeshStandardMaterial({
-                        color: colorHex,
+                        color: toLinearColor(colorHex),
                         metalness: 0.8,
                         roughness: 0.2
                     });
@@ -1380,7 +1397,7 @@
 
                 default:  // cartoon, default, etc.
                     geometry = getCachedSphereGeometry(scaledRadius, seg);
-                    material = new THREE.MeshLambertMaterial({ color: colorHex });
+                    material = new THREE.MeshLambertMaterial({ color: toLinearColor(colorHex) });
                     mesh = new THREE.Mesh(geometry, material);
                     mesh.position.copy(pos);
                     return mesh;
@@ -1463,38 +1480,38 @@
                     // Use lines for neon style
                     const points1 = [startPos, midpoint];
                     const geometry1 = new THREE.BufferGeometry().setFromPoints(points1);
-                    material1 = new THREE.LineBasicMaterial({ color: bondColor1, linewidth: 2 });
+                    material1 = new THREE.LineBasicMaterial({ color: toLinearColor(bondColor1), linewidth: 2 });
                     group.add(new THREE.Line(geometry1, material1));
 
                     const points2 = [midpoint, endPos];
                     const geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
-                    material2 = new THREE.LineBasicMaterial({ color: bondColor2, linewidth: 2 });
+                    material2 = new THREE.LineBasicMaterial({ color: toLinearColor(bondColor2), linewidth: 2 });
                     group.add(new THREE.Line(geometry2, material2));
                     return group;
 
                 case 'cartoon':
-                    material1 = new THREE.MeshToonMaterial({ color: bondColor1 });
-                    material2 = new THREE.MeshToonMaterial({ color: bondColor2 });
+                    material1 = new THREE.MeshToonMaterial({ color: toLinearColor(bondColor1) });
+                    material2 = new THREE.MeshToonMaterial({ color: toLinearColor(bondColor2) });
                     break;
 
                 case 'metallic':
-                    material1 = new THREE.MeshStandardMaterial({ color: bondColor1, metalness: 0.8, roughness: 0.2 });
-                    material2 = new THREE.MeshStandardMaterial({ color: bondColor2, metalness: 0.8, roughness: 0.2 });
+                    material1 = new THREE.MeshStandardMaterial({ color: toLinearColor(bondColor1), metalness: 0.8, roughness: 0.2 });
+                    material2 = new THREE.MeshStandardMaterial({ color: toLinearColor(bondColor2), metalness: 0.8, roughness: 0.2 });
                     break;
 
                 case 'glossy':
-                    material1 = new THREE.MeshPhongMaterial({ color: bondColor1, shininess: 100, specular: 0x444444 });
-                    material2 = new THREE.MeshPhongMaterial({ color: bondColor2, shininess: 100, specular: 0x444444 });
+                    material1 = new THREE.MeshPhongMaterial({ color: toLinearColor(bondColor1), shininess: 100, specular: toLinearColor(0x444444) });
+                    material2 = new THREE.MeshPhongMaterial({ color: toLinearColor(bondColor2), shininess: 100, specular: toLinearColor(0x444444) });
                     break;
 
                 case 'bubble':
-                    material1 = new THREE.MeshPhongMaterial({ color: bondColor1, transparent: true, opacity: 0.6, shininess: 100, specular: 0xffffff });
-                    material2 = new THREE.MeshPhongMaterial({ color: bondColor2, transparent: true, opacity: 0.6, shininess: 100, specular: 0xffffff });
+                    material1 = new THREE.MeshPhongMaterial({ color: toLinearColor(bondColor1), transparent: true, opacity: 0.6, shininess: 100, specular: 0xffffff });
+                    material2 = new THREE.MeshPhongMaterial({ color: toLinearColor(bondColor2), transparent: true, opacity: 0.6, shininess: 100, specular: 0xffffff });
                     break;
 
                 default:
-                    material1 = new THREE.MeshPhongMaterial({ color: bondColor1, shininess: 30 });
-                    material2 = new THREE.MeshPhongMaterial({ color: bondColor2, shininess: 30 });
+                    material1 = new THREE.MeshPhongMaterial({ color: toLinearColor(bondColor1), shininess: 30 });
+                    material2 = new THREE.MeshPhongMaterial({ color: toLinearColor(bondColor2), shininess: 30 });
             }
 
             // First half
@@ -2171,8 +2188,7 @@
                     cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
                 ];
                 const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                const cellColor = new THREE.Color(settings.cellColor);
-                const cellMaterial = new THREE.LineBasicMaterial({ color: cellColor });
+                const cellMaterial = new THREE.LineBasicMaterial({ color: toLinearColor(settings.cellColor) });
                 const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
                 cellMesh.renderOrder = 2;
                 moleculeGroup.add(cellMesh);

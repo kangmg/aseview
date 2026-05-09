@@ -104,11 +104,36 @@ function getAtomColorByScheme(symbol) {
     return (atomInfo[symbol] || atomInfo['default']).color; // 'jmol'
 }
 
+function toLinearColor(color) {
+    const result = color instanceof THREE.Color ? color.clone() : new THREE.Color(color);
+    if (typeof result.convertSRGBToLinear === 'function') {
+        result.convertSRGBToLinear();
+    }
+    return result;
+}
+
+function setMaterialColor(material, color) {
+    if (material && material.color) {
+        material.color.copy(toLinearColor(color));
+    }
+}
+
 function getStandardMaterial(color, type) {
     switch (type) {
-        case 'glossy': return new THREE.MeshPhongMaterial({ color: color, shininess: 100, specular: 0x222222 });
-        case 'metallic': return new THREE.MeshStandardMaterial({ color: color, metalness: 0.3, roughness: 0.4 });
-        default: return new THREE.MeshLambertMaterial({ color: color });
+        case 'glossy':
+            return new THREE.MeshPhongMaterial({
+                color: toLinearColor(color),
+                shininess: 100,
+                specular: toLinearColor(0x222222)
+            });
+        case 'metallic':
+            return new THREE.MeshStandardMaterial({
+                color: toLinearColor(color),
+                metalness: 0.3,
+                roughness: 0.4
+            });
+        default:
+            return new THREE.MeshLambertMaterial({ color: toLinearColor(color) });
     }
 }
 
@@ -605,7 +630,7 @@ function createHalfBondBubble(start, end, color, bondThickness) {
     const path = new THREE.LineCurve3(start, end);
     const geometry = new THREE.TubeGeometry(path, 2, bondThickness, 12, false);
     const material = new THREE.MeshPhongMaterial({
-        color: color,
+        color: toLinearColor(color),
         transparent: true,
         opacity: 0.4,  // More transparent for lighter appearance
         shininess: 80,
@@ -658,7 +683,7 @@ function createHalfBondGrey(start, end, color, bondThickness) {
     // Use CylinderGeometry for cleaner appearance
     const geometry = new THREE.CylinderGeometry(bondThickness, bondThickness, distance, 16, 1);
     const material = new THREE.MeshBasicMaterial({
-        color: color,
+        color: toLinearColor(color),
         depthWrite: true,
         depthTest: true
     });
@@ -1033,37 +1058,41 @@ function getCachedMaterial(type, colorHex, extraKey) {
                 gradientMap.magFilter = THREE.NearestFilter;
                 gradientMap.needsUpdate = true;
                 _matCache[key] = new THREE.MeshToonMaterial({
-                    color: new THREE.Color(colorHex),
+                    color: toLinearColor(colorHex),
                     gradientMap: gradientMap
                 });
                 break;
             }
             case 'outline':
                 _matCache[key] = new THREE.MeshBasicMaterial({
-                    color: colorHex,
+                    color: toLinearColor(colorHex),
                     side: THREE.BackSide
                 });
                 break;
             case 'glossy':
                 _matCache[key] = new THREE.MeshPhongMaterial({
-                    color: colorHex, shininess: 100, specular: 0x222222
+                    color: toLinearColor(colorHex),
+                    shininess: 100,
+                    specular: toLinearColor(0x222222)
                 });
                 break;
             case 'metallic':
                 _matCache[key] = new THREE.MeshStandardMaterial({
-                    color: colorHex, metalness: 0.3, roughness: 0.4
+                    color: toLinearColor(colorHex),
+                    metalness: 0.3,
+                    roughness: 0.4
                 });
                 break;
             case 'lambert':
-                _matCache[key] = new THREE.MeshLambertMaterial({ color: colorHex });
+                _matCache[key] = new THREE.MeshLambertMaterial({ color: toLinearColor(colorHex) });
                 break;
             case 'lambertFlat':
                 _matCache[key] = new THREE.MeshLambertMaterial({
-                    color: new THREE.Color(colorHex), flatShading: false
+                    color: toLinearColor(colorHex), flatShading: false
                 });
                 break;
             default:
-                _matCache[key] = new THREE.MeshLambertMaterial({ color: colorHex });
+                _matCache[key] = new THREE.MeshLambertMaterial({ color: toLinearColor(colorHex) });
         }
         _matCache[key]._isCached = true;
     }
