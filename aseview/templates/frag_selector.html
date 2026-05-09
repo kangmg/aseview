@@ -950,22 +950,66 @@
          * BFS from already-fixed atoms outward; snap each chain atom to the
          * correct bond length and angle relative to its parent.
          */
+        /**
+         * Seed ring-atom substituents into the largest angular gap between the
+         * atom's ring bonds — this avoids the PCA-direction bug where a freshly
+         * regularised ring atom sits outside the PCA cloud and the naïve
+         * atan2(pca_H − hex_C) vector points back toward the centre.
+         */
         function snapChainAngles(coords, adj, nAtoms, fixed, bondLen) {
             bondLen = bondLen || 1.5;
             const queued = new Set([...fixed]);
             const queue  = []; // [parentIdx, atomIdx, incomingAngle]
 
+            // Seed from ring atoms using outward angular-gap logic
             for (const v of fixed) {
-                for (const u of adj[v]) {
-                    if (queued.has(u)) continue;
-                    const theta = Math.atan2(coords[u][1] - coords[v][1],
-                                             coords[u][0] - coords[v][0]);
-                    queue.push([v, u, theta]);
-                    queued.add(u);
+                const unqueued = adj[v].filter(nb => !queued.has(nb));
+                if (!unqueued.length) continue;
+
+                const ringNbs = adj[v].filter(nb => queued.has(nb));
+                let angles;
+
+                if (ringNbs.length >= 2) {
+                    // Sort ring-bond angles, find the largest gap → place substituents there
+                    const ra = ringNbs
+                        .map(nb => Math.atan2(coords[nb][1] - coords[v][1],
+                                              coords[nb][0] - coords[v][0]))
+                        .sort((a, b) => a - b);
+                    const m = ra.length;
+                    let maxGap = -1, gapStart = 0;
+                    for (let i = 0; i < m; i++) {
+                        const a1 = ra[i];
+                        const a2 = (i + 1 < m) ? ra[i + 1] : ra[0] + 2 * Math.PI;
+                        const gap = a2 - a1;
+                        if (gap > maxGap) { maxGap = gap; gapStart = a1; }
+                    }
+                    const step = maxGap / (unqueued.length + 1);
+                    angles = unqueued.map((_, k) => gapStart + (k + 1) * step);
+                } else if (ringNbs.length === 1) {
+                    // Single ring neighbour: treat as a chain continuation
+                    const inAngle = Math.atan2(
+                        coords[v][1] - coords[ringNbs[0]][1],
+                        coords[v][0] - coords[ringNbs[0]][0]
+                    );
+                    angles = outgoingAngles(inAngle, adj[v].length, unqueued.length);
+                } else {
+                    // No placed neighbours yet: PCA direction is still valid
+                    angles = unqueued.map(nb =>
+                        Math.atan2(coords[nb][1] - coords[v][1],
+                                   coords[nb][0] - coords[v][0])
+                    );
                 }
+
+                unqueued.forEach((nb, k) => {
+                    const theta = angles[k] ?? 0;
+                    coords[nb] = [coords[v][0] + bondLen * Math.cos(theta),
+                                  coords[v][1] + bondLen * Math.sin(theta)];
+                    queue.push([v, nb, theta]);
+                    queued.add(nb);
+                });
             }
 
-            // Bootstrap: no ring atoms – start from local atom 0
+            // Bootstrap for acyclic molecules: start BFS from atom 0
             if (fixed.size === 0) {
                 fixed.add(0); queued.add(0);
                 const deg  = adj[0].length || 1;
@@ -989,9 +1033,9 @@
                 ];
                 const out = adj[atom].filter(nb => !queued.has(nb));
                 if (!out.length) continue;
-                const angles = outgoingAngles(inAngle, adj[atom].length, out.length);
+                const a = outgoingAngles(inAngle, adj[atom].length, out.length);
                 out.forEach((nb, k) => {
-                    const theta = angles[k];
+                    const theta = a[k];
                     coords[nb] = [coords[atom][0] + bondLen * Math.cos(theta),
                                   coords[atom][1] + bondLen * Math.sin(theta)];
                     queue.push([atom, nb, theta]);
