@@ -833,7 +833,8 @@ function createBondStyleCinematic(p1, p2, sym1, sym2, bondThickness, atomScale, 
     const colorA = highlightAtoms && highlightAtoms.has(atomA) ? highlightColor : getAtomColorByScheme(sym1);
     const colorB = highlightAtoms && highlightAtoms.has(atomB) ? highlightColor : getAtomColorByScheme(sym2);
 
-    if (colorA === colorB) {
+    const singleColor = helpers && (helpers.colorBy === 'Molecule' || helpers.colorBy === 'Colormap');
+    if (singleColor || colorA === colorB) {
         return createCinematicHalfBond(startPos, endPos, colorA, bondThickness);
     }
 

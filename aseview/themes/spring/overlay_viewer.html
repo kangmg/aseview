@@ -1534,7 +1534,7 @@
                         greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
                     });
                 }
-                const helpers = { greyColorMap, _lod: lodSegments };
+                const helpers = { greyColorMap, _lod: lodSegments, colorBy };
 
                 // Render bonds using spatial grid
                 if (settings.showBond) {
