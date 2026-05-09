@@ -1,5 +1,8 @@
 name: Publish VS Code Extension
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     tags:
@@ -33,7 +36,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
           cache-dependency-path: vscode-extension/package-lock.json
 
@@ -43,10 +46,7 @@ jobs:
 
       - name: Resolve VSIX filename
         id: vsix
-        working-directory: vscode-extension
-        run: |
-          version="$(node -p "require('./package.json').version")"
-          echo "filename=aseview-vscode-${version}.vsix" >> "$GITHUB_OUTPUT"
+        run: echo "filename=aseview.vsix" >> "$GITHUB_OUTPUT"
 
       - name: Package VSIX
         working-directory: vscode-extension
@@ -88,21 +88,35 @@ jobs:
           fi
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
 
-      - name: Ensure GitHub Release exists
+      - name: Create or update GitHub Release with VSIX
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           tag="${{ steps.release.outputs.tag }}"
-          if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag" --title "$tag" --notes "Release $tag"
+          asset="dist/aseview.vsix"
+
+          if [ ! -f "$asset" ]; then
+            echo "::error::VSIX artifact not found at $asset"
+            find dist -maxdepth 2 -type f -print
+            exit 1
           fi
 
-      - name: Attach VSIX to GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: gh release upload "${{ steps.release.outputs.tag }}" dist/*.vsix --clobber
+          if gh release view "$tag" >/dev/null 2>&1; then
+            immutable="$(gh api "repos/${GH_REPO}/releases/tags/${tag}" --jq '.immutable // false')"
+            if [ "$immutable" = "true" ]; then
+              asset_names="$(gh api "repos/${GH_REPO}/releases/tags/${tag}" --jq '.assets[].name')"
+              if printf '%s\n' "$asset_names" | grep -Fxq "$(basename "$asset")"; then
+                echo "Release $tag is immutable and already has $(basename "$asset"); nothing to upload."
+                exit 0
+              fi
+              echo "::error::Release $tag is immutable, so VSIX assets cannot be attached after publication. Delete/recreate the release or let this workflow create it from the tag."
+              exit 1
+            fi
+            gh release upload "$tag" "$asset" --clobber
+          else
+            gh release create "$tag" "$asset" --title "$tag" --notes "Release $tag"
+          fi
 
   publish-marketplace:
     if: >

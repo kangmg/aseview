@@ -370,7 +370,7 @@
         setTheme,
         getTheme,
         DEFAULT_OPTIONS: Object.assign({}, DEFAULT_VIEWER_OPTIONS),
-        version: '0.0.5',
+        version: '0.0.6',
         CDN_BASE,
     };
 
