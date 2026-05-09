@@ -88,7 +88,63 @@ const cpkColors = {
     'Np': 0xFFFFFF, 'Pu': 0xFFFFFF, 'Am': 0xFFFFFF, 'Cm': 0xFFFFFF,
 };
 
-// Active color scheme: 'jmol' (default) or 'cpk'
+// PyMOL color scheme
+const pymolColors = {
+    'H': 0xE5E5E5, 'He': 0xD8FFFF, 'Li': 0xCC7FFF, 'Be': 0xC2FF00,
+    'B': 0xFFB5B5, 'C': 0x33FF33, 'N': 0x3333FF, 'O': 0xFF4C4C,
+    'F': 0xB2FFFF, 'Ne': 0xB2E2F5, 'Na': 0xAA5CF2, 'Mg': 0x8AFF00,
+    'Al': 0xBFA5A5, 'Si': 0xF0C79F, 'P': 0xFF7F00, 'S': 0xE5C53F,
+    'Cl': 0x1EF01E, 'Ar': 0x7FD0E2, 'K': 0x8F3FD3, 'Ca': 0x3CFF00,
+    'Sc': 0xE5E5E5, 'Ti': 0xBFC2C7, 'V': 0xA5A5AA, 'Cr': 0x8A99C7,
+    'Mn': 0x9C7AC7, 'Fe': 0xE06633, 'Co': 0xF08F9F, 'Ni': 0x4FD04F,
+    'Cu': 0xC77F33, 'Zn': 0x7C7FAF, 'Ga': 0xC28F8F, 'Ge': 0x668F8F,
+    'As': 0xBD7FE2, 'Se': 0xFFA000, 'Br': 0xA52929, 'Kr': 0x5CB7D0,
+    'Rb': 0x6F2EAF, 'Sr': 0x00FF00, 'Y': 0x94FFFF, 'Zr': 0x94E0E0,
+    'Nb': 0x72C2C8, 'Mo': 0x54B5B5, 'Tc': 0x3A9D9D, 'Ru': 0x248F8F,
+    'Rh': 0x097C8C, 'Pd': 0x006984, 'Ag': 0xBFBFBF, 'Cd': 0xFFD88F,
+    'In': 0xA57472, 'Sn': 0x667F7F, 'Sb': 0x9D62B5, 'Te': 0xD37A00,
+    'I': 0x940094, 'Xe': 0x419DAF, 'Cs': 0x57168F, 'Ba': 0x00C800,
+    'La': 0x6FD3FF, 'Ce': 0xFFFFC7, 'Pr': 0xD8FFC7, 'Nd': 0xC7FFC7,
+    'Pm': 0xA2FFC7, 'Sm': 0x8FFFC7, 'Eu': 0x61FFC7, 'Gd': 0x44FFC7,
+    'Tb': 0x2FFFC7, 'Dy': 0x1EFFC7, 'Ho': 0x00FF9C, 'Er': 0x00E574,
+    'Tm': 0x00D351, 'Yb': 0x00BF37, 'Lu': 0x00AA24, 'Hf': 0x4CC2FF,
+    'Ta': 0x4CA5FF, 'W': 0x2194D5, 'Re': 0x267CAA, 'Os': 0x266695,
+    'Ir': 0x165487, 'Pt': 0xD0D0E0, 'Au': 0xFFD023, 'Hg': 0xB7B7D0,
+    'Tl': 0xA5544C, 'Pb': 0x575961, 'Bi': 0x9D4FB5, 'Po': 0xAA5C00,
+    'At': 0x744F44, 'Rn': 0x418295, 'Fr': 0x410066, 'Ra': 0x007C00,
+    'Ac': 0x6FAAFA, 'Th': 0x00BAFF, 'Pa': 0x00A0FF, 'U': 0x008FFF,
+    'Np': 0x007FFF, 'Pu': 0x006AFF, 'Am': 0x545CF2, 'Cm': 0x775CE2,
+};
+
+// VMD color scheme
+const vmdColors = {
+    'H': 0xFFFFFF, 'He': 0x804C00, 'Li': 0x804C00, 'Be': 0x804C00,
+    'B': 0x804C00, 'C': 0x999999, 'N': 0x0000FF, 'O': 0xFF0000,
+    'F': 0x804C00, 'Ne': 0x804C00, 'Na': 0x804C00, 'Mg': 0x804C00,
+    'Al': 0x804C00, 'Si': 0x804C00, 'P': 0x808033, 'S': 0xFFFF00,
+    'Cl': 0x804C00, 'Ar': 0x804C00, 'K': 0x804C00, 'Ca': 0x804C00,
+    'Sc': 0x804C00, 'Ti': 0x804C00, 'V': 0x804C00, 'Cr': 0x804C00,
+    'Mn': 0x804C00, 'Fe': 0x804C00, 'Co': 0x804C00, 'Ni': 0x804C00,
+    'Cu': 0x804C00, 'Zn': 0x999999, 'Ga': 0x804C00, 'Ge': 0x804C00,
+    'As': 0x804C00, 'Se': 0x804C00, 'Br': 0x804C00, 'Kr': 0x804C00,
+    'Rb': 0x804C00, 'Sr': 0x804C00, 'Y': 0x804C00, 'Zr': 0x804C00,
+    'Nb': 0x804C00, 'Mo': 0x804C00, 'Tc': 0x804C00, 'Ru': 0x804C00,
+    'Rh': 0x804C00, 'Pd': 0x804C00, 'Ag': 0x804C00, 'Cd': 0x804C00,
+    'In': 0x804C00, 'Sn': 0x804C00, 'Sb': 0x804C00, 'Te': 0x804C00,
+    'I': 0x804C00, 'Xe': 0x804C00, 'Cs': 0x804C00, 'Ba': 0x804C00,
+    'La': 0x804C00, 'Ce': 0x804C00, 'Pr': 0x804C00, 'Nd': 0x804C00,
+    'Pm': 0x804C00, 'Sm': 0x804C00, 'Eu': 0x804C00, 'Gd': 0x804C00,
+    'Tb': 0x804C00, 'Dy': 0x804C00, 'Ho': 0x804C00, 'Er': 0x804C00,
+    'Tm': 0x804C00, 'Yb': 0x804C00, 'Lu': 0x804C00, 'Hf': 0x804C00,
+    'Ta': 0x804C00, 'W': 0x804C00, 'Re': 0x804C00, 'Os': 0x804C00,
+    'Ir': 0x804C00, 'Pt': 0x804C00, 'Au': 0x804C00, 'Hg': 0x804C00,
+    'Tl': 0x804C00, 'Pb': 0x804C00, 'Bi': 0x804C00, 'Po': 0x804C00,
+    'At': 0x804C00, 'Rn': 0x804C00, 'Fr': 0x804C00, 'Ra': 0x804C00,
+    'Ac': 0x804C00, 'Th': 0x804C00, 'Pa': 0x804C00, 'U': 0x804C00,
+    'Np': 0x804C00, 'Pu': 0x804C00, 'Am': 0x804C00, 'Cm': 0x804C00,
+};
+
+// Active color scheme: 'jmol' (default), 'cpk', 'pymol', or 'vmd'
 let atomColorScheme = 'jmol';
 
 /**
@@ -96,10 +152,14 @@ let atomColorScheme = 'jmol';
  * Falls back to jmol (atomInfo.color) for unknown elements or schemes.
  */
 function getAtomColorByScheme(symbol) {
-    if (atomColorScheme === 'cpk') {
-        return cpkColors[symbol] !== undefined
-            ? cpkColors[symbol]
-            : (atomInfo[symbol] || atomInfo['default']).color;
+    if (atomColorScheme === 'cpk' && cpkColors[symbol] !== undefined) {
+        return cpkColors[symbol];
+    }
+    if (atomColorScheme === 'pymol' && pymolColors[symbol] !== undefined) {
+        return pymolColors[symbol];
+    }
+    if (atomColorScheme === 'vmd' && vmdColors[symbol] !== undefined) {
+        return vmdColors[symbol];
     }
     return (atomInfo[symbol] || atomInfo['default']).color; // 'jmol'
 }
