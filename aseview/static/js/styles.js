@@ -210,6 +210,15 @@ function setMaterialColor(material, color) {
     if (material && material.color) {
         material.color.copy(toLinearColor(color));
     }
+    if (material && material.uniforms && material.uniforms.uColor && material.uniforms.uColor.value) {
+        const linearColor = toLinearColor(color);
+        const target = material.uniforms.uColor.value;
+        if (target.isColor && typeof target.copy === 'function') {
+            target.copy(linearColor);
+        } else if (typeof target.set === 'function') {
+            target.set(linearColor.r, linearColor.g, linearColor.b);
+        }
+    }
 }
 
 function getStandardMaterial(color, type) {
@@ -226,6 +235,8 @@ function getStandardMaterial(color, type) {
                 metalness: 0.3,
                 roughness: 0.4
             });
+        case 'cinematic':
+            return getCachedMaterial('cinematic', color);
         default:
             return new THREE.MeshLambertMaterial({ color: toLinearColor(color) });
     }
@@ -392,6 +403,26 @@ function createAtomStyleMetallic(pos, symbol, atomScale, helpers) {
     const material = getCachedMaterial('metallic', getAtomColorByScheme(symbol));
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
+    return sphere;
+}
+
+function getCinematicAtomColor(symbol, helpers) {
+    if (helpers && helpers.atomIndex !== undefined &&
+        helpers.highlightAtoms instanceof Set &&
+        helpers.highlightAtoms.has(helpers.atomIndex)) {
+        return Number.isFinite(helpers.highlightColor) ? helpers.highlightColor : 0xFFEB3B;
+    }
+    return getAtomColorByScheme(symbol);
+}
+
+function createAtomStyleCinematic(pos, symbol, atomScale, helpers) {
+    const scaledRadius = getScaledAtomRadius(symbol, atomScale, helpers);
+    const lod = (helpers && helpers._lod) || { sphere: 64, sphereHigh: 128 };
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphereHigh || lod.sphere || 64);
+    const material = getCachedMaterial('cinematic', getCinematicAtomColor(symbol, helpers));
+    const sphere = new THREE.Mesh(geometry, material);
+    sphere.position.copy(pos);
+    sphere.userData = { symbol, radius: scaledRadius, cinematic: true };
     return sphere;
 }
 
@@ -790,6 +821,44 @@ function createHalfBondGrey(start, end, color, bondThickness) {
     return bond;
 }
 
+function createBondStyleCinematic(p1, p2, sym1, sym2, bondThickness, atomScale, helpers) {
+    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, 'default', helpers);
+    if (!bondPoints) return null;
+    const { startPos, endPos } = bondPoints;
+
+    const atomA = helpers && helpers.bondAtoms ? helpers.bondAtoms[0] : undefined;
+    const atomB = helpers && helpers.bondAtoms ? helpers.bondAtoms[1] : undefined;
+    const highlightAtoms = helpers && helpers.highlightAtoms instanceof Set ? helpers.highlightAtoms : null;
+    const highlightColor = helpers && Number.isFinite(helpers.highlightColor) ? helpers.highlightColor : 0xFFEB3B;
+    const colorA = highlightAtoms && highlightAtoms.has(atomA) ? highlightColor : getAtomColorByScheme(sym1);
+    const colorB = highlightAtoms && highlightAtoms.has(atomB) ? highlightColor : getAtomColorByScheme(sym2);
+
+    if (colorA === colorB) {
+        return createCinematicHalfBond(startPos, endPos, colorA, bondThickness);
+    }
+
+    const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
+    const group = new THREE.Group();
+    const halfA = createCinematicHalfBond(startPos, midPoint, colorA, bondThickness);
+    const halfB = createCinematicHalfBond(midPoint, endPos, colorB, bondThickness);
+    if (halfA) group.add(halfA);
+    if (halfB) group.add(halfB);
+    return group;
+}
+
+function createCinematicHalfBond(start, end, colorHex, thickness) {
+    const direction = end.clone().sub(start);
+    const length = direction.length();
+    if (length <= 0) return null;
+
+    const geometry = new THREE.CylinderGeometry(thickness, thickness, length, 24, 1, false);
+    const material = getCachedMaterial('cinematic', colorHex);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(start.clone().add(end).multiplyScalar(0.5));
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+    return mesh;
+}
+
 // ─────────────────────────────────────────────────────────────
 // Convex Hull helper (incremental / gift-wrapping in 3D)
 // Returns { vertices: Float32Array, indices: Uint32Array } for the hull.
@@ -1177,6 +1246,49 @@ function getCachedMaterial(type, colorHex, extraKey) {
                     roughness: 0.4
                 });
                 break;
+            case 'cinematic': {
+                const color = toLinearColor(colorHex);
+                _matCache[key] = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uColor: { value: color },
+                        uDark: { value: 0.55 },
+                        uCenter: { value: 0.42 },
+                        uCenterR: { value: 0.22 },
+                        uRimPow: { value: 1.3 },
+                        uRimGain: { value: 1.55 },
+                    },
+                    vertexShader: `
+                        varying vec3 vNormalW;
+                        varying vec3 vViewDir;
+                        void main() {
+                            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                            vNormalW = normalize(normalMatrix * normal);
+                            vViewDir = normalize(-mv.xyz);
+                            gl_Position = projectionMatrix * mv;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vNormalW;
+                        varying vec3 vViewDir;
+                        uniform vec3 uColor;
+                        uniform float uDark;
+                        uniform float uCenter;
+                        uniform float uCenterR;
+                        uniform float uRimPow;
+                        uniform float uRimGain;
+                        void main() {
+                            float ndv = clamp(dot(normalize(vNormalW), normalize(vViewDir)), 0.0, 1.0);
+                            float rim = pow(1.0 - ndv, uRimPow);
+                            float bright = mix(uDark, uRimGain, rim);
+                            float spot = 1.0 - smoothstep(1.0 - uCenterR, 1.0, ndv);
+                            float lit = mix(uCenter, bright, spot);
+                            vec3 col = uColor * lit + uColor * rim * 0.30;
+                            gl_FragColor = vec4(col, 1.0);
+                        }
+                    `
+                });
+                break;
+            }
             case 'lambert':
                 _matCache[key] = new THREE.MeshLambertMaterial({ color: toLinearColor(colorHex) });
                 break;

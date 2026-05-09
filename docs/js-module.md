@@ -410,6 +410,9 @@ viewer.setSettings({ style: 'glossy', atomSize: 0.6 });
 | `showShading` | boolean | `true` | Enable directional lighting |
 | `showAxis` | boolean | `true` | Show XYZ axis helper |
 | `showForces` | boolean | `false` | Show force vectors |
+| `hideHydrogens` | boolean | `false` | Hide hydrogen atoms and their bonds without removing them from the data |
+| `showBlur` | boolean | `false` | Apply blur to the rendered molecule canvas |
+| `blurStrength` | float | `1.5` | Blur radius in pixels when `showBlur` is enabled |
 | `showEnergyPlot` | boolean | `false` | Show energy vs frame plot |
 | `showForceMaxPlot` | boolean | `true` | Include max force trace when forces are available |
 | `radiusContrast` | float | `1.0` | Atom radius contrast (`0.0` uniform, `1.0` element radii) |
@@ -419,7 +422,7 @@ viewer.setSettings({ style: 'glossy', atomSize: 0.6 });
 | `viewMode` | string | `'Perspective'` | `'Perspective'` or `'Orthographic'` |
 | `rotationMode` | string | `'TrackBall'` | `'TrackBall'` or `'Orbit'` |
 
-**Available styles:** `default`, `2d`, `cartoon`, `neon`, `glossy`, `metallic`, `rowan`, `bubble`, `grey`
+**Available styles:** `default`, `2d`, `cartoon`, `neon`, `glossy`, `metallic`, `cinematic`, `rowan`, `bubble`, `grey`
 
 #### MolecularViewer Settings
 

@@ -287,7 +287,7 @@ def main(
     style: str = typer.Option(
         "cartoon",
         "--style",
-        help="Visual style: default, cartoon, neon, glossy, metallic, rowan, grey",
+        help="Visual style: default, cartoon, neon, glossy, metallic, cinematic, rowan, grey",
     ),
     cmap: Optional[str] = typer.Option(
         None,

@@ -94,3 +94,4 @@ venv.bak/
 !pyproject.toml
 !vscode-extension/**/*.json
 site/
+tmp/

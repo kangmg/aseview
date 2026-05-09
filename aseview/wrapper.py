@@ -5,9 +5,14 @@ Wrapper module for molecular visualization
 import glob as glob_module
 import json
 import os
+import re
 from typing import Dict, Any, List, Union
 from ase import Atoms
 import numpy as np
+
+_STYLES_JS_TAG_RE = re.compile(
+    r'<script\s+src=["\']https://cdn\.jsdelivr\.net/gh/kangmg/aseview@main/aseview/static/js/styles\.js(?:\?[^"\']*)?["\']\s*></script>'
+)
 
 # ── Theme management ──────────────────────────────────────────────────────────
 _THEME = 'dark'
@@ -49,6 +54,16 @@ def _resolve_template(name: str, theme: str = None) -> str:
         f"Template '{name}' not found for theme '{theme}'. "
         f"Available themes: {list_themes()}"
     )
+
+
+def _inline_styles_js(html: str) -> str:
+    """Inline packaged styles.js, accepting cache-busted CDN script tags."""
+    styles_path = os.path.join(os.path.dirname(__file__), "static", "js", "styles.js")
+    if not os.path.exists(styles_path):
+        return html
+    with open(styles_path, "r", encoding="utf-8") as style_file:
+        styles_js = style_file.read()
+    return _STYLES_JS_TAG_RE.sub(f"<script>\n{styles_js}\n</script>", html)
 
 
 class MolecularData:
@@ -286,6 +301,9 @@ class MolecularViewer(BaseViewer):
             "style": "cartoon",
             "showCell": True,
             "showBond": True,
+            "hideHydrogens": False,
+            "showBlur": False,
+            "blurStrength": 1.5,
             "showHBond": False,          # Hydrogen bond detection (N/O/F donors & acceptors)
             "showShadow": False,
             "showShading": True,
@@ -293,7 +311,7 @@ class MolecularViewer(BaseViewer):
             "showForces": False,
             "colorBy": "Element",        # "Element" or "Charge"
             "showConstraint": False,
-            "colorScheme": "Jmol",       # "Jmol" (default) or "CPK"
+            "colorScheme": "Jmol",       # "Jmol" (default), "CPK", "PyMOL", or "VMD"
             "normalizeCharges": False,   # Normalize charges to symmetric range
             "chargeColormap": "coolwarm",
             "viewMode": "Perspective",
@@ -349,16 +367,7 @@ class MolecularViewer(BaseViewer):
             )
 
         # Inline styles.js
-        styles_path = os.path.join(os.path.dirname(__file__), "static", "js", "styles.js")
-        if os.path.exists(styles_path):
-            with open(styles_path, "r", encoding="utf-8") as style_file:
-                styles_js = style_file.read()
-
-            # Replace CDN URL with inline version (templates use CDN for web compatibility)
-            cdn_tag = '<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js"></script>'
-            inline_styles_tag = f"<script>\n{styles_js}\n</script>"
-            if cdn_tag in html:
-                html = html.replace(cdn_tag, inline_styles_tag)
+        html = _inline_styles_js(html)
 
         # Inline gifshot.js for GIF export
         gifshot_path = os.path.join(vendor_dir, "gifshot.js")
@@ -570,6 +579,9 @@ class NormalViewer(BaseViewer):
             "showCell": True,
             "cellColor": "#808080",
             "showBond": True,
+            "hideHydrogens": False,
+            "showBlur": False,
+            "blurStrength": 1.5,
             "showShadow": False,
             "displacementAmplitude": 0.75,
             "showModeVector": False,
@@ -689,14 +701,7 @@ class NormalViewer(BaseViewer):
             )
 
         # Inline styles.js
-        styles_path = os.path.join(os.path.dirname(__file__), "static", "js", "styles.js")
-        if os.path.exists(styles_path):
-            with open(styles_path, "r", encoding="utf-8") as f:
-                styles_js = f.read()
-            # Replace CDN URL with inline version (templates use CDN for web compatibility)
-            cdn_tag = '<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js"></script>'
-            if cdn_tag in html:
-                html = html.replace(cdn_tag, f"<script>\n{styles_js}\n</script>")
+        html = _inline_styles_js(html)
 
         # Inline gifshot.js for GIF export
         gifshot_path = os.path.join(vendor_dir, "gifshot.js")
@@ -974,6 +979,9 @@ class OverlayViewer(BaseViewer):
             "style": "cartoon",
             "showCell": True,
             "showBond": True,
+            "hideHydrogens": False,
+            "showBlur": False,
+            "blurStrength": 1.5,
             "showShadow": False,
             "viewMode": "Perspective",
             "rotationMode": "TrackBall",
@@ -1069,14 +1077,7 @@ class OverlayViewer(BaseViewer):
             )
 
         # Inline styles.js
-        styles_path = os.path.join(os.path.dirname(__file__), "static", "js", "styles.js")
-        if os.path.exists(styles_path):
-            with open(styles_path, "r", encoding="utf-8") as f:
-                styles_js = f.read()
-            # Replace CDN URL with inline version (templates use CDN for web compatibility)
-            cdn_tag = '<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js"></script>'
-            if cdn_tag in html:
-                html = html.replace(cdn_tag, f"<script>\n{styles_js}\n</script>")
+        html = _inline_styles_js(html)
 
         # Inject molecular data and settings
         settings_json = json.dumps(self.settings)
@@ -1165,7 +1166,7 @@ class FragSelector(BaseViewer):
     atomSize : float
         Relative atom sphere size (default 0.4).
     style : str
-        3-D rendering style: 'cartoon', 'glossy', 'default', 'bubble', 'metallic' (default 'cartoon').
+        3-D rendering style: 'cartoon', 'glossy', 'default', 'bubble', 'metallic', 'cinematic' (default 'cartoon').
     showBond : bool
         Whether to draw bonds (default True).
     showShading : bool
@@ -1186,6 +1187,9 @@ class FragSelector(BaseViewer):
             "atomSize":      0.4,
             "style":         "cartoon",
             "showBond":      True,
+            "hideHydrogens": False,
+            "showBlur":      False,
+            "blurStrength":  1.5,
             "showShading":   True,
             "backgroundColor": "#1f2937",
             **kwargs,
@@ -1240,13 +1244,7 @@ class FragSelector(BaseViewer):
                 f"<script>{trackball_js}</script>",
             )
 
-        styles_path = os.path.join(os.path.dirname(__file__), "static", "js", "styles.js")
-        if os.path.exists(styles_path):
-            with open(styles_path, "r", encoding="utf-8") as f:
-                styles_js = f.read()
-            cdn_tag = '<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js"></script>'
-            if cdn_tag in html:
-                html = html.replace(cdn_tag, f"<script>\n{styles_js}\n</script>")
+        html = _inline_styles_js(html)
 
         # ── Inject molecular data and settings ────────────────────────────
         html = html.replace("{{molecular_data}}", js_data)

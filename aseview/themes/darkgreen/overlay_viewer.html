@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js?_aseview=20260509-color-schemes-2"></script>
 
   <style>
     :root {
@@ -498,6 +498,7 @@
                                 <option value="neon">Neon</option>
                                 <option value="glossy">Glossy</option>
                                 <option value="metallic">Metallic</option>
+                                <option value="cinematic">Cinematic</option>
                                 <option value="bubble">Bubble</option>
                                 <option value="rowan">Rowan</option>
                                 <option value="grey">Grey</option>
@@ -570,6 +571,37 @@
                                     <input type="checkbox" id="show-bond" checked>
                                     <span class="slider-switch"></span>
                                 </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Hide Hs</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="hide-hydrogens">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Blur</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-blur">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="blur-strength-group" style="display:none;">
+                            <div class="control-label">
+                                <span>Blur Strength</span>
+                                <span class="slider-value" id="blur-strength-value">1.5px</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.2" max="6" step="0.1" value="1.5" class="slider"
+                                    id="blur-strength">
                             </div>
                         </div>
 
@@ -821,6 +853,9 @@
             showCell: true,
             cellColor: '#808080',
             showBond: true,
+            hideHydrogens: false,
+            showBlur: false,
+            blurStrength: 1.5,
             showShading: false,
             showEnergyPlot: false,
             showForces: false,
@@ -831,6 +866,37 @@
             colormap: 'viridis',
             alignMolecules: false  // Kabsch rotation + Hungarian reordering
         };
+
+        function isHydrogenSymbol(symbol) {
+            return String(symbol || '').trim().toUpperCase() === 'H';
+        }
+
+        function isHydrogenHidden(symbol) {
+            return !!settings.hideHydrogens && isHydrogenSymbol(symbol);
+        }
+
+        function isBondHidden(sym1, sym2) {
+            return isHydrogenHidden(sym1) || isHydrogenHidden(sym2);
+        }
+
+        function getBlurStrengthValue() {
+            const value = Number(settings.blurStrength);
+            return Number.isFinite(value) ? Math.max(0, value) : 1.5;
+        }
+
+        function updateBlurEffect() {
+            const filter = settings.showBlur ? `blur(${getBlurStrengthValue().toFixed(1)}px)` : 'none';
+            if (renderer && renderer.domElement) renderer.domElement.style.filter = filter;
+
+            const blurGroup = document.getElementById('blur-strength-group');
+            if (blurGroup) blurGroup.style.display = settings.showBlur ? 'block' : 'none';
+
+            const blurSlider = document.getElementById('blur-strength');
+            if (blurSlider && document.activeElement !== blurSlider) blurSlider.value = getBlurStrengthValue().toFixed(1);
+
+            const blurValue = document.getElementById('blur-strength-value');
+            if (blurValue) blurValue.textContent = getBlurStrengthValue().toFixed(1) + 'px';
+        }
 
         // Update UI and rendering from settings (called via postMessage API)
         function updateFromSettings() {
@@ -848,6 +914,8 @@
             const checkboxMappings = {
                 'show-cell': 'showCell',
                 'show-bond': 'showBond',
+                'hide-hydrogens': 'hideHydrogens',
+                'show-blur': 'showBlur',
                 'show-shading': 'showShading',
                 'show-axis': 'showAxis',
                 'align-molecules': 'alignMolecules'
@@ -898,6 +966,8 @@
                 }
             }
 
+            updateBlurEffect();
+
             // Apply rendering changes
             if (typeof updateShading === 'function') updateShading();
             if (typeof renderMolecule === 'function') renderMolecule();
@@ -925,6 +995,9 @@
                 if (material && material.color) {
                     material.color.copy(toLinearColor(color));
                 }
+                if (material && material.uniforms && material.uniforms.uColor && material.uniforms.uColor.value) {
+                    material.uniforms.uColor.value.copy(toLinearColor(color));
+                }
             };
         }
 
@@ -935,6 +1008,7 @@
             'neon': (pos, symbol, atomScale) => createAtomStyleNeon(pos, symbol, atomScale),
             'glossy': (pos, symbol, atomScale) => createAtomStyleGlossy(pos, symbol, atomScale),
             'metallic': (pos, symbol, atomScale) => createAtomStyleMetallic(pos, symbol, atomScale),
+            'cinematic': (pos, symbol, atomScale, helpers) => createAtomStyleCinematic(pos, symbol, atomScale, helpers),
             'rowan': (pos, symbol, atomScale) => createAtomStyleRowan(pos, symbol, atomScale),
             'bubble': (pos, symbol, atomScale) => createAtomStyleBubble(pos, symbol, atomScale),
             'grey': (pos, symbol, atomScale, helpers) => createAtomStyleGrey(pos, symbol, atomScale, helpers.greyColorMap[symbol] ?? 0x808080)
@@ -947,6 +1021,7 @@
             'neon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale),
             'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy'),
             'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic'),
+            'cinematic': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleCinematic(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
             'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale),
             'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale),
             'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap)
@@ -1403,6 +1478,7 @@
 
                     for (let b = 0; b < bondPairs.length; b++) {
                         const { i, j } = bondPairs[b];
+                        if (isBondHidden(symbols[i], symbols[j])) continue;
                         let bondMesh = bondFactory(
                             positions[i],
                             positions[j],
@@ -1438,6 +1514,7 @@
 
                 // Render atoms
                 for (let i = 0; i < positions.length; i++) {
+                    if (isHydrogenHidden(symbols[i])) continue;
                     let atomMesh = atomFactory(positions[i], symbols[i], atomScale, helpers);
 
                     if (!atomMesh) {
@@ -2462,6 +2539,21 @@
             safeAddListener('show-bond', 'change', function () {
                 settings.showBond = this.checked;
                 renderMolecule();
+            });
+
+            safeAddListener('hide-hydrogens', 'change', function () {
+                settings.hideHydrogens = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-blur', 'change', function () {
+                settings.showBlur = this.checked;
+                updateBlurEffect();
+            });
+
+            safeAddListener('blur-strength', 'input', function () {
+                settings.blurStrength = parseFloat(this.value);
+                updateBlurEffect();
             });
 
             safeAddListener('align-molecules', 'change', function () {

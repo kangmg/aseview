@@ -42,6 +42,9 @@ The mode is inferred automatically from the type of `index_list`:
 |-----------|------|-------------|---------|
 | `style` | `str` | Visual style name | `"cartoon"` |
 | `backgroundColor` | `str` | Background color (hex) | `"#1f2937"` |
+| `hideHydrogens` | `bool` | Hide hydrogen atoms and their bonds without removing them from the data | `False` |
+| `showBlur` | `bool` | Apply blur to the rendered molecule canvas | `False` |
+| `blurStrength` | `float` | Blur radius in pixels when `showBlur` is enabled | `1.5` |
 
 #### Color Settings
 

@@ -2011,6 +2011,15 @@ function setMaterialColor(material, color) {
     if (material && material.color) {
         material.color.copy(toLinearColor(color));
     }
+    if (material && material.uniforms && material.uniforms.uColor && material.uniforms.uColor.value) {
+        const linearColor = toLinearColor(color);
+        const target = material.uniforms.uColor.value;
+        if (target.isColor && typeof target.copy === 'function') {
+            target.copy(linearColor);
+        } else if (typeof target.set === 'function') {
+            target.set(linearColor.r, linearColor.g, linearColor.b);
+        }
+    }
 }
 
 function getStandardMaterial(color, type) {
@@ -2027,6 +2036,8 @@ function getStandardMaterial(color, type) {
                 metalness: 0.3,
                 roughness: 0.4
             });
+        case 'cinematic':
+            return getCachedMaterial('cinematic', color);
         default:
             return new THREE.MeshLambertMaterial({ color: toLinearColor(color) });
     }
@@ -2193,6 +2204,26 @@ function createAtomStyleMetallic(pos, symbol, atomScale, helpers) {
     const material = getCachedMaterial('metallic', getAtomColorByScheme(symbol));
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.copy(pos);
+    return sphere;
+}
+
+function getCinematicAtomColor(symbol, helpers) {
+    if (helpers && helpers.atomIndex !== undefined &&
+        helpers.highlightAtoms instanceof Set &&
+        helpers.highlightAtoms.has(helpers.atomIndex)) {
+        return Number.isFinite(helpers.highlightColor) ? helpers.highlightColor : 0xFFEB3B;
+    }
+    return getAtomColorByScheme(symbol);
+}
+
+function createAtomStyleCinematic(pos, symbol, atomScale, helpers) {
+    const scaledRadius = getScaledAtomRadius(symbol, atomScale, helpers);
+    const lod = (helpers && helpers._lod) || { sphere: 64, sphereHigh: 128 };
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphereHigh || lod.sphere || 64);
+    const material = getCachedMaterial('cinematic', getCinematicAtomColor(symbol, helpers));
+    const sphere = new THREE.Mesh(geometry, material);
+    sphere.position.copy(pos);
+    sphere.userData = { symbol, radius: scaledRadius, cinematic: true };
     return sphere;
 }
 
@@ -2591,6 +2622,44 @@ function createHalfBondGrey(start, end, color, bondThickness) {
     return bond;
 }
 
+function createBondStyleCinematic(p1, p2, sym1, sym2, bondThickness, atomScale, helpers) {
+    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, 'default', helpers);
+    if (!bondPoints) return null;
+    const { startPos, endPos } = bondPoints;
+
+    const atomA = helpers && helpers.bondAtoms ? helpers.bondAtoms[0] : undefined;
+    const atomB = helpers && helpers.bondAtoms ? helpers.bondAtoms[1] : undefined;
+    const highlightAtoms = helpers && helpers.highlightAtoms instanceof Set ? helpers.highlightAtoms : null;
+    const highlightColor = helpers && Number.isFinite(helpers.highlightColor) ? helpers.highlightColor : 0xFFEB3B;
+    const colorA = highlightAtoms && highlightAtoms.has(atomA) ? highlightColor : getAtomColorByScheme(sym1);
+    const colorB = highlightAtoms && highlightAtoms.has(atomB) ? highlightColor : getAtomColorByScheme(sym2);
+
+    if (colorA === colorB) {
+        return createCinematicHalfBond(startPos, endPos, colorA, bondThickness);
+    }
+
+    const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
+    const group = new THREE.Group();
+    const halfA = createCinematicHalfBond(startPos, midPoint, colorA, bondThickness);
+    const halfB = createCinematicHalfBond(midPoint, endPos, colorB, bondThickness);
+    if (halfA) group.add(halfA);
+    if (halfB) group.add(halfB);
+    return group;
+}
+
+function createCinematicHalfBond(start, end, colorHex, thickness) {
+    const direction = end.clone().sub(start);
+    const length = direction.length();
+    if (length <= 0) return null;
+
+    const geometry = new THREE.CylinderGeometry(thickness, thickness, length, 24, 1, false);
+    const material = getCachedMaterial('cinematic', colorHex);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(start.clone().add(end).multiplyScalar(0.5));
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+    return mesh;
+}
+
 // ─────────────────────────────────────────────────────────────
 // Convex Hull helper (incremental / gift-wrapping in 3D)
 // Returns { vertices: Float32Array, indices: Uint32Array } for the hull.
@@ -2978,6 +3047,49 @@ function getCachedMaterial(type, colorHex, extraKey) {
                     roughness: 0.4
                 });
                 break;
+            case 'cinematic': {
+                const color = toLinearColor(colorHex);
+                _matCache[key] = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uColor: { value: color },
+                        uDark: { value: 0.55 },
+                        uCenter: { value: 0.42 },
+                        uCenterR: { value: 0.22 },
+                        uRimPow: { value: 1.3 },
+                        uRimGain: { value: 1.55 },
+                    },
+                    vertexShader: `
+                        varying vec3 vNormalW;
+                        varying vec3 vViewDir;
+                        void main() {
+                            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                            vNormalW = normalize(normalMatrix * normal);
+                            vViewDir = normalize(-mv.xyz);
+                            gl_Position = projectionMatrix * mv;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vNormalW;
+                        varying vec3 vViewDir;
+                        uniform vec3 uColor;
+                        uniform float uDark;
+                        uniform float uCenter;
+                        uniform float uCenterR;
+                        uniform float uRimPow;
+                        uniform float uRimGain;
+                        void main() {
+                            float ndv = clamp(dot(normalize(vNormalW), normalize(vViewDir)), 0.0, 1.0);
+                            float rim = pow(1.0 - ndv, uRimPow);
+                            float bright = mix(uDark, uRimGain, rim);
+                            float spot = 1.0 - smoothstep(1.0 - uCenterR, 1.0, ndv);
+                            float lit = mix(uCenter, bright, spot);
+                            vec3 col = uColor * lit + uColor * rim * 0.30;
+                            gl_FragColor = vec4(col, 1.0);
+                        }
+                    `
+                });
+                break;
+            }
             case 'lambert':
                 _matCache[key] = new THREE.MeshLambertMaterial({ color: toLinearColor(colorHex) });
                 break;
@@ -3729,7 +3841,7 @@ function createHydrogenBond(p1, p2) {
                                 </button>
                             </div>
                             <div id="element-color-grid"
-                                style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;"></div>
+                                style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;"></div>
                             <input type="color" id="element-color-picker"
                                 style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;border:0;padding:0;"
                                 tabindex="-1" aria-hidden="true">
@@ -3835,6 +3947,7 @@ function createHydrogenBond(p1, p2) {
                                 <option value="neon">Neon</option>
                                 <option value="glossy">Glossy</option>
                                 <option value="metallic">Metallic</option>
+                                <option value="cinematic">Cinematic</option>
                                 <option value="bubble">Bubble</option>
                                 <option value="rowan">Rowan</option>
                                 <option value="grey">Grey</option>
@@ -3875,6 +3988,37 @@ function createHydrogenBond(p1, p2) {
                                     <input type="checkbox" id="show-bond" checked>
                                     <span class="slider-switch"></span>
                                 </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Hide Hs</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="hide-hydrogens">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Blur</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-blur">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="blur-strength-group" style="display:none;">
+                            <div class="control-label">
+                                <span>Blur Strength</span>
+                                <span class="slider-value" id="blur-strength-value">1.5px</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.2" max="6" step="0.1" value="1.5" class="slider"
+                                    id="blur-strength">
                             </div>
                         </div>
 
@@ -4365,6 +4509,9 @@ function createHydrogenBond(p1, p2) {
             style: 'cartoon',
             showCell: true,
             showBond: true,
+            hideHydrogens: false,
+            showBlur: false,
+            blurStrength: 1.5,
             showHBond: false,
             showShading: true,
             showEnergyPlot: false,
@@ -4390,6 +4537,37 @@ function createHydrogenBond(p1, p2) {
             rotationMode: 'TrackBall'
         };
 
+        function isHydrogenSymbol(symbol) {
+            return String(symbol || '').trim().toUpperCase() === 'H';
+        }
+
+        function isHydrogenHidden(symbol) {
+            return !!settings.hideHydrogens && isHydrogenSymbol(symbol);
+        }
+
+        function isBondHidden(sym1, sym2) {
+            return isHydrogenHidden(sym1) || isHydrogenHidden(sym2);
+        }
+
+        function getBlurStrengthValue() {
+            const value = Number(settings.blurStrength);
+            return Number.isFinite(value) ? Math.max(0, value) : 1.5;
+        }
+
+        function updateBlurEffect() {
+            const filter = settings.showBlur ? `blur(${getBlurStrengthValue().toFixed(1)}px)` : 'none';
+            if (renderer && renderer.domElement) renderer.domElement.style.filter = filter;
+
+            const blurGroup = document.getElementById('blur-strength-group');
+            if (blurGroup) blurGroup.style.display = settings.showBlur ? 'block' : 'none';
+
+            const blurSlider = document.getElementById('blur-strength');
+            if (blurSlider && document.activeElement !== blurSlider) blurSlider.value = getBlurStrengthValue().toFixed(1);
+
+            const blurValue = document.getElementById('blur-strength-value');
+            if (blurValue) blurValue.textContent = getBlurStrengthValue().toFixed(1) + 'px';
+        }
+
         // Update UI and rendering from settings (called via postMessage API)
         function updateFromSettings() {
             // Update select elements
@@ -4401,15 +4579,21 @@ function createHydrogenBond(p1, p2) {
 
             const colorSchemeSelect = document.getElementById('color-scheme-select');
             if (colorSchemeSelect) colorSchemeSelect.value = settings.colorScheme || 'Jmol';
+            if (typeof atomColorScheme !== 'undefined') {
+                atomColorScheme = (settings.colorScheme || 'Jmol').toLowerCase();
+            }
             if (!settings.elementColorOverrides || typeof settings.elementColorOverrides !== 'object') {
                 settings.elementColorOverrides = {};
             }
+            if (typeof applyElementColorOverrides === 'function') applyElementColorOverrides();
             if (typeof updateElementColorGridUI === 'function') updateElementColorGridUI();
 
             // Update checkboxes
             const checkboxMappings = {
                 'show-cell': 'showCell',
                 'show-bond': 'showBond',
+                'hide-hydrogens': 'hideHydrogens',
+                'show-blur': 'showBlur',
                 'show-hbond': 'showHBond',
                 'show-shading': 'showShading',
                 'show-energy-plot': 'showEnergyPlot',
@@ -4507,6 +4691,8 @@ function createHydrogenBond(p1, p2) {
                 }
             }
 
+            updateBlurEffect();
+
             // Apply rendering changes
             if (typeof updateShading === 'function') updateShading();
             if (typeof updateChargeUI === 'function') updateChargeUI();
@@ -4535,6 +4721,9 @@ function createHydrogenBond(p1, p2) {
                 if (material && material.color) {
                     material.color.copy(toLinearColor(color));
                 }
+                if (material && material.uniforms && material.uniforms.uColor && material.uniforms.uColor.value) {
+                    material.uniforms.uColor.value.copy(toLinearColor(color));
+                }
             };
         }
 
@@ -4545,6 +4734,7 @@ function createHydrogenBond(p1, p2) {
             'neon': (pos, symbol, atomScale) => createAtomStyleNeon(pos, symbol, atomScale),
             'glossy': (pos, symbol, atomScale) => createAtomStyleGlossy(pos, symbol, atomScale),
             'metallic': (pos, symbol, atomScale) => createAtomStyleMetallic(pos, symbol, atomScale),
+            'cinematic': (pos, symbol, atomScale, helpers) => createAtomStyleCinematic(pos, symbol, atomScale, helpers),
             'rowan': (pos, symbol, atomScale) => createAtomStyleRowan(pos, symbol, atomScale),
             'bubble': (pos, symbol, atomScale) => createAtomStyleBubble(pos, symbol, atomScale),
             'grey': (pos, symbol, atomScale, helpers) => createAtomStyleGrey(pos, symbol, atomScale, helpers.greyColorMap[symbol] ?? 0x808080)
@@ -4557,6 +4747,7 @@ function createHydrogenBond(p1, p2) {
             'neon': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
             'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy', helpers),
             'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic', helpers),
+            'cinematic': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleCinematic(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
             'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
             'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
             'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap, helpers)
@@ -5435,7 +5626,7 @@ function createHydrogenBond(p1, p2) {
             const symbols = getUniqueSymbols();
             if (symbols.length === 0) {
                 const empty = document.createElement('div');
-                empty.style.cssText = 'grid-column:1 / -1;color:#9ca3af;font-size:11px;';
+                empty.style.cssText = 'width:100%;color:#9ca3af;font-size:11px;';
                 empty.textContent = 'No elements loaded';
                 grid.appendChild(empty);
                 return;
@@ -5447,12 +5638,14 @@ function createHydrogenBond(p1, p2) {
                 btn.textContent = sym;
                 btn.title = `${sym}: ${hex} (click to change)`;
                 btn.style.cssText = `
-                    border:1px solid #4b5563;border-radius:6px;padding:4px 6px;cursor:pointer;
-                    font-size:11px;font-weight:600;background:${hex};color:${getTextColorForHex(hex)};
-                    transition:filter 0.12s ease;
+                    padding:2px 8px;border-radius:9999px;min-width:34px;cursor:pointer;
+                    border:2px solid ${hex};font-size:11px;font-weight:600;
+                    background:${hex};color:${getTextColorForHex(hex)};line-height:1.35;
+                    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.18);
+                    transition:filter 0.12s ease, transform 0.12s ease;
                 `;
-                btn.onmouseenter = () => { btn.style.filter = 'brightness(1.08)'; };
-                btn.onmouseleave = () => { btn.style.filter = 'none'; };
+                btn.onmouseenter = () => { btn.style.filter = 'brightness(1.08)'; btn.style.transform = 'translateY(-1px)'; };
+                btn.onmouseleave = () => { btn.style.filter = 'none'; btn.style.transform = 'none'; };
                 btn.addEventListener('click', () => {
                     const picker = document.getElementById('element-color-picker');
                     if (!picker) return;
@@ -5727,6 +5920,7 @@ function createHydrogenBond(p1, p2) {
                 const fixedBondStyles = ['rowan', 'neon', 'cartoon', '2d'];
                 for (let b = 0; b < bondPairs.length; b++) {
                     const { i, j } = bondPairs[b];
+                    if (isBondHidden(symbols[i], symbols[j])) continue;
                     let bond;
                     if (useChargeColor && !fixedBondStyles.includes(styleName)) {
                         bond = createBondWithColor(
@@ -5767,6 +5961,7 @@ function createHydrogenBond(p1, p2) {
                 });
                 for (let b = 0; b < hbondPairs.length; b++) {
                     const { h, a } = hbondPairs[b];
+                    if (isBondHidden(symbols[h], symbols[a])) continue;
                     const hbond = createHydrogenBond(positions[h], positions[a]);
                     if (hbond) {
                         hbond.renderOrder = 1;
@@ -5777,6 +5972,7 @@ function createHydrogenBond(p1, p2) {
 
             for (let i = 0; i < positions.length; i++) {
                 let atom;
+                if (isHydrogenHidden(symbols[i])) continue;
                 const atomRenderScale = getAdjustedAtomScale(symbols[i], atomScale, radiusScaleBySymbol);
 
                 if (useChargeColor) {
@@ -5801,6 +5997,7 @@ function createHydrogenBond(p1, p2) {
                 });
                 for (const idx of fixedIndexSet) {
                     if (idx >= positions.length) continue;
+                    if (isHydrogenHidden(symbols[idx])) continue;
                     const r = getAdjustedAtomRadius(symbols[idx], atomScale, radiusScaleBySymbol) * 1.30;
                     const mesh = new THREE.Mesh(
                         new THREE.SphereGeometry(r, 16, 12), fixedMat
@@ -5814,6 +6011,7 @@ function createHydrogenBond(p1, p2) {
             // Add charge labels if enabled
             if (settings.showChargeLabels && useChargeColor && frameCharges.length > 0) {
                 for (let i = 0; i < positions.length; i++) {
+                    if (isHydrogenHidden(symbols[i])) continue;
                     const charge = frameCharges[i] || 0;
                     const atomRenderScale = getAdjustedAtomScale(symbols[i], atomScale, radiusScaleBySymbol);
                     const label = createChargeLabelSprite(charge, positions[i], atomRenderScale, settings.normalizeCharges);
@@ -5830,6 +6028,7 @@ function createHydrogenBond(p1, p2) {
                 const headLength = 0.2;
                 const headWidth = 0.1;
                 for (let i = 0; i < positions.length; i++) {
+                    if (isHydrogenHidden(symbols[i])) continue;
                     const forceVec = new THREE.Vector3(...molecule.forces[i]);
                     if (forceVec.lengthSq() === 0) continue;
                     const direction = forceVec.clone().normalize();
@@ -5846,6 +6045,7 @@ function createHydrogenBond(p1, p2) {
             if (settings.showPolyhedron || settings.showRings) {
                 for (let b = 0; b < bondPairs.length; b++) {
                     const { i, j } = bondPairs[b];
+                    if (isBondHidden(symbols[i], symbols[j])) continue;
                     adjacency[i].push(j);
                     adjacency[j].push(i);
                 }
@@ -5857,6 +6057,7 @@ function createHydrogenBond(p1, p2) {
                 if (pairs.length === 0) {
                     // No pairs defined → draw all atoms with CN≥4 (fallback / discovery mode)
                     for (let i = 0; i < positions.length; i++) {
+                        if (isHydrogenHidden(symbols[i])) continue;
                         const neighbors = adjacency[i];
                         if (neighbors.length < 4) continue;
                         const neighborPositions = neighbors.map(ni => positions[ni]);
@@ -5872,6 +6073,7 @@ function createHydrogenBond(p1, p2) {
                     // center atom element matches and neighbor filter by neighbor element.
                     for (const { center, neighbor } of pairs) {
                         for (let i = 0; i < positions.length; i++) {
+                            if (isHydrogenHidden(symbols[i])) continue;
                             if (symbols[i] !== center) continue;
                             const nbrs = adjacency[i].filter(ni => symbols[ni] === neighbor);
                             if (nbrs.length < 4) continue;
@@ -6813,6 +7015,21 @@ function createHydrogenBond(p1, p2) {
                 renderMolecule();
             });
 
+            safeAddListener('hide-hydrogens', 'change', function () {
+                settings.hideHydrogens = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-blur', 'change', function () {
+                settings.showBlur = this.checked;
+                updateBlurEffect();
+            });
+
+            safeAddListener('blur-strength', 'input', function () {
+                settings.blurStrength = parseFloat(this.value);
+                updateBlurEffect();
+            });
+
             safeAddListener('show-hbond', 'change', function () {
                 settings.showHBond = this.checked;
                 const hbondThresholdGroup = document.getElementById('hbond-threshold-group');
@@ -6948,25 +7165,44 @@ function createHydrogenBond(p1, p2) {
                 renderMolecule();
             });
 
-            // Color scheme selection (Jmol / CPK)
-            safeAddListener('color-scheme-select', 'change', function () {
-                settings.colorScheme = this.value;
-                atomColorScheme = this.value.toLowerCase(); // sync styles.js global
+            // Color scheme selection (Jmol / CPK / PyMOL / VMD)
+            function applyColorSchemeSelectValue(select) {
+                settings.colorScheme = select.value;
+                atomColorScheme = select.value.toLowerCase(); // sync styles.js global
+                applyElementColorOverrides();
                 updateElementColorGridUI();
                 renderMolecule();
+            }
+
+            safeAddListener('color-scheme-select', 'input', function () {
+                applyColorSchemeSelectValue(this);
             });
 
-            safeAddListener('element-color-picker', 'input', function () {
-                const symbol = this.dataset.symbol;
-                const hex = normalizeHexColor(this.value);
+            safeAddListener('color-scheme-select', 'change', function () {
+                applyColorSchemeSelectValue(this);
+            });
+
+            function applyElementColorPickerValue(picker) {
+                const symbol = picker.dataset.symbol;
+                const hex = normalizeHexColor(picker.value);
                 if (!symbol || !hex) return;
                 settings.elementColorOverrides[symbol] = hex;
+                applyElementColorOverrides();
                 updateElementColorGridUI();
                 renderMolecule();
+            }
+
+            safeAddListener('element-color-picker', 'input', function () {
+                applyElementColorPickerValue(this);
+            });
+
+            safeAddListener('element-color-picker', 'change', function () {
+                applyElementColorPickerValue(this);
             });
 
             safeAddListener('reset-element-colors-btn', 'click', function () {
                 settings.elementColorOverrides = {};
+                applyElementColorOverrides();
                 updateElementColorGridUI();
                 renderMolecule();
             });

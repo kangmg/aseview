@@ -52,6 +52,7 @@ FragSelector(data, **kwargs)
 | `"default"` | Standard CPK coloring |
 | `"glossy"` | Shiny reflective surface |
 | `"metallic"` | Metallic appearance |
+| `"cinematic"` | Cinematic glossy ball-and-stick style |
 | `"bubble"` | Bubble-like appearance |
 | `"rowan"` | Rowan-inspired style |
 | `"neon"` | Glowing neon effect |
@@ -61,6 +62,9 @@ FragSelector(data, **kwargs)
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `showBond` | `bool` | Draw bonds in the 3D view | `True` |
+| `hideHydrogens` | `bool` | Hide hydrogen atoms and their bonds in both panels without removing them from the data | `False` |
+| `showBlur` | `bool` | Apply blur to the 2D and 3D rendered panels | `False` |
+| `blurStrength` | `float` | Blur radius in pixels when `showBlur` is enabled | `1.5` |
 | `showShading` | `bool` | Enable directional shading on atom spheres | `True` |
 
 ## Methods

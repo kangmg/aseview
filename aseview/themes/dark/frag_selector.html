@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js?_aseview=20260509-color-schemes-2"></script>
     <style>
         :root {
             --sidebar-bg: #1f2937;
@@ -528,7 +528,35 @@
                                 <option value="default">Default</option>
                                 <option value="bubble">Bubble</option>
                                 <option value="metallic">Metallic</option>
+                                <option value="cinematic">Cinematic</option>
                             </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Hide Hs</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="hide-hydrogens">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Blur</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-blur">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group" id="blur-strength-group" style="display:none;">
+                            <div class="control-label">
+                                <span>Blur Strength</span>
+                                <span class="slider-value" id="blur-strength-value">1.5px</span>
+                            </div>
+                            <input type="range" min="0.2" max="6" step="0.1" value="1.5" class="slider"
+                                id="blur-strength">
                         </div>
                         <div class="control-group">
                             <div class="control-label"><span>Background</span></div>
@@ -697,12 +725,48 @@
             bondThickness: 0.1,
             bondThreshold: 1.2,
             showBond: true,
+            hideHydrogens: false,
+            showBlur: false,
+            blurStrength: 1.5,
             showCell: true,
             cellColor: '#808080',
             showAxis: true,
             showShading: true,
             colorScheme: 'Jmol',
         }, _readInjectedJSON('__frag_settings__', {}));
+
+        function isHydrogenSymbol(symbol) {
+            return String(symbol || '').trim().toUpperCase() === 'H';
+        }
+
+        function isHydrogenHidden(symbol) {
+            return !!fragSettings.hideHydrogens && isHydrogenSymbol(symbol);
+        }
+
+        function isBondHidden(sym1, sym2) {
+            return isHydrogenHidden(sym1) || isHydrogenHidden(sym2);
+        }
+
+        function getBlurStrengthValue() {
+            const value = Number(fragSettings.blurStrength);
+            return Number.isFinite(value) ? Math.max(0, value) : 1.5;
+        }
+
+        function updateBlurEffect() {
+            const filter = fragSettings.showBlur ? `blur(${getBlurStrengthValue().toFixed(1)}px)` : 'none';
+            const svg = document.getElementById('lewis-svg');
+            if (svg) svg.style.filter = filter;
+            if (renderer3D && renderer3D.domElement) renderer3D.domElement.style.filter = filter;
+
+            const blurGroup = document.getElementById('blur-strength-group');
+            if (blurGroup) blurGroup.style.display = fragSettings.showBlur ? 'block' : 'none';
+
+            const blurSlider = document.getElementById('blur-strength');
+            if (blurSlider && document.activeElement !== blurSlider) blurSlider.value = getBlurStrengthValue().toFixed(1);
+
+            const blurValue = document.getElementById('blur-strength-value');
+            if (blurValue) blurValue.textContent = getBlurStrengthValue().toFixed(1) + 'px';
+        }
 
         // ─────────────────────────────────────────────────────────────────────
         // atom/bond factory tables  (mirrors molecular_viewer.html)
@@ -721,6 +785,9 @@
                 if (material && material.color) {
                     material.color.copy(toLinearColor(color));
                 }
+                if (material && material.uniforms && material.uniforms.uColor && material.uniforms.uColor.value) {
+                    material.uniforms.uColor.value.copy(toLinearColor(color));
+                }
             };
         }
 
@@ -729,6 +796,7 @@
             'cartoon':  (pos, sym, s)          => createAtomStyleCartoon(pos, sym, s),
             'glossy':   (pos, sym, s)          => createAtomStyleGlossy(pos, sym, s),
             'metallic': (pos, sym, s)          => createAtomStyleMetallic(pos, sym, s),
+            'cinematic': (pos, sym, s, helpers) => createAtomStyleCinematic(pos, sym, s, helpers),
             'bubble':   (pos, sym, s)          => createAtomStyleBubble(pos, sym, s),
             'rowan':    (pos, sym, s)          => createAtomStyleRowan(pos, sym, s),
             'neon':     (pos, sym, s)          => createAtomStyleNeon(pos, sym, s),
@@ -740,6 +808,7 @@
             'cartoon':  (p1, p2, s1, s2, r, as)          => createBondStyleCartoon(p1, p2, s1, s2, r, as),
             'glossy':   (p1, p2, s1, s2, r, as)          => createBondStyleDefault(p1, p2, s1, s2, r, as, 'glossy'),
             'metallic': (p1, p2, s1, s2, r, as)          => createBondStyleDefault(p1, p2, s1, s2, r, as, 'metallic'),
+            'cinematic': (p1, p2, s1, s2, r, as, helpers) => createBondStyleCinematic(p1, p2, s1, s2, r, as, helpers),
             'bubble':   (p1, p2, s1, s2, r, as)          => createBondStyleBubble(p1, p2, s1, s2, r, as),
             'rowan':    (p1, p2, s1, s2, r, as)          => createBondStyleRowan(p1, p2, s1, s2, r, as),
             'neon':     (p1, p2, s1, s2, r, as)          => createBondStyleNeon(p1, p2, s1, s2, r, as),
@@ -1118,7 +1187,9 @@
             const { coords2d } = layout2D;
             if (!coords2d || coords2d.length === 0) return;
 
-            const xs = coords2d.map(c => c[0]), ys = coords2d.map(c => c[1]);
+            const visibleCoords = coords2d.filter((_, i) => !isHydrogenHidden(molData.symbols[i]));
+            const fitCoords = visibleCoords.length > 0 ? visibleCoords : coords2d;
+            const xs = fitCoords.map(c => c[0]), ys = fitCoords.map(c => c[1]);
             const minX = Math.min(...xs), maxX = Math.max(...xs);
             const minY = Math.min(...ys), maxY = Math.max(...ys);
             const molW = (maxX - minX) || 2, molH = (maxY - minY) || 2;
@@ -1149,6 +1220,7 @@
 
             // ── Bonds (split-colour, each half atom's colour) ──
             for (const [a, b] of bonds) {
+                if (isBondHidden(symbols[a], symbols[b])) continue;
                 const [x1, y1] = coords2d[a];
                 const [x2, y2] = coords2d[b];
                 const mx = (x1+x2)/2, my = (y1+y2)/2;
@@ -1175,6 +1247,7 @@
 
             // ── Atoms ──
             for (let i = 0; i < symbols.length; i++) {
+                if (isHydrogenHidden(symbols[i])) continue;
                 const [cx, cy] = coords2d[i];
                 const sym  = symbols[i];
                 const info = atomInfo[sym] || atomInfo['default'];
@@ -1363,12 +1436,14 @@
                 const minX = Math.min(...xs), maxX = Math.max(...xs);
                 const minY = Math.min(...ys), maxY = Math.max(...ys);
                 layout2D.coords2d.forEach(([ax, ay], i) => {
+                    if (isHydrogenHidden(molData.symbols[i])) return;
                     if (ax >= minX && ax <= maxX && ay >= minY && ay <= maxY)
                         selectedAtoms.add(i);
                 });
             } else {
                 // lasso
                 layout2D.coords2d.forEach(([ax, ay], i) => {
+                    if (isHydrogenHidden(molData.symbols[i])) return;
                     if (pointInPolygon(ax, ay, layoutPts)) selectedAtoms.add(i);
                 });
             }
@@ -1488,6 +1563,7 @@
 
             const projected = projectAtoms3D();
             projected.forEach(([px, py, pz], i) => {
+                if (isHydrogenHidden(cachedSymbols[i])) return;
                 if (pz > 1) return;  // behind camera — skip
                 if (mode === 'rect') {
                     const xs   = localPts.map(p => p[0]);
@@ -2414,6 +2490,7 @@
                 const bp = findBondsSpatialGrid(positions, symbols, cutoff);
                 for (let b = 0; b < bp.length; b++) {
                     const { i, j } = bp[b];
+                    if (isBondHidden(symbols[i], symbols[j])) continue;
                     const bond = bf(positions[i], positions[j], symbols[i], symbols[j], bondRadius, atomScale, helpers);
                     if (bond) { bond.renderOrder = 1; moleculeGroup3D.add(bond); }
                 }
@@ -2421,6 +2498,7 @@
 
             // Atoms (tag each mesh for raycasting)
             for (let i = 0; i < positions.length; i++) {
+                if (isHydrogenHidden(symbols[i])) continue;
                 const atom = af(positions[i], symbols[i], atomScale, helpers);
                 if (atom) {
                     atom.traverse(child => {
@@ -2649,6 +2727,36 @@
                 renderMolecule3D();
             });
 
+            const hideHydrogensCb = document.getElementById('hide-hydrogens');
+            if (hideHydrogensCb) {
+                hideHydrogensCb.checked = !!fragSettings.hideHydrogens;
+                hideHydrogensCb.addEventListener('change', function () {
+                    fragSettings.hideHydrogens = this.checked;
+                    buildSVG();
+                    fitSVG();
+                    renderMolecule3D();
+                });
+            }
+
+            const showBlurCb = document.getElementById('show-blur');
+            if (showBlurCb) {
+                showBlurCb.checked = !!fragSettings.showBlur;
+                showBlurCb.addEventListener('change', function () {
+                    fragSettings.showBlur = this.checked;
+                    updateBlurEffect();
+                });
+            }
+
+            const blurSlider = document.getElementById('blur-strength');
+            if (blurSlider) {
+                blurSlider.value = getBlurStrengthValue().toFixed(1);
+                blurSlider.addEventListener('input', function () {
+                    fragSettings.blurStrength = parseFloat(this.value);
+                    updateBlurEffect();
+                });
+            }
+            updateBlurEffect();
+
             // Background colour
             const bgInput = document.getElementById('bg-color');
             bgInput.value = fragSettings.backgroundColor || '#1f2937';
@@ -2870,6 +2978,19 @@
                         if (showAxisCbMsg && msg.settings.showAxis !== undefined) {
                             showAxisCbMsg.checked = fragSettings.showAxis;
                         }
+                        const hideHydrogensCbMsg = document.getElementById('hide-hydrogens');
+                        if (hideHydrogensCbMsg && msg.settings.hideHydrogens !== undefined) {
+                            hideHydrogensCbMsg.checked = !!fragSettings.hideHydrogens;
+                        }
+                        const showBlurCbMsg = document.getElementById('show-blur');
+                        if (showBlurCbMsg && msg.settings.showBlur !== undefined) {
+                            showBlurCbMsg.checked = !!fragSettings.showBlur;
+                        }
+                        const blurSliderMsg = document.getElementById('blur-strength');
+                        if (blurSliderMsg && msg.settings.blurStrength !== undefined) {
+                            blurSliderMsg.value = getBlurStrengthValue().toFixed(1);
+                        }
+                        updateBlurEffect();
                         recompute();
                     }
                     break;

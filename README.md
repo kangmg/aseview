@@ -232,7 +232,7 @@ from aseview import MolecularViewer
 
 viewer = MolecularViewer(
     atoms,
-    style='neon',           # default, cartoon, neon, glossy, metallic, rowan, grey
+    style='neon',           # default, cartoon, neon, glossy, metallic, cinematic, rowan, grey
     bondThreshold=1.2,      # bond detection scale factor
     atomSize=0.5,
     radiusContrast=0.8,     # 0.0 = uniform radii, 1.0 = element radii

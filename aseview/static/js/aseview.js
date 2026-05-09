@@ -16,9 +16,30 @@
     // so they are not blocked by CDN iframe headers or text/plain content types.
     // Themes live at: aseview/themes/{theme}/{template}.html
     // Fallback to legacy templates/ path for backward compat
-    const THEMES_BASE    = 'https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/themes';
-    const FALLBACK_BASE  = 'https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/templates';
+    const REMOTE_THEMES_BASE = 'https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/themes';
+    const REMOTE_FALLBACK_BASE = 'https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/templates';
+
+    function inferLocalTemplateBases() {
+        const currentScript = document.currentScript;
+        if (!currentScript || !currentScript.src) return null;
+        try {
+            const scriptUrl = new URL(currentScript.src, global.location && global.location.href ? global.location.href : undefined);
+            if (scriptUrl.protocol === 'file:') return null;
+            return {
+                themes: new URL('../../themes', scriptUrl).href.replace(/\/$/, ''),
+                templates: new URL('../../templates', scriptUrl).href.replace(/\/$/, '')
+            };
+        } catch (err) {
+            return null;
+        }
+    }
+
+    const localTemplateBases = inferLocalTemplateBases();
+    const THEMES_BASE = (global.ASEVIEW_THEMES_BASE || (localTemplateBases && localTemplateBases.themes) || REMOTE_THEMES_BASE);
+    const FALLBACK_BASE = (global.ASEVIEW_TEMPLATES_BASE || (localTemplateBases && localTemplateBases.templates) || REMOTE_FALLBACK_BASE);
     const CDN_BASE       = THEMES_BASE;   // kept for external access via ASEView.CDN_BASE
+    const DEFAULT_CACHE_BUST = 'auto';
+    const ASEVIEW_MAIN_ASSET_RE = /https:\/\/cdn\.jsdelivr\.net\/gh\/kangmg\/aseview@main\/aseview\/static\/js\/styles\.js(?:\?[^"']*)?/g;
     const DEFAULT_VIEWER_OPTIONS = {
         bondThreshold: 1.2,
     };
@@ -51,6 +72,11 @@
             this.isReady = false;
             this.pendingMessages = [];
             this._loadId = 0;
+            this._cacheBustToken = this._resolveCacheBustToken(
+                Object.prototype.hasOwnProperty.call(this.options, 'cacheBust')
+                    ? this.options.cacheBust
+                    : DEFAULT_CACHE_BUST
+            );
 
             this._createIframe();
         }
@@ -90,6 +116,31 @@
             return `${base}${html}`;
         }
 
+        _resolveCacheBustToken(value) {
+            if (!value) return null;
+            if (value === true || value === 'auto') {
+                return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+            }
+            return String(value);
+        }
+
+        _withCacheBust(url) {
+            if (!this._cacheBustToken) return url;
+            try {
+                const next = new URL(url, global.location && global.location.href ? global.location.href : undefined);
+                next.searchParams.set('_aseview', this._cacheBustToken);
+                return next.href;
+            } catch (err) {
+                const separator = url.includes('?') ? '&' : '?';
+                return `${url}${separator}_aseview=${encodeURIComponent(this._cacheBustToken)}`;
+            }
+        }
+
+        _withAssetCacheBust(html) {
+            if (!this._cacheBustToken) return html;
+            return html.replace(ASEVIEW_MAIN_ASSET_RE, (url) => this._withCacheBust(url));
+        }
+
         async _loadTemplate() {
             const loadId = ++this._loadId;
             const candidates = this._templateCandidates();
@@ -97,11 +148,12 @@
 
             for (const url of candidates) {
                 try {
-                    const response = await fetch(url, { cache: 'no-cache' });
+                    const requestUrl = this._withCacheBust(url);
+                    const response = await fetch(requestUrl, { cache: this._cacheBustToken ? 'reload' : 'no-cache' });
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}`);
                     }
-                    const html = await response.text();
+                    const html = this._withAssetCacheBust(await response.text());
                     if (loadId !== this._loadId || !this.iframe) return;
                     this.iframe.srcdoc = this._withBaseHref(html, url);
                     return;

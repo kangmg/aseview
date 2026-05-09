@@ -45,6 +45,9 @@ NormalViewer(atoms, vibrations=None, mode_vectors=None, frequencies=None, n_fram
 |-----------|------|-------------|---------|
 | `showCell` | `bool` | Show unit cell | `True` |
 | `showBond` | `bool` | Show bonds | `True` |
+| `hideHydrogens` | `bool` | Hide hydrogen atoms and their bonds without removing them from the data | `False` |
+| `showBlur` | `bool` | Apply blur to the rendered molecule canvas | `False` |
+| `blurStrength` | `float` | Blur radius in pixels when `showBlur` is enabled | `1.5` |
 | `showShadow` | `bool` | Enable shadows | `False` |
 | `showModeVector` | `bool` | Show displacement arrows | `False` |
 

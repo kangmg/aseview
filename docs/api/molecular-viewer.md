@@ -43,6 +43,7 @@ MolecularViewer(data, **kwargs)
 | `"neon"` | Glowing neon effect |
 | `"glossy"` | Shiny reflective surface |
 | `"metallic"` | Metallic appearance |
+| `"cinematic"` | Cinematic glossy ball-and-stick style |
 | `"rowan"` | Rowan-inspired style |
 | `"grey"` | Greyscale rendering |
 | `"bubble"` | Bubble-like appearance |
@@ -53,6 +54,9 @@ MolecularViewer(data, **kwargs)
 |-----------|------|-------------|---------|
 | `showCell` | `bool` | Show unit cell | `True` |
 | `showBond` | `bool` | Show covalent bonds | `True` |
+| `hideHydrogens` | `bool` | Hide hydrogen atoms and their bonds without removing them from the data | `False` |
+| `showBlur` | `bool` | Apply blur to the rendered molecule canvas | `False` |
+| `blurStrength` | `float` | Blur radius in pixels when `showBlur` is enabled | `1.5` |
 | `showHBond` | `bool` | Show hydrogen bonds | `False` |
 | `hBondThreshold` | `float` | H···A distance cutoff (Å) for hydrogen-bond detection | `2.5` |
 | `showShadow` | `bool` | Enable shadows | `False` |
@@ -66,7 +70,7 @@ MolecularViewer(data, **kwargs)
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `colorBy` | `str` | Atom coloring mode: `"Element"` or `"Charge"` | `"Element"` |
-| `colorScheme` | `str` | Element color scheme: `"Jmol"` or `"CPK"` | `"Jmol"` |
+| `colorScheme` | `str` | Element color scheme: `"Jmol"`, `"CPK"`, `"PyMOL"`, or `"VMD"` | `"Jmol"` |
 | `normalizeCharges` | `bool` | Normalize charges to symmetric range | `False` |
 | `chargeColormap` | `str` | Colormap for charge visualization | `"coolwarm"` |
 | `showConstraint` | `bool` | Highlight fixed atoms with a yellow overlay | `False` |
@@ -296,8 +300,8 @@ viewer.show()
 ### Color Scheme
 
 ```python
-# CPK classic colors
-viewer = MolecularViewer(atoms, colorScheme="CPK")
+# CPK, PyMOL, and VMD element color tables are available
+viewer = MolecularViewer(atoms, colorScheme="PyMOL")
 viewer.show()
 ```
 

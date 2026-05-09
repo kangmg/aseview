@@ -65,6 +65,7 @@ aseview [OPTIONS] FILES...
 | `neon` | Glowing neon effect |
 | `glossy` | Shiny reflective surface |
 | `metallic` | Metallic appearance |
+| `cinematic` | Cinematic glossy ball-and-stick style |
 | `rowan` | Rowan-inspired style |
 | `grey` | Greyscale rendering |
 

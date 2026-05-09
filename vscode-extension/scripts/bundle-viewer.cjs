@@ -15,10 +15,11 @@ function readMedia(name) {
 let html = readMedia('molecular_viewer.html');
 
 // Helper: replace a <script src="URL"> tag with inline <script>code</script>
-function inlineScript(html, urlPattern, code) {
+function inlineScript(html, urlPattern, code, options = {}) {
   // Match <script src="URL"></script> (with possible attributes before src)
   const escaped = urlPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp(`<script[^>]*src="${escaped}"[^>]*>\\s*</script>`, 'i');
+  const querySuffix = options.allowQuery ? '(?:\\?[^"]*)?' : '';
+  const re = new RegExp(`<script[^>]*src="${escaped}${querySuffix}"[^>]*>\\s*</script>`, 'i');
   const tag = `<script>\n${code}\n</script>`;
   const result = html.replace(re, tag);
   if (result === html) {
@@ -58,7 +59,7 @@ const stylesUrls = [
 ];
 let stylesInlined = false;
 for (const url of stylesUrls) {
-  const next = inlineScript(html, url, stylesCode);
+  const next = inlineScript(html, url, stylesCode, { allowQuery: true });
   if (next !== html) { html = next; stylesInlined = true; break; }
 }
 if (!stylesInlined) console.warn('  WARNING: styles.js CDN tag not found');
