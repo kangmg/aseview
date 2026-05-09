@@ -2736,6 +2736,13 @@
         function applyHideHydrogens() {
             if (!molData) return;
             const syms = molData.symbols;
+            if (hideHydrogens) {
+                let changed = false;
+                for (const idx of [...selectedAtoms]) {
+                    if (syms[idx] === 'H') { selectedAtoms.delete(idx); changed = true; }
+                }
+                if (changed) updateIndexPanel();
+            }
             document.querySelectorAll('.atom-group[data-is-h]').forEach(grp => {
                 grp.style.display = hideHydrogens ? 'none' : '';
             });
