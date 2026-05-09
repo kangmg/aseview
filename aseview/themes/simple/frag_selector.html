@@ -265,6 +265,7 @@
     #sel-overlay-container, #sel-overlay-container-3d { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:4; overflow:hidden; }
     #lewis-svg.mode-navigate { cursor:grab; }
     #lewis-svg.mode-navigate.panning { cursor:grabbing; }
+    #lewis-svg.mode-navigate.rotating { cursor:crosshair; }
     #lewis-svg.mode-click, #lewis-svg.mode-rect, #lewis-svg.mode-lasso { cursor:crosshair; }
     #molecule-canvas-3d.mode-navigate, #molecule-canvas-3d.mode-click { cursor:default; }
     #molecule-canvas-3d.mode-rect, #molecule-canvas-3d.mode-lasso { cursor:crosshair; }
@@ -349,6 +350,7 @@
                             <button class="btn" id="select-all-btn">Select All</button>
                             <button class="btn" id="clear-btn">Clear</button>
                             <button class="btn" id="invert-btn">Invert</button>
+                            <button class="btn" id="expand-h-btn" title="Add H atoms bonded to selected atoms">Expand H</button>
                         </div>
                         <div class="control-group" style="margin-top:0.75rem;">
                             <div class="control-label" style="margin-bottom:0.3rem;">
@@ -463,6 +465,15 @@
                                 <span>Axis</span>
                                 <label class="switch">
                                     <input type="checkbox" id="show-axis" checked>
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Hide H</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="hide-h-toggle">
                                     <span class="slider-switch"></span>
                                 </label>
                             </div>
@@ -698,6 +709,7 @@
         // Selection state
         // ─────────────────────────────────────────────────────────────────────
         const selectedAtoms = new Set();
+        let hideHydrogens = false;
 
         // ─────────────────────────────────────────────────────────────────────
         // THREE.js state
@@ -715,7 +727,8 @@
         // ─────────────────────────────────────────────────────────────────────
         // 2D layout state
         // ─────────────────────────────────────────────────────────────────────
-        let svgTx = 0, svgTy = 0, svgScale = 1;
+        let svgTx = 0, svgTy = 0, svgScale = 1, svgAngle = 0;
+        let svgComX = 0, svgComY = 0;   // 2D layout COM (layout units)
         let layout2D = null;   // { coords2d: [[x,y]...], bonds: [[i,j]...], comps: [[idx,...]...] }
 
         // ═════════════════════════════════════════════════════════════════════
@@ -811,17 +824,18 @@
             const apo = bondLen / (2 * Math.tan(Math.PI / n));
 
             const anchors = ring.filter(i => fixed.has(i));
-            let cx, cy, startAngle;
+            let cx, cy, startAngle, dir = 1;
 
             if (anchors.length >= 2) {
                 let fa = anchors[0], fb = anchors[1];
+                outerAnchor:
                 for (let ai = 0; ai < anchors.length; ai++) {
                     const ka = ring.indexOf(anchors[ai]);
                     for (let bi = 0; bi < anchors.length; bi++) {
                         if (ai === bi) continue;
                         const kb = ring.indexOf(anchors[bi]);
                         if (Math.abs(ka - kb) === 1 || Math.abs(ka - kb) === n - 1) {
-                            fa = anchors[ai]; fb = anchors[bi]; break;
+                            fa = anchors[ai]; fb = anchors[bi]; break outerAnchor;
                         }
                     }
                 }
@@ -833,14 +847,26 @@
                              my + apo * Math.sin(edgeAngle + Math.PI/2)];
                 const c2 = [mx + apo * Math.cos(edgeAngle - Math.PI/2),
                              my + apo * Math.sin(edgeAngle - Math.PI/2)];
-                const unpl = ring.filter(i => !fixed.has(i));
-                let ux = 0, uy = 0;
-                const ref = unpl.length ? unpl : ring;
-                for (const i of ref) { ux += coords[i][0]; uy += coords[i][1]; }
-                ux /= ref.length; uy /= ref.length;
-                [cx, cy] = Math.hypot(c1[0]-ux,c1[1]-uy) < Math.hypot(c2[0]-ux,c2[1]-uy) ? c1 : c2;
+                // Choose center farther from other already-placed rings, else closer to unplaced PCA atoms
+                const ringSet = new Set(ring);
+                const otherFixed = Array.from(fixed).filter(i => !ringSet.has(i));
+                if (otherFixed.length > 0) {
+                    let ox = 0, oy = 0;
+                    for (const i of otherFixed) { ox += coords[i][0]; oy += coords[i][1]; }
+                    ox /= otherFixed.length; oy /= otherFixed.length;
+                    [cx, cy] = Math.hypot(c1[0]-ox,c1[1]-oy) > Math.hypot(c2[0]-ox,c2[1]-oy) ? c1 : c2;
+                } else {
+                    const unpl = ring.filter(i => !fixed.has(i));
+                    let ux = 0, uy = 0;
+                    const ref = unpl.length ? unpl : ring;
+                    for (const i of ref) { ux += coords[i][0]; uy += coords[i][1]; }
+                    ux /= ref.length; uy /= ref.length;
+                    [cx, cy] = Math.hypot(c1[0]-ux,c1[1]-uy) < Math.hypot(c2[0]-ux,c2[1]-uy) ? c1 : c2;
+                }
                 const ka = ring.indexOf(fa);
-                startAngle = Math.atan2(ay - cy, ax - cx) - (2 * Math.PI * ka / n);
+                const crossVec = (ax - cx) * (by - cy) - (ay - cy) * (bx - cx);
+                dir = crossVec >= 0 ? 1 : -1;
+                startAngle = Math.atan2(ay - cy, ax - cx) - dir * (2 * Math.PI * ka / n);
             } else if (anchors.length === 1) {
                 let pcx = 0, pcy = 0;
                 for (const i of ring) { pcx += coords[i][0]; pcy += coords[i][1]; }
@@ -856,7 +882,7 @@
 
             for (let k = 0; k < n; k++) {
                 if (!fixed.has(ring[k])) {
-                    const angle = startAngle + (2 * Math.PI * k) / n;
+                    const angle = startAngle + dir * (2 * Math.PI * k) / n;
                     coords[ring[k]] = [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
                 }
             }
@@ -959,9 +985,36 @@
             for (const [a, b] of bonds) { adj[a].push(b); adj[b].push(a); }
             const rings = detectRings(nAtoms, bonds, adj);
             const fixed = new Set();
-            for (const ring of rings) {
-                regulariseRing(coords, ring, fixed);
-                for (const i of ring) fixed.add(i);
+            if (rings.length > 0) {
+                const ringAdj = rings.map(() => []);
+                for (let i = 0; i < rings.length; i++) {
+                    const si = new Set(rings[i]);
+                    for (let j = i + 1; j < rings.length; j++) {
+                        if (rings[j].filter(a => si.has(a)).length >= 2) {
+                            ringAdj[i].push(j); ringAdj[j].push(i);
+                        }
+                    }
+                }
+                const visited = new Uint8Array(rings.length);
+                const queue = [0];
+                visited[0] = 1;
+                regulariseRing(coords, rings[0], fixed);
+                for (const a of rings[0]) fixed.add(a);
+                while (queue.length) {
+                    const ri = queue.shift();
+                    for (const rj of ringAdj[ri]) {
+                        if (visited[rj]) continue;
+                        visited[rj] = 1;
+                        regulariseRing(coords, rings[rj], fixed);
+                        for (const a of rings[rj]) fixed.add(a);
+                        queue.push(rj);
+                    }
+                }
+                for (let i = 1; i < rings.length; i++) {
+                    if (visited[i]) continue;
+                    regulariseRing(coords, rings[i], fixed);
+                    for (const a of rings[i]) fixed.add(a);
+                }
             }
             snapChainAngles(coords, adj, nAtoms, fixed);
             return coords;
@@ -985,6 +1038,100 @@
                 comps.push(comp);
             }
             return comps;
+        }
+
+        /** Place H atoms around their parent heavy atoms after heavy-atom layout. */
+        function placeHydrogens(coords, bonds, isH, bondLen) {
+            bondLen = bondLen || 1.5;
+            const n = coords.length;
+            const adj = Array.from({length: n}, () => []);
+            for (const [a, b] of bonds) { adj[a].push(b); adj[b].push(a); }
+            const hByParent = new Map();
+            for (let i = 0; i < n; i++) {
+                if (!isH[i]) continue;
+                const par = adj[i].find(nb => !isH[nb]);
+                if (par === undefined) continue;
+                if (!hByParent.has(par)) hByParent.set(par, []);
+                hByParent.get(par).push(i);
+            }
+            for (const [par, hList] of hByParent) {
+                const pp = coords[par];
+                const heavyNbs = adj[par].filter(nb => !isH[nb]);
+                const nH = hList.length;
+                if (heavyNbs.length === 1) {
+                    const totalDeg = heavyNbs.length + nH;
+                    const step = (2 * Math.PI) / Math.max(totalDeg, 2);
+                    const inAngle = Math.atan2(pp[1] - coords[heavyNbs[0]][1], pp[0] - coords[heavyNbs[0]][0]);
+                    const backAngle = inAngle + Math.PI;
+                    let startShift = 0;
+                    if (nH === 3) {
+                        let bestD2 = -1;
+                        for (let s = 0; s < 18; s++) {
+                            const shift = s * Math.PI / 36;
+                            let minD2 = Infinity;
+                            for (let k = 0; k < 3; k++) {
+                                const a = backAngle + shift + (k + 1) * step;
+                                const hx = pp[0] + bondLen * Math.cos(a);
+                                const hy = pp[1] + bondLen * Math.sin(a);
+                                for (let ci = 0; ci < n; ci++) {
+                                    if (isH[ci] || ci === par) continue;
+                                    const dx = hx - coords[ci][0], dy = hy - coords[ci][1];
+                                    const d2 = dx*dx + dy*dy;
+                                    if (d2 < minD2) minD2 = d2;
+                                }
+                            }
+                            if (minD2 > bestD2) { bestD2 = minD2; startShift = shift; }
+                        }
+                    }
+                    hList.forEach((hi, k) => {
+                        const angle = backAngle + startShift + (k + 1) * step;
+                        coords[hi] = [pp[0] + bondLen * Math.cos(angle), pp[1] + bondLen * Math.sin(angle)];
+                    });
+                } else {
+                    const heavyAngles = heavyNbs.map(nb => Math.atan2(coords[nb][1]-pp[1], coords[nb][0]-pp[0]));
+                    const m = heavyAngles.length;
+                    const sorted = [...heavyAngles].sort((a, b) => a - b);
+                    const gaps = [];
+                    for (let i = 0; i < m; i++) {
+                        const a1 = sorted[i];
+                        const a2 = i + 1 < m ? sorted[i+1] : sorted[0] + 2 * Math.PI;
+                        gaps.push({ start: a1, size: a2 - a1, count: 0 });
+                    }
+                    let distribute = false;
+                    if (m === 2) {
+                        const v1 = [coords[heavyNbs[0]][0]-pp[0], coords[heavyNbs[0]][1]-pp[1]];
+                        const v2 = [coords[heavyNbs[1]][0]-pp[0], coords[heavyNbs[1]][1]-pp[1]];
+                        const dot = v1[0]*v2[0] + v1[1]*v2[1];
+                        const cosA = dot / (Math.hypot(v1[0],v1[1]) * Math.hypot(v2[0],v2[1]));
+                        if (cosA < -0.6) distribute = true;
+                    }
+                    if (distribute) {
+                        for (let i = 0; i < nH; i++) {
+                            let best = 0;
+                            for (let g = 1; g < gaps.length; g++) {
+                                if (gaps[g].size / (gaps[g].count + 1) > gaps[best].size / (gaps[best].count + 1))
+                                    best = g;
+                            }
+                            gaps[best].count++;
+                        }
+                    } else {
+                        let best = 0;
+                        for (let g = 1; g < gaps.length; g++) {
+                            if (gaps[g].size > gaps[best].size) best = g;
+                        }
+                        gaps[best].count = nH;
+                    }
+                    let hIdx = 0;
+                    for (const gap of gaps) {
+                        if (gap.count === 0) continue;
+                        const step = gap.size / (gap.count + 1);
+                        for (let k = 1; k <= gap.count; k++) {
+                            coords[hList[hIdx++]] = [pp[0] + bondLen * Math.cos(gap.start + k * step),
+                                                      pp[1] + bondLen * Math.sin(gap.start + k * step)];
+                        }
+                    }
+                }
+            }
         }
 
         /**
@@ -1021,6 +1168,9 @@
                     .filter(([a, b]) => compSet.has(a) && compSet.has(b))
                     .map(([a, b])    => [globalToLocal.get(a), globalToLocal.get(b)]);
 
+                const localIsH = comp.map(gi => symbols[gi] === 'H');
+                const heavyLocalBonds = localBonds.filter(([a, b]) => !localIsH[a] && !localIsH[b]);
+
                 let local2d;
                 if (comp.length === 1) {
                     local2d = [[0, 0]];
@@ -1029,14 +1179,20 @@
                 } else {
                     // Project to 2D with PCA, then refine with ring regularisation + angle snapping
                     const pca2d = pca3Dto2D(pts3d);
-                    const allX  = pca2d.map(p => p[0]), allY = pca2d.map(p => p[1]);
-                    const span  = Math.max(
-                        Math.max(...allX) - Math.min(...allX),
-                        Math.max(...allY) - Math.min(...allY),
-                        1e-9,
-                    );
-                    const scaled = pca2d.map(p => [p[0] / span, p[1] / span]);
-                    local2d = refine2DLayout(scaled, localBonds, comp.length);
+                    // Scale PCA using heavy bonds so average heavy bond length = 1.5
+                    const scaleBonds = heavyLocalBonds.length > 0 ? heavyLocalBonds : localBonds;
+                    let _totLen = 0;
+                    for (const [_a, _b] of scaleBonds) {
+                        const _dx = pca2d[_a][0] - pca2d[_b][0];
+                        const _dy = pca2d[_a][1] - pca2d[_b][1];
+                        _totLen += Math.sqrt(_dx*_dx + _dy*_dy);
+                    }
+                    const _s = _totLen > 0 ? 1.5 * scaleBonds.length / _totLen : 1;
+                    const scaled = pca2d.map(p => [p[0] * _s, p[1] * _s]);
+                    // Layout heavy atoms only (H atoms keep scaled PCA positions for now)
+                    local2d = refine2DLayout(scaled, heavyLocalBonds, comp.length);
+                    // Place H atoms around their heavy-atom parents
+                    placeHydrogens(local2d, localBonds, localIsH, 1.5);
                 }
 
                 // Centre this component's Y around 0
@@ -1083,7 +1239,9 @@
 
         function applySVGTransform() {
             const g = document.getElementById('svg-content');
-            if (g) g.setAttribute('transform', `translate(${svgTx},${svgTy}) scale(${svgScale})`);
+            if (g) g.setAttribute('transform',
+                `translate(${svgTx},${svgTy}) scale(${svgScale}) translate(${svgComX},${svgComY}) rotate(${svgAngle}) translate(${-svgComX},${-svgComY})`
+            );
         }
 
         function fitSVG() {
@@ -1094,6 +1252,11 @@
             const H = svg.clientHeight || 400;
             const { coords2d } = layout2D;
             if (!coords2d || coords2d.length === 0) return;
+
+            const n = coords2d.length;
+            svgComX = coords2d.reduce((s, c) => s + c[0], 0) / n;
+            svgComY = coords2d.reduce((s, c) => s + c[1], 0) / n;
+            svgAngle = 0;
 
             const visibleCoords = coords2d.filter((_, i) => !isHydrogenHidden(molData.symbols[i]));
             const fitCoords = visibleCoords.length > 0 ? visibleCoords : coords2d;
@@ -1169,6 +1332,7 @@
                 const grp = document.createElementNS(SVG_NS, 'g');
                 grp.setAttribute('class', 'atom-group');
                 grp.setAttribute('data-atom-idx', i);
+                if (sym === 'H') grp.setAttribute('data-is-h', '');
                 grp.style.cursor = 'pointer';
 
                 // Selection ring (hidden by default) — yellow highlight
@@ -1231,6 +1395,7 @@
 
                 atomsLayer.appendChild(grp);
             }
+            applyHideHydrogens();
         }
 
         /** Update SVG highlight rings and bond colours to match current selection. */
@@ -1315,7 +1480,15 @@
             const rect = svg.getBoundingClientRect();
             const px   = clientX - rect.left;
             const py   = clientY - rect.top;
-            return [(px - svgTx) / svgScale, (py - svgTy) / svgScale];
+            // Remove translate + scale
+            const qx = (px - svgTx) / svgScale;
+            const qy = (py - svgTy) / svgScale;
+            // Remove rotation around COM (inverse = rotate by -svgAngle)
+            if (svgAngle === 0) return [qx, qy];
+            const rad = -svgAngle * Math.PI / 180;
+            const cos = Math.cos(rad), sin = Math.sin(rad);
+            const dx = qx - svgComX, dy = qy - svgComY;
+            return [svgComX + cos * dx - sin * dy, svgComY + sin * dx + cos * dy];
         }
 
         /** Ray-casting point-in-polygon test (layout coordinates). */
@@ -1473,6 +1646,7 @@
             projected.forEach(([px, py, pz], i) => {
                 if (isHydrogenHidden(cachedSymbols[i])) return;
                 if (pz > 1) return;  // behind camera — skip
+                if (hideHydrogens && cachedSymbols[i] === 'H') return;
                 if (mode === 'rect') {
                     const xs   = localPts.map(p => p[0]);
                     const ys   = localPts.map(p => p[1]);
@@ -1986,6 +2160,10 @@
             let panning  = false;
             let panSX = 0, panSY = 0, panTX0 = 0, panTY0 = 0;
 
+            // Rotate state
+            let rotating = false;
+            let rotComX = 0, rotComY = 0, rotStartAngle = 0, rotAngle0 = 0;
+
             // Selection drag state
             let selDragging  = false;
             let selStartX    = 0, selStartY = 0;
@@ -2015,10 +2193,24 @@
                 e.preventDefault();
 
                 if (currentMode === 'navigate') {
-                    panning = true;
-                    panSX   = e.clientX; panSY = e.clientY;
-                    panTX0  = svgTx;     panTY0 = svgTy;
-                    svg.classList.add('panning');
+                    const onMolecule = !!e.target.closest('.atom-group, .bond-seg');
+                    if (onMolecule) {
+                        panning = true;
+                        panSX  = e.clientX; panSY = e.clientY;
+                        panTX0 = svgTx;     panTY0 = svgTy;
+                        svg.classList.add('panning');
+                    } else {
+                        rotating = true;
+                        const svgRect = svg.getBoundingClientRect();
+                        // COM screen position (SVG viewport coords, stable during drag)
+                        rotComX = svgComX * svgScale + svgTx;
+                        rotComY = svgComY * svgScale + svgTy;
+                        const mx = e.clientX - svgRect.left;
+                        const my = e.clientY - svgRect.top;
+                        rotStartAngle = Math.atan2(my - rotComY, mx - rotComX);
+                        rotAngle0 = svgAngle;
+                        svg.classList.add('rotating');
+                    }
 
                 } else if (currentMode === 'rect') {
                     selDragging = true;
@@ -2041,6 +2233,14 @@
                     svgTy = panTY0 + (e.clientY - panSY);
                     applySVGTransform();
 
+                } else if (rotating && currentMode === 'navigate') {
+                    const svgRect = svg.getBoundingClientRect();
+                    const mx = e.clientX - svgRect.left;
+                    const my = e.clientY - svgRect.top;
+                    const curAngle = Math.atan2(my - rotComY, mx - rotComX);
+                    svgAngle = rotAngle0 + (curAngle - rotStartAngle) * 180 / Math.PI;
+                    applySVGTransform();
+
                 } else if (selDragging && currentMode === 'rect') {
                     updateSelRectOverlay(selStartX, selStartY, e.clientX, e.clientY);
 
@@ -2056,6 +2256,10 @@
                 if (panning) {
                     panning = false;
                     svg.classList.remove('panning');
+                }
+                if (rotating) {
+                    rotating = false;
+                    svg.classList.remove('rotating');
                 }
 
                 if (selDragging) {
@@ -2400,7 +2604,7 @@
                     const { i, j } = bp[b];
                     if (isBondHidden(symbols[i], symbols[j])) continue;
                     const bond = bf(positions[i], positions[j], symbols[i], symbols[j], bondRadius, atomScale, helpers);
-                    if (bond) { bond.renderOrder = 1; moleculeGroup3D.add(bond); }
+                    if (bond) { bond.userData.bondA = i; bond.userData.bondB = j; bond.renderOrder = 1; moleculeGroup3D.add(bond); }
                 }
             }
 
@@ -2412,6 +2616,7 @@
                     atom.traverse(child => {
                         if (child.isMesh) { child.userData.atomIndex = i; atomMeshes3D.push(child); }
                     });
+                    atom.userData.atomIndex = i;
                     atom.renderOrder = 0;
                     moleculeGroup3D.add(atom);
                 }
@@ -2450,6 +2655,7 @@
             scene3D.add(moleculeGroup3D);
             if (fitOnNextRender) { fitCamera3D(moleculeGroup3D); fitOnNextRender = false; }
             renderSelOverlay3D();
+            applyHideHydrogens();
         }
 
         /** Rebuild the transparent yellow selection-sphere + bond overlay. */
@@ -2465,6 +2671,7 @@
             // Atom spheres
             for (const idx of selectedAtoms) {
                 if (idx >= cachedPos3D.length) continue;
+                if (hideHydrogens && cachedSymbols[idx] === 'H') continue;
                 const sym   = cachedSymbols[idx] || 'C';
                 const info  = atomInfo[sym] || atomInfo['default'];
                 const r     = info.radius * atomScale * 1.50;
@@ -2480,6 +2687,7 @@
                 layout2D.bonds.forEach(([a, b]) => {
                     if (!selectedAtoms.has(a) || !selectedAtoms.has(b)) return;
                     if (a >= cachedPos3D.length || b >= cachedPos3D.length) return;
+                    if (hideHydrogens && (cachedSymbols[a] === 'H' || cachedSymbols[b] === 'H')) return;
                     const pA = cachedPos3D[a], pB = cachedPos3D[b];
                     const dir = new THREE.Vector3().subVectors(pB, pA);
                     const len = dir.length();
@@ -2538,6 +2746,37 @@
             updateSVGSelection();
             renderSelOverlay3D();
             updateIndexPanel();
+        }
+
+        function applyHideHydrogens() {
+            if (!molData) return;
+            const syms = molData.symbols;
+            if (hideHydrogens) {
+                let changed = false;
+                for (const idx of [...selectedAtoms]) {
+                    if (syms[idx] === 'H') { selectedAtoms.delete(idx); changed = true; }
+                }
+                if (changed) updateIndexPanel();
+            }
+            document.querySelectorAll('.atom-group[data-is-h]').forEach(grp => {
+                grp.style.display = hideHydrogens ? 'none' : '';
+            });
+            document.querySelectorAll('.bond-seg').forEach(el => {
+                const a = parseInt(el.getAttribute('data-bond-a'));
+                const b = parseInt(el.getAttribute('data-bond-b'));
+                if (syms[a] === 'H' || syms[b] === 'H')
+                    el.style.display = hideHydrogens ? 'none' : '';
+            });
+            if (moleculeGroup3D) {
+                moleculeGroup3D.children.forEach(obj => {
+                    if (obj.userData.atomIndex !== undefined && syms[obj.userData.atomIndex] === 'H')
+                        obj.visible = !hideHydrogens;
+                    else if (obj.userData.bondA !== undefined &&
+                            (syms[obj.userData.bondA] === 'H' || syms[obj.userData.bondB] === 'H'))
+                        obj.visible = !hideHydrogens;
+                });
+            }
+            renderSelOverlay3D();
         }
 
         function updateIndexPanel() {
@@ -2723,6 +2962,22 @@
                 });
                 updateSelectionVisuals();
             });
+            document.getElementById('expand-h-btn').addEventListener('click', () => {
+                if (!molData || !layout2D) return;
+                const syms = molData.symbols;
+                layout2D.bonds.forEach(([a, b]) => {
+                    if (selectedAtoms.has(a) && syms[b] === 'H') selectedAtoms.add(b);
+                    if (selectedAtoms.has(b) && syms[a] === 'H') selectedAtoms.add(a);
+                });
+                updateSelectionVisuals();
+            });
+            const hideHCb = document.getElementById('hide-h-toggle');
+            if (hideHCb) {
+                hideHCb.addEventListener('change', function () {
+                    hideHydrogens = this.checked;
+                    applyHideHydrogens();
+                });
+            }
 
             // Clipboard helper — works in file:// / iframe contexts without HTTPS
             function copyText(text) {
