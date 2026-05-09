@@ -879,48 +879,167 @@
             return C.map(p => [dot3(p, v1), dot3(p, v2)]);
         }
 
-        /** Fruchterman-Reingold force-directed layout in 2-D. */
-        function fruchtermanReingold(coords, bonds, iters) {
-            const n = coords.length;
-            if (n <= 1) return coords.map(c => [...c]);
-            iters = iters || Math.min(120, Math.max(40, Math.floor(3000 / n)));
-            const k   = Math.sqrt(1.0 / n);
-            const pos = coords.map(p => [p[0], p[1]]);
-            for (let it = 0; it < iters; it++) {
-                const temp = k * (1 - it / iters);
-                const disp = Array.from({ length: n }, () => [0, 0]);
-                for (let i = 0; i < n; i++) {
-                    for (let j = i + 1; j < n; j++) {
-                        let dx = pos[i][0] - pos[j][0];
-                        let dy = pos[i][1] - pos[j][1];
-                        let d  = Math.hypot(dx, dy);
-                        if (d < 1e-9) {
-                            // Exact coincidence — inject a tiny random nudge so repulsion has direction
-                            dx = (Math.random() - 0.5) * 1e-4;
-                            dy = (Math.random() - 0.5) * 1e-4;
-                            d  = Math.hypot(dx, dy) || 1e-8;
-                        }
-                        const f = k * k / d;
-                        disp[i][0] += dx/d * f;  disp[i][1] += dy/d * f;
-                        disp[j][0] -= dx/d * f;  disp[j][1] -= dy/d * f;
+        // ── 2D post-processing: ring regularisation + angle snapping ─────────
+
+        /** BFS shortest-cycle per bond → SSSR-like ring list, sorted smallest first. */
+        function detectRings(nAtoms, bonds, adj, maxSize) {
+            maxSize = maxSize || 8;
+            const rings = [], seen = new Set();
+            for (const [ea, eb] of bonds) {
+                const prev = new Int32Array(nAtoms).fill(-1);
+                const vis  = new Uint8Array(nAtoms);
+                vis[ea] = 1;
+                const q = [ea];
+                let found = false;
+                outer: while (q.length) {
+                    const v = q.shift();
+                    for (const u of adj[v]) {
+                        if ((v===ea&&u===eb)||(v===eb&&u===ea)) continue;
+                        if (vis[u]) continue;
+                        prev[u] = v; vis[u] = 1;
+                        if (u === eb) { found = true; break outer; }
+                        q.push(u);
                     }
                 }
-                for (const [a, b] of bonds) {
-                    let dx = pos[a][0] - pos[b][0];
-                    let dy = pos[a][1] - pos[b][1];
-                    const d = Math.hypot(dx, dy) || 0.001;
-                    const f = d * d / k;
-                    disp[a][0] -= dx/d * f;  disp[a][1] -= dy/d * f;
-                    disp[b][0] += dx/d * f;  disp[b][1] += dy/d * f;
+                if (!found) continue;
+                const path = [];
+                for (let v = eb; v !== -1; v = prev[v]) path.push(v);
+                path.reverse();
+                if (path.length < 3 || path.length > maxSize) continue;
+                const key = [...path].sort((a,b)=>a-b).join(',');
+                if (!seen.has(key)) { seen.add(key); rings.push(path); }
+            }
+            rings.sort((a,b) => a.length - b.length);
+            return rings;
+        }
+
+        function regulariseRing(coords, ring, fixed, bondLen) {
+            bondLen = bondLen || 1.5;
+            const n   = ring.length;
+            const r   = bondLen / (2 * Math.sin(Math.PI / n));
+            const apo = bondLen / (2 * Math.tan(Math.PI / n));
+
+            const anchors = ring.filter(i => fixed.has(i));
+            let cx, cy, startAngle;
+
+            if (anchors.length >= 2) {
+                let fa = anchors[0], fb = anchors[1];
+                for (let ai = 0; ai < anchors.length; ai++) {
+                    const ka = ring.indexOf(anchors[ai]);
+                    for (let bi = 0; bi < anchors.length; bi++) {
+                        if (ai === bi) continue;
+                        const kb = ring.indexOf(anchors[bi]);
+                        if (Math.abs(ka - kb) === 1 || Math.abs(ka - kb) === n - 1) {
+                            fa = anchors[ai]; fb = anchors[bi]; break;
+                        }
+                    }
                 }
-                for (let i = 0; i < n; i++) {
-                    const d = Math.hypot(disp[i][0], disp[i][1]) || 0.001;
-                    const s = Math.min(d, temp) / d;
-                    pos[i][0] += disp[i][0] * s;
-                    pos[i][1] += disp[i][1] * s;
+                const ax = coords[fa][0], ay = coords[fa][1];
+                const bx = coords[fb][0], by = coords[fb][1];
+                const mx = (ax + bx) / 2, my = (ay + by) / 2;
+                const edgeAngle = Math.atan2(by - ay, bx - ax);
+                const c1 = [mx + apo * Math.cos(edgeAngle + Math.PI/2),
+                             my + apo * Math.sin(edgeAngle + Math.PI/2)];
+                const c2 = [mx + apo * Math.cos(edgeAngle - Math.PI/2),
+                             my + apo * Math.sin(edgeAngle - Math.PI/2)];
+                const unpl = ring.filter(i => !fixed.has(i));
+                let ux = 0, uy = 0;
+                const ref = unpl.length ? unpl : ring;
+                for (const i of ref) { ux += coords[i][0]; uy += coords[i][1]; }
+                ux /= ref.length; uy /= ref.length;
+                [cx, cy] = Math.hypot(c1[0]-ux,c1[1]-uy) < Math.hypot(c2[0]-ux,c2[1]-uy) ? c1 : c2;
+                const ka = ring.indexOf(fa);
+                startAngle = Math.atan2(ay - cy, ax - cx) - (2 * Math.PI * ka / n);
+            } else if (anchors.length === 1) {
+                let pcx = 0, pcy = 0;
+                for (const i of ring) { pcx += coords[i][0]; pcy += coords[i][1]; }
+                cx = pcx / n; cy = pcy / n;
+                const ka = ring.indexOf(anchors[0]);
+                startAngle = Math.atan2(coords[anchors[0]][1] - cy, coords[anchors[0]][0] - cx) - (2 * Math.PI * ka / n);
+            } else {
+                let pcx = 0, pcy = 0;
+                for (const i of ring) { pcx += coords[i][0]; pcy += coords[i][1]; }
+                cx = pcx / n; cy = pcy / n;
+                startAngle = Math.atan2(coords[ring[0]][1] - cy, coords[ring[0]][0] - cx);
+            }
+
+            for (let k = 0; k < n; k++) {
+                if (!fixed.has(ring[k])) {
+                    const angle = startAngle + (2 * Math.PI * k) / n;
+                    coords[ring[k]] = [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
                 }
             }
-            return pos;
+        }
+
+        function outgoingAngles(inAngle, totalDeg, nOut) {
+            const angles = [];
+            if (nOut <= 0) return angles;
+            const step      = (2 * Math.PI) / Math.max(totalDeg, 2);
+            const backAngle = inAngle + Math.PI;
+            for (let k = 1; k <= nOut; k++) angles.push(backAngle + k * step);
+            return angles;
+        }
+
+        function snapChainAngles(coords, adj, nAtoms, fixed, bondLen) {
+            bondLen = bondLen || 1.5;
+            const queued = new Set([...fixed]);
+            const queue  = [];
+
+            for (const v of fixed) {
+                for (const u of adj[v]) {
+                    if (queued.has(u)) continue;
+                    const theta = Math.atan2(coords[u][1] - coords[v][1],
+                                             coords[u][0] - coords[v][0]);
+                    queue.push([v, u, theta]);
+                    queued.add(u);
+                }
+            }
+
+            if (fixed.size === 0) {
+                fixed.add(0); queued.add(0);
+                const deg  = adj[0].length || 1;
+                const step = (2 * Math.PI) / deg;
+                adj[0].forEach((nb, k) => {
+                    if (queued.has(nb)) return;
+                    const theta = k * step;
+                    coords[nb] = [coords[0][0] + bondLen * Math.cos(theta),
+                                  coords[0][1] + bondLen * Math.sin(theta)];
+                    queue.push([0, nb, theta]);
+                    queued.add(nb);
+                });
+            }
+
+            while (queue.length) {
+                const [par, atom, inAngle] = queue.shift();
+                fixed.add(atom);
+                coords[atom] = [
+                    coords[par][0] + bondLen * Math.cos(inAngle),
+                    coords[par][1] + bondLen * Math.sin(inAngle),
+                ];
+                const out = adj[atom].filter(nb => !queued.has(nb));
+                if (!out.length) continue;
+                const angles = outgoingAngles(inAngle, adj[atom].length, out.length);
+                out.forEach((nb, k) => {
+                    const theta = angles[k];
+                    coords[nb] = [coords[atom][0] + bondLen * Math.cos(theta),
+                                  coords[atom][1] + bondLen * Math.sin(theta)];
+                    queue.push([atom, nb, theta]);
+                    queued.add(nb);
+                });
+            }
+        }
+
+        function refine2DLayout(coords, bonds, nAtoms) {
+            const adj = Array.from({length: nAtoms}, () => []);
+            for (const [a, b] of bonds) { adj[a].push(b); adj[b].push(a); }
+            const rings = detectRings(nAtoms, bonds, adj);
+            const fixed = new Set();
+            for (const ring of rings) {
+                regulariseRing(coords, ring, fixed);
+                for (const i of ring) fixed.add(i);
+            }
+            snapChainAngles(coords, adj, nAtoms, fixed);
+            return coords;
         }
 
         /** BFS-based connected components. */
@@ -983,7 +1102,7 @@
                 } else if (comp.length === 2) {
                     local2d = [[-0.75, 0], [0.75, 0]];
                 } else {
-                    // Project to 2D with PCA, then normalise to unit scale before FR
+                    // Project to 2D with PCA, then refine with ring regularisation + angle snapping
                     const pca2d = pca3Dto2D(pts3d);
                     const allX  = pca2d.map(p => p[0]), allY = pca2d.map(p => p[1]);
                     const span  = Math.max(
@@ -992,7 +1111,7 @@
                         1e-9,
                     );
                     const scaled = pca2d.map(p => [p[0] / span, p[1] / span]);
-                    local2d = fruchtermanReingold(scaled, localBonds);
+                    local2d = refine2DLayout(scaled, localBonds, comp.length);
                 }
 
                 // Centre this component's Y around 0
@@ -2273,6 +2392,15 @@
             const col = new THREE.Color(fragSettings.backgroundColor);
             scene3D.background = col;
             renderer3D.setClearColor(col, 1);
+            const p2d = document.getElementById('panel-2d');
+            if (p2d) {
+                const off = 10 / 255;
+                p2d.style.background = '#' + new THREE.Color(
+                    Math.min(1, col.r + off),
+                    Math.min(1, col.g + off),
+                    Math.min(1, col.b + off)
+                ).getHexString();
+            }
         }
 
         function disposeObj3D(obj) {
