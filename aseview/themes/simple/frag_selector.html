@@ -1629,6 +1629,7 @@
             projected.forEach(([px, py, pz], i) => {
                 if (isHydrogenHidden(cachedSymbols[i])) return;
                 if (pz > 1) return;  // behind camera — skip
+                if (hideHydrogens && cachedSymbols[i] === 'H') return;
                 if (mode === 'rect') {
                     const xs   = localPts.map(p => p[0]);
                     const ys   = localPts.map(p => p[1]);
@@ -2623,6 +2624,7 @@
             // Atom spheres
             for (const idx of selectedAtoms) {
                 if (idx >= cachedPos3D.length) continue;
+                if (hideHydrogens && cachedSymbols[idx] === 'H') continue;
                 const sym   = cachedSymbols[idx] || 'C';
                 const info  = atomInfo[sym] || atomInfo['default'];
                 const r     = info.radius * atomScale * 1.50;
@@ -2638,6 +2640,7 @@
                 layout2D.bonds.forEach(([a, b]) => {
                     if (!selectedAtoms.has(a) || !selectedAtoms.has(b)) return;
                     if (a >= cachedPos3D.length || b >= cachedPos3D.length) return;
+                    if (hideHydrogens && (cachedSymbols[a] === 'H' || cachedSymbols[b] === 'H')) return;
                     const pA = cachedPos3D[a], pB = cachedPos3D[b];
                     const dir = new THREE.Vector3().subVectors(pB, pA);
                     const len = dir.length();
