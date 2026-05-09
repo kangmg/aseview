@@ -450,8 +450,13 @@ viewer.setVibrationData(atoms, vibrationData);</pre>
 
     </div><!-- #examples-section -->
 
-    <!-- Load ASEView.js from jsDelivr CDN -->
-    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/aseview.js"></script>
+    <!-- Prefer the local JS API during local docs development; fall back to CDN in deployed docs. -->
+    <script src="../aseview/static/js/aseview.js"></script>
+    <script>
+        if (!window.ASEView) {
+            document.write('<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/aseview.js"><\/script>');
+        }
+    </script>
 
     <script>
         // ── Constants ──────────────────────────────────────────────────────────

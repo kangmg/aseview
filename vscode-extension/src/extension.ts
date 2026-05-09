@@ -452,7 +452,7 @@ class AseviewEditorProvider implements vscode.CustomTextEditorProvider {
 </head>
 <body>
   <div id="root"><div class="loading" id="loading">ASEView is loading...</div></div>
-  <script src="https://raw.githack.com/kangmg/aseview/main/aseview/static/js/aseview.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/aseview.js"></script>
   <script>
     (function () {
       const vscodeApi = acquireVsCodeApi();

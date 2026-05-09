@@ -495,7 +495,12 @@
 <div id="toast"></div>
 
 <!-- ── Scripts ── -->
-<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/aseview.js"></script>
+<script src="../../aseview/static/js/aseview.js"></script>
+<script>
+if (!window.ASEView) {
+  document.write('<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/aseview.js"><\/script>');
+}
+</script>
 <script>
 // ─────────────────────────────────────────────────────────────
 // Sample data

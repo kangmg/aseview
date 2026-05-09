@@ -12,11 +12,12 @@
 (function(global) {
     'use strict';
 
-    // CDN base for themes - must use raw.githack.com (jsDelivr blocks HTML)
+    // CDN base for themes. Templates are fetched as text and injected via srcdoc
+    // so they are not blocked by CDN iframe headers or text/plain content types.
     // Themes live at: aseview/themes/{theme}/{template}.html
     // Fallback to legacy templates/ path for backward compat
-    const THEMES_BASE    = 'https://raw.githack.com/kangmg/aseview/main/aseview/themes';
-    const FALLBACK_BASE  = 'https://raw.githack.com/kangmg/aseview/main/aseview/templates';
+    const THEMES_BASE    = 'https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/themes';
+    const FALLBACK_BASE  = 'https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/templates';
     const CDN_BASE       = THEMES_BASE;   // kept for external access via ASEView.CDN_BASE
     const DEFAULT_VIEWER_OPTIONS = {
         bondThreshold: 1.2,
@@ -49,6 +50,7 @@
             this.iframe = null;
             this.isReady = false;
             this.pendingMessages = [];
+            this._loadId = 0;
 
             this._createIframe();
         }
@@ -62,20 +64,56 @@
             this.iframe.style.cssText = 'width:100%;height:100%;border:none;display:block;';
             this.iframe.setAttribute('allowfullscreen', 'true');
 
-            // Build template URL: themes/{theme}/template.html
-            // On error (theme not found), fall back to legacy templates/ path
-            const templateUrl = `${THEMES_BASE}/${this._theme}/${this.templateName}`;
-            this.iframe.src = templateUrl;
-            this.iframe.addEventListener('error', () => {
-                this.iframe.src = `${FALLBACK_BASE}/${this.templateName}`;
-            }, { once: true });
-
             // Listen for messages from iframe
             this._messageHandler = (event) => this._onMessage(event);
             window.addEventListener('message', this._messageHandler);
 
             // Add to container
             this.container.appendChild(this.iframe);
+
+            this._loadTemplate();
+        }
+
+        _templateCandidates() {
+            return [
+                `${THEMES_BASE}/${this._theme}/${this.templateName}`,
+                `${FALLBACK_BASE}/${this.templateName}`,
+            ];
+        }
+
+        _withBaseHref(html, href) {
+            const base = `<base href="${href}">`;
+            if (/<base\s/i.test(html)) return html;
+            if (/<head[^>]*>/i.test(html)) {
+                return html.replace(/<head([^>]*)>/i, `<head$1>${base}`);
+            }
+            return `${base}${html}`;
+        }
+
+        async _loadTemplate() {
+            const loadId = ++this._loadId;
+            const candidates = this._templateCandidates();
+            let lastError = null;
+
+            for (const url of candidates) {
+                try {
+                    const response = await fetch(url, { cache: 'no-cache' });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    const html = await response.text();
+                    if (loadId !== this._loadId || !this.iframe) return;
+                    this.iframe.srcdoc = this._withBaseHref(html, url);
+                    return;
+                } catch (err) {
+                    lastError = err;
+                }
+            }
+
+            console.error(
+                `ASEView: failed to load ${this.templateName}`,
+                lastError && lastError.message ? lastError.message : lastError
+            );
         }
 
         _onMessage(event) {
@@ -115,6 +153,7 @@
          */
         dispose() {
             window.removeEventListener('message', this._messageHandler);
+            this._loadId++;
             if (this.iframe) {
                 this.iframe.remove();
                 this.iframe = null;
