@@ -472,6 +472,7 @@
                             <button class="btn" id="select-all-btn">Select All</button>
                             <button class="btn" id="clear-btn">Clear</button>
                             <button class="btn" id="invert-btn">Invert</button>
+                            <button class="btn" id="expand-h-btn" title="Add H atoms bonded to selected atoms">+ H</button>
                         </div>
                         <div class="control-group" style="margin-top:0.75rem;">
                             <div class="control-label" style="margin-bottom:0.3rem;">
@@ -586,6 +587,15 @@
                                 <span>Axis</span>
                                 <label class="switch">
                                     <input type="checkbox" id="show-axis" checked>
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Hide H</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="hide-h-toggle">
                                     <span class="slider-switch"></span>
                                 </label>
                             </div>
@@ -824,6 +834,7 @@
         // Selection state
         // ─────────────────────────────────────────────────────────────────────
         const selectedAtoms = new Set();
+        let hideHydrogens = false;
 
         // ─────────────────────────────────────────────────────────────────────
         // THREE.js state
@@ -1438,6 +1449,7 @@
                 const grp = document.createElementNS(SVG_NS, 'g');
                 grp.setAttribute('class', 'atom-group');
                 grp.setAttribute('data-atom-idx', i);
+                if (sym === 'H') grp.setAttribute('data-is-h', '');
                 grp.style.cursor = 'pointer';
 
                 // Selection ring (hidden by default) — yellow highlight
@@ -1500,6 +1512,7 @@
 
                 atomsLayer.appendChild(grp);
             }
+            applyHideHydrogens();
         }
 
         /** Update SVG highlight rings and bond colours to match current selection. */
@@ -2669,7 +2682,7 @@
                     const { i, j } = bp[b];
                     if (isBondHidden(symbols[i], symbols[j])) continue;
                     const bond = bf(positions[i], positions[j], symbols[i], symbols[j], bondRadius, atomScale, helpers);
-                    if (bond) { bond.renderOrder = 1; moleculeGroup3D.add(bond); }
+                    if (bond) { bond.userData.bondA = i; bond.userData.bondB = j; bond.renderOrder = 1; moleculeGroup3D.add(bond); }
                 }
             }
 
@@ -2681,6 +2694,7 @@
                     atom.traverse(child => {
                         if (child.isMesh) { child.userData.atomIndex = i; atomMeshes3D.push(child); }
                     });
+                    atom.userData.atomIndex = i;
                     atom.renderOrder = 0;
                     moleculeGroup3D.add(atom);
                 }
@@ -2719,6 +2733,7 @@
             scene3D.add(moleculeGroup3D);
             if (fitOnNextRender) { fitCamera3D(moleculeGroup3D); fitOnNextRender = false; }
             renderSelOverlay3D();
+            applyHideHydrogens();
         }
 
         /** Rebuild the transparent yellow selection-sphere + bond overlay. */
@@ -2807,6 +2822,29 @@
             updateSVGSelection();
             renderSelOverlay3D();
             updateIndexPanel();
+        }
+
+        function applyHideHydrogens() {
+            if (!molData) return;
+            const syms = molData.symbols;
+            document.querySelectorAll('.atom-group[data-is-h]').forEach(grp => {
+                grp.style.display = hideHydrogens ? 'none' : '';
+            });
+            document.querySelectorAll('.bond-seg').forEach(el => {
+                const a = parseInt(el.getAttribute('data-bond-a'));
+                const b = parseInt(el.getAttribute('data-bond-b'));
+                if (syms[a] === 'H' || syms[b] === 'H')
+                    el.style.display = hideHydrogens ? 'none' : '';
+            });
+            if (moleculeGroup3D) {
+                moleculeGroup3D.children.forEach(obj => {
+                    if (obj.userData.atomIndex !== undefined && syms[obj.userData.atomIndex] === 'H')
+                        obj.visible = !hideHydrogens;
+                    else if (obj.userData.bondA !== undefined &&
+                            (syms[obj.userData.bondA] === 'H' || syms[obj.userData.bondB] === 'H'))
+                        obj.visible = !hideHydrogens;
+                });
+            }
         }
 
         function updateIndexPanel() {
@@ -2992,6 +3030,22 @@
                 });
                 updateSelectionVisuals();
             });
+            document.getElementById('expand-h-btn').addEventListener('click', () => {
+                if (!molData || !layout2D) return;
+                const syms = molData.symbols;
+                layout2D.bonds.forEach(([a, b]) => {
+                    if (selectedAtoms.has(a) && syms[b] === 'H') selectedAtoms.add(b);
+                    if (selectedAtoms.has(b) && syms[a] === 'H') selectedAtoms.add(a);
+                });
+                updateSelectionVisuals();
+            });
+            const hideHCb = document.getElementById('hide-h-toggle');
+            if (hideHCb) {
+                hideHCb.addEventListener('change', function () {
+                    hideHydrogens = this.checked;
+                    applyHideHydrogens();
+                });
+            }
 
             // Clipboard helper — works in file:// / iframe contexts without HTTPS
             function copyText(text) {
