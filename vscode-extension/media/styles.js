@@ -146,12 +146,46 @@ const vmdColors = {
 
 // Active color scheme: 'jmol' (default), 'cpk', 'pymol', or 'vmd'
 let atomColorScheme = 'jmol';
+let atomColorOverrides = {};
+
+function normalizeColorHexValue(value) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value & 0xFFFFFF;
+    }
+    if (typeof value !== 'string') return null;
+    const raw = value.trim();
+    if (/^#?[0-9a-fA-F]{6}$/.test(raw)) {
+        return parseInt(raw.replace('#', ''), 16);
+    }
+    if (/^#?[0-9a-fA-F]{3}$/.test(raw)) {
+        const hex = raw.replace('#', '');
+        return parseInt(hex.split('').map(ch => ch + ch).join(''), 16);
+    }
+    return null;
+}
+
+function setAtomColorOverrides(overrides) {
+    const next = {};
+    if (overrides && typeof overrides === 'object') {
+        for (const [symbol, value] of Object.entries(overrides)) {
+            const normalized = normalizeColorHexValue(value);
+            if (normalized !== null) {
+                next[symbol] = normalized;
+            }
+        }
+    }
+    atomColorOverrides = next;
+}
 
 /**
  * Return the element color for `symbol` under the current atomColorScheme.
  * Falls back to jmol (atomInfo.color) for unknown elements or schemes.
  */
 function getAtomColorByScheme(symbol) {
+    const overridden = atomColorOverrides[symbol];
+    if (overridden !== undefined) {
+        return overridden;
+    }
     if (atomColorScheme === 'cpk' && cpkColors[symbol] !== undefined) {
         return cpkColors[symbol];
     }
