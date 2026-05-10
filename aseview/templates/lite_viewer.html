@@ -34,6 +34,7 @@
             position: relative;
         }
 
+        /* ── top-left: play + slider + frame label ── */
         #lite-controls {
             position: absolute;
             top: 10px;
@@ -41,11 +42,11 @@
             z-index: 10;
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 6px 8px;
+            gap: 7px;
+            padding: 4px 10px;
             border-radius: 999px;
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(2px);
+            background: rgba(0, 0, 0, 0.30);
+            backdrop-filter: blur(3px);
         }
 
         #lite-controls.hidden {
@@ -53,12 +54,12 @@
         }
 
         #play-stop-btn {
-            border: 1px solid rgba(255, 255, 255, 0.28);
+            border: none;
             border-radius: 50%;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.45);
             color: #ffffff;
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             padding: 0;
             cursor: pointer;
             user-select: none;
@@ -72,15 +73,15 @@
             display: block;
             width: 0;
             height: 0;
-            border-top: 7px solid transparent;
-            border-bottom: 7px solid transparent;
-            border-left: 10px solid #ffffff;
-            margin-left: 3px;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 9px solid #ffffff;
+            margin-left: 2px;
         }
 
         #play-stop-btn.is-playing::before {
-            width: 10px;
-            height: 10px;
+            width: 9px;
+            height: 9px;
             margin-left: 0;
             border: none;
             background:
@@ -88,35 +89,45 @@
                     #ffffff 0,
                     #ffffff 3px,
                     transparent 3px,
-                    transparent 7px,
-                    #ffffff 7px,
-                    #ffffff 10px);
+                    transparent 6px,
+                    #ffffff 6px,
+                    #ffffff 9px);
         }
 
         #play-stop-btn:focus-visible {
-            outline: 2px solid rgba(255, 255, 255, 0.75);
-            outline-offset: 1px;
+            outline: none;
         }
 
         #frame-slider {
-            width: 130px;
+            width: 110px;
             accent-color: #ffffff;
             cursor: pointer;
+            height: 3px;
         }
 
+        #frame-label {
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 11px;
+            font-weight: 500;
+            min-width: 44px;
+            text-align: center;
+            letter-spacing: 0.3px;
+            user-select: none;
+        }
+
+        /* ── bottom-left: element map ── */
         #element-map {
             position: absolute;
-            left: 50%;
+            left: 10px;
             bottom: 10px;
-            transform: translateX(-50%);
             z-index: 10;
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
+            gap: 4px;
+            padding: 4px 8px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.78);
-            backdrop-filter: blur(2px);
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(3px);
             max-width: calc(100% - 20px);
             overflow-x: auto;
             white-space: nowrap;
@@ -129,21 +140,21 @@
         .element-chip {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            padding: 2px 7px;
+            gap: 4px;
+            padding: 1px 5px;
             border-radius: 999px;
-            border: 1px solid rgba(15, 23, 42, 0.15);
-            font-size: 11px;
+            border: none;
+            font-size: 10px;
             font-weight: 600;
-            color: #0f172a;
-            background: rgba(255, 255, 255, 0.75);
+            color: rgba(15, 23, 42, 0.75);
+            background: transparent;
         }
 
         .element-chip-dot {
-            width: 9px;
-            height: 9px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            border: 1px solid rgba(15, 23, 42, 0.3);
+            border: none;
             flex-shrink: 0;
         }
     </style>
@@ -154,6 +165,7 @@
         <div id="lite-controls" class="hidden">
             <button id="play-stop-btn" type="button" title="Play" aria-label="Play"></button>
             <input id="frame-slider" type="range" min="0" max="0" step="1" value="0" title="Frame">
+            <span id="frame-label">0 / 0</span>
         </div>
         <div id="element-map" class="hidden"></div>
     </div>
@@ -226,28 +238,26 @@
         const controlsPanel = document.getElementById("lite-controls");
         const playStopButton = document.getElementById("play-stop-btn");
         const frameSlider = document.getElementById("frame-slider");
+        const frameLabel = document.getElementById("frame-label");
         const elementMap = document.getElementById("element-map");
         const frameCount = Array.isArray(molecularData) ? molecularData.length : 0;
         document.body.style.backgroundColor = backgroundColor;
         viewport.style.backgroundColor = backgroundColor;
 
         if (isDarkBackground) {
-            controlsPanel.style.background = "rgba(0, 0, 0, 0.55)";
-            elementMap.style.background = "rgba(0, 0, 0, 0.55)";
+            controlsPanel.style.background = "rgba(0, 0, 0, 0.35)";
+            elementMap.style.background = "rgba(0, 0, 0, 0.35)";
         }
 
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(backgroundColor);
 
-        const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
+        const camera = new THREE.PerspectiveCamera(25, 1, 0.1, 2000);
         camera.position.set(0, 0, 12);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
         renderer.setPixelRatio(window.devicePixelRatio || 1);
         renderer.setSize(viewport.clientWidth, viewport.clientHeight);
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.0;
         viewport.appendChild(renderer.domElement);
 
         const controls = new THREE.TrackballControls(camera, renderer.domElement);
@@ -257,9 +267,9 @@
         controls.dynamicDampingFactor = 0.2;
         controls.minDistance = 0.2;
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.85));
         const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        keyLight.position.set(10, 10, 10);
+        keyLight.position.set(4, 5, 8);
         scene.add(keyLight);
         const fillLight = new THREE.DirectionalLight(0xffffff, 0.35);
         fillLight.position.set(-6, -2, -6);
@@ -273,6 +283,12 @@
         let currentFrame = 0;
         let isPlaying = false;
         let playbackTimer = null;
+
+        function updateFrameLabel() {
+            if (frameLabel && frameCount > 0) {
+                frameLabel.textContent = (currentFrame + 1) + " / " + frameCount;
+            }
+        }
 
         function disposeObject(obj) {
             if (!obj) return;
@@ -336,16 +352,13 @@
                 const chip = document.createElement("span");
                 chip.className = "element-chip";
                 if (isDarkBackground) {
-                    chip.style.color = "#f8fafc";
-                    chip.style.borderColor = "rgba(248, 250, 252, 0.28)";
-                    chip.style.background = "rgba(0, 0, 0, 0.45)";
+                    chip.style.color = "rgba(248, 250, 252, 0.80)";
                 }
 
                 const dot = document.createElement("span");
                 dot.className = "element-chip-dot";
                 const colorHex = `#${(getAtomColorByScheme(symbol) >>> 0).toString(16).padStart(6, "0")}`;
                 dot.style.backgroundColor = colorHex;
-                dot.style.borderColor = isDarkBackground ? "rgba(248, 250, 252, 0.38)" : "rgba(15, 23, 42, 0.3)";
 
                 const label = document.createElement("span");
                 label.textContent = symbol;
@@ -418,6 +431,7 @@
             if (!Array.isArray(molecularData) || molecularData.length === 0) {
                 clearSceneObjects();
                 updateElementMap([]);
+                updateFrameLabel();
                 return;
             }
             const total = molecularData.length;
@@ -464,6 +478,7 @@
             if (frameSlider) {
                 frameSlider.value = String(currentFrame);
             }
+            updateFrameLabel();
         }
 
         function syncPlayButton() {
@@ -530,6 +545,7 @@
             frameSlider.value = "0";
         }
         syncPlayButton();
+        updateFrameLabel();
 
         renderFrame(0, true);
 
