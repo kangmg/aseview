@@ -384,20 +384,24 @@
 
         function renderCell(frame) {
             if (!showCell || !frame || !Array.isArray(frame.cell) || frame.cell.length !== 3) {
+                cellGroup.position.set(0, 0, 0);
                 return [];
             }
 
             const vectors = frame.cell.map((v) => Array.isArray(v) && v.length >= 3 ? new THREE.Vector3(v[0], v[1], v[2]) : null);
             if (vectors.some((v) => v === null)) {
+                cellGroup.position.set(0, 0, 0);
                 return [];
             }
 
+            // Move the whole cell box to the COM offset (cell vectors are NOT modified)
             const offset = Array.isArray(frame.cell_offset) && frame.cell_offset.length === 3
                 ? new THREE.Vector3(frame.cell_offset[0], frame.cell_offset[1], frame.cell_offset[2])
                 : new THREE.Vector3(0, 0, 0);
+            cellGroup.position.copy(offset);
 
             const [a, b, c] = vectors;
-            const o = offset.clone();
+            const o = new THREE.Vector3(0, 0, 0);
             const ab = a.clone().add(b);
             const ac = a.clone().add(c);
             const bc = b.clone().add(c);
