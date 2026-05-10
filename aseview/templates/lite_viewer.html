@@ -34,32 +34,128 @@
             position: relative;
         }
 
-        #play-stop-btn {
+        #lite-controls {
             position: absolute;
             top: 10px;
             left: 10px;
             z-index: 10;
-            border: 1px solid rgba(255, 255, 255, 0.28);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
             border-radius: 999px;
-            background: rgba(0, 0, 0, 0.6);
-            color: #ffffff;
-            font-size: 12px;
-            line-height: 1;
-            padding: 8px 12px;
-            cursor: pointer;
-            user-select: none;
-            min-width: 64px;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(2px);
         }
 
-        #play-stop-btn.hidden {
+        #lite-controls.hidden {
             display: none;
+        }
+
+        #play-stop-btn {
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            color: #ffffff;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            cursor: pointer;
+            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #play-stop-btn::before {
+            content: "";
+            display: block;
+            width: 0;
+            height: 0;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+            border-left: 10px solid #ffffff;
+            margin-left: 3px;
+        }
+
+        #play-stop-btn.is-playing::before {
+            width: 10px;
+            height: 10px;
+            margin-left: 0;
+            border: none;
+            background:
+                linear-gradient(to right,
+                    #ffffff 0,
+                    #ffffff 3px,
+                    transparent 3px,
+                    transparent 7px,
+                    #ffffff 7px,
+                    #ffffff 10px);
+        }
+
+        #play-stop-btn:focus-visible {
+            outline: 2px solid rgba(255, 255, 255, 0.75);
+            outline-offset: 1px;
+        }
+
+        #frame-slider {
+            width: 130px;
+            accent-color: #ffffff;
+            cursor: pointer;
+        }
+
+        #element-map {
+            position: absolute;
+            left: 50%;
+            bottom: 10px;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(2px);
+            max-width: calc(100% - 20px);
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        #element-map.hidden {
+            display: none;
+        }
+
+        .element-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            border: 1px solid rgba(15, 23, 42, 0.15);
+            font-size: 11px;
+            font-weight: 600;
+            color: #0f172a;
+            background: rgba(255, 255, 255, 0.75);
+        }
+
+        .element-chip-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            border: 1px solid rgba(15, 23, 42, 0.3);
+            flex-shrink: 0;
         }
     </style>
 </head>
 
 <body>
     <div id="viewport">
-        <button id="play-stop-btn" class="hidden" type="button">Play</button>
+        <div id="lite-controls" class="hidden">
+            <button id="play-stop-btn" type="button" title="Play" aria-label="Play"></button>
+            <input id="frame-slider" type="range" min="0" max="0" step="1" value="0" title="Frame">
+        </div>
+        <div id="element-map" class="hidden"></div>
     </div>
 
     <script>
@@ -70,12 +166,34 @@
         const fps = Number(settings.fps) > 0 ? Number(settings.fps) : 30;
         const backgroundColor = settings.backgroundColor || "#ffffff";
         const atomSize = Number(settings.atomSize) || 0.4;
-        const bondThreshold = Number(settings.bondThreshold) || 1.2;
+        const bondThreshold = Number(settings.bondThreshold) || 1.3;
         const bondThickness = Number(settings.bondThickness) || 0.09;
         const hideHydrogens = !!settings.hideHydrogens;
+        const showCell = settings.showCell !== false;
+        const isDarkBackground = String(backgroundColor).toLowerCase() === "#000000";
 
         if (typeof atomColorScheme !== "undefined") {
             atomColorScheme = String(settings.colorScheme || "Jmol").toLowerCase();
+        }
+
+        if (typeof toLinearColor !== "function") {
+            window.toLinearColor = function(color) {
+                const result = color instanceof THREE.Color ? color.clone() : new THREE.Color(color);
+                if (typeof result.convertSRGBToLinear === "function") {
+                    result.convertSRGBToLinear();
+                }
+                return result;
+            };
+        }
+        if (typeof setMaterialColor !== "function") {
+            window.setMaterialColor = function(material, color) {
+                if (material && material.color) {
+                    material.color.copy(toLinearColor(color));
+                }
+                if (material && material.uniforms && material.uniforms.uColor && material.uniforms.uColor.value) {
+                    material.uniforms.uColor.value.copy(toLinearColor(color));
+                }
+            };
         }
 
         const atomFactories = {
@@ -105,9 +223,18 @@
         };
 
         const viewport = document.getElementById("viewport");
+        const controlsPanel = document.getElementById("lite-controls");
         const playStopButton = document.getElementById("play-stop-btn");
+        const frameSlider = document.getElementById("frame-slider");
+        const elementMap = document.getElementById("element-map");
+        const frameCount = Array.isArray(molecularData) ? molecularData.length : 0;
         document.body.style.backgroundColor = backgroundColor;
         viewport.style.backgroundColor = backgroundColor;
+
+        if (isDarkBackground) {
+            controlsPanel.style.background = "rgba(0, 0, 0, 0.55)";
+            elementMap.style.background = "rgba(0, 0, 0, 0.55)";
+        }
 
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(backgroundColor);
@@ -118,6 +245,9 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
         renderer.setPixelRatio(window.devicePixelRatio || 1);
         renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
         viewport.appendChild(renderer.domElement);
 
         const controls = new THREE.TrackballControls(camera, renderer.domElement);
@@ -127,9 +257,9 @@
         controls.dynamicDampingFactor = 0.2;
         controls.minDistance = 0.2;
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.2));
         const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        keyLight.position.set(4, 5, 8);
+        keyLight.position.set(10, 10, 10);
         scene.add(keyLight);
         const fillLight = new THREE.DirectionalLight(0xffffff, 0.35);
         fillLight.position.set(-6, -2, -6);
@@ -137,6 +267,8 @@
 
         const moleculeGroup = new THREE.Group();
         scene.add(moleculeGroup);
+        const cellGroup = new THREE.Group();
+        scene.add(cellGroup);
 
         let currentFrame = 0;
         let isPlaying = false;
@@ -161,11 +293,16 @@
             }
         }
 
-        function clearMolecule() {
-            while (moleculeGroup.children.length > 0) {
-                const child = moleculeGroup.children.pop();
+        function clearGroup(group) {
+            while (group.children.length > 0) {
+                const child = group.children.pop();
                 disposeObject(child);
             }
+        }
+
+        function clearSceneObjects() {
+            clearGroup(moleculeGroup);
+            clearGroup(cellGroup);
         }
 
         function getVisibleFrame(frame) {
@@ -184,6 +321,80 @@
             }
 
             return { symbols: filteredSymbols, positions: filteredPositions };
+        }
+
+        function updateElementMap(symbols) {
+            if (!elementMap) return;
+            const uniqueSymbols = [...new Set(symbols || [])];
+            elementMap.innerHTML = "";
+            if (uniqueSymbols.length === 0) {
+                elementMap.classList.add("hidden");
+                return;
+            }
+
+            uniqueSymbols.forEach((symbol) => {
+                const chip = document.createElement("span");
+                chip.className = "element-chip";
+                if (isDarkBackground) {
+                    chip.style.color = "#f8fafc";
+                    chip.style.borderColor = "rgba(248, 250, 252, 0.28)";
+                    chip.style.background = "rgba(0, 0, 0, 0.45)";
+                }
+
+                const dot = document.createElement("span");
+                dot.className = "element-chip-dot";
+                const colorHex = `#${(getAtomColorByScheme(symbol) >>> 0).toString(16).padStart(6, "0")}`;
+                dot.style.backgroundColor = colorHex;
+                dot.style.borderColor = isDarkBackground ? "rgba(248, 250, 252, 0.38)" : "rgba(15, 23, 42, 0.3)";
+
+                const label = document.createElement("span");
+                label.textContent = symbol;
+
+                chip.appendChild(dot);
+                chip.appendChild(label);
+                elementMap.appendChild(chip);
+            });
+
+            elementMap.classList.remove("hidden");
+        }
+
+        function renderCell(frame) {
+            if (!showCell || !frame || !Array.isArray(frame.cell) || frame.cell.length !== 3) {
+                return [];
+            }
+
+            const vectors = frame.cell.map((v) => Array.isArray(v) && v.length >= 3 ? new THREE.Vector3(v[0], v[1], v[2]) : null);
+            if (vectors.some((v) => v === null)) {
+                return [];
+            }
+
+            const [a, b, c] = vectors;
+            const o = new THREE.Vector3(0, 0, 0);
+            const ab = a.clone().add(b);
+            const ac = a.clone().add(c);
+            const bc = b.clone().add(c);
+            const abc = a.clone().add(b).add(c);
+            const corners = [o, a, b, c, ab, ac, bc, abc];
+            const edgePairs = [
+                [0, 1], [0, 2], [0, 3],
+                [1, 4], [1, 5],
+                [2, 4], [2, 6],
+                [3, 5], [3, 6],
+                [4, 7], [5, 7], [6, 7],
+            ];
+
+            const edgePoints = [];
+            edgePairs.forEach(([start, end]) => {
+                edgePoints.push(corners[start], corners[end]);
+            });
+            const geometry = new THREE.BufferGeometry().setFromPoints(edgePoints);
+            const material = new THREE.LineBasicMaterial({
+                color: isDarkBackground ? 0xcbd5e1 : 0x1e293b,
+                transparent: true,
+                opacity: isDarkBackground ? 0.9 : 0.75,
+            });
+            cellGroup.add(new THREE.LineSegments(geometry, material));
+            return corners;
         }
 
         function fitCamera(points) {
@@ -205,40 +416,65 @@
 
         function renderFrame(frameIndex, fitView = false) {
             if (!Array.isArray(molecularData) || molecularData.length === 0) {
-                clearMolecule();
+                clearSceneObjects();
+                updateElementMap([]);
                 return;
             }
-            const frame = molecularData[frameIndex % molecularData.length];
+            const total = molecularData.length;
+            currentFrame = ((frameIndex % total) + total) % total;
+            const frame = molecularData[currentFrame];
             const visible = getVisibleFrame(frame);
 
-            clearMolecule();
-            if (visible.symbols.length === 0) return;
+            clearSceneObjects();
 
             const helpers = { radiusScaleBySymbol: {}, highlightAtoms: null, highlightColor: 0xffffff };
             const atomFactory = atomFactories[styleKey] || atomFactories.default;
             const bondFactory = bondFactories[styleKey] || bondFactories.default;
 
-            for (let i = 0; i < visible.symbols.length; i++) {
-                const atomMesh = atomFactory(visible.positions[i], visible.symbols[i], atomSize, helpers);
-                if (atomMesh) moleculeGroup.add(atomMesh);
+            if (visible.symbols.length > 0) {
+                for (let i = 0; i < visible.symbols.length; i++) {
+                    const atomMesh = atomFactory(visible.positions[i], visible.symbols[i], atomSize, helpers);
+                    if (atomMesh) moleculeGroup.add(atomMesh);
+                }
+
+                const bondPairs = findBondsSpatialGrid(visible.positions, visible.symbols, bondThreshold);
+                for (const pair of bondPairs) {
+                    const bond = bondFactory(
+                        visible.positions[pair.i],
+                        visible.positions[pair.j],
+                        visible.symbols[pair.i],
+                        visible.symbols[pair.j],
+                        bondThickness,
+                        atomSize,
+                        helpers
+                    );
+                    if (bond) moleculeGroup.add(bond);
+                }
             }
 
-            const bondPairs = findBondsSpatialGrid(visible.positions, visible.symbols, bondThreshold);
-            for (const pair of bondPairs) {
-                const bond = bondFactory(
-                    visible.positions[pair.i],
-                    visible.positions[pair.j],
-                    visible.symbols[pair.i],
-                    visible.symbols[pair.j],
-                    bondThickness,
-                    atomSize,
-                    helpers
-                );
-                if (bond) moleculeGroup.add(bond);
-            }
+            const cellCorners = renderCell(frame);
+            updateElementMap(visible.symbols);
 
             if (fitView) {
-                fitCamera(visible.positions);
+                const fitPoints = [...visible.positions, ...cellCorners];
+                if (fitPoints.length > 0) {
+                    fitCamera(fitPoints);
+                }
+            }
+            if (frameSlider) {
+                frameSlider.value = String(currentFrame);
+            }
+        }
+
+        function syncPlayButton() {
+            if (isPlaying) {
+                playStopButton.classList.add("is-playing");
+                playStopButton.title = "Stop";
+                playStopButton.setAttribute("aria-label", "Stop");
+            } else {
+                playStopButton.classList.remove("is-playing");
+                playStopButton.title = "Play";
+                playStopButton.setAttribute("aria-label", "Play");
             }
         }
 
@@ -248,14 +484,14 @@
                 playbackTimer = null;
             }
             isPlaying = false;
-            playStopButton.textContent = "Play";
+            syncPlayButton();
         }
 
         function startPlayback() {
             if (!Array.isArray(molecularData) || molecularData.length <= 1) return;
             stopPlayback();
             isPlaying = true;
-            playStopButton.textContent = "Stop";
+            syncPlayButton();
             playbackTimer = setInterval(() => {
                 currentFrame = (currentFrame + 1) % molecularData.length;
                 renderFrame(currentFrame, false);
@@ -280,11 +516,20 @@
         }
 
         playStopButton.addEventListener("click", togglePlayback);
+        frameSlider.addEventListener("input", (event) => {
+            const next = Number.parseInt(event.target.value, 10);
+            if (!Number.isFinite(next)) return;
+            currentFrame = next;
+            renderFrame(currentFrame, false);
+        });
         window.addEventListener("resize", onResize);
 
-        if (Array.isArray(molecularData) && molecularData.length > 1) {
-            playStopButton.classList.remove("hidden");
+        if (frameCount > 1) {
+            controlsPanel.classList.remove("hidden");
+            frameSlider.max = String(frameCount - 1);
+            frameSlider.value = "0";
         }
+        syncPlayButton();
 
         renderFrame(0, true);
 
