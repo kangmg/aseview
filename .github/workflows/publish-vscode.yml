@@ -46,17 +46,26 @@ jobs:
 
       - name: Resolve VSIX filename
         id: vsix
-        run: echo "filename=aseview.vsix" >> "$GITHUB_OUTPUT"
+        working-directory: vscode-extension
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "version_filename=aseview-vscode-${version}.vsix" >> "$GITHUB_OUTPUT"
+          echo "latest_filename=aseview-latest.vsix" >> "$GITHUB_OUTPUT"
 
       - name: Package VSIX
         working-directory: vscode-extension
-        run: npm run package -- --out "${{ steps.vsix.outputs.filename }}"
+        run: |
+          npm run package -- --out "${{ steps.vsix.outputs.version_filename }}"
+          cp "${{ steps.vsix.outputs.version_filename }}" "${{ steps.vsix.outputs.latest_filename }}"
 
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v4
         with:
           name: aseview-vsix
-          path: vscode-extension/${{ steps.vsix.outputs.filename }}
+          path: |
+            vscode-extension/${{ steps.vsix.outputs.version_filename }}
+            vscode-extension/${{ steps.vsix.outputs.latest_filename }}
 
   attach-release-asset:
     if: >
@@ -94,28 +103,39 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           tag="${{ steps.release.outputs.tag }}"
-          asset="dist/aseview.vsix"
+          version="${tag#v}"
+          version_asset="dist/aseview-vscode-${version}.vsix"
+          latest_asset="dist/aseview-latest.vsix"
+          assets=("$version_asset" "$latest_asset")
 
-          if [ ! -f "$asset" ]; then
-            echo "::error::VSIX artifact not found at $asset"
-            find dist -maxdepth 2 -type f -print
-            exit 1
-          fi
+          for asset in "${assets[@]}"; do
+            if [ ! -f "$asset" ]; then
+              echo "::error::VSIX artifact not found at $asset"
+              find dist -maxdepth 2 -type f -print
+              exit 1
+            fi
+          done
 
           if gh release view "$tag" >/dev/null 2>&1; then
             immutable="$(gh api "repos/${GH_REPO}/releases/tags/${tag}" --jq '.immutable // false')"
             if [ "$immutable" = "true" ]; then
               asset_names="$(gh api "repos/${GH_REPO}/releases/tags/${tag}" --jq '.assets[].name')"
-              if printf '%s\n' "$asset_names" | grep -Fxq "$(basename "$asset")"; then
-                echo "Release $tag is immutable and already has $(basename "$asset"); nothing to upload."
-                exit 0
+              missing=0
+              for asset in "${assets[@]}"; do
+                if ! printf '%s\n' "$asset_names" | grep -Fxq "$(basename "$asset")"; then
+                  echo "::error::Release $tag is immutable and is missing $(basename "$asset"). Delete/recreate the release or let this workflow create it from the tag."
+                  missing=1
+                fi
+              done
+              if [ "$missing" -ne 0 ]; then
+                exit 1
               fi
-              echo "::error::Release $tag is immutable, so VSIX assets cannot be attached after publication. Delete/recreate the release or let this workflow create it from the tag."
-              exit 1
+              echo "Release $tag is immutable and already has all VSIX assets; nothing to upload."
+              exit 0
             fi
-            gh release upload "$tag" "$asset" --clobber
+            gh release upload "$tag" "${assets[@]}" --clobber
           else
-            gh release create "$tag" "$asset" --title "$tag" --notes "Release $tag"
+            gh release create "$tag" "${assets[@]}" --title "$tag" --notes "Release $tag" --latest
           fi
 
   publish-marketplace:
@@ -152,7 +172,7 @@ jobs:
         if: steps.token.outputs.configured == 'true'
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: npx --yes @vscode/vsce publish --packagePath dist/aseview.vsix -p "$VSCE_PAT"
+        run: npx --yes @vscode/vsce publish --packagePath dist/aseview-latest.vsix -p "$VSCE_PAT"
 
   publish-openvsx:
     if: >
@@ -188,4 +208,4 @@ jobs:
         if: steps.token.outputs.configured == 'true'
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        run: npx --yes ovsx publish dist/aseview.vsix -p "$OVSX_PAT"
+        run: npx --yes ovsx publish dist/aseview-latest.vsix -p "$OVSX_PAT"
