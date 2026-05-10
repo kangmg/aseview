@@ -95,3 +95,6 @@ venv.bak/
 !vscode-extension/**/*.json
 site/
 tmp/
+
+# Copilot local workspace
+.claude/
