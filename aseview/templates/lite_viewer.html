@@ -114,7 +114,7 @@
         }
 
         #frame-label {
-            color: rgba(255, 255, 255, 0.75);
+            color: rgba(0, 0, 0, 0.65);
             font-size: 11px;
             font-weight: 500;
             min-width: 44px;
@@ -132,12 +132,9 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            padding: 4px 8px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            padding: 2px 0;
+            border-radius: 0;
+            background: transparent;
             max-width: calc(100% - 20px);
             overflow-x: auto;
             white-space: nowrap;
@@ -150,21 +147,21 @@
         .element-chip {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 1px 5px;
-            border-radius: 999px;
-            border: 0.5px solid rgba(0, 0, 0, 0.25);
+            gap: 3px;
+            padding: 1px 3px;
+            border-radius: 0;
+            border: none;
             font-size: 10px;
             font-weight: 600;
-            color: rgba(15, 23, 42, 0.85);
+            color: rgba(15, 23, 42, 0.80);
             background: transparent;
         }
 
         .element-chip-dot {
-            width: 21px;
-            height: 21px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            border: 0.5px solid rgba(0, 0, 0, 0.15);
+            border: 0.5px solid rgba(0, 0, 0, 0.20);
             flex-shrink: 0;
         }
     </style>
@@ -193,6 +190,7 @@
         const hideHydrogens = !!settings.hideHydrogens;
         const showCell = settings.showCell !== false;
         const isDarkBackground = String(backgroundColor).toLowerCase() === "#000000";
+        const highPerf = !!settings.highPerformance;
 
         if (typeof atomColorScheme !== "undefined") {
             atomColorScheme = String(settings.colorScheme || "Jmol").toLowerCase();
@@ -256,7 +254,6 @@
 
         if (isDarkBackground) {
             controlsPanel.style.background = "rgba(0, 0, 0, 0.35)";
-            elementMap.style.background = "rgba(0, 0, 0, 0.35)";
         }
 
         const scene = new THREE.Scene();
@@ -265,8 +262,12 @@
         const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 2000);
         camera.position.set(0, 0, 12);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
-        renderer.setPixelRatio(window.devicePixelRatio || 1);
+        const renderer = new THREE.WebGLRenderer({
+            antialias: !highPerf,
+            alpha: false,
+            preserveDrawingBuffer: true
+        });
+        renderer.setPixelRatio(highPerf ? 1 : (window.devicePixelRatio || 1));
         renderer.setSize(viewport.clientWidth, viewport.clientHeight);
         viewport.appendChild(renderer.domElement);
 
@@ -274,7 +275,7 @@
         controls.rotateSpeed = 4.0;
         controls.zoomSpeed = 1.2;
         controls.panSpeed = 0.8;
-        controls.dynamicDampingFactor = 0.2;
+        controls.dynamicDampingFactor = highPerf ? 0.8 : 0.2;
         controls.minDistance = 0.2;
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.85));
@@ -391,8 +392,12 @@
                 return [];
             }
 
+            const offset = Array.isArray(frame.cell_offset) && frame.cell_offset.length === 3
+                ? new THREE.Vector3(frame.cell_offset[0], frame.cell_offset[1], frame.cell_offset[2])
+                : new THREE.Vector3(0, 0, 0);
+
             const [a, b, c] = vectors;
-            const o = new THREE.Vector3(0, 0, 0);
+            const o = offset.clone();
             const ab = a.clone().add(b);
             const ac = a.clone().add(c);
             const bc = b.clone().add(c);
