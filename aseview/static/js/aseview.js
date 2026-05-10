@@ -171,6 +171,7 @@
         _onMessage(event) {
             const msg = event.data;
             if (!msg || !msg.type) return;
+            if (!this.iframe || event.source !== this.iframe.contentWindow) return;
 
             if (msg.type === 'viewerLoaded') {
                 this.isReady = true;
@@ -335,6 +336,7 @@
             return new Promise((resolve) => {
                 const handler = (event) => {
                     const msg = event.data;
+                    if (event.source !== (this.iframe && this.iframe.contentWindow)) return;
                     if (msg && msg.type === 'selectionResponse') {
                         window.removeEventListener('message', handler);
                         resolve(msg.selected || []);

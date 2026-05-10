@@ -849,7 +849,7 @@
 
         // Global variables
         let molecularData = [];
-        let sidebarOpen = true;
+        let sidebarOpen = false;
         let cards = {
             advanced: true,
             display: true,
@@ -1210,6 +1210,9 @@
             window.addEventListener('resize', handleResize);
             handleResize();
             animate();
+            if (Array.isArray(molecularData) && molecularData.length > 0) {
+                renderMolecule();
+            }
         }
 
         function setupCamera() {

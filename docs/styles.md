@@ -87,10 +87,10 @@ The molecule is acetamide, matching `ase.build.molecule("CH3CONH2")`.
         showCell: false,
         showBond: true,
         showAxis: false,
-        atomSize: 0.42,
-        bondThickness: 0.09,
-        bondThreshold: 1.2,
-        radiusContrast: 0.85,
+        atomSize: 0.52,
+        bondThickness: 0.11,
+        bondThreshold: 1.25,
+        radiusContrast: 0.95,
         radiusContrastMode: 'log',
         showEnergyPlot: false,
         showForceMaxPlot: false
@@ -198,7 +198,7 @@ The molecule is acetamide, matching `ase.build.molecule("CH3CONH2")`.
 .aseview-style-card iframe {
   display: block;
   width: 100%;
-  height: 280px;
+  height: 340px;
   border: 0;
   background: transparent;
 }
