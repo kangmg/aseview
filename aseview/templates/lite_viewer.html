@@ -42,11 +42,13 @@
             z-index: 10;
             display: flex;
             align-items: center;
-            gap: 7px;
-            padding: 4px 10px;
+            gap: 6px;
+            padding: 4px 8px;
             border-radius: 999px;
-            background: rgba(0, 0, 0, 0.30);
-            backdrop-filter: blur(3px);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
         }
 
         #lite-controls.hidden {
@@ -54,10 +56,10 @@
         }
 
         #play-stop-btn {
-            border: none;
+            border: 0.5px solid rgba(255, 255, 255, 0.20);
             border-radius: 50%;
-            background: rgba(0, 0, 0, 0.45);
-            color: #ffffff;
+            background: rgba(255, 255, 255, 0.10);
+            color: rgba(255, 255, 255, 0.80);
             width: 28px;
             height: 28px;
             padding: 0;
@@ -66,6 +68,12 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        #play-stop-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.35);
         }
 
         #play-stop-btn::before {
@@ -126,8 +134,10 @@
             gap: 4px;
             padding: 4px 8px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.35);
-            backdrop-filter: blur(3px);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
             max-width: calc(100% - 20px);
             overflow-x: auto;
             white-space: nowrap;
@@ -143,18 +153,18 @@
             gap: 4px;
             padding: 1px 5px;
             border-radius: 999px;
-            border: none;
+            border: 0.5px solid rgba(0, 0, 0, 0.25);
             font-size: 10px;
             font-weight: 600;
-            color: rgba(15, 23, 42, 0.75);
+            color: rgba(15, 23, 42, 0.85);
             background: transparent;
         }
 
         .element-chip-dot {
-            width: 7px;
-            height: 7px;
+            width: 21px;
+            height: 21px;
             border-radius: 50%;
-            border: none;
+            border: 0.5px solid rgba(0, 0, 0, 0.15);
             flex-shrink: 0;
         }
     </style>
