@@ -1267,6 +1267,7 @@ class LiteViewer(BaseViewer):
         hide_hs: bool = False,
         center: Optional[bool] = None,
         centering: Optional[bool] = None,
+        high_performance: bool = False,
     ):
         super().__init__(data)
 
@@ -1304,6 +1305,7 @@ class LiteViewer(BaseViewer):
             "viewMode": "Perspective",
             "colorScheme": "Jmol",
             "backgroundColor": background,
+            "highPerformance": bool(high_performance),
         }
 
     @staticmethod
@@ -1399,6 +1401,7 @@ def view(
     hide_hs: bool = False,
     center: Optional[bool] = None,
     centering: Optional[bool] = None,
+    high_performance: bool = False,
     width: int = 500,
     height: int = 500,
 ) -> LiteViewer:
@@ -1412,6 +1415,7 @@ def view(
         hide_hs: Hide hydrogen atoms if True.
         center: Center each frame by center of mass if True (default: False).
         centering: Alias of ``center``.
+        high_performance: If True, disable antialias, lock pixelRatio=1, and reduce damping (default: False).
         width: Viewer width in pixels (default: 500).
         height: Viewer height in pixels (default: 500).
     """
@@ -1425,6 +1429,7 @@ def view(
         hide_hs=hide_hs,
         center=center,
         centering=centering,
+        high_performance=high_performance,
     )
     viewer.show(width=width, height=height)
     return viewer
