@@ -45,6 +45,7 @@ The molecule is acetamide, matching `ase.build.molecule("CH3CONH2")`.
   }
 
   function withPreviewChrome(html) {
+    const PREVIEW_CAMERA_SCALE = 0.4; // ~2.5x closer than template default fit
     const base = `<base href="${TEMPLATE_URL}">`;
     const previewCss = `
       <style>
@@ -65,6 +66,10 @@ The molecule is acetamide, matching `ase.build.molecule("CH3CONH2")`.
     let next = html.replace(
       /https:\/\/cdn\.jsdelivr\.net\/gh\/kangmg\/aseview@main\/aseview\/static\/js\/styles\.js(?:\?[^"']*)?/g,
       'https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js?aseview_styles_docs=20260510'
+    );
+    next = next.replace(
+      /const distance = maxDim \/ \(2 \* Math\.tan\(halfFov\)\) \+ maxDim;/g,
+      `const distance = (maxDim / (2 * Math.tan(halfFov)) + maxDim) * ${PREVIEW_CAMERA_SCALE};`
     );
 
     if (!/<base\s/i.test(next)) {
