@@ -56,7 +56,7 @@
         }
 
         #play-stop-btn {
-            border: 0.5px solid rgba(255, 255, 255, 0.20);
+            border: 0.5px solid rgba(0, 0, 0, 0.20);
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.10);
             color: rgba(255, 255, 255, 0.80);
@@ -73,7 +73,7 @@
 
         #play-stop-btn:hover {
             background: rgba(255, 255, 255, 0.18);
-            border-color: rgba(255, 255, 255, 0.35);
+            border-color: rgba(0, 0, 0, 0.35);
         }
 
         #play-stop-btn::before {
@@ -111,6 +111,25 @@
             accent-color: #ffffff;
             cursor: pointer;
             height: 3px;
+        }
+
+        #frame-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.60);
+            border: 0.5px solid rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+        }
+
+        #frame-slider::-moz-range-thumb {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.60);
+            border: 0.5px solid rgba(0, 0, 0, 0.25);
+            cursor: pointer;
         }
 
         #frame-label {
@@ -278,13 +297,14 @@
         controls.dynamicDampingFactor = highPerf ? 0.8 : 0.2;
         controls.minDistance = 0.2;
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.85));
-        const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        keyLight.position.set(4, 5, 8);
-        scene.add(keyLight);
-        const fillLight = new THREE.DirectionalLight(0xffffff, 0.35);
-        fillLight.position.set(-6, -2, -6);
-        scene.add(fillLight);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        keyLight.position.set(5, 8, 10);
+        camera.add(keyLight);
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        fillLight.position.set(-6, -4, -6);
+        camera.add(fillLight);
+        scene.add(camera);
 
         const moleculeGroup = new THREE.Group();
         scene.add(moleculeGroup);
