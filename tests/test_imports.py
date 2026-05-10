@@ -10,6 +10,8 @@ def test_import_package():
     assert hasattr(aseview, "NormalViewer")
     assert hasattr(aseview, "OverlayViewer")
     assert hasattr(aseview, "FragSelector")
+    assert hasattr(aseview, "LiteViewer")
+    assert hasattr(aseview, "view")
     assert hasattr(aseview, "MolecularData")
     assert hasattr(aseview, "set_theme")
     assert hasattr(aseview, "get_theme")
@@ -40,6 +42,8 @@ def test_import_wrapper():
         NormalViewer,
         OverlayViewer,
         FragSelector,
+        LiteViewer,
+        view,
         MolecularData,
         set_theme,
         get_theme,

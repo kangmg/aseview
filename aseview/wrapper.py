@@ -1251,3 +1251,113 @@ class FragSelector(BaseViewer):
         html = html.replace("{{settings}}", settings_json)
 
         return html
+
+
+class LiteViewer(BaseViewer):
+    """Lightweight viewer with only a render canvas and optional play/stop button."""
+
+    _BLACK_BACKGROUND_STYLES = {"grey", "bubble", "cinematic", "neon", "2d"}
+
+    def __init__(
+        self,
+        data: Union[Atoms, Dict[str, Any], str, List],
+        styles: str = "cinematic",
+        fps: Union[int, float] = 30,
+        hide_hs: bool = False,
+    ):
+        super().__init__(data)
+
+        style_name = str(styles or "cinematic").strip().lower()
+        if not style_name:
+            style_name = "cinematic"
+
+        fps_value = float(fps)
+        if not np.isfinite(fps_value) or fps_value <= 0:
+            raise ValueError(f"fps must be a positive number, got {fps!r}")
+
+        background = "#000000" if style_name in self._BLACK_BACKGROUND_STYLES else "#ffffff"
+
+        self.settings = {
+            "style": style_name,
+            "fps": fps_value,
+            "hideHydrogens": bool(hide_hs),
+            "bondThreshold": 1.2,
+            "bondThickness": 0.09,
+            "atomSize": 0.4,
+            "viewMode": "Perspective",
+            "colorScheme": "Jmol",
+            "backgroundColor": background,
+        }
+
+    def _generate_html(self) -> str:
+        """Generate minimal HTML for the lightweight viewer."""
+        js_data = self._get_js_data()
+        settings_json = json.dumps(self.settings)
+
+        try:
+            template_path = _resolve_template("lite_viewer.html", None)
+            with open(template_path, "r", encoding="utf-8") as f:
+                html = f.read()
+        except FileNotFoundError:
+            return self._generate_simple_html("Lite Viewer")
+
+        vendor_dir = os.path.join(os.path.dirname(__file__), "static", "js", "vendor")
+
+        three_path = os.path.join(vendor_dir, "three.min.js")
+        if os.path.exists(three_path):
+            with open(three_path, "r", encoding="utf-8") as f:
+                three_js = f.read()
+            html = html.replace(
+                '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>',
+                f"<script>{three_js}</script>",
+            )
+
+        orbit_path = os.path.join(vendor_dir, "OrbitControls.js")
+        if os.path.exists(orbit_path):
+            with open(orbit_path, "r", encoding="utf-8") as f:
+                orbit_js = f.read()
+            html = html.replace(
+                '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>',
+                f"<script>{orbit_js}</script>",
+            )
+
+        trackball_path = os.path.join(vendor_dir, "TrackballControls.js")
+        if os.path.exists(trackball_path):
+            with open(trackball_path, "r", encoding="utf-8") as f:
+                trackball_js = f.read()
+            html = html.replace(
+                '<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>',
+                f"<script>{trackball_js}</script>",
+            )
+
+        html = _inline_styles_js(html)
+        html = html.replace("{{molecular_data}}", js_data)
+        html = html.replace("{{settings}}", settings_json)
+        return html
+
+
+def view(
+    data: Union[Atoms, Dict[str, Any], str, List],
+    styles: str = "cinematic",
+    fps: Union[int, float] = 30,
+    hide_hs: bool = False,
+    width: int = 400,
+    height: int = 400,
+) -> LiteViewer:
+    """
+    Show a lightweight molecular viewer and return the underlying LiteViewer.
+
+    Args:
+        data: ASE Atoms, list of Atoms, dict data, or file/glob path.
+        styles: Rendering style (default: "cinematic").
+        fps: Playback FPS for trajectories.
+        hide_hs: Hide hydrogen atoms if True.
+        width: Viewer width in pixels (default: 400).
+        height: Viewer height in pixels (default: 400).
+    """
+    if width <= 0 or height <= 0:
+        raise ValueError(f"width and height must be positive integers, got ({width}, {height})")
+
+    viewer = LiteViewer(data, styles=styles, fps=fps, hide_hs=hide_hs)
+    viewer.show(width=width, height=height)
+    return viewer

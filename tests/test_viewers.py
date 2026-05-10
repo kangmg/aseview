@@ -6,7 +6,7 @@ from ase import Atoms
 from ase.build import molecule, bulk
 
 from aseview.wrapper import (
-    MolecularViewer, NormalViewer, OverlayViewer, FragSelector,
+    MolecularViewer, NormalViewer, OverlayViewer, FragSelector, LiteViewer, view,
     set_theme, get_theme, list_themes, _resolve_template,
 )
 
@@ -159,6 +159,53 @@ class TestFragSelector:
         html = viewer.get_html()
         assert isinstance(html, str)
         assert len(html) > 1000
+
+
+# ── LiteViewer ────────────────────────────────────────────────
+
+
+class TestLiteViewer:
+    def test_default_settings(self, h2o):
+        viewer = LiteViewer(h2o)
+        assert viewer.settings["style"] == "cinematic"
+        assert viewer.settings["bondThickness"] == 0.09
+        assert viewer.settings["atomSize"] == 0.4
+        assert viewer.settings["viewMode"] == "Perspective"
+        assert viewer.settings["colorScheme"] == "Jmol"
+        assert viewer.settings["backgroundColor"] == "#000000"
+
+    def test_white_background_style(self, h2o):
+        viewer = LiteViewer(h2o, styles="cartoon")
+        assert viewer.settings["backgroundColor"] == "#ffffff"
+
+    def test_hide_hydrogen_setting(self, h2o):
+        viewer = LiteViewer(h2o, hide_hs=True)
+        assert viewer.settings["hideHydrogens"] is True
+
+    def test_generate_html_contains_play_button(self, h2o):
+        viewer = LiteViewer([h2o, h2o], fps=12)
+        html = viewer.get_html()
+        assert isinstance(html, str)
+        assert "play-stop-btn" in html
+        assert '"fps": 12.0' in html
+
+    def test_invalid_fps_raises(self, h2o):
+        with pytest.raises(ValueError):
+            LiteViewer(h2o, fps=0)
+
+    def test_view_helper_returns_lite_viewer(self, h2o, monkeypatch):
+        calls = {}
+
+        def _fake_show(self, width="100%", height=600):
+            calls["width"] = width
+            calls["height"] = height
+
+        monkeypatch.setattr(LiteViewer, "show", _fake_show)
+
+        viewer = view(h2o, width=320, height=280)
+        assert isinstance(viewer, LiteViewer)
+        assert calls["width"] == 320
+        assert calls["height"] == 280
 
 
 # ── Theme System ─────────────────────────────────────────────

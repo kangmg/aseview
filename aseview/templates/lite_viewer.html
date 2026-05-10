@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASEView Lite Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/styles.js?_aseview=20260509-color-schemes-2"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #ffffff;
+        }
+
+        #viewport {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #play-stop-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #ffffff;
+            font-size: 12px;
+            line-height: 1;
+            padding: 8px 12px;
+            cursor: pointer;
+            user-select: none;
+            min-width: 64px;
+        }
+
+        #play-stop-btn.hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="viewport">
+        <button id="play-stop-btn" class="hidden" type="button">Play</button>
+    </div>
+
+    <script>
+        const molecularData = {{molecular_data}};
+        const settings = {{settings}};
+
+        const styleKey = String(settings.style || "cinematic").toLowerCase();
+        const fps = Number(settings.fps) > 0 ? Number(settings.fps) : 30;
+        const backgroundColor = settings.backgroundColor || "#ffffff";
+        const atomSize = Number(settings.atomSize) || 0.4;
+        const bondThreshold = Number(settings.bondThreshold) || 1.2;
+        const bondThickness = Number(settings.bondThickness) || 0.09;
+        const hideHydrogens = !!settings.hideHydrogens;
+
+        if (typeof atomColorScheme !== "undefined") {
+            atomColorScheme = String(settings.colorScheme || "Jmol").toLowerCase();
+        }
+
+        const atomFactories = {
+            "default": (pos, symbol, scale, helpers) => createAtomStyleDefault(pos, symbol, scale, helpers),
+            "2d": (pos, symbol, scale) => createAtomStyle2D(pos, symbol, scale),
+            "cartoon": (pos, symbol, scale, helpers) => createAtomStyleCartoon(pos, symbol, scale, helpers),
+            "neon": (pos, symbol, scale) => createAtomStyleNeon(pos, symbol, scale),
+            "glossy": (pos, symbol, scale, helpers) => createAtomStyleGlossy(pos, symbol, scale, helpers),
+            "metallic": (pos, symbol, scale, helpers) => createAtomStyleMetallic(pos, symbol, scale, helpers),
+            "cinematic": (pos, symbol, scale, helpers) => createAtomStyleCinematic(pos, symbol, scale, helpers),
+            "rowan": (pos, symbol, scale, helpers) => createAtomStyleRowan(pos, symbol, scale, helpers),
+            "bubble": (pos, symbol, scale) => createAtomStyleBubble(pos, symbol, scale),
+            "grey": (pos, symbol, scale) => createAtomStyleGrey(pos, symbol, scale, 0x808080),
+        };
+
+        const bondFactories = {
+            "default": (p1, p2, s1, s2, br, as, helpers) => createBondStyleDefault(p1, p2, s1, s2, br, as, "default", helpers),
+            "2d": (p1, p2, s1, s2, br, as, helpers) => createBondStyle2D(p1, p2, s1, s2, br, as, helpers),
+            "cartoon": (p1, p2, s1, s2, br, as, helpers) => createBondStyleCartoon(p1, p2, s1, s2, br, as, helpers),
+            "neon": (p1, p2, s1, s2, br, as, helpers) => createBondStyleNeon(p1, p2, s1, s2, br, as, helpers),
+            "glossy": (p1, p2, s1, s2, br, as, helpers) => createBondStyleDefault(p1, p2, s1, s2, br, as, "glossy", helpers),
+            "metallic": (p1, p2, s1, s2, br, as, helpers) => createBondStyleDefault(p1, p2, s1, s2, br, as, "metallic", helpers),
+            "cinematic": (p1, p2, s1, s2, br, as, helpers) => createBondStyleCinematic(p1, p2, s1, s2, br, as, helpers),
+            "rowan": (p1, p2, s1, s2, br, as, helpers) => createBondStyleRowan(p1, p2, s1, s2, br, as, helpers),
+            "bubble": (p1, p2, s1, s2, br, as, helpers) => createBondStyleBubble(p1, p2, s1, s2, br, as, helpers),
+            "grey": (p1, p2, s1, s2, br, as, helpers) => createBondStyleGrey(p1, p2, s1, s2, br, as, {}, helpers),
+        };
+
+        const viewport = document.getElementById("viewport");
+        const playStopButton = document.getElementById("play-stop-btn");
+        document.body.style.backgroundColor = backgroundColor;
+        viewport.style.backgroundColor = backgroundColor;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(backgroundColor);
+
+        const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
+        camera.position.set(0, 0, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
+        renderer.setPixelRatio(window.devicePixelRatio || 1);
+        renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+        viewport.appendChild(renderer.domElement);
+
+        const controls = new THREE.TrackballControls(camera, renderer.domElement);
+        controls.rotateSpeed = 4.0;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.8;
+        controls.dynamicDampingFactor = 0.2;
+        controls.minDistance = 0.2;
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+        const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        keyLight.position.set(4, 5, 8);
+        scene.add(keyLight);
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.35);
+        fillLight.position.set(-6, -2, -6);
+        scene.add(fillLight);
+
+        const moleculeGroup = new THREE.Group();
+        scene.add(moleculeGroup);
+
+        let currentFrame = 0;
+        let isPlaying = false;
+        let playbackTimer = null;
+
+        function disposeObject(obj) {
+            if (!obj) return;
+            if (obj.geometry && typeof obj.geometry.dispose === "function") {
+                obj.geometry.dispose();
+            }
+            if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                    obj.material.forEach((mat) => {
+                        if (mat && typeof mat.dispose === "function" && !mat._isCached) mat.dispose();
+                    });
+                } else if (typeof obj.material.dispose === "function" && !obj.material._isCached) {
+                    obj.material.dispose();
+                }
+            }
+            if (obj.children && obj.children.length > 0) {
+                obj.children.forEach((child) => disposeObject(child));
+            }
+        }
+
+        function clearMolecule() {
+            while (moleculeGroup.children.length > 0) {
+                const child = moleculeGroup.children.pop();
+                disposeObject(child);
+            }
+        }
+
+        function getVisibleFrame(frame) {
+            const symbols = Array.isArray(frame?.symbols) ? frame.symbols : [];
+            const positions = Array.isArray(frame?.positions) ? frame.positions : [];
+            const filteredSymbols = [];
+            const filteredPositions = [];
+
+            for (let i = 0; i < symbols.length; i++) {
+                const symbol = symbols[i];
+                const pos = positions[i];
+                if (!Array.isArray(pos) || pos.length < 3) continue;
+                if (hideHydrogens && symbol === "H") continue;
+                filteredSymbols.push(symbol);
+                filteredPositions.push(new THREE.Vector3(pos[0], pos[1], pos[2]));
+            }
+
+            return { symbols: filteredSymbols, positions: filteredPositions };
+        }
+
+        function fitCamera(points) {
+            if (!points || points.length === 0) return;
+            const box = new THREE.Box3().setFromPoints(points);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z, 0.5);
+            const fov = camera.fov * Math.PI / 180.0;
+            const distance = (maxDim / 2) / Math.tan(fov / 2) * 2.2;
+
+            controls.target.copy(center);
+            camera.position.set(center.x + distance * 0.2, center.y + distance * 0.2, center.z + distance);
+            camera.near = Math.max(0.05, distance / 100);
+            camera.far = Math.max(500, distance * 20);
+            camera.updateProjectionMatrix();
+            controls.update();
+        }
+
+        function renderFrame(frameIndex, fitView = false) {
+            if (!Array.isArray(molecularData) || molecularData.length === 0) {
+                clearMolecule();
+                return;
+            }
+            const frame = molecularData[frameIndex % molecularData.length];
+            const visible = getVisibleFrame(frame);
+
+            clearMolecule();
+            if (visible.symbols.length === 0) return;
+
+            const helpers = { radiusScaleBySymbol: {}, highlightAtoms: null, highlightColor: 0xffffff };
+            const atomFactory = atomFactories[styleKey] || atomFactories.default;
+            const bondFactory = bondFactories[styleKey] || bondFactories.default;
+
+            for (let i = 0; i < visible.symbols.length; i++) {
+                const atomMesh = atomFactory(visible.positions[i], visible.symbols[i], atomSize, helpers);
+                if (atomMesh) moleculeGroup.add(atomMesh);
+            }
+
+            const bondPairs = findBondsSpatialGrid(visible.positions, visible.symbols, bondThreshold);
+            for (const pair of bondPairs) {
+                const bond = bondFactory(
+                    visible.positions[pair.i],
+                    visible.positions[pair.j],
+                    visible.symbols[pair.i],
+                    visible.symbols[pair.j],
+                    bondThickness,
+                    atomSize,
+                    helpers
+                );
+                if (bond) moleculeGroup.add(bond);
+            }
+
+            if (fitView) {
+                fitCamera(visible.positions);
+            }
+        }
+
+        function stopPlayback() {
+            if (playbackTimer !== null) {
+                clearInterval(playbackTimer);
+                playbackTimer = null;
+            }
+            isPlaying = false;
+            playStopButton.textContent = "Play";
+        }
+
+        function startPlayback() {
+            if (!Array.isArray(molecularData) || molecularData.length <= 1) return;
+            stopPlayback();
+            isPlaying = true;
+            playStopButton.textContent = "Stop";
+            playbackTimer = setInterval(() => {
+                currentFrame = (currentFrame + 1) % molecularData.length;
+                renderFrame(currentFrame, false);
+            }, 1000 / fps);
+        }
+
+        function togglePlayback() {
+            if (isPlaying) {
+                stopPlayback();
+            } else {
+                startPlayback();
+            }
+        }
+
+        function onResize() {
+            const width = Math.max(viewport.clientWidth, 1);
+            const height = Math.max(viewport.clientHeight, 1);
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            controls.handleResize();
+        }
+
+        playStopButton.addEventListener("click", togglePlayback);
+        window.addEventListener("resize", onResize);
+
+        if (Array.isArray(molecularData) && molecularData.length > 1) {
+            playStopButton.classList.remove("hidden");
+        }
+
+        renderFrame(0, true);
+
+        (function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        })();
+    </script>
+</body>
+
+</html>
