@@ -1442,6 +1442,166 @@ function buildExportSnippet(iframeSettings) {
   ].join('\n');
 }
 
+function requestCurrentSettings(viewer, timeoutMs = 4000, retries = 1) {
+  return new Promise((resolve, reject) => {
+    const targetWindow = viewer && viewer.iframe && viewer.iframe.contentWindow;
+    if (!targetWindow) {
+      reject(new Error('Viewer iframe is not ready'));
+      return;
+    }
+
+    let attempts = 0;
+    let timeoutId = null;
+
+    const cleanup = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      window.removeEventListener('message', onMessage);
+    };
+
+    const onMessage = (e) => {
+      if (e.source !== targetWindow) return;
+      if (!e.data || e.data.type !== 'currentSettings') return;
+      cleanup();
+      resolve(e.data.settings || {});
+    };
+
+    const request = () => {
+      attempts += 1;
+      targetWindow.postMessage({ type: 'getSettings' }, '*');
+      timeoutId = setTimeout(() => {
+        if (attempts <= retries) {
+          request();
+          return;
+        }
+        cleanup();
+        reject(new Error('Timed out waiting for currentSettings'));
+      }, timeoutMs);
+    };
+
+    window.addEventListener('message', onMessage);
+    request();
+  });
+}
+
+function collectIframeSettings(viewer, viewerType) {
+  const doc = viewer && viewer.iframe && viewer.iframe.contentDocument;
+  if (!doc) return {};
+
+  const readNum = (id, key, out) => {
+    const el = doc.getElementById(id);
+    if (!el) return;
+    const n = parseFloat(el.value);
+    if (Number.isFinite(n)) out[key] = n;
+  };
+  const readInt = (id, key, out) => {
+    const el = doc.getElementById(id);
+    if (!el) return;
+    const n = parseInt(el.value, 10);
+    if (Number.isFinite(n)) out[key] = n;
+  };
+  const readBool = (id, key, out) => {
+    const el = doc.getElementById(id);
+    if (el && typeof el.checked === 'boolean') out[key] = !!el.checked;
+  };
+  const readStr = (id, key, out) => {
+    const el = doc.getElementById(id);
+    if (el && typeof el.value === 'string' && el.value !== '') out[key] = el.value;
+  };
+  const hasActive = (id) => {
+    const el = doc.getElementById(id);
+    return !!(el && el.classList && el.classList.contains('active'));
+  };
+
+  const out = {};
+
+  if (viewerType === 'MolecularViewer') {
+    readNum('bond-threshold', 'bondThreshold', out);
+    readNum('hbond-threshold', 'hBondThreshold', out);
+    readNum('bond-thickness', 'bondThickness', out);
+    readNum('atom-size', 'atomSize', out);
+    readNum('radius-contrast', 'radiusContrast', out);
+    readInt('animation-speed', 'animationSpeed', out);
+    readNum('force-scale', 'forceScale', out);
+    readStr('background-color', 'backgroundColor', out);
+    readStr('cell-color', 'cellColor', out);
+    readStr('style', 'style', out);
+    readStr('color-by-select', 'colorBy', out);
+    readStr('color-scheme-select', 'colorScheme', out);
+    readBool('show-cell', 'showCell', out);
+    readBool('show-constraint', 'showConstraint', out);
+    readBool('show-bond', 'showBond', out);
+    readBool('hide-hydrogens', 'hideHydrogens', out);
+    readBool('show-blur', 'showBlur', out);
+    readNum('blur-strength', 'blurStrength', out);
+    readBool('show-hbond', 'showHBond', out);
+    readBool('show-shading', 'showShading', out);
+    readBool('show-energy-plot', 'showEnergyPlot', out);
+    readBool('show-force-max-plot', 'showForceMaxPlot', out);
+    readBool('show-forces', 'showForces', out);
+    readBool('show-axis', 'showAxis', out);
+    readBool('show-polyhedron', 'showPolyhedron', out);
+    readNum('polyhedron-opacity', 'polyhedronOpacity', out);
+    readBool('show-polyhedron-edge', 'showPolyhedronEdge', out);
+    readNum('polyhedron-edge-opacity', 'polyhedronEdgeOpacity', out);
+    readBool('show-rings', 'showRings', out);
+    readNum('ring-opacity', 'ringOpacity', out);
+    readStr('ring-color', 'ringColor', out);
+    readBool('normalize-charges', 'normalizeCharges', out);
+    readBool('show-charge-labels', 'showChargeLabels', out);
+
+    const radiusModeChip = doc.getElementById('radius-contrast-mode-chip');
+    if (radiusModeChip && radiusModeChip.textContent) {
+      out.radiusContrastMode = radiusModeChip.textContent.trim().toLowerCase();
+    }
+    if (hasActive('orthographic-btn')) out.viewMode = 'Orthographic';
+    if (hasActive('perspective-btn')) out.viewMode = 'Perspective';
+    if (hasActive('orbit-btn')) out.rotationMode = 'Orbit';
+    if (hasActive('trackball-btn')) out.rotationMode = 'TrackBall';
+  } else if (viewerType === 'OverlayViewer') {
+    readNum('bond-threshold', 'bondThreshold', out);
+    readNum('bond-thickness', 'bondThickness', out);
+    readNum('atom-size', 'atomSize', out);
+    readInt('animation-speed', 'animationSpeed', out);
+    readNum('force-scale', 'forceScale', out);
+    readStr('background-color', 'backgroundColor', out);
+    readStr('style', 'style', out);
+    readStr('color-by', 'colorBy', out);
+    readStr('colormap-select', 'colormap', out);
+    readStr('color-scheme-select', 'colorScheme', out);
+    readBool('show-cell', 'showCell', out);
+    readStr('cell-color', 'cellColor', out);
+    readBool('show-bond', 'showBond', out);
+    readBool('hide-hydrogens', 'hideHydrogens', out);
+    readBool('show-blur', 'showBlur', out);
+    readNum('blur-strength', 'blurStrength', out);
+    readBool('show-shading', 'showShading', out);
+    readBool('show-axis', 'showAxis', out);
+    readBool('align-molecules', 'alignMolecules', out);
+    if (hasActive('orthographic-btn')) out.viewMode = 'Orthographic';
+    if (hasActive('perspective-btn')) out.viewMode = 'Perspective';
+    if (hasActive('orbit-btn')) out.rotationMode = 'Orbit';
+    if (hasActive('trackball-btn')) out.rotationMode = 'TrackBall';
+  } else if (viewerType === 'FragSelector') {
+    readNum('bond-threshold', 'bondThreshold', out);
+    readNum('atom-size', 'atomSize', out);
+    readStr('style-select', 'style', out);
+    readStr('bg-color', 'backgroundColor', out);
+    readBool('show-cell', 'showCell', out);
+    readStr('cell-color', 'cellColor', out);
+    readBool('show-axis', 'showAxis', out);
+    readBool('hide-hydrogens', 'hideHydrogens', out);
+    readBool('show-blur', 'showBlur', out);
+    readNum('blur-strength', 'blurStrength', out);
+  }
+
+  return out;
+}
+
+function viewerSupportsGetSettings(viewer) {
+  const srcdoc = viewer && viewer.iframe && viewer.iframe.srcdoc;
+  return typeof srcdoc === 'string' && srcdoc.includes("case 'getSettings'");
+}
+
 document.getElementById('export-btn').addEventListener('click', () => {
   if (!currentViewer || !lastLoadedData) {
     showToast('Load a molecule first', 'err');
@@ -1452,27 +1612,22 @@ document.getElementById('export-btn').addEventListener('click', () => {
     return;
   }
 
-  let settled = false;
-  const handler = (e) => {
-    if (!e.data || e.data.type !== 'currentSettings') return;
-    if (settled) return;
-    settled = true;
-    window.removeEventListener('message', handler);
-    document.getElementById('export-code').value = buildExportSnippet(e.data.settings);
+  const iframeSettings = collectIframeSettings(currentViewer, currentType);
+  if (currentType === 'FragSelector' || !viewerSupportsGetSettings(currentViewer)) {
+    const fallbackSettings = Object.keys(iframeSettings).length > 0 ? iframeSettings : (currentViewer.options || {});
+    document.getElementById('export-code').value = buildExportSnippet(fallbackSettings);
     openExportModal();
-  };
-  window.addEventListener('message', handler);
+    return;
+  }
 
-  // Fallback: open with empty settings if iframe doesn't respond
-  setTimeout(() => {
-    if (settled) return;
-    settled = true;
-    window.removeEventListener('message', handler);
-    document.getElementById('export-code').value = buildExportSnippet({});
+  requestCurrentSettings(currentViewer).then((settings) => {
+    document.getElementById('export-code').value = buildExportSnippet(settings);
     openExportModal();
-  }, 1200);
-
-  currentViewer.iframe.contentWindow.postMessage({ type: 'getSettings' }, '*');
+  }).catch(() => {
+    const fallbackSettings = Object.keys(iframeSettings).length > 0 ? iframeSettings : (currentViewer.options || {});
+    document.getElementById('export-code').value = buildExportSnippet(fallbackSettings);
+    openExportModal();
+  });
 });
 
 document.getElementById('export-close').addEventListener('click', closeExportModal);

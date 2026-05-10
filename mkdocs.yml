@@ -54,6 +54,7 @@ nav:
     - FragSelector: api/frag-selector.md
   - JavaScript Module: js-module.md
   - Theming: theming.md
+  - Styles: styles.md
   - Examples:
     - Basic Visualization: examples/basic.md
     - Trajectory Animation: examples/trajectory.md
