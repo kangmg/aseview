@@ -1329,6 +1329,18 @@ class LiteViewer(BaseViewer):
 
         com = np.average(coords, axis=0, weights=masses)
         centered["positions"] = (coords - com).tolist()
+
+        # Also shift cell vectors so they stay aligned with centered atoms
+        cell = centered.get("cell")
+        if isinstance(cell, list) and len(cell) == 3:
+            shifted_cell = []
+            for v in cell:
+                if isinstance(v, (list, tuple)) and len(v) >= 3:
+                    shifted_cell.append([v[0] - com[0], v[1] - com[1], v[2] - com[2], *v[3:]])
+                else:
+                    shifted_cell.append(v)
+            centered["cell"] = shifted_cell
+
         return centered
 
     @classmethod
