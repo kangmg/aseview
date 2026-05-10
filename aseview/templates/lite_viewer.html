@@ -252,7 +252,7 @@
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(backgroundColor);
 
-        const camera = new THREE.PerspectiveCamera(25, 1, 0.1, 2000);
+        const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 2000);
         camera.position.set(0, 0, 12);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
@@ -416,13 +416,18 @@
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z, 0.5);
-            const fov = camera.fov * Math.PI / 180.0;
-            const distance = (maxDim / 2) / Math.tan(fov / 2) * 2.2;
+            const half = maxDim * 0.6;
+
+            const aspect = Math.max(viewport.clientWidth / Math.max(viewport.clientHeight, 1), 1);
+            camera.left = -half * aspect;
+            camera.right = half * aspect;
+            camera.top = half;
+            camera.bottom = -half;
+            camera.near = 0.1;
+            camera.far = maxDim * 20;
 
             controls.target.copy(center);
-            camera.position.set(center.x + distance * 0.2, center.y + distance * 0.2, center.z + distance);
-            camera.near = Math.max(0.05, distance / 100);
-            camera.far = Math.max(500, distance * 20);
+            camera.position.set(center.x, center.y, center.z + maxDim * 3);
             camera.updateProjectionMatrix();
             controls.update();
         }
@@ -525,7 +530,9 @@
             const width = Math.max(viewport.clientWidth, 1);
             const height = Math.max(viewport.clientHeight, 1);
             renderer.setSize(width, height);
-            camera.aspect = width / height;
+            const aspect = width / height;
+            camera.left = -camera.top * aspect;
+            camera.right = camera.top * aspect;
             camera.updateProjectionMatrix();
             controls.handleResize();
         }
