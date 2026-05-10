@@ -4689,6 +4689,11 @@
                         }
                     }
                     break;
+                case 'getSettings':
+                    if (event.source) {
+                        event.source.postMessage({ type: 'currentSettings', settings: Object.assign({}, settings) }, '*');
+                    }
+                    break;
                 case 'ready':
                     if (event.source) {
                         event.source.postMessage({ type: 'ready', viewer: 'molecular' }, '*');

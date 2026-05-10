@@ -366,6 +366,65 @@
     }
     .paste-hint { font-size: 0.72rem; color: var(--muted); }
 
+    /* ── Export modal ── */
+    #export-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(16, 18, 20, 0.56);
+      backdrop-filter: blur(6px);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+    }
+    #export-backdrop.open { display: flex; }
+
+    .export-modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: min(680px, 92vw);
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow);
+    }
+    .export-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .export-header h3 { font-size: 0.9rem; font-weight: 600; }
+    .export-header p { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+    .export-close {
+      background: none; border: none; color: var(--muted);
+      font-size: 1.2rem; cursor: pointer; padding: 0 0.3rem;
+    }
+    .export-close:hover { color: var(--text); }
+
+    #export-code {
+      flex: 1;
+      min-height: 200px;
+      background: var(--bg);
+      border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      padding: 0.75rem 1rem;
+      resize: none;
+      outline: none;
+      line-height: 1.5;
+    }
+    .export-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 1rem;
+    }
+
     @media (max-width: 760px) {
       .header, .toolbar { padding-left: 0.8rem; padding-right: 0.8rem; }
       .toolbar-right { width: 100%; margin-left: 0; justify-content: flex-start; }
@@ -449,6 +508,14 @@
     Load Sample
   </button>
 
+  <!-- Export HTML -->
+  <button class="btn" id="export-btn" title="Copy embed snippet for blogs / markdown">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
+    </svg>
+    Export HTML
+  </button>
+
   <!-- Status -->
   <div class="toolbar-right toolbar-group">
     <div class="status-dot" id="status-dot"></div>
@@ -493,6 +560,24 @@
 
 <!-- ── Toast ── -->
 <div id="toast"></div>
+
+<!-- ── Export modal ── -->
+<div id="export-backdrop">
+  <div class="export-modal">
+    <div class="export-header">
+      <div>
+        <h3>Export HTML Snippet</h3>
+        <p>Paste into any HTML page or Markdown file (GitHub Pages, Jekyll, etc.)</p>
+      </div>
+      <button class="export-close" id="export-close">&times;</button>
+    </div>
+    <textarea id="export-code" readonly spellcheck="false"></textarea>
+    <div class="export-footer">
+      <span class="paste-hint">Includes current molecule data &amp; viewer settings</span>
+      <button class="btn primary" id="export-copy-btn">Copy</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Scripts ── -->
 <script src="../../aseview/static/js/aseview.js?_aseview=20260509-color-schemes-2"></script>
@@ -968,6 +1053,7 @@ function parseJSON(text) {
 // ─────────────────────────────────────────────────────────────
 let currentViewer = null;
 let currentType = 'MolecularViewer';
+let lastLoadedData = null;   // array of frames passed to setData
 
 function setStatus(msg, kind = '') {
   const dot = document.getElementById('status-dot');
@@ -1037,14 +1123,17 @@ function loadDataIntoViewer(parsedFrames, sourceLabel) {
   try {
     if (currentType === 'MolecularViewer') {
       currentViewer.setData(parsedFrames);
+      lastLoadedData = parsedFrames;
       setStatus('Loaded ' + parsedFrames.length + ' frame(s) — ' + sourceLabel, 'ok');
       showToast('Loaded ' + parsedFrames.length + ' frame(s)');
     } else if (currentType === 'OverlayViewer') {
       currentViewer.setData(parsedFrames);
+      lastLoadedData = parsedFrames;
       setStatus('Loaded ' + parsedFrames.length + ' structure(s) — ' + sourceLabel, 'ok');
       showToast('Loaded ' + parsedFrames.length + ' structure(s)');
     } else if (currentType === 'FragSelector') {
       currentViewer.setData(parsedFrames[0]);
+      lastLoadedData = parsedFrames;
       setStatus('Loaded ' + parsedFrames[0].symbols.length + ' atoms — ' + sourceLabel, 'ok');
       showToast('Loaded ' + parsedFrames[0].symbols.length + ' atoms');
     }
@@ -1311,6 +1400,96 @@ wrap.addEventListener('drop', e => {
   dropOverlay.classList.remove('active');
   const files = e.dataTransfer.files;
   if (files.length) handleFiles(files);
+});
+
+// ─────────────────────────────────────────────────────────────
+// Export HTML
+// ─────────────────────────────────────────────────────────────
+function openExportModal() { document.getElementById('export-backdrop').classList.add('open'); }
+function closeExportModal() { document.getElementById('export-backdrop').classList.remove('open'); }
+
+function buildExportSnippet(iframeSettings) {
+  const uid = Math.random().toString(36).slice(2, 8);
+  const theme = document.getElementById('theme-type').value;
+  const viewerClass = currentType;
+
+  // Merge iframe settings with theme; drop keys irrelevant to embeds
+  const SKIP = new Set(['animationSpeed', 'forceScale']);
+  const opts = { theme };
+  for (const [k, v] of Object.entries(iframeSettings)) {
+    if (!SKIP.has(k)) opts[k] = v;
+  }
+
+  // Compact but readable options block
+  const optsStr = JSON.stringify(opts, null, 2);
+
+  // Compact data: fully inline (embed doesn't need human-readable positions)
+  const dataStr = JSON.stringify(lastLoadedData);
+
+  const setDataLine = viewerClass === 'FragSelector'
+    ? `v.setData(${dataStr}[0]);`
+    : `v.setData(${dataStr});`;
+
+  return [
+    `<div id="aseview-${uid}" style="width:100%;height:420px;"></div>`,
+    `<script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/aseview.js"><\/script>`,
+    `<script>`,
+    `(function () {`,
+    `  const v = new ASEView.${viewerClass}('#aseview-${uid}', ${optsStr.replace(/\n/g, '\n  ')});`,
+    `  ${setDataLine}`,
+    `})();`,
+    `<\/script>`,
+  ].join('\n');
+}
+
+document.getElementById('export-btn').addEventListener('click', () => {
+  if (!currentViewer || !lastLoadedData) {
+    showToast('Load a molecule first', 'err');
+    return;
+  }
+  if (currentType === 'NormalModeViewer') {
+    showToast('NormalModeViewer export not supported', 'err');
+    return;
+  }
+
+  let settled = false;
+  const handler = (e) => {
+    if (!e.data || e.data.type !== 'currentSettings') return;
+    if (settled) return;
+    settled = true;
+    window.removeEventListener('message', handler);
+    document.getElementById('export-code').value = buildExportSnippet(e.data.settings);
+    openExportModal();
+  };
+  window.addEventListener('message', handler);
+
+  // Fallback: open with empty settings if iframe doesn't respond
+  setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    window.removeEventListener('message', handler);
+    document.getElementById('export-code').value = buildExportSnippet({});
+    openExportModal();
+  }, 1200);
+
+  currentViewer.iframe.contentWindow.postMessage({ type: 'getSettings' }, '*');
+});
+
+document.getElementById('export-close').addEventListener('click', closeExportModal);
+document.getElementById('export-backdrop').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeExportModal();
+});
+document.getElementById('export-copy-btn').addEventListener('click', () => {
+  const code = document.getElementById('export-code').value;
+  navigator.clipboard.writeText(code).then(() => {
+    showToast('Copied to clipboard!');
+    closeExportModal();
+  }).catch(() => {
+    document.getElementById('export-code').select();
+    document.execCommand('copy');
+    showToast('Copied to clipboard!');
+    closeExportModal();
+  });
 });
 
 // ─────────────────────────────────────────────────────────────

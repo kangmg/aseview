@@ -3097,6 +3097,11 @@
                         }
                     }
                     break;
+                case 'getSettings':
+                    if (event.source) {
+                        event.source.postMessage({ type: 'currentSettings', settings: Object.assign({}, settings) }, '*');
+                    }
+                    break;
                 case 'ready':
                     // Respond that viewer is ready
                     if (event.source) {
