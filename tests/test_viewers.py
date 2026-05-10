@@ -2,7 +2,9 @@
 
 import os
 import pytest
+import numpy as np
 from ase import Atoms
+from ase.data import atomic_masses, atomic_numbers
 from ase.build import molecule, bulk
 
 from aseview.wrapper import (
@@ -173,6 +175,7 @@ class TestLiteViewer:
         assert viewer.settings["viewMode"] == "Perspective"
         assert viewer.settings["colorScheme"] == "Jmol"
         assert viewer.settings["backgroundColor"] == "#000000"
+        assert viewer.settings["centerByCOM"] is False
 
     def test_white_background_style(self, h2o):
         viewer = LiteViewer(h2o, styles="cartoon")
@@ -187,11 +190,31 @@ class TestLiteViewer:
         html = viewer.get_html()
         assert isinstance(html, str)
         assert "play-stop-btn" in html
+        assert "frame-slider" in html
         assert '"fps": 12.0' in html
 
     def test_invalid_fps_raises(self, h2o):
         with pytest.raises(ValueError):
             LiteViewer(h2o, fps=0)
+
+    def test_center_by_com(self, h2o):
+        viewer = LiteViewer(h2o, center=True)
+        coords = np.asarray(viewer.data["positions"], dtype=float)
+        masses = np.asarray(
+            [atomic_masses[atomic_numbers[symbol]] for symbol in viewer.data["symbols"]],
+            dtype=float,
+        )
+        com = np.average(coords, axis=0, weights=masses)
+        assert np.allclose(com, np.zeros(3), atol=1e-10)
+        assert viewer.settings["centerByCOM"] is True
+
+    def test_centering_alias(self, h2o):
+        viewer = LiteViewer(h2o, centering=True)
+        assert viewer.settings["centerByCOM"] is True
+
+    def test_conflicting_center_args_raises(self, h2o):
+        with pytest.raises(ValueError):
+            LiteViewer(h2o, center=True, centering=False)
 
     def test_view_helper_returns_lite_viewer(self, h2o, monkeypatch):
         calls = {}

@@ -3,10 +3,11 @@ Wrapper module for molecular visualization
 """
 
 import glob as glob_module
+import copy
 import json
 import os
 import re
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List, Optional, Union
 from ase import Atoms
 import numpy as np
 
@@ -1264,8 +1265,19 @@ class LiteViewer(BaseViewer):
         styles: str = "cinematic",
         fps: Union[int, float] = 30,
         hide_hs: bool = False,
+        center: Optional[bool] = None,
+        centering: Optional[bool] = None,
     ):
         super().__init__(data)
+
+        if center is not None and centering is not None and bool(centering) != bool(center):
+            raise ValueError("center and centering were both provided with different values")
+        if centering is not None:
+            center_enabled = bool(centering)
+        elif center is not None:
+            center_enabled = bool(center)
+        else:
+            center_enabled = False
 
         style_name = str(styles or "cinematic").strip().lower()
         if not style_name:
@@ -1277,17 +1289,56 @@ class LiteViewer(BaseViewer):
 
         background = "#000000" if style_name in self._BLACK_BACKGROUND_STYLES else "#ffffff"
 
+        if center_enabled:
+            self.data = self._center_data_by_com(self.data)
+
         self.settings = {
             "style": style_name,
             "fps": fps_value,
             "hideHydrogens": bool(hide_hs),
-            "bondThreshold": 1.2,
+            "centerByCOM": center_enabled,
+            "bondThreshold": 1.3,
             "bondThickness": 0.09,
             "atomSize": 0.4,
+            "showCell": True,
             "viewMode": "Perspective",
             "colorScheme": "Jmol",
             "backgroundColor": background,
         }
+
+    @staticmethod
+    def _center_structure_by_com(structure: Dict[str, Any]) -> Dict[str, Any]:
+        """Return a copy of structure centered to its center of mass."""
+        from ase.data import atomic_numbers, atomic_masses
+
+        centered = copy.deepcopy(structure)
+        symbols = centered.get("symbols")
+        positions = centered.get("positions")
+        if not isinstance(symbols, list) or not isinstance(positions, list):
+            return centered
+        if len(symbols) == 0 or len(symbols) != len(positions):
+            return centered
+
+        masses = np.array([atomic_masses[atomic_numbers.get(sym, 0)] for sym in symbols], dtype=float)
+        if not np.isfinite(masses).all() or float(masses.sum()) <= 0:
+            masses = np.ones(len(symbols), dtype=float)
+
+        coords = np.asarray(positions, dtype=float)
+        if coords.ndim != 2 or coords.shape[1] != 3:
+            return centered
+
+        com = np.average(coords, axis=0, weights=masses)
+        centered["positions"] = (coords - com).tolist()
+        return centered
+
+    @classmethod
+    def _center_data_by_com(cls, data: Union[Dict[str, Any], List[Dict[str, Any]]]):
+        """Center a single structure or a frame list by center of mass."""
+        if isinstance(data, list):
+            return [cls._center_structure_by_com(frame) if isinstance(frame, dict) else frame for frame in data]
+        if isinstance(data, dict):
+            return cls._center_structure_by_com(data)
+        return data
 
     def _generate_html(self) -> str:
         """Generate minimal HTML for the lightweight viewer."""
@@ -1341,6 +1392,8 @@ def view(
     styles: str = "cinematic",
     fps: Union[int, float] = 30,
     hide_hs: bool = False,
+    center: Optional[bool] = None,
+    centering: Optional[bool] = None,
     width: int = 400,
     height: int = 400,
 ) -> LiteViewer:
@@ -1352,12 +1405,21 @@ def view(
         styles: Rendering style (default: "cinematic").
         fps: Playback FPS for trajectories.
         hide_hs: Hide hydrogen atoms if True.
+        center: Center each frame by center of mass if True (default: False).
+        centering: Alias of ``center``.
         width: Viewer width in pixels (default: 400).
         height: Viewer height in pixels (default: 400).
     """
     if width <= 0 or height <= 0:
         raise ValueError(f"width and height must be positive integers, got ({width}, {height})")
 
-    viewer = LiteViewer(data, styles=styles, fps=fps, hide_hs=hide_hs)
+    viewer = LiteViewer(
+        data,
+        styles=styles,
+        fps=fps,
+        hide_hs=hide_hs,
+        center=center,
+        centering=centering,
+    )
     viewer.show(width=width, height=height)
     return viewer
