@@ -131,7 +131,17 @@ function atomsToViewerFrame(atoms) {
   const getArray =
     typeof atoms.getArray === "function" ? atoms.getArray.bind(atoms) : () => undefined;
 
-  const forcesRaw = has("forces") ? getArray("forces", true) : undefined;
+  let forcesRaw;
+  if (typeof atoms.getForces === "function") {
+    try {
+      forcesRaw = atoms.getForces();
+    } catch {
+      // Some formats do not carry forces; fall back to arrays below.
+    }
+  }
+  if (!forcesRaw && has("forces")) {
+    forcesRaw = getArray("forces", true);
+  }
   if (forcesRaw) {
     frame.forces = toVec3Array(forcesRaw, "forces");
   }
@@ -175,8 +185,22 @@ function atomsToViewerFrame(atoms) {
   }
 
   const info = atoms.info ?? {};
-  if (typeof info.energy === "number" && Number.isFinite(info.energy)) {
-    frame.energy = info.energy;
+  let energy;
+  if (typeof atoms.getPotentialEnergy === "function") {
+    try {
+      energy = atoms.getPotentialEnergy();
+    } catch {
+      // Some formats do not carry energy; fall back to info below.
+    }
+  }
+  if (typeof energy !== "number" && atoms.calc?.results && typeof atoms.calc.results.energy === "number") {
+    energy = atoms.calc.results.energy;
+  }
+  if (typeof energy !== "number" && typeof info.energy === "number") {
+    energy = info.energy;
+  }
+  if (typeof energy === "number" && Number.isFinite(energy)) {
+    frame.energy = energy;
   }
   if (typeof info.name === "string" && info.name.trim()) {
     frame.name = info.name;
