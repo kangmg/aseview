@@ -291,6 +291,78 @@ Compare multiple molecular structures by overlaying them.
     viewer.setData([structure1, structure2]);
     ```
 
+### FragSelector
+
+Interactive fragment selector with synchronized 2D and 3D views.
+
+**Features:**
+
+- Click, rectangle, and lasso atom selection
+- Synchronized 2D/3D fragment picking
+- Copy selected or unselected atom indices
+- Structure copy using the same `xyz`, `extxyz`, `cif`, and `POSCAR` formats as the main viewer
+
+=== "Full HTML"
+
+    ```html
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>FragSelector Example</title>
+        <style>
+            #viewer { width: 100%; height: 600px; }
+        </style>
+    </head>
+    <body>
+        <div id="viewer"></div>
+
+        <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/aseview.js"></script>
+        <script>
+            const viewer = new ASEView.FragSelector('#viewer');
+
+            viewer.setData({
+                symbols: ['O', 'C', 'N', 'C', 'H', 'H', 'H', 'H', 'H'],
+                positions: [
+                    [ 0.424546,  1.327024,  0.008034],
+                    [ 0.077158,  0.149789, -0.004249],
+                    [ 0.985518, -0.878537, -0.048910],
+                    [-1.371475, -0.288665, -0.000144],
+                    [ 0.707952, -1.824249,  0.169942],
+                    [-1.997229,  0.584922, -0.175477],
+                    [-1.560842, -1.039270, -0.771686],
+                    [-1.632113, -0.723007,  0.969814],
+                    [ 1.953133, -0.631574,  0.111866]
+                ]
+            });
+
+            viewer.setSelection([1, 2, 4, 8]);
+        </script>
+    </body>
+    </html>
+    ```
+
+=== "JavaScript Only"
+
+    ```javascript
+    const viewer = new ASEView.FragSelector('#viewer');
+    viewer.setData({
+        symbols: ['O', 'C', 'N', 'C', 'H', 'H', 'H', 'H', 'H'],
+        positions: [
+            [ 0.424546,  1.327024,  0.008034],
+            [ 0.077158,  0.149789, -0.004249],
+            [ 0.985518, -0.878537, -0.048910],
+            [-1.371475, -0.288665, -0.000144],
+            [ 0.707952, -1.824249,  0.169942],
+            [-1.997229,  0.584922, -0.175477],
+            [-1.560842, -1.039270, -0.771686],
+            [-1.632113, -0.723007,  0.969814],
+            [ 1.953133, -0.631574,  0.111866]
+        ]
+    });
+    viewer.setSelection([1, 2, 4, 8]);
+    ```
+
 ## API Reference
 
 ### Methods
@@ -314,6 +386,14 @@ Compare multiple molecular structures by overlaying them.
 | Method | Description |
 |--------|-------------|
 | `setStructures(...structures)` | Set two or more structures for overlay comparison |
+
+**FragSelector Only**
+
+| Method | Description |
+|--------|-------------|
+| `setSelection(indices)` | Select atoms programmatically |
+| `getSelection()` | Resolve the currently selected atom indices |
+| `clearSelection()` | Clear all selected atoms |
 
 ### Data Format
 

@@ -58,6 +58,18 @@ viewer = MolecularViewer(atoms)
 viewer.show()
 ```
 
+### Lightweight `view()` Helper
+
+```python
+from ase.io import read
+from aseview import view
+
+atoms = read("molecule.xyz")
+viewer = view(atoms, styles="cinematic", center=True, width=500, height=420)
+```
+
+See the [Lightweight view() example](../examples/lite-view.md) for an embedded HTML preview and the full option list.
+
 ### Save as HTML
 
 ```python

@@ -2,6 +2,8 @@
 
 aseview supports multiple visual themes. Themes are complete HTML template sets that control the entire look and feel of the viewer — colors, typography, layout, and UI style.
 
+Themes are separate from molecule rendering styles such as `cartoon`, `cinematic`, `bubble`, or `grey`. See [Styles](styles.md) for interactive style previews.
+
 ## Available Themes
 
 | Theme | Description |

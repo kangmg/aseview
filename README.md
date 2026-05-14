@@ -11,6 +11,8 @@ Molecular structure viewer for ASE (Atomic Simulation Environment).
 - Cell/PBC display, bonds, hydrogen bonds, charges, forces, and fixed-atom constraint highlighting
 - Energy and max-force (Fmax) trajectory plots with independent force-plot toggling
 - Radius Contrast control for reducing or restoring element-radius size differences
+- Visual styles including cartoon, glossy, metallic, cinematic, bubble, neon, grey, and 2D
+- Hide hydrogens without deleting data, and apply optional render blur to saved images
 - Clipboard export for current frame or full trajectory as `xyz`, `extxyz`, `cif`, or `POSCAR`
 
 ## Installation
@@ -225,6 +227,21 @@ atoms = read('molecule.xyz')
 view_molecule(atoms, viewer_type='molecular', height=600)
 ```
 
+### Lightweight Viewer (PyMOL-style)
+
+```python
+from aseview import view
+
+# Single structure
+view(atoms)
+
+# Trajectory/list of ASE Atoms with CSS play button + frame slider
+viewer = view(traj, styles='cinematic', fps=24, hide_hs=True, center=True, width=400, height=400)
+
+# view() returns LiteViewer, so the same object can be saved as HTML
+viewer.save_html('lite_view.html')
+```
+
 ### Custom Settings
 
 ```python
@@ -294,6 +311,7 @@ viewer.save_html('selector.html')
 | Viewer | Description |
 |--------|-------------|
 | MolecularViewer | Single structure or trajectory animation |
+| LiteViewer / `view(...)` | Minimal render-only viewer with optional play/stop |
 | NormalViewer | Normal mode vibration visualization |
 | OverlayViewer | Compare multiple structures overlaid |
 | FragSelector | Interactive 2D+3D atom selection with rect/lasso |

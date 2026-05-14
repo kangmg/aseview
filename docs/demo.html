@@ -173,7 +173,13 @@
             justify-content: space-between;
             align-items: center;
         }
-        .copy-btn {
+        .code-actions {
+            display: flex;
+            gap: 0.45rem;
+            align-items: center;
+        }
+        .copy-btn,
+        .run-btn {
             background: var(--surface);
             border: 1px solid var(--border);
             color: var(--text);
@@ -183,18 +189,51 @@
             font-size: 0.7rem;
             transition: background 0.15s, border-color 0.15s, color 0.15s;
         }
-        .copy-btn:hover { background: var(--surface-2); border-color: var(--accent); color: var(--accent); }
+        .copy-btn:hover,
+        .run-btn:hover { background: var(--surface-2); border-color: var(--accent); color: var(--accent); }
+        .run-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .run-btn.primary:hover {
+            background: var(--accent-h);
+            border-color: var(--accent-h);
+            color: #fff;
+        }
         .code-content {
             background: var(--code-bg);
             color: var(--code-text);
-            padding: 1rem;
+            padding: 0;
             overflow: auto;
             max-height: 500px;
             font-family: 'Monaco', 'Menlo', monospace;
             font-size: 0.75rem;
             line-height: 1.5;
         }
-        .code-content pre { margin: 0; white-space: pre; }
+        .code-editor {
+            display: block;
+            width: 100%;
+            min-height: 500px;
+            resize: vertical;
+            border: 0;
+            outline: 0;
+            padding: 1rem;
+            background: var(--code-bg);
+            color: var(--code-text);
+            font: inherit;
+            line-height: inherit;
+            tab-size: 4;
+            white-space: pre;
+        }
+        .run-error {
+            padding: 1rem;
+            color: #fff;
+            background: #7f1d1d;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+        }
         .kw  { color: var(--code-kw); }
         .str { color: var(--code-str); }
         .cmt { color: var(--code-cmt); }
@@ -324,27 +363,32 @@
                 <div class="code-panel">
                     <div class="code-header">
                         <span>JavaScript Code</span>
-                        <button class="copy-btn" onclick="copyCode('code1')">Copy</button>
+                        <div class="code-actions">
+                            <button class="copy-btn" onclick="copyCode('code1')">Copy</button>
+                            <button class="run-btn primary" onclick="runExample('code1', 'viewer1')">Run</button>
+                        </div>
                     </div>
                     <div class="code-content">
-<pre id="code1"><span class="cmt">// Create viewer</span>
-<span class="kw">const</span> viewer = <span class="kw">new</span> ASEView.MolecularViewer(<span class="str">'#viewer1'</span>);
+<textarea class="code-editor" id="code1" spellcheck="false">// Create viewer
+const viewer = new ASEView.MolecularViewer(mount, { theme });
 
-<span class="cmt">// Set molecule data (Ethanol)</span>
+// Set molecule data (Ethanol)
 viewer.setData({
-    symbols: [<span class="str">'C'</span>, <span class="str">'C'</span>, <span class="str">'O'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>],
+    symbols: ['C', 'C', 'O', 'H', 'H', 'H', 'H', 'H', 'H'],
     positions: [
-        [<span class="num">-0.047</span>, <span class="num">0.666</span>, <span class="num">0.000</span>],
-        [<span class="num">-0.047</span>, <span class="num">-0.866</span>, <span class="num">0.000</span>],
-        [<span class="num">1.204</span>, <span class="num">1.144</span>, <span class="num">0.000</span>],
-        [<span class="num">1.869</span>, <span class="num">0.485</span>, <span class="num">0.000</span>],
-        [<span class="num">-0.570</span>, <span class="num">1.035</span>, <span class="num">0.889</span>],
-        [<span class="num">-0.570</span>, <span class="num">1.035</span>, <span class="num">-0.889</span>],
-        [<span class="num">0.982</span>, <span class="num">-1.162</span>, <span class="num">0.000</span>],
-        [<span class="num">-0.557</span>, <span class="num">-1.222</span>, <span class="num">0.889</span>],
-        [<span class="num">-0.557</span>, <span class="num">-1.222</span>, <span class="num">-0.889</span>]
+        [-0.047,  0.666,  0.000],
+        [-0.047, -0.866,  0.000],
+        [ 1.204,  1.144,  0.000],
+        [ 1.869,  0.485,  0.000],
+        [-0.570,  1.035,  0.889],
+        [-0.570,  1.035, -0.889],
+        [ 0.982, -1.162,  0.000],
+        [-0.557, -1.222,  0.889],
+        [-0.557, -1.222, -0.889]
     ]
-});</pre>
+});
+
+return viewer;</textarea>
                     </div>
                 </div>
                 <div class="viewer-panel">
@@ -364,34 +408,39 @@ viewer.setData({
                 <div class="code-panel">
                     <div class="code-header">
                         <span>JavaScript Code</span>
-                        <button class="copy-btn" onclick="copyCode('code2')">Copy</button>
+                        <div class="code-actions">
+                            <button class="copy-btn" onclick="copyCode('code2')">Copy</button>
+                            <button class="run-btn primary" onclick="runExample('code2', 'viewer2')">Run</button>
+                        </div>
                     </div>
                     <div class="code-content">
-<pre id="code2"><span class="cmt">// Create overlay viewer</span>
-<span class="kw">const</span> viewer = <span class="kw">new</span> ASEView.OverlayViewer(<span class="str">'#viewer2'</span>);
+<textarea class="code-editor" id="code2" spellcheck="false">// Create overlay viewer
+const viewer = new ASEView.OverlayViewer(mount, { theme });
 
-<span class="cmt">// Structure 1: Original water</span>
-<span class="kw">const</span> water1 = {
-    symbols: [<span class="str">'O'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>],
+// Structure 1: Original water
+const water1 = {
+    symbols: ['O', 'H', 'H'],
     positions: [
-        [<span class="num">0.000</span>, <span class="num">0.000</span>, <span class="num">0.117</span>],
-        [<span class="num">0.000</span>, <span class="num">0.757</span>, <span class="num">-0.469</span>],
-        [<span class="num">0.000</span>, <span class="num">-0.757</span>, <span class="num">-0.469</span>]
+        [0.000,  0.000,  0.117],
+        [0.000,  0.757, -0.469],
+        [0.000, -0.757, -0.469]
     ]
 };
 
-<span class="cmt">// Structure 2: Stretched water</span>
-<span class="kw">const</span> water2 = {
-    symbols: [<span class="str">'O'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>],
+// Structure 2: Stretched water
+const water2 = {
+    symbols: ['O', 'H', 'H'],
     positions: [
-        [<span class="num">0.000</span>, <span class="num">0.000</span>, <span class="num">0.050</span>],
-        [<span class="num">0.000</span>, <span class="num">0.900</span>, <span class="num">-0.400</span>],
-        [<span class="num">0.000</span>, <span class="num">-0.900</span>, <span class="num">-0.400</span>]
+        [0.000,  0.000,  0.050],
+        [0.000,  0.900, -0.400],
+        [0.000, -0.900, -0.400]
     ]
 };
 
-<span class="cmt">// Set both structures</span>
-viewer.setStructures(water1, water2);</pre>
+// Set both structures
+viewer.setStructures(water1, water2);
+
+return viewer;</textarea>
                     </div>
                 </div>
                 <div class="viewer-panel">
@@ -411,39 +460,91 @@ viewer.setStructures(water1, water2);</pre>
                 <div class="code-panel">
                     <div class="code-header">
                         <span>JavaScript Code</span>
-                        <button class="copy-btn" onclick="copyCode('code3')">Copy</button>
+                        <div class="code-actions">
+                            <button class="copy-btn" onclick="copyCode('code3')">Copy</button>
+                            <button class="run-btn primary" onclick="runExample('code3', 'viewer3')">Run</button>
+                        </div>
                     </div>
                     <div class="code-content">
-<pre id="code3"><span class="cmt">// Create normal mode viewer</span>
-<span class="kw">const</span> viewer = <span class="kw">new</span> ASEView.NormalModeViewer(<span class="str">'#viewer3'</span>);
+<textarea class="code-editor" id="code3" spellcheck="false">// Create normal mode viewer
+const viewer = new ASEView.NormalModeViewer(mount, { theme });
 
-<span class="cmt">// Equilibrium structure</span>
-<span class="kw">const</span> atoms = {
-    symbols: [<span class="str">'O'</span>, <span class="str">'H'</span>, <span class="str">'H'</span>],
+// Equilibrium structure
+const atoms = {
+    symbols: ['O', 'H', 'H'],
     positions: [
-        [<span class="num">0.000</span>, <span class="num">0.000</span>, <span class="num">0.117</span>],
-        [<span class="num">0.000</span>, <span class="num">0.757</span>, <span class="num">-0.469</span>],
-        [<span class="num">0.000</span>, <span class="num">-0.757</span>, <span class="num">-0.469</span>]
+        [0.000,  0.000,  0.117],
+        [0.000,  0.757, -0.469],
+        [0.000, -0.757, -0.469]
     ]
 };
 
-<span class="cmt">// Vibration data (3 modes for water)</span>
-<span class="kw">const</span> vibrationData = {
+// Vibration data (3 modes for water)
+const vibrationData = {
     modeVectors: [
-        [[<span class="num">0</span>, <span class="num">0</span>, <span class="num">-0.07</span>], [<span class="num">0</span>, <span class="num">0.42</span>, <span class="num">0.56</span>], [<span class="num">0</span>, <span class="num">-0.42</span>, <span class="num">0.56</span>]],
-        [[<span class="num">0</span>, <span class="num">0.07</span>, <span class="num">0</span>], [<span class="num">0</span>, <span class="num">-0.56</span>, <span class="num">0.42</span>], [<span class="num">0</span>, <span class="num">0.56</span>, <span class="num">0.42</span>]],
-        [[<span class="num">0.07</span>, <span class="num">0</span>, <span class="num">0</span>], [<span class="num">-0.56</span>, <span class="num">0</span>, <span class="num">0</span>], [<span class="num">-0.56</span>, <span class="num">0</span>, <span class="num">0</span>]]
+        [[0,    0,    -0.07], [0,  0.42, 0.56], [0, -0.42, 0.56]],
+        [[0,    0.07,  0   ], [0, -0.56, 0.42], [0,  0.56, 0.42]],
+        [[0.07, 0,     0   ], [-0.56, 0, 0   ], [-0.56, 0, 0   ]]
     ],
-    frequencies: [<span class="str">"1595.32"</span>, <span class="str">"3657.05"</span>, <span class="str">"3755.93"</span>],
-    isImaginary: [<span class="kw">false</span>, <span class="kw">false</span>, <span class="kw">false</span>]
+    frequencies: ['1595.32', '3657.05', '3755.93'],
+    isImaginary: [false, false, false]
 };
 
-viewer.setVibrationData(atoms, vibrationData);</pre>
+viewer.setVibrationData(atoms, vibrationData);
+
+return viewer;</textarea>
                     </div>
                 </div>
                 <div class="viewer-panel">
                     <div class="viewer-header">Result</div>
                     <div class="viewer-content" id="viewer3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Example 4: FragSelector -->
+        <div class="example">
+            <div class="example-header">
+                <h2>4. FragSelector</h2>
+            </div>
+            <p class="desc">Select fragments with synchronized 2D/3D views and copy selected atom groups.</p>
+            <div class="demo-row">
+                <div class="code-panel">
+                    <div class="code-header">
+                        <span>JavaScript Code</span>
+                        <div class="code-actions">
+                            <button class="copy-btn" onclick="copyCode('code4')">Copy</button>
+                            <button class="run-btn primary" onclick="runExample('code4', 'viewer4')">Run</button>
+                        </div>
+                    </div>
+                    <div class="code-content">
+<textarea class="code-editor" id="code4" spellcheck="false">// Create fragment selector
+const viewer = new ASEView.FragSelector(mount, { theme });
+
+// Acetamide, matching ase.build.molecule('CH3CONH2')
+viewer.setData({
+    symbols: ['O', 'C', 'N', 'C', 'H', 'H', 'H', 'H', 'H'],
+    positions: [
+        [ 0.424546,  1.327024,  0.008034],
+        [ 0.077158,  0.149789, -0.004249],
+        [ 0.985518, -0.878537, -0.048910],
+        [-1.371475, -0.288665, -0.000144],
+        [ 0.707952, -1.824249,  0.169942],
+        [-1.997229,  0.584922, -0.175477],
+        [-1.560842, -1.039270, -0.771686],
+        [-1.632113, -0.723007,  0.969814],
+        [ 1.953133, -0.631574,  0.111866]
+    ]
+});
+
+viewer.setSelection([1, 2, 4, 8]);
+
+return viewer;</textarea>
+                    </div>
+                </div>
+                <div class="viewer-panel">
+                    <div class="viewer-header">Result</div>
+                    <div class="viewer-content" id="viewer4"></div>
                 </div>
             </div>
         </div>
@@ -480,13 +581,48 @@ viewer.setVibrationData(atoms, vibrationData);</pre>
 
         // ── Helpers ────────────────────────────────────────────────────────────
         function copyCode(id) {
-            const code = document.getElementById(id).textContent;
+            const node = document.getElementById(id);
+            const code = node.value || node.textContent;
             navigator.clipboard.writeText(code).then(() => alert('Code copied!'));
+        }
+
+        function disposeViewer(key) {
+            const viewer = allViewers[key];
+            if (viewer && viewer.dispose) viewer.dispose();
+            delete allViewers[key];
         }
 
         function disposeAll() {
             Object.values(allViewers).forEach(v => v && v.dispose && v.dispose());
             allViewers = {};
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function runExample(codeId, viewerId) {
+            const codeNode = document.getElementById(codeId);
+            const mount = document.getElementById(viewerId);
+            if (!codeNode || !mount) return;
+
+            disposeViewer(viewerId);
+            mount.innerHTML = '';
+
+            try {
+                const code = codeNode.value || codeNode.textContent;
+                const theme = ASEView.getTheme();
+                const execute = new Function('ASEView', 'mount', 'theme', 'ETHANOL', code);
+                const viewer = execute(ASEView, mount, theme, ETHANOL);
+                if (viewer) allViewers[viewerId] = viewer;
+            } catch (err) {
+                mount.innerHTML = `<div class="run-error">${escapeHtml(err && err.stack ? err.stack : err)}</div>`;
+            }
         }
 
         function getGridColumnCount() {
@@ -518,30 +654,10 @@ viewer.setVibrationData(atoms, vibrationData);</pre>
 
         function initViewers() {
             disposeAll();
-            const theme = ASEView.getTheme();
-
-            allViewers.v1 = new ASEView.MolecularViewer('#viewer1', { theme });
-            allViewers.v1.setData(ETHANOL);
-
-            allViewers.v2 = new ASEView.OverlayViewer('#viewer2', { theme });
-            allViewers.v2.setStructures(
-                { symbols:['O','H','H'], positions:[[0,0,0.117],[0,0.757,-0.469],[0,-0.757,-0.469]] },
-                { symbols:['O','H','H'], positions:[[0,0,0.050],[0,0.900,-0.400],[0,-0.900,-0.400]] }
-            );
-
-            allViewers.v3 = new ASEView.NormalModeViewer('#viewer3', { theme });
-            allViewers.v3.setVibrationData(
-                { symbols:['O','H','H'], positions:[[0,0,0.117],[0,0.757,-0.469],[0,-0.757,-0.469]] },
-                {
-                    modeVectors: [
-                        [[0,0,-0.07],[0,0.42,0.56],[0,-0.42,0.56]],
-                        [[0,0.07,0],[0,-0.56,0.42],[0,0.56,0.42]],
-                        [[0.07,0,0],[-0.56,0,0],[-0.56,0,0]]
-                    ],
-                    frequencies: ['1595.32','3657.05','3755.93'],
-                    isImaginary: [false, false, false]
-                }
-            );
+            runExample('code1', 'viewer1');
+            runExample('code2', 'viewer2');
+            runExample('code3', 'viewer3');
+            runExample('code4', 'viewer4');
         }
 
         // ── All-themes grid mode ───────────────────────────────────────────────

@@ -88,7 +88,7 @@ viewer = MolecularViewer(atoms, showConstraint=True)
 viewer.show()
 ```
 
-See the [Solid-State examples](../examples/solid-state.md#live-demo-cu111-surface--fixed-atoms-fixatoms-constraint) for a full surface slab demo.
+See the [Solid-State examples](../examples/solid-state.md#live-demo-cu111-surface-fixed-atoms-fixatoms-constraint) for a full surface slab demo.
 
 ---
 

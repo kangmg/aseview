@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ase import Atoms
 from ase.build import molecule, bulk, fcc111, graphene_nanoribbon, nanotube
 from ase.lattice.cubic import FaceCenteredCubic
-from aseview import MolecularViewer, OverlayViewer, NormalViewer, FragSelector
+from aseview import MolecularViewer, OverlayViewer, NormalViewer, FragSelector, LiteViewer
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "assets", "viewers")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -62,6 +62,23 @@ def create_trajectory_viewer():
     viewer = MolecularViewer(trajectory, showEnergyPlot=True)
     viewer.save_html(os.path.join(OUTPUT_DIR, "trajectory.html"))
     print("Created trajectory.html")
+
+
+def create_lite_viewer():
+    """Create a lightweight view() style embedded example."""
+    acetamide = molecule("CH3CONH2")
+    acetamide.center(vacuum=3.0)
+    viewer = LiteViewer(
+        acetamide,
+        styles="cinematic",
+        hide_hs=False,
+        center=True,
+        bond_threshold=1.25,
+        show_bond=True,
+        high_performance=True,
+    )
+    viewer.save_html(os.path.join(OUTPUT_DIR, "lite_view.html"))
+    print("Created lite_view.html")
 
 
 def create_overlay_viewer():
@@ -717,6 +734,8 @@ if __name__ == "__main__":
     create_caffeine_viewer()
     # Trajectory
     create_trajectory_viewer()
+    # Lightweight view() helper
+    create_lite_viewer()
     # Overlay
     create_overlay_viewer()
     create_overlay_colormap_viewer()

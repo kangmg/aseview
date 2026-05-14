@@ -57,6 +57,7 @@ nav:
   - Styles: styles.md
   - Examples:
     - Basic Visualization: examples/basic.md
+    - Lightweight view(): examples/lite-view.md
     - Trajectory Animation: examples/trajectory.md
     - Overlay Comparison: examples/overlay.md
     - Normal Modes: examples/normal-modes.md

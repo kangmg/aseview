@@ -9,8 +9,9 @@ aseview is a powerful, browser-based molecular viewer that integrates seamlessly
 ## Features
 
 - **Multiple Viewer Types**: Standard molecular viewer, overlay comparison, normal mode visualization, and interactive fragment selector
-- **Rich Styling**: Multiple visual styles including Cartoon, Neon, Glossy, Metallic, and more
+- **Rich Styling**: Multiple visual styles including Cartoon, Neon, Glossy, Metallic, Cinematic, Bubble, Grey, and 2D ([Styles](styles.md))
 - **Themes**: Swap the entire look and feel with `dark`, `spring`, `glass`, `darkgreen`, `simple`, or custom themes ([Theming guide](theming.md))
+- **Display Controls**: Hide hydrogens without deleting data, add render blur for saved images, and tune radius contrast
 - **Trajectory Support**: Animate trajectories with synchronized energy and max-force plots
 - **Normal Modes**: Visualize vibrational modes from ASE vibrations, ORCA Hessian files, or VASP OUTCAR files
 - **Cell and Constraints**: Display periodic cells and highlight fixed atoms from `FixAtoms`

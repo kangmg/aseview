@@ -39,14 +39,17 @@ MolecularViewer(data, **kwargs)
 | Value | Description |
 |-------|-------------|
 | `"default"` | Standard CPK coloring |
+| `"2d"` | Flat, high-contrast 2D-style rendering |
 | `"cartoon"` | Cartoon style with black bonds |
 | `"neon"` | Glowing neon effect |
 | `"glossy"` | Shiny reflective surface |
 | `"metallic"` | Metallic appearance |
 | `"cinematic"` | Cinematic glossy ball-and-stick style |
 | `"rowan"` | Rowan-inspired style |
-| `"grey"` | Greyscale rendering |
+| `"grey"` | Greyscale rendering with bonds matching the active atom colors |
 | `"bubble"` | Bubble-like appearance |
+
+See [Styles](../styles.md) for interactive previews of every style.
 
 #### Display Settings
 

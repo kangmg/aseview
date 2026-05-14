@@ -807,8 +807,9 @@ function createHalfBondGrey(start, end, color, bondThickness) {
 
     // Use CylinderGeometry for cleaner appearance
     const geometry = new THREE.CylinderGeometry(bondThickness, bondThickness, distance, 16, 1);
+    const resolvedColor = normalizeColorHexValue(color) ?? 0x808080;
     const material = new THREE.MeshBasicMaterial({
-        color: toLinearColor(color),
+        color: resolvedColor,
         depthWrite: true,
         depthTest: true
     });

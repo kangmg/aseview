@@ -1267,6 +1267,8 @@ class LiteViewer(BaseViewer):
         hide_hs: bool = False,
         center: Optional[bool] = None,
         centering: Optional[bool] = None,
+        bond_threshold: float = 1.3,
+        show_bond: bool = True,
         high_performance: bool = False,
     ):
         super().__init__(data)
@@ -1298,7 +1300,8 @@ class LiteViewer(BaseViewer):
             "fps": fps_value,
             "hideHydrogens": bool(hide_hs),
             "centerByCOM": center_enabled,
-            "bondThreshold": 1.3,
+            "bondThreshold": float(bond_threshold),
+            "showBond": bool(show_bond),
             "bondThickness": 0.09,
             "atomSize": 0.4,
             "showCell": True,
@@ -1398,6 +1401,8 @@ def view(
     data: Union[Atoms, Dict[str, Any], str, List],
     styles: str = "cinematic",
     fps: Union[int, float] = 30,
+    bond_threshold: float = 1.3,
+    show_bond: bool = True,
     hide_hs: bool = False,
     center: Optional[bool] = None,
     centering: Optional[bool] = None,
@@ -1429,6 +1434,8 @@ def view(
         hide_hs=hide_hs,
         center=center,
         centering=centering,
+        bond_threshold=bond_threshold,
+        show_bond=show_bond,
         high_performance=high_performance,
     )
     viewer.show(width=width, height=height)
