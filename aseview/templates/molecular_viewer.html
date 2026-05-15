@@ -2693,13 +2693,34 @@
                 for (const idx of fixedIndexSet) {
                     if (idx >= positions.length) continue;
                     if (isHydrogenHidden(symbols[idx])) continue;
-                    const r = getAdjustedAtomRadius(symbols[idx], atomScale, radiusScaleBySymbol) * 1.30;
+                    const r = getAdjustedAtomRadius(symbols[idx], atomScale, radiusScaleBySymbol) * 1.20;
                     const mesh = new THREE.Mesh(
                         new THREE.SphereGeometry(r, 16, 12), fixedMat
                     );
                     mesh.position.copy(positions[idx]);
                     mesh.renderOrder = 5;
                     moleculeGroup.add(mesh);
+                }
+
+                // Highlight bonds between fixed atoms with yellow semi-transparent cylinder overlay
+                if (settings.showBond) {
+                    const fixedBondMat = new THREE.MeshBasicMaterial({
+                        color: 0xeab308, transparent: true, opacity: 0.72, depthWrite: false,
+                    });
+                    for (let b = 0; b < bondPairs.length; b++) {
+                        const { i, j } = bondPairs[b];
+                        if (!fixedIndexSet.has(i) || !fixedIndexSet.has(j)) continue;
+                        if (isBondHidden(symbols[i], symbols[j])) continue;
+                        const dir = new THREE.Vector3().subVectors(positions[j], positions[i]);
+                        const len = dir.length();
+                        if (len <= 0) continue;
+                        const cylGeom = new THREE.CylinderGeometry(bondRadius * 1.3, bondRadius * 1.3, len, 16);
+                        const cylinder = new THREE.Mesh(cylGeom, fixedBondMat);
+                        cylinder.position.copy(new THREE.Vector3().addVectors(positions[i], positions[j]).multiplyScalar(0.5));
+                        cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+                        cylinder.renderOrder = 5;
+                        moleculeGroup.add(cylinder);
+                    }
                 }
             }
 
