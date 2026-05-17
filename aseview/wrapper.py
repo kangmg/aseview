@@ -138,7 +138,10 @@ class MolecularData:
             fixed = []
             for c in atoms.constraints:
                 if hasattr(c, "index"):  # FixAtoms stores indices in .index
-                    fixed.extend(int(i) for i in np.asarray(c.index).flatten())
+                    index = c.index
+                    if isinstance(index, slice):
+                        index = list(range(*index.indices(len(atoms))))
+                    fixed.extend(int(i) for i in np.asarray(index).flatten())
             if fixed:
                 data["fixed"] = sorted(set(fixed))
 
