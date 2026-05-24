@@ -1306,6 +1306,20 @@
 
             updateBlurEffect();
 
+            // Update camera type when viewMode setting changes
+            if (typeof setupCamera === 'function') {
+                const orthoBtn = document.getElementById('orthographic-btn');
+                const perspBtn = document.getElementById('perspective-btn');
+                if (orthoBtn && perspBtn) {
+                    const isOrtho = settings.viewMode === 'Orthographic';
+                    orthoBtn.classList.toggle('active', isOrtho);
+                    perspBtn.classList.toggle('active', !isOrtho);
+                }
+                setupCamera();
+                if (typeof setupControls === 'function') setupControls();
+                cameraNeedsFit = true;
+            }
+
             // Apply rendering changes
             if (typeof updateShading === 'function') updateShading();
             if (typeof updateChargeUI === 'function') updateChargeUI();
