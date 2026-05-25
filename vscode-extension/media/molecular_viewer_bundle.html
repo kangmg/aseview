@@ -4706,10 +4706,13 @@ function createHydrogenBond(p1, p2) {
             const bgColorPicker = document.getElementById('background-color');
             if (bgColorPicker && settings.backgroundColor) {
                 bgColorPicker.value = settings.backgroundColor;
+                const bgColorValueEl = document.getElementById('background-color-value');
+                if (bgColorValueEl) bgColorValueEl.textContent = settings.backgroundColor;
                 const viewerContainer = document.querySelector('.viewer-container');
                 if (viewerContainer) {
                     viewerContainer.style.background = `linear-gradient(135deg, ${settings.backgroundColor}, ${darkenColorHex(settings.backgroundColor, 20)})`;
                 }
+                if (typeof updateBackgroundColor === 'function') updateBackgroundColor();
             }
 
             const cellColorPicker = document.getElementById('cell-color');
@@ -4729,6 +4732,20 @@ function createHydrogenBond(p1, p2) {
             }
 
             updateBlurEffect();
+
+            // Update camera type when viewMode setting changes
+            if (typeof setupCamera === 'function') {
+                const orthoBtn = document.getElementById('orthographic-btn');
+                const perspBtn = document.getElementById('perspective-btn');
+                if (orthoBtn && perspBtn) {
+                    const isOrtho = settings.viewMode === 'Orthographic';
+                    orthoBtn.classList.toggle('active', isOrtho);
+                    perspBtn.classList.toggle('active', !isOrtho);
+                }
+                setupCamera();
+                if (typeof setupControls === 'function') setupControls();
+                cameraNeedsFit = true;
+            }
 
             // Apply rendering changes
             if (typeof updateShading === 'function') updateShading();
