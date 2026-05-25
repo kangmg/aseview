@@ -1026,10 +1026,13 @@
             const bgColorPicker = document.getElementById('background-color');
             if (bgColorPicker && settings.backgroundColor) {
                 bgColorPicker.value = settings.backgroundColor;
+                const bgColorValueEl = document.getElementById('background-color-value');
+                if (bgColorValueEl) bgColorValueEl.textContent = settings.backgroundColor;
                 const viewerContainer = document.querySelector('.viewer-container');
                 if (viewerContainer) {
                     viewerContainer.style.background = `linear-gradient(135deg, ${settings.backgroundColor}, ${darkenColorHex(settings.backgroundColor, 20)})`;
                 }
+                if (typeof updateBackgroundColor === 'function') updateBackgroundColor();
             }
 
             updateBlurEffect();
