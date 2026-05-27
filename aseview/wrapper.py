@@ -18,6 +18,22 @@ _STYLES_JS_TAG_RE = re.compile(
 # ── Theme management ──────────────────────────────────────────────────────────
 _THEME = 'dark'
 
+# Default backgroundColor per (theme, viewer_type).
+# These mirror each theme template's own settings.backgroundColor default.
+_THEME_BG_DEFAULTS: Dict[str, str] = {
+    'dark':      '#1f2937',
+    'darkgreen': '#0d1117',
+    'glass':     '#ffffff',
+    'simple':    '#f4f4f5',
+    'spring':    '#ffffff',
+}
+_FALLBACK_BG = '#1f2937'  # used when theme is unknown
+
+
+def _theme_bg(theme: str, viewer: str = None) -> str:
+    """Return the default backgroundColor for a given theme."""
+    return _THEME_BG_DEFAULTS.get(theme or _THEME, _FALLBACK_BG)
+
 def set_theme(name: str) -> None:
     """Set the global default theme for all viewers."""
     global _THEME
@@ -301,7 +317,7 @@ class MolecularViewer(BaseViewer):
             "atomSize": 0.4,
             "animationSpeed": 30,
             "forceScale": 1.0,
-            "backgroundColor": "#1f2937",
+            "backgroundColor": _theme_bg(self._theme, 'molecular'),
             "style": "cartoon",
             "showCell": True,
             "showBond": True,
@@ -578,7 +594,7 @@ class NormalViewer(BaseViewer):
             "bondThickness": 0.1,
             "atomSize": 0.4,
             "animationSpeed": 30,
-            "backgroundColor": "#1f2937",
+            "backgroundColor": _theme_bg(self._theme, 'normal'),
             "style": "cartoon",
             "showCell": True,
             "cellColor": "#808080",
@@ -979,7 +995,7 @@ class OverlayViewer(BaseViewer):
             "bondThreshold": 1.2,  # Scale factor for covalent radii sum
             "bondThickness": 0.1,
             "atomSize": 0.4,
-            "backgroundColor": "#1f2937",
+            "backgroundColor": _theme_bg(self._theme, 'overlay'),
             "style": "cartoon",
             "showCell": True,
             "showBond": True,
@@ -1195,7 +1211,7 @@ class FragSelector(BaseViewer):
             "showBlur":      False,
             "blurStrength":  1.5,
             "showShading":   True,
-            "backgroundColor": "#1f2937",
+            "backgroundColor": _theme_bg(self._theme, 'frag'),
             **kwargs,
         }
 
