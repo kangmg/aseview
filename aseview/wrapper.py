@@ -20,19 +20,19 @@ _THEME = 'dark'
 
 # Default backgroundColor per (theme, viewer_type).
 # These mirror each theme template's own settings.backgroundColor default.
-_THEME_BG_DEFAULTS: Dict[str, Dict[str, str]] = {
-    'dark':      {'molecular': '#1f2937', 'normal': '#1f2937',    'overlay': '#1f2937',    'frag': '#1f2937'},
-    'darkgreen': {'molecular': '#ffffff', 'normal': '#0d1117',    'overlay': '#0d1117',    'frag': '#0d1117'},
-    'glass':     {'molecular': '#ffffff', 'normal': 'transparent', 'overlay': 'transparent', 'frag': 'transparent'},
-    'simple':    {'molecular': '#ffffff', 'normal': '#f4f4f5',    'overlay': '#f4f4f5',    'frag': '#f4f4f5'},
-    'spring':    {'molecular': '#ffffff', 'normal': '#ffffff',     'overlay': '#ffffff',    'frag': '#ffffff'},
+_THEME_BG_DEFAULTS: Dict[str, str] = {
+    'dark':      '#1f2937',
+    'darkgreen': '#0d1117',
+    'glass':     '#ffffff',
+    'simple':    '#f4f4f5',
+    'spring':    '#ffffff',
 }
 _FALLBACK_BG = '#1f2937'  # used when theme is unknown
 
 
-def _theme_bg(theme: str, viewer: str) -> str:
-    """Return the default backgroundColor for a given theme and viewer type."""
-    return _THEME_BG_DEFAULTS.get(theme or _THEME, {}).get(viewer, _FALLBACK_BG)
+def _theme_bg(theme: str, viewer: str = None) -> str:
+    """Return the default backgroundColor for a given theme."""
+    return _THEME_BG_DEFAULTS.get(theme or _THEME, _FALLBACK_BG)
 
 def set_theme(name: str) -> None:
     """Set the global default theme for all viewers."""
