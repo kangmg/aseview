@@ -2902,29 +2902,115 @@
             safeAddListener('download-btn', 'click', saveAsPNG);
         }
 
+        function showExportDialog(type, onConfirm) {
+            const existing = document.getElementById('_aseview_export_overlay');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = '_aseview_export_overlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:inherit;';
+
+            const panel = document.createElement('div');
+            panel.style.cssText = 'background:#1c1c2e;border:1px solid #3a3a5c;border-radius:8px;padding:20px 24px;min-width:240px;color:#ccc;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+
+            const titleEl = document.createElement('div');
+            titleEl.textContent = type === 'png' ? 'Export PNG' : 'Export GIF';
+            titleEl.style.cssText = 'font-size:14px;font-weight:600;color:#fff;margin-bottom:16px;';
+            panel.appendChild(titleEl);
+
+            function addRow(labelText, selectId, optionsHtml) {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:12px;';
+                const lbl = document.createElement('label');
+                lbl.textContent = labelText;
+                lbl.style.cssText = 'font-size:12px;color:#aaa;flex:0 0 64px;';
+                const sel = document.createElement('select');
+                sel.id = selectId;
+                sel.style.cssText = 'flex:1;background:#2a2a40;color:#ccc;border:1px solid #3a3a5c;border-radius:4px;padding:4px 8px;font-size:12px;';
+                sel.innerHTML = optionsHtml;
+                row.appendChild(lbl);
+                row.appendChild(sel);
+                panel.appendChild(row);
+            }
+
+            if (type === 'png') {
+                addRow('Scale', '_exp_scale',
+                    '<option value="1">1× (current size)</option>' +
+                    '<option value="2">2× (double)</option>' +
+                    '<option value="4">4× (ultra)</option>');
+            } else {
+                const fps = (typeof settings !== 'undefined' && settings.animationSpeed) || 30;
+                const nearestFps = [10, 15, 20, 30].reduce((a, b) => Math.abs(b - fps) < Math.abs(a - fps) ? b : a);
+                addRow('FPS', '_exp_fps',
+                    [10, 15, 20, 30].map(f =>
+                        '<option value="' + f + '"' + (f === nearestFps ? ' selected' : '') + '>' + f + ' fps</option>'
+                    ).join(''));
+                addRow('Quality', '_exp_qual',
+                    '<option value="20">Low (fast)</option>' +
+                    '<option value="10" selected>Medium</option>' +
+                    '<option value="5">High (slow)</option>');
+            }
+
+            const btns = document.createElement('div');
+            btns.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:16px;';
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.style.cssText = 'padding:6px 14px;border-radius:4px;border:1px solid #3a3a5c;background:#2a2a40;color:#ccc;cursor:pointer;font-size:12px;';
+            const confirmBtn = document.createElement('button');
+            confirmBtn.textContent = 'Export';
+            confirmBtn.style.cssText = 'padding:6px 14px;border-radius:4px;border:none;background:#4a7fd4;color:#fff;cursor:pointer;font-size:12px;font-weight:600;';
+            btns.appendChild(cancelBtn);
+            btns.appendChild(confirmBtn);
+            panel.appendChild(btns);
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
+
+            cancelBtn.onclick = () => overlay.remove();
+            overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+            confirmBtn.onclick = () => {
+                const opts = {};
+                if (type === 'png') {
+                    opts.scale = parseInt(document.getElementById('_exp_scale').value) || 1;
+                } else {
+                    opts.fps = parseInt(document.getElementById('_exp_fps').value) || 30;
+                    opts.sampleInterval = parseInt(document.getElementById('_exp_qual').value) || 10;
+                }
+                overlay.remove();
+                onConfirm(opts);
+            };
+        }
+
         function saveAsPNG() {
             if (!renderer || !scene || !camera) {
                 alert('Renderer not ready');
                 return;
             }
+            showExportDialog('png', function (opts) {
+                const scale = opts.scale || 1;
+                const origW = renderer.domElement.width;
+                const origH = renderer.domElement.height;
+                if (scale > 1) renderer.setSize(origW * scale, origH * scale, false);
 
-            // Store original background
-            const originalBackground = scene.background;
-
-            // Set transparent background
-            scene.background = null;
-            renderer.setClearColor(0x000000, 0);
-
-            // Render one frame
-            renderer.render(scene, camera);
-
-            // Get canvas data as PNG
-            const exportCanvas = getExportCanvasWithOptionalBlur(renderer.domElement);
-            exportCanvas.toBlob(function (blob) {
-                // Restore original background
+                const originalBackground = scene.background;
+                scene.background = null;
+                renderer.setClearColor(0x000000, 0);
+                renderer.render(scene, camera);
                 scene.background = originalBackground;
                 updateBackgroundColor();
 
+                const srcCanvas = renderer.domElement;
+                const exportCanvas = document.createElement('canvas');
+                exportCanvas.width = srcCanvas.width;
+                exportCanvas.height = srcCanvas.height;
+                const ctx = exportCanvas.getContext('2d');
+                if (settings.showBlur && getBlurStrengthValue() > 0) {
+                    const blurPx = getBlurStrengthValue() * (srcCanvas.width / Math.max(srcCanvas.clientWidth || srcCanvas.width, 1));
+                    ctx.filter = `blur(${blurPx.toFixed(2)}px)`;
+                }
+                ctx.drawImage(srcCanvas, 0, 0);
+                if (scale > 1) renderer.setSize(origW, origH, false);
+
+                exportCanvas.toBlob(function (blob) {
                 // Generate filename
                 let filename;
                 if (downloadCounters.png === 0) {
@@ -2954,7 +3040,8 @@
                     if (link.parentNode) document.body.removeChild(link);
                     URL.revokeObjectURL(url);
                 }, 1000);
-            }, 'image/png');
+                }, 'image/png');
+            });
         }
 
         function saveAsGIF() {
@@ -2962,23 +3049,21 @@
                 alert('No vibration data available for GIF');
                 return;
             }
-
             if (!renderer || !scene || !camera) {
                 alert('Renderer not ready');
                 return;
             }
-
             if (typeof gifshot === 'undefined') {
                 alert('GIF library not loaded');
                 return;
             }
-
+            showExportDialog('gif', function (opts) {
             const videoBtn = document.getElementById('video-btn');
             const originalHTML = videoBtn ? videoBtn.innerHTML : '';
 
             try {
                 const nFrames = vibrationData.nFrames;
-                const fps = settings.animationSpeed || 30;
+                const fps = opts.fps || settings.animationSpeed || 30;
                 const interval = 1 / fps;
 
                 // Warn for large frame counts
@@ -3019,7 +3104,7 @@
                     interval: interval,
                     numFrames: images.length,
                     frameDuration: 1,
-                    sampleInterval: 10,
+                    sampleInterval: opts.sampleInterval || 10,
                     numWorkers: 2
                 }, function (obj) {
                     if (!obj.error) {
@@ -3057,6 +3142,7 @@
                     videoBtn.disabled = false;
                 }
             }
+            }); // showExportDialog
         }
 
         function setupButtonGroup(groupName, buttonIds) {
