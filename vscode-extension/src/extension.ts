@@ -12,6 +12,7 @@ type ViewerFrame = {
   pbc?: boolean[];
   forces?: number[][];
   charges?: number[];
+  magmoms?: number[];
   fixed?: number[];
   arrays?: {
     fixed?: boolean[];

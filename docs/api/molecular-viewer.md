@@ -72,7 +72,7 @@ See [Styles](../styles.md) for interactive previews of every style.
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `colorBy` | `str` | Atom coloring mode: `"Element"` or `"Charge"` | `"Element"` |
+| `colorBy` | `str` | Atom coloring mode: `"Element"`, `"Charge"`, or `"Magmom"` | `"Element"` |
 | `colorScheme` | `str` | Element color scheme: `"Jmol"`, `"CPK"`, `"PyMOL"`, or `"VMD"` | `"Jmol"` |
 | `normalizeCharges` | `bool` | Normalize charges to symmetric range | `False` |
 | `chargeColormap` | `str` | Colormap for charge visualization | `"coolwarm"` |
@@ -90,6 +90,15 @@ See [Styles](../styles.md) for interactive previews of every style.
     - **Blue** → positive charges
     - **White** → neutral (zero)
     - **Red** → negative charges
+
+!!! note "Magmom Coloring"
+    The `colorBy="Magmom"` option is only available when atoms have per-atom magnetic moment data.
+    Magnetic moments can be set via:
+
+    - `atoms.arrays['magmoms']` or `atoms.arrays['initial_magmoms']` - per-atom arrays
+    - `atoms.info['magmom']` or `atoms.info['magmoms']` - lists in the info dict
+
+    Magmom coloring does not use the `normalizeCharges` setting. Values are shown on a zero-centered diverging scale, with color intensity based on distance from zero.
 
 !!! note "Constraint Visualization"
     The `showConstraint=True` option is only available when atoms have `FixAtoms`
@@ -273,6 +282,13 @@ viewer.show()
     Charges can also be set via `atoms.info['charges']`:
     ```python
     water.info['charges'] = [-0.82, 0.41, 0.41]
+    ```
+
+!!! tip "Setting Magnetic Moments"
+    Magnetic moments can be set via `atoms.info['magmom']`:
+    ```python
+    water.info['magmom'] = [1.0, -1.0, 0.0]
+    viewer = MolecularViewer(water, colorBy="Magmom")
     ```
 
 ### Constraint Visualization

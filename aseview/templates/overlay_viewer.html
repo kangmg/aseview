@@ -1084,31 +1084,191 @@
             };
         }
 
+        function normalizeOverlayColorValue(color) {
+            if (typeof normalizeColorHexValue === 'function') {
+                const normalized = normalizeColorHexValue(color);
+                if (normalized !== null) return normalized;
+            }
+            return color;
+        }
+
+        function isOverlaySpriteAtomStyle(styleName) {
+            return ['2d', 'grey'].includes((styleName || '').toLowerCase());
+        }
+
         const atomFactories = {
-            'default': (pos, symbol, atomScale) => createAtomStyleDefault(pos, symbol, atomScale),
-            '2d': (pos, symbol, atomScale) => createAtomStyle2D(pos, symbol, atomScale),
-            'cartoon': (pos, symbol, atomScale) => createAtomStyleCartoon(pos, symbol, atomScale),
-            'neon': (pos, symbol, atomScale) => createAtomStyleNeon(pos, symbol, atomScale),
-            'glossy': (pos, symbol, atomScale) => createAtomStyleGlossy(pos, symbol, atomScale),
-            'metallic': (pos, symbol, atomScale) => createAtomStyleMetallic(pos, symbol, atomScale),
+            'default': (pos, symbol, atomScale, helpers) => createAtomStyleDefault(pos, symbol, atomScale, helpers),
+            '2d': (pos, symbol, atomScale, helpers) => createAtomStyle2D(pos, symbol, atomScale, helpers),
+            'cartoon': (pos, symbol, atomScale, helpers) => createAtomStyleCartoon(pos, symbol, atomScale, helpers),
+            'neon': (pos, symbol, atomScale, helpers) => createAtomStyleNeon(pos, symbol, atomScale, helpers),
+            'glossy': (pos, symbol, atomScale, helpers) => createAtomStyleGlossy(pos, symbol, atomScale, helpers),
+            'metallic': (pos, symbol, atomScale, helpers) => createAtomStyleMetallic(pos, symbol, atomScale, helpers),
             'cinematic': (pos, symbol, atomScale, helpers) => createAtomStyleCinematic(pos, symbol, atomScale, helpers),
-            'rowan': (pos, symbol, atomScale) => createAtomStyleRowan(pos, symbol, atomScale),
-            'bubble': (pos, symbol, atomScale) => createAtomStyleBubble(pos, symbol, atomScale),
+            'rowan': (pos, symbol, atomScale, helpers) => createAtomStyleRowan(pos, symbol, atomScale, helpers),
+            'bubble': (pos, symbol, atomScale, helpers) => createAtomStyleBubble(pos, symbol, atomScale, helpers),
             'grey': (pos, symbol, atomScale, helpers) => createAtomStyleGrey(pos, symbol, atomScale, helpers.greyColorMap[symbol] ?? 0x808080)
         };
 
         const bondFactories = {
-            'default': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'default'),
-            '2d': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyle2D(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'cartoon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleCartoon(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'neon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy'),
-            'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic'),
+            'default': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'default', helpers),
+            '2d': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyle2D(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'cartoon': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleCartoon(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'neon': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy', helpers),
+            'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic', helpers),
             'cinematic': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleCinematic(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
-            'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
             'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap)
         };
+
+        function cloneHelpersWithOverlayColor(helpers, symbol, colorHex) {
+            const nextHelpers = { ...(helpers || {}) };
+            const overlayColor = normalizeOverlayColorValue(colorHex);
+            nextHelpers.greyColorMap = {
+                ...((helpers && helpers.greyColorMap) || {}),
+                [symbol]: overlayColor
+            };
+            return nextHelpers;
+        }
+
+        function withTemporaryAtomColorOverride(symbol, colorHex, callback) {
+            if (typeof setAtomColorOverrides !== 'function') return callback();
+
+            const overlayColor = normalizeOverlayColorValue(colorHex);
+            const baseOverrides = settings.elementColorOverrides && typeof settings.elementColorOverrides === 'object'
+                ? settings.elementColorOverrides
+                : {};
+            setAtomColorOverrides({ ...baseOverrides, [symbol]: overlayColor });
+            try {
+                return callback();
+            } finally {
+                setAtomColorOverrides(baseOverrides);
+            }
+        }
+
+
+        function createAtomWithOverlayColor(pos, symbol, atomScale, colorHex, styleName, helpers) {
+            const atomFactory = atomFactories[styleName] || atomFactories['default'];
+            if (isOverlaySpriteAtomStyle(styleName)) {
+                return atomFactory(pos, symbol, atomScale, helpers);
+            }
+
+            const overlayHelpers = cloneHelpersWithOverlayColor(helpers, symbol, colorHex);
+            let atom = withTemporaryAtomColorOverride(symbol, colorHex, () => (
+                atomFactory(pos, symbol, atomScale, overlayHelpers)
+            ));
+            if (!atom) {
+                atom = withTemporaryAtomColorOverride(symbol, colorHex, () => (
+                    atomFactories['default'](pos, symbol, atomScale, overlayHelpers)
+                ));
+            }
+
+            return atom;
+        }
+
+        function cloneHelpersWithOverlayBondColors(helpers, sym1, sym2, key1, key2, color1Hex, color2Hex) {
+            const nextHelpers = { ...(helpers || {}) };
+            const overlayColor1 = normalizeOverlayColorValue(color1Hex);
+            const overlayColor2 = normalizeOverlayColorValue(color2Hex);
+            const radiusScaleBySymbol = { ...((helpers && helpers.radiusScaleBySymbol) || {}) };
+            if (radiusScaleBySymbol[sym1] !== undefined) radiusScaleBySymbol[key1] = radiusScaleBySymbol[sym1];
+            if (radiusScaleBySymbol[sym2] !== undefined) radiusScaleBySymbol[key2] = radiusScaleBySymbol[sym2];
+            nextHelpers.radiusScaleBySymbol = radiusScaleBySymbol;
+            nextHelpers.greyColorMap = {
+                ...((helpers && helpers.greyColorMap) || {}),
+                [key1]: overlayColor1,
+                [key2]: overlayColor2
+            };
+            return nextHelpers;
+        }
+
+        function withTemporaryOverlayBondSymbols(sym1, sym2, color1Hex, color2Hex, callback) {
+            const key1 = '__overlay_bond_a__';
+            const key2 = '__overlay_bond_b__';
+            const previous1 = atomInfo[key1];
+            const previous2 = atomInfo[key2];
+            const info1 = atomInfo[sym1] || atomInfo['default'];
+            const info2 = atomInfo[sym2] || atomInfo['default'];
+            const overlayColor1 = normalizeOverlayColorValue(color1Hex);
+            const overlayColor2 = normalizeOverlayColorValue(color2Hex);
+
+            atomInfo[key1] = { ...info1, color: overlayColor1 };
+            atomInfo[key2] = { ...info2, color: overlayColor2 };
+            try {
+                return callback(key1, key2);
+            } finally {
+                if (previous1 === undefined) delete atomInfo[key1];
+                else atomInfo[key1] = previous1;
+                if (previous2 === undefined) delete atomInfo[key2];
+                else atomInfo[key2] = previous2;
+            }
+        }
+
+        function createBondWithOverlayColor(pos1, pos2, sym1, sym2, bondRadius, atomScale, color1Hex, color2Hex, styleName, helpers) {
+            const bondFactory = bondFactories[styleName] || bondFactories['default'];
+            return withTemporaryOverlayBondSymbols(sym1, sym2, color1Hex, color2Hex, (overlaySym1, overlaySym2) => {
+                const overlayHelpers = cloneHelpersWithOverlayBondColors(
+                    helpers,
+                    sym1,
+                    sym2,
+                    overlaySym1,
+                    overlaySym2,
+                    color1Hex,
+                    color2Hex
+                );
+                let bond = bondFactory(
+                    pos1,
+                    pos2,
+                    overlaySym1,
+                    overlaySym2,
+                    bondRadius,
+                    atomScale,
+                    overlayHelpers
+                );
+                if (!bond) {
+                    bond = bondFactories['default'](
+                        pos1,
+                        pos2,
+                        overlaySym1,
+                        overlaySym2,
+                        bondRadius,
+                        atomScale,
+                        overlayHelpers
+                    );
+                }
+                return bond;
+            });
+        }
+
+        function forEachRenderableMaterial(object, callback) {
+            if (!object || typeof object.traverse !== 'function') return;
+            object.traverse(child => {
+                if (!(child.isMesh || child.isLine) || !child.material) return;
+                if (Array.isArray(child.material)) {
+                    child.material = child.material.map(material => {
+                        const cloned = material.clone();
+                        callback(cloned);
+                        return cloned;
+                    });
+                } else {
+                    child.material = child.material.clone();
+                    callback(child.material);
+                }
+            });
+        }
+
+        function applyObjectOpacity(object, opacity) {
+            if (opacity >= 1.0) return;
+            forEachRenderableMaterial(object, material => {
+                if (material.isShaderMaterial && material.uniforms && material.uniforms.uOpacity) {
+                    material.uniforms.uOpacity.value = opacity;
+                } else {
+                    material.transparent = true;
+                    material.opacity = opacity;
+                }
+            });
+        }
 
         let scene = null;
         let camera = null;
@@ -1645,46 +1805,36 @@
                 // Render bonds using spatial grid
                 if (settings.showBond) {
                     const bondPairs = findBondsSpatialGrid(positions, symbols, bondCutoff);
-                    const blackBondStyles = ['rowan', 'cartoon'];
-                    const isBlackBondStyle = blackBondStyles.includes(styleName);
+                    const useMoleculeColor = colorBy === 'Molecule' || colorBy === 'Colormap';
 
                     for (let b = 0; b < bondPairs.length; b++) {
                         const { i, j } = bondPairs[b];
                         if (isBondHidden(symbols[i], symbols[j])) continue;
-                        let bondMesh = bondFactory(
-                            positions[i],
-                            positions[j],
-                            symbols[i],
-                            symbols[j],
-                            bondRadius,
-                            atomScale,
-                            helpers
-                        );
+                        const bondMesh = useMoleculeColor
+                            ? createBondWithOverlayColor(
+                                positions[i],
+                                positions[j],
+                                symbols[i],
+                                symbols[j],
+                                bondRadius,
+                                atomScale,
+                                moleculeColor,
+                                moleculeColor,
+                                styleName,
+                                helpers
+                            )
+                            : bondFactory(
+                                positions[i],
+                                positions[j],
+                                symbols[i],
+                                symbols[j],
+                                bondRadius,
+                                atomScale,
+                                helpers
+                            );
 
                         if (bondMesh) {
-                            if ((colorBy === 'Molecule' || colorBy === 'Colormap') && !isBlackBondStyle) {
-                                bondMesh.traverse((child) => {
-                                    if (child.isMesh && child.material) {
-                                        child.material = child.material.clone();
-                                        setMaterialColor(child.material, moleculeColor);
-                                    }
-                                });
-                            }
-
-                            if (opacity < 1.0) {
-                                bondMesh.traverse((child) => {
-                                    if (child.isMesh && child.material) {
-                                        if (child.material.isShaderMaterial && child.material.uniforms && child.material.uniforms.uOpacity) {
-                                            child.material = child.material.clone();
-                                            child.material.uniforms.uOpacity.value = opacity;
-                                        } else {
-                                            child.material.transparent = true;
-                                            child.material.opacity = opacity;
-                                        }
-                                    }
-                                });
-                            }
-
+                            applyObjectOpacity(bondMesh, opacity);
                             molGroup.add(bondMesh);
                         }
                     }
@@ -1693,36 +1843,17 @@
                 // Render atoms
                 for (let i = 0; i < positions.length; i++) {
                     if (isHydrogenHidden(symbols[i])) continue;
-                    let atomMesh = atomFactory(positions[i], symbols[i], atomScale, helpers);
+                    const useMoleculeColor = colorBy === 'Molecule' || colorBy === 'Colormap';
+                    let atomMesh = useMoleculeColor
+                        ? createAtomWithOverlayColor(positions[i], symbols[i], atomScale, moleculeColor, styleName, helpers)
+                        : atomFactory(positions[i], symbols[i], atomScale, helpers);
 
                     if (!atomMesh) {
                         atomMesh = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
                     }
 
                     if (atomMesh) {
-                        if (colorBy === 'Molecule' || colorBy === 'Colormap') {
-                            atomMesh.traverse((child) => {
-                                if (child.isMesh && child.material) {
-                                    child.material = child.material.clone();
-                                    setMaterialColor(child.material, moleculeColor);
-                                }
-                            });
-                        }
-
-                        if (opacity < 1.0) {
-                            atomMesh.traverse((child) => {
-                                if (child.isMesh && child.material) {
-                                    if (child.material.isShaderMaterial && child.material.uniforms && child.material.uniforms.uOpacity) {
-                                        child.material = child.material.clone();
-                                        child.material.uniforms.uOpacity.value = opacity;
-                                    } else {
-                                        child.material.transparent = true;
-                                        child.material.opacity = opacity;
-                                    }
-                                }
-                            });
-                        }
-
+                        applyObjectOpacity(atomMesh, opacity);
                         molGroup.add(atomMesh);
                     }
                 }

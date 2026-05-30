@@ -87,10 +87,32 @@ class MolecularData:
     """Class to handle molecular data conversion between ASE Atoms and JSON format."""
 
     @staticmethod
+    def _as_per_atom_scalar(values, n_atoms: int, *, allow_vectors: bool = False):
+        """Return a 1D per-atom float array, or None if shape is incompatible."""
+        try:
+            values_array = np.asarray(values, dtype=float)
+        except (TypeError, ValueError):
+            return None
+
+        if values_array.ndim == 0:
+            return None
+        if values_array.ndim == 2 and values_array.shape == (n_atoms, 1):
+            values_array = values_array[:, 0]
+        elif allow_vectors and values_array.ndim == 2 and values_array.shape == (n_atoms, 3):
+            values_array = np.linalg.norm(values_array, axis=1)
+        else:
+            values_array = values_array.flatten()
+
+        if len(values_array) != n_atoms:
+            return None
+        return values_array
+
+    @staticmethod
     def from_atoms(atoms: Atoms) -> Dict[str, Any]:
         """Convert ASE Atoms object to JSON-serializable dictionary."""
         positions = atoms.get_positions().tolist()
         symbols = atoms.get_chemical_symbols()
+        n_atoms = len(symbols)
 
         data = {"positions": positions, "symbols": symbols}
 
@@ -138,14 +160,36 @@ class MolecularData:
             charges = atoms.info["charges"]
 
         if charges is not None:
-            try:
-                import numpy as np
+            charges_array = MolecularData._as_per_atom_scalar(charges, n_atoms)
+            if charges_array is not None:
+                data["charges"] = charges_array.tolist()
 
-                charges_array = np.asarray(charges, dtype=float).flatten()
-                if len(charges_array) == len(symbols):
-                    data["charges"] = charges_array.tolist()
-            except (TypeError, ValueError):
+        # Add magnetic moments if available (from arrays, info dict, or calculator)
+        magmoms = None
+        if hasattr(atoms, "arrays"):
+            for key in ("magmoms", "magmom", "magnetic_moments", "initial_magmoms"):
+                if key in atoms.arrays:
+                    magmoms = atoms.arrays[key]
+                    break
+        if magmoms is None and hasattr(atoms, "info"):
+            for key in ("magmoms", "magmom", "magnetic_moments", "magnetic_moment"):
+                if key in atoms.info:
+                    magmoms = atoms.info[key]
+                    break
+        if magmoms is None and atoms.calc is not None:
+            try:
+                magmoms = atoms.get_magnetic_moments()
+            except Exception:
                 pass
+
+        if magmoms is not None:
+            magmoms_array = MolecularData._as_per_atom_scalar(
+                magmoms,
+                n_atoms,
+                allow_vectors=True,
+            )
+            if magmoms_array is not None:
+                data["magmoms"] = magmoms_array.tolist()
 
         # Add fixed atom indices from FixAtoms constraints
         if hasattr(atoms, "constraints") and atoms.constraints:
@@ -329,7 +373,7 @@ class MolecularViewer(BaseViewer):
             "showShading": True,
             "showEnergyPlot": False,
             "showForces": False,
-            "colorBy": "Element",        # "Element" or "Charge"
+            "colorBy": "Element",        # "Element", "Charge", or "Magmom"
             "showConstraint": False,
             "colorScheme": "Jmol",       # "Jmol" (default), "CPK", "PyMOL", or "VMD"
             "normalizeCharges": False,   # Normalize charges to symmetric range
@@ -425,14 +469,14 @@ class MolecularViewer(BaseViewer):
                         window.settings = {{}};
                     }}
                     Object.assign(settings, pythonSettings);
-                    // Sync UI elements to reflect the applied Python settings
-                    if (typeof updateFromSettings === 'function') {{
-                        updateFromSettings();
-                    }}
                     if (typeof setMolecularData === 'function') {{
                         setMolecularData({js_data});
                     }} else {{
                         console.error('setMolecularData function not found!');
+                    }}
+                    // Sync UI elements after data-dependent options are available.
+                    if (typeof updateFromSettings === 'function') {{
+                        updateFromSettings();
                     }}
                 }} else if (retryCount < MAX_RETRIES) {{
                     setTimeout(trySetData, 50);
@@ -758,15 +802,15 @@ class NormalViewer(BaseViewer):
                         window.settings = {{}};
                     }}
                     Object.assign(settings, pythonSettings);
-                    // Sync UI elements to reflect the applied Python settings
-                    if (typeof updateFromSettings === 'function') {{
-                        updateFromSettings();
-                    }}
                     if (typeof initNormalModeViewer === 'function') {{
                         initNormalModeViewer(window.equilibriumAtoms, window.vibrationData);
                     }} else if (typeof setMolecularData === 'function') {{
                         // Fallback for templates without vibration support
                         setMolecularData([window.equilibriumAtoms]);
+                    }}
+                    // Sync UI elements after data-dependent options are available.
+                    if (typeof updateFromSettings === 'function') {{
+                        updateFromSettings();
                     }}
                 }} else if (retryCount < MAX_RETRIES) {{
                     setTimeout(trySetData, 50);
@@ -1014,7 +1058,7 @@ class OverlayViewer(BaseViewer):
     def _filter_structure(structure: Dict[str, Any], indices: List[int]) -> Dict[str, Any]:
         """Return a copy of *structure* keeping only the atoms at *indices*."""
         filtered = {}
-        per_atom_keys = {"symbols", "positions", "forces", "charges"}
+        per_atom_keys = {"symbols", "positions", "forces", "charges", "magmoms"}
         for key, value in structure.items():
             if key in per_atom_keys and isinstance(value, list):
                 filtered[key] = [value[i] for i in indices]
@@ -1117,12 +1161,12 @@ class OverlayViewer(BaseViewer):
                         window.settings = {{}};
                     }}
                     Object.assign(settings, pythonSettings);
-                    // Sync UI elements to reflect the applied Python settings
-                    if (typeof updateFromSettings === 'function') {{
-                        updateFromSettings();
-                    }}
                     if (typeof setMolecularData === 'function') {{
                         setMolecularData({js_data});
+                    }}
+                    // Sync UI elements after data-dependent options are available.
+                    if (typeof updateFromSettings === 'function') {{
+                        updateFromSettings();
                     }}
                 }} else if (retryCount < MAX_RETRIES) {{
                     setTimeout(trySetData, 50);

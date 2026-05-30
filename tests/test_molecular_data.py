@@ -53,6 +53,30 @@ class TestMolecularDataFromAtoms:
         assert len(data["charges"]) == 3
         assert abs(data["charges"][0] - 0.4) < 1e-6
 
+    def test_magmoms_preserved_from_info(self, water):
+        water.info["magmom"] = [1.0, -1.0, 0.0]
+        data = MolecularData.from_atoms(water)
+        assert "magmoms" in data
+        assert len(data["magmoms"]) == 3
+        assert abs(data["magmoms"][1] + 1.0) < 1e-6
+
+    def test_magmoms_preserved_from_initial_array(self, water):
+        water.set_initial_magnetic_moments([0.5, -0.5, 0.0])
+        data = MolecularData.from_atoms(water)
+        assert "magmoms" in data
+        assert len(data["magmoms"]) == 3
+        assert abs(data["magmoms"][0] - 0.5) < 1e-6
+
+    def test_vector_magmoms_are_converted_to_magnitudes(self, water):
+        water.info["magmoms"] = [
+            [1.0, 0.0, 0.0],
+            [0.0, -2.0, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+        data = MolecularData.from_atoms(water)
+        assert "magmoms" in data
+        np.testing.assert_allclose(data["magmoms"], [1.0, 2.0, 0.0])
+
 
 class TestMolecularDataToAtoms:
     def test_roundtrip(self, water):

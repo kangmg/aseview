@@ -8,7 +8,7 @@ Molecular structure viewer for ASE (Atomic Simulation Environment).
 
 - Interactive structure, trajectory, overlay, normal-mode, and fragment-selection viewers
 - ASE-backed Python API and CLI, plus a browser-only JavaScript module
-- Cell/PBC display, bonds, hydrogen bonds, charges, forces, and fixed-atom constraint highlighting
+- Cell/PBC display, bonds, hydrogen bonds, charges, magnetic moments, forces, and fixed-atom constraint highlighting
 - Energy and max-force (Fmax) trajectory plots with independent force-plot toggling
 - Radius Contrast control for reducing or restoring element-radius size differences
 - Visual styles including cartoon, glossy, metallic, cinematic, bubble, neon, grey, and 2D

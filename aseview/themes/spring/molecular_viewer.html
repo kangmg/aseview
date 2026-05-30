@@ -882,7 +882,7 @@
                             </div>
                         </div>
 
-                        <!-- Color By section - only visible when charges are present -->
+                        <!-- Color By section - only visible when scalar data is present -->
                         <div class="control-group" id="color-by-section" style="display: none;">
                             <div class="control-label">
                                 <span>Color By</span>
@@ -890,6 +890,7 @@
                             <select class="select" id="color-by-select">
                                 <option value="Element">Element</option>
                                 <option value="Charge">Charge</option>
+                                <option value="Magmom">Magmom</option>
                             </select>
                         </div>
 
@@ -904,7 +905,7 @@
                             </div>
                         </div>
 
-                        <!-- Show Charge Labels toggle - only visible when colorBy is Charge -->
+                        <!-- Show scalar labels toggle - only visible when colorBy is Charge or Magmom -->
                         <div class="control-group" id="show-charge-labels-section" style="display: none;">
                             <div class="control-label">
                                 <span>Show Labels</span>
@@ -1180,7 +1181,7 @@
             showRings: false,
             ringOpacity: 0.30,
             ringColor: null,          // null = auto (dominant-atom color)
-            colorBy: 'Element',  // 'Element' or 'Charge'
+            colorBy: 'Element',  // 'Element', 'Charge', or 'Magmom'
             showConstraint: false,
             colorScheme: 'Jmol', // 'Jmol', 'CPK', 'PyMOL', or 'VMD'
             elementColorOverrides: {},
@@ -1431,15 +1432,15 @@
         }
 
         const atomFactories = {
-            'default': (pos, symbol, atomScale) => createAtomStyleDefault(pos, symbol, atomScale),
-            '2d': (pos, symbol, atomScale) => createAtomStyle2D(pos, symbol, atomScale),
-            'cartoon': (pos, symbol, atomScale) => createAtomStyleCartoon(pos, symbol, atomScale),
-            'neon': (pos, symbol, atomScale) => createAtomStyleNeon(pos, symbol, atomScale),
-            'glossy': (pos, symbol, atomScale) => createAtomStyleGlossy(pos, symbol, atomScale),
-            'metallic': (pos, symbol, atomScale) => createAtomStyleMetallic(pos, symbol, atomScale),
+            'default': (pos, symbol, atomScale, helpers) => createAtomStyleDefault(pos, symbol, atomScale, helpers),
+            '2d': (pos, symbol, atomScale, helpers) => createAtomStyle2D(pos, symbol, atomScale, helpers),
+            'cartoon': (pos, symbol, atomScale, helpers) => createAtomStyleCartoon(pos, symbol, atomScale, helpers),
+            'neon': (pos, symbol, atomScale, helpers) => createAtomStyleNeon(pos, symbol, atomScale, helpers),
+            'glossy': (pos, symbol, atomScale, helpers) => createAtomStyleGlossy(pos, symbol, atomScale, helpers),
+            'metallic': (pos, symbol, atomScale, helpers) => createAtomStyleMetallic(pos, symbol, atomScale, helpers),
             'cinematic': (pos, symbol, atomScale, helpers) => createAtomStyleCinematic(pos, symbol, atomScale, helpers),
-            'rowan': (pos, symbol, atomScale) => createAtomStyleRowan(pos, symbol, atomScale),
-            'bubble': (pos, symbol, atomScale) => createAtomStyleBubble(pos, symbol, atomScale),
+            'rowan': (pos, symbol, atomScale, helpers) => createAtomStyleRowan(pos, symbol, atomScale, helpers),
+            'bubble': (pos, symbol, atomScale, helpers) => createAtomStyleBubble(pos, symbol, atomScale, helpers),
             'grey': (pos, symbol, atomScale, helpers) => createAtomStyleGrey(pos, symbol, atomScale, helpers.greyColorMap[symbol] ?? 0x808080)
         };
 
@@ -1528,8 +1529,9 @@
             return getElementRadius(symbol) * getAdjustedAtomScale(symbol, atomScale, radiusScaleBySymbol);
         }
 
-        // Charge coloring utilities
-        let chargeStats = { hasCharges: false, min: 0, max: 0, maxPositive: 0, minNegative: 0 };
+        // Scalar coloring utilities
+        let chargeStats = { hasCharges: false, min: 0, max: 0, absMax: 0, maxPositive: 0, minNegative: 0 };
+        let magmomStats = { hasMagmoms: false, min: 0, max: 0, absMax: 0, maxPositive: 0, minNegative: 0 };
         let fixedStats  = { hasFixed: false };
 
         function checkConstraintsInData() {
@@ -1544,35 +1546,62 @@
             return false;
         }
 
+        function resetScalarStats(stats, hasKey) {
+            stats[hasKey] = false;
+            stats.min = 0;
+            stats.max = 0;
+            stats.absMax = 0;
+            stats.maxPositive = 0;
+            stats.minNegative = 0;
+        }
 
-        function checkChargesInData() {
+        function collectScalarValues(frame, fieldName) {
+            if (!frame || !Array.isArray(frame[fieldName])) return [];
+            return frame[fieldName]
+                .map(value => Number(value))
+                .filter(value => Number.isFinite(value));
+        }
+
+        function updateScalarStats(fieldName, stats, hasKey) {
+            resetScalarStats(stats, hasKey);
             if (!molecularData || molecularData.length === 0) return false;
 
-            let hasCharges = false;
-            let allCharges = [];
-
+            let allValues = [];
             for (const frame of molecularData) {
-                if (frame.charges && Array.isArray(frame.charges) && frame.charges.length > 0) {
-                    hasCharges = true;
-                    allCharges = allCharges.concat(frame.charges);
-                }
+                allValues = allValues.concat(collectScalarValues(frame, fieldName));
             }
 
-            if (hasCharges && allCharges.length > 0) {
-                chargeStats.hasCharges = true;
-                chargeStats.min = Math.min(...allCharges);
-                chargeStats.max = Math.max(...allCharges);
-                chargeStats.absMax = Math.max(Math.abs(chargeStats.min), Math.abs(chargeStats.max));
-                // Track positive and negative ranges separately
-                const positiveCharges = allCharges.filter(c => c > 0);
-                const negativeCharges = allCharges.filter(c => c < 0);
-                chargeStats.maxPositive = positiveCharges.length > 0 ? Math.max(...positiveCharges) : 0;
-                chargeStats.minNegative = negativeCharges.length > 0 ? Math.min(...negativeCharges) : 0;
-            } else {
-                chargeStats.hasCharges = false;
-            }
+            if (allValues.length === 0) return false;
 
-            return hasCharges;
+            stats[hasKey] = true;
+            stats.min = Math.min(...allValues);
+            stats.max = Math.max(...allValues);
+            stats.absMax = Math.max(Math.abs(stats.min), Math.abs(stats.max));
+
+            const positiveValues = allValues.filter(value => value > 0);
+            const negativeValues = allValues.filter(value => value < 0);
+            stats.maxPositive = positiveValues.length > 0 ? Math.max(...positiveValues) : 0;
+            stats.minNegative = negativeValues.length > 0 ? Math.min(...negativeValues) : 0;
+            return true;
+        }
+
+        function checkChargesInData() {
+            return updateScalarStats('charges', chargeStats, 'hasCharges');
+        }
+
+        function checkMagmomsInData() {
+            return updateScalarStats('magmoms', magmomStats, 'hasMagmoms');
+        }
+
+        function getActiveScalarStats() {
+            return settings.colorBy === 'Magmom' ? magmomStats : chargeStats;
+        }
+
+        function scalarModeHasData(mode) {
+            if (mode === 'Element') return true;
+            if (mode === 'Charge') return chargeStats.hasCharges;
+            if (mode === 'Magmom') return magmomStats.hasMagmoms;
+            return false;
         }
 
         function updateChargeUI() {
@@ -1585,21 +1614,26 @@
 
             if (!colorBySection || !select) return;
 
-            // Rebuild Charge option dynamically
             [...select.options].forEach(o => { if (o.value !== 'Element') o.remove(); });
-            if (chargeStats.hasCharges) {
+            const scalarOptions = [
+                { value: 'Charge', label: 'Charge', available: chargeStats.hasCharges },
+                { value: 'Magmom', label: 'Magmom', available: magmomStats.hasMagmoms }
+            ];
+            scalarOptions.forEach(({ value, label, available }) => {
+                if (!available) return;
                 const opt = document.createElement('option');
-                opt.value = 'Charge'; opt.text = 'Charge';
+                opt.value = value;
+                opt.text = label;
                 select.add(opt);
-            }
+            });
 
-            // If selected colorBy is no longer valid, reset to Element
-            if (settings.colorBy === 'Charge' && !chargeStats.hasCharges) {
+            // If selected colorBy is no longer valid, reset to Element.
+            if (!scalarModeHasData(settings.colorBy)) {
                 settings.colorBy = 'Element';
             }
             select.value = settings.colorBy;
 
-            // Fixed Atoms toggle: show only when constraints are present
+            // Fixed Atoms toggle: show only when constraints are present.
             if (constraintSection) {
                 constraintSection.style.display = fixedStats.hasFixed ? 'block' : 'none';
                 if (!fixedStats.hasFixed) settings.showConstraint = false;
@@ -1607,14 +1641,15 @@
                 if (cb) cb.checked = !!settings.showConstraint;
             }
 
-            colorBySection.style.display = chargeStats.hasCharges ? 'block' : 'none';
+            const hasScalarData = chargeStats.hasCharges || magmomStats.hasMagmoms;
+            colorBySection.style.display = hasScalarData ? 'block' : 'none';
 
-            // Charge-specific sub-controls
-            const showChargeOptions = settings.colorBy === 'Charge';
-            if (normalizeSection) normalizeSection.style.display = showChargeOptions ? 'block' : 'none';
-            if (labelsSection)    labelsSection.style.display    = showChargeOptions ? 'block' : 'none';
-            if (colorbarSection)  colorbarSection.style.display  = showChargeOptions ? 'block' : 'none';
-            if (showChargeOptions) updateColorbarLabels();
+            const showScalarOptions = settings.colorBy === 'Charge' || settings.colorBy === 'Magmom';
+            const showNormalizeOptions = settings.colorBy === 'Charge';
+            if (normalizeSection) normalizeSection.style.display = showNormalizeOptions ? 'block' : 'none';
+            if (labelsSection)    labelsSection.style.display    = showScalarOptions ? 'block' : 'none';
+            if (colorbarSection)  colorbarSection.style.display  = showScalarOptions ? 'block' : 'none';
+            if (showScalarOptions) updateColorbarLabels();
         }
 
         function updateColorbarLabels() {
@@ -1624,13 +1659,12 @@
             if (!minLabel || !maxLabel) return;
 
             let minVal, maxVal;
-            if (settings.normalizeCharges) {
-                // Normalize mode: show -1.0 to +1.0 (full range used)
+            if (settings.colorBy === 'Charge' && settings.normalizeCharges) {
                 minVal = -1.0;
                 maxVal = 1.0;
             } else {
-                // Non-normalize mode: show symmetric range based on absMax
-                const absMax = chargeStats.absMax || 1.0;
+                const stats = getActiveScalarStats();
+                const absMax = stats.absMax || 1.0;
                 minVal = -absMax;
                 maxVal = absMax;
             }
@@ -1640,7 +1674,7 @@
         }
 
         // Coolwarm colormap: red (negative) -> white (zero) -> blue (positive)
-        function getChargeColor(charge, normalize = false) {
+        function getChargeColor(charge, normalize = false, stats = chargeStats) {
             // Standard convention: red = negative, blue = positive
             const negativeColor = new THREE.Color(0xb40426);  // Red
             const neutralColor = new THREE.Color(0xf7f7f7);   // White
@@ -1648,21 +1682,20 @@
 
             let resultColor = new THREE.Color();
             let t;
+            const scalarStats = stats || chargeStats;
 
             if (normalize) {
-                // Normalize: scale each direction to its max (full color range)
                 if (charge >= 0) {
-                    const maxPos = chargeStats.maxPositive || 1.0;
+                    const maxPos = scalarStats.maxPositive || 1.0;
                     t = maxPos > 0 ? Math.min(charge / maxPos, 1) : 0;
                     resultColor.lerpColors(neutralColor, positiveColor, t);
                 } else {
-                    const minNeg = chargeStats.minNegative || -1.0;
+                    const minNeg = scalarStats.minNegative || -1.0;
                     t = minNeg < 0 ? Math.min(Math.abs(charge) / Math.abs(minNeg), 1) : 0;
                     resultColor.lerpColors(neutralColor, negativeColor, t);
                 }
             } else {
-                // Non-normalize: use symmetric range based on absMax
-                const absMax = chargeStats.absMax || 1.0;
+                const absMax = scalarStats.absMax || 1.0;
                 if (charge >= 0) {
                     t = absMax > 0 ? Math.min(charge / absMax, 1) : 0;
                     resultColor.lerpColors(neutralColor, positiveColor, t);
@@ -1675,74 +1708,70 @@
             return resultColor.getHex();
         }
 
-        // Create atom with custom color (for charge coloring)
-        function createAtomWithColor(pos, symbol, atomScale, colorHex, styleName, lodSegments) {
-            const info = atomInfo[symbol] || atomInfo['default'];
-            const scaledRadius = info.radius * atomScale;
-            const seg = (lodSegments && lodSegments.sphere) || 32;
+        // Create atom with the selected style and scalar color.
+        function cloneHelpersWithScalarColor(helpers, symbol, colorHex) {
+            const nextHelpers = { ...(helpers || {}) };
+            nextHelpers.greyColorMap = {
+                ...((helpers && helpers.greyColorMap) || {}),
+                [symbol]: colorHex
+            };
+            return nextHelpers;
+        }
 
-            // Create geometry based on style
-            let geometry, material, mesh;
+        function withTemporaryAtomColorOverride(symbol, colorHex, callback) {
+            if (typeof setAtomColorOverrides !== 'function') return callback();
 
-            switch (styleName) {
-                case 'neon':
-                    geometry = getCachedSphereGeometry(scaledRadius, seg);
-                    material = new THREE.MeshBasicMaterial({
-                        color: toLinearColor(colorHex),
-                        transparent: true,
-                        opacity: 0.9
-                    });
-                    mesh = new THREE.Mesh(geometry, material);
-                    mesh.position.copy(pos);
-
-                    // Add glow effect
-                    const glowGeometry = getCachedSphereGeometry(scaledRadius * 1.3, seg);
-                    const glowMaterial = new THREE.MeshBasicMaterial({
-                        color: toLinearColor(colorHex),
-                        transparent: true,
-                        opacity: 0.3
-                    });
-                    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-                    glow.position.copy(pos);
-
-                    const group = new THREE.Group();
-                    group.add(glow);
-                    group.add(mesh);
-                    return group;
-
-                case 'glossy':
-                    geometry = getCachedSphereGeometry(scaledRadius, seg);
-                    material = new THREE.MeshPhongMaterial({
-                        color: toLinearColor(colorHex),
-                        specular: toLinearColor(0x444444),
-                        shininess: 100
-                    });
-                    mesh = new THREE.Mesh(geometry, material);
-                    mesh.position.copy(pos);
-                    return mesh;
-
-                case 'metallic':
-                    geometry = getCachedSphereGeometry(scaledRadius, seg);
-                    material = new THREE.MeshStandardMaterial({
-                        color: toLinearColor(colorHex),
-                        metalness: 0.8,
-                        roughness: 0.2
-                    });
-                    mesh = new THREE.Mesh(geometry, material);
-                    mesh.position.copy(pos);
-                    return mesh;
-
-                default:  // cartoon, default, etc.
-                    geometry = getCachedSphereGeometry(scaledRadius, seg);
-                    material = new THREE.MeshLambertMaterial({ color: toLinearColor(colorHex) });
-                    mesh = new THREE.Mesh(geometry, material);
-                    mesh.position.copy(pos);
-                    return mesh;
+            const baseOverrides = settings.elementColorOverrides && typeof settings.elementColorOverrides === 'object'
+                ? settings.elementColorOverrides
+                : {};
+            setAtomColorOverrides({ ...baseOverrides, [symbol]: colorHex });
+            try {
+                return callback();
+            } finally {
+                setAtomColorOverrides(baseOverrides);
             }
         }
 
+        function tintSpriteMaterials(object, colorHex) {
+            if (!object || typeof object.traverse !== 'function') return;
+            object.traverse(child => {
+                if (!child.isSprite || !child.material) return;
+                if (Array.isArray(child.material)) {
+                    child.material = child.material.map(material => {
+                        const cloned = material.clone();
+                        setMaterialColor(cloned, colorHex);
+                        return cloned;
+                    });
+                } else {
+                    child.material = child.material.clone();
+                    setMaterialColor(child.material, colorHex);
+                }
+            });
+        }
+
+        function createAtomWithColor(pos, symbol, atomScale, colorHex, styleName, helpers) {
+            const atomFactory = atomFactories[styleName] || atomFactories['default'];
+            const scalarHelpers = cloneHelpersWithScalarColor(helpers, symbol, colorHex);
+
+            let atom = withTemporaryAtomColorOverride(symbol, colorHex, () => (
+                atomFactory(pos, symbol, atomScale, scalarHelpers)
+            ));
+            if (!atom) {
+                atom = withTemporaryAtomColorOverride(symbol, colorHex, () => (
+                    atomFactories['default'](pos, symbol, atomScale, scalarHelpers)
+                ));
+            }
+
+            // 2D atoms draw a white canvas sprite, so tint the sprite material after creation.
+            if ((styleName || '').toLowerCase() === '2d') {
+                tintSpriteMaterials(atom, colorHex);
+            }
+
+            return atom;
+        }
+
         // Create charge label sprite
-        function createChargeLabelSprite(charge, position, atomScale, normalize) {
+        function createChargeLabelSprite(charge, position, atomScale, normalize, stats = chargeStats) {
             const canvas = document.createElement('canvas');
             canvas.width = 128;
             canvas.height = 64;
@@ -1763,7 +1792,7 @@
             ctx.strokeText(text, 64, 32);
 
             // Label color matches atom color (reflects normalization)
-            const colorHex = getChargeColor(charge, normalize || false);
+            const colorHex = getChargeColor(charge, normalize || false, stats);
             const labelColor = new THREE.Color(colorHex);
             ctx.fillStyle = '#' + labelColor.getHexString();
             ctx.fillText(text, 64, 32);
@@ -1784,90 +1813,75 @@
             return sprite;
         }
 
-        // Create bond with custom colors (for charge coloring)
-        function createBondWithColor(pos1, pos2, sym1, sym2, bondRadius, atomScale, color1Hex, color2Hex, styleName, helpers) {
-            const group = new THREE.Group();
+        // Create bond with the selected style and endpoint scalar colors.
+        function cloneHelpersWithBondScalarColors(helpers, sym1, sym2, key1, key2, color1Hex, color2Hex) {
+            const nextHelpers = { ...(helpers || {}) };
+            const radiusScaleBySymbol = { ...((helpers && helpers.radiusScaleBySymbol) || {}) };
+            if (radiusScaleBySymbol[sym1] !== undefined) radiusScaleBySymbol[key1] = radiusScaleBySymbol[sym1];
+            if (radiusScaleBySymbol[sym2] !== undefined) radiusScaleBySymbol[key2] = radiusScaleBySymbol[sym2];
+            nextHelpers.radiusScaleBySymbol = radiusScaleBySymbol;
+            nextHelpers.greyColorMap = {
+                ...((helpers && helpers.greyColorMap) || {}),
+                [key1]: color1Hex,
+                [key2]: color2Hex
+            };
+            return nextHelpers;
+        }
 
-            const direction = new THREE.Vector3().subVectors(pos2, pos1);
-            const length = direction.length();
-            if (length <= 0) return null;
+        function withTemporaryScalarBondSymbols(sym1, sym2, color1Hex, color2Hex, callback) {
+            const key1 = '__scalar_bond_a__';
+            const key2 = '__scalar_bond_b__';
+            const previous1 = atomInfo[key1];
+            const previous2 = atomInfo[key2];
+            const info1 = atomInfo[sym1] || atomInfo['default'];
+            const info2 = atomInfo[sym2] || atomInfo['default'];
 
-            const bondDirection = direction.clone().normalize();
-            const radiusScaleBySymbol = helpers?.radiusScaleBySymbol || {};
-            const offsetFactor = styleName === 'neon' ? 0.6 : 0.75;
-            const radius1 = getAdjustedAtomRadius(sym1, atomScale, radiusScaleBySymbol) * offsetFactor;
-            const radius2 = getAdjustedAtomRadius(sym2, atomScale, radiusScaleBySymbol) * offsetFactor;
-            const startPos = pos1.clone().add(bondDirection.clone().multiplyScalar(radius1));
-            const endPos = pos2.clone().sub(bondDirection.clone().multiplyScalar(radius2));
-            const adjustedLength = startPos.distanceTo(endPos);
-            if (adjustedLength <= 0.01) return null;
-
-            const midpoint = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5);
-            const halfLength = adjustedLength / 2;
-
-            // Darken colors for bonds
-            const darkenFactor = 0.7;
-            const bondColor1 = new THREE.Color(color1Hex).multiplyScalar(darkenFactor).getHex();
-            const bondColor2 = new THREE.Color(color2Hex).multiplyScalar(darkenFactor).getHex();
-
-            let material1, material2;
-
-            switch (styleName) {
-                case 'neon':
-                    // Use lines for neon style
-                    const points1 = [startPos, midpoint];
-                    const geometry1 = new THREE.BufferGeometry().setFromPoints(points1);
-                    material1 = new THREE.LineBasicMaterial({ color: toLinearColor(bondColor1), linewidth: 2 });
-                    group.add(new THREE.Line(geometry1, material1));
-
-                    const points2 = [midpoint, endPos];
-                    const geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
-                    material2 = new THREE.LineBasicMaterial({ color: toLinearColor(bondColor2), linewidth: 2 });
-                    group.add(new THREE.Line(geometry2, material2));
-                    return group;
-
-                case 'cartoon':
-                    material1 = new THREE.MeshToonMaterial({ color: toLinearColor(bondColor1) });
-                    material2 = new THREE.MeshToonMaterial({ color: toLinearColor(bondColor2) });
-                    break;
-
-                case 'metallic':
-                    material1 = new THREE.MeshStandardMaterial({ color: toLinearColor(bondColor1), metalness: 0.8, roughness: 0.2 });
-                    material2 = new THREE.MeshStandardMaterial({ color: toLinearColor(bondColor2), metalness: 0.8, roughness: 0.2 });
-                    break;
-
-                case 'glossy':
-                    material1 = new THREE.MeshPhongMaterial({ color: toLinearColor(bondColor1), shininess: 100, specular: toLinearColor(0x444444) });
-                    material2 = new THREE.MeshPhongMaterial({ color: toLinearColor(bondColor2), shininess: 100, specular: toLinearColor(0x444444) });
-                    break;
-
-                case 'bubble':
-                    material1 = new THREE.MeshPhongMaterial({ color: toLinearColor(bondColor1), transparent: true, opacity: 0.6, shininess: 100, specular: 0xffffff });
-                    material2 = new THREE.MeshPhongMaterial({ color: toLinearColor(bondColor2), transparent: true, opacity: 0.6, shininess: 100, specular: 0xffffff });
-                    break;
-
-                default:
-                    material1 = new THREE.MeshPhongMaterial({ color: toLinearColor(bondColor1), shininess: 30 });
-                    material2 = new THREE.MeshPhongMaterial({ color: toLinearColor(bondColor2), shininess: 30 });
+            atomInfo[key1] = { ...info1, color: color1Hex };
+            atomInfo[key2] = { ...info2, color: color2Hex };
+            try {
+                return callback(key1, key2);
+            } finally {
+                if (previous1 === undefined) delete atomInfo[key1];
+                else atomInfo[key1] = previous1;
+                if (previous2 === undefined) delete atomInfo[key2];
+                else atomInfo[key2] = previous2;
             }
+        }
 
-            // First half
-            const cylGeom1 = new THREE.CylinderGeometry(bondRadius, bondRadius, halfLength, 16);
-            const cylinder1 = new THREE.Mesh(cylGeom1, material1);
-            const half1Mid = new THREE.Vector3().addVectors(startPos, midpoint).multiplyScalar(0.5);
-            cylinder1.position.copy(half1Mid);
-            cylinder1.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bondDirection);
-            group.add(cylinder1);
-
-            // Second half
-            const cylGeom2 = new THREE.CylinderGeometry(bondRadius, bondRadius, halfLength, 16);
-            const cylinder2 = new THREE.Mesh(cylGeom2, material2);
-            const half2Mid = new THREE.Vector3().addVectors(midpoint, endPos).multiplyScalar(0.5);
-            cylinder2.position.copy(half2Mid);
-            cylinder2.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bondDirection);
-            group.add(cylinder2);
-
-            return group;
+        function createBondWithColor(pos1, pos2, sym1, sym2, bondRadius, atomScale, color1Hex, color2Hex, styleName, helpers) {
+            const bondFactory = bondFactories[styleName] || bondFactories['default'];
+            return withTemporaryScalarBondSymbols(sym1, sym2, color1Hex, color2Hex, (scalarSym1, scalarSym2) => {
+                const scalarHelpers = cloneHelpersWithBondScalarColors(
+                    helpers,
+                    sym1,
+                    sym2,
+                    scalarSym1,
+                    scalarSym2,
+                    color1Hex,
+                    color2Hex
+                );
+                let bond = bondFactory(
+                    pos1,
+                    pos2,
+                    scalarSym1,
+                    scalarSym2,
+                    bondRadius,
+                    atomScale,
+                    scalarHelpers
+                );
+                if (!bond) {
+                    bond = bondFactories['default'](
+                        pos1,
+                        pos2,
+                        scalarSym1,
+                        scalarSym2,
+                        bondRadius,
+                        atomScale,
+                        scalarHelpers
+                    );
+                }
+                return bond;
+            });
         }
 
         let scene = null;
@@ -2604,10 +2618,17 @@
                 moleculeGroup.add(cellMesh);
             }
 
-            // Get charges for current frame (if available)
+            // Get scalar values for current frame (if available)
             const frameCharges = molecule.charges || [];
+            const frameMagmoms = molecule.magmoms || [];
+            const scalarValues = settings.colorBy === 'Magmom' ? frameMagmoms : frameCharges;
+            const scalarStats = getActiveScalarStats();
+            const normalizeScalarColor = settings.colorBy === 'Charge' && settings.normalizeCharges;
             const fixedIndexSet = getFixedIndexSet(molecule);
-            const useChargeColor     = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
+            const useChargeColor = (
+                (settings.colorBy === 'Charge' && chargeStats.hasCharges) ||
+                (settings.colorBy === 'Magmom' && magmomStats.hasMagmoms)
+            ) && scalarValues.length === positions.length;
             const useConstraintColor = settings.showConstraint && fixedIndexSet.size > 0;
 
 
@@ -2615,8 +2636,8 @@
             const atomChargeColors = [];
             if (useChargeColor) {
                 for (let i = 0; i < positions.length; i++) {
-                    const charge = frameCharges[i] || 0;
-                    atomChargeColors[i] = getChargeColor(charge, settings.normalizeCharges);
+                    const scalarValue = scalarValues[i] || 0;
+                    atomChargeColors[i] = getChargeColor(scalarValue, normalizeScalarColor, scalarStats);
                 }
             }
 
@@ -2625,12 +2646,11 @@
 
             if (settings.showBond) {
                 let bondCount = 0;
-                const fixedBondStyles = ['rowan', 'neon', 'cartoon', '2d'];
                 for (let b = 0; b < bondPairs.length; b++) {
                     const { i, j } = bondPairs[b];
                     if (isBondHidden(symbols[i], symbols[j])) continue;
                     let bond;
-                    if (useChargeColor && !fixedBondStyles.includes(styleName)) {
+                    if (useChargeColor) {
                         bond = createBondWithColor(
                             positions[i],
                             positions[j],
@@ -2684,7 +2704,7 @@
                 const atomRenderScale = getAdjustedAtomScale(symbols[i], atomScale, radiusScaleBySymbol);
 
                 if (useChargeColor) {
-                    atom = createAtomWithColor(positions[i], symbols[i], atomRenderScale, atomChargeColors[i], styleName, lodSegments);
+                    atom = createAtomWithColor(positions[i], symbols[i], atomRenderScale, atomChargeColors[i], styleName, helpers);
                 } else {
                     atom = atomFactory(positions[i], symbols[i], atomRenderScale, helpers);
                     if (!atom) {
@@ -2737,13 +2757,13 @@
                 }
             }
 
-            // Add charge labels if enabled
-            if (settings.showChargeLabels && useChargeColor && frameCharges.length > 0) {
+            // Add scalar labels if enabled
+            if (settings.showChargeLabels && useChargeColor && scalarValues.length > 0) {
                 for (let i = 0; i < positions.length; i++) {
                     if (isHydrogenHidden(symbols[i])) continue;
-                    const charge = frameCharges[i] || 0;
+                    const scalarValue = scalarValues[i] || 0;
                     const atomRenderScale = getAdjustedAtomScale(symbols[i], atomScale, radiusScaleBySymbol);
-                    const label = createChargeLabelSprite(charge, positions[i], atomRenderScale, settings.normalizeCharges);
+                    const label = createChargeLabelSprite(scalarValue, positions[i], atomRenderScale, normalizeScalarColor, scalarStats);
                     if (label) {
                         label.renderOrder = 4;
                         moleculeGroup.add(label);
@@ -3524,6 +3544,7 @@
 
             // Check for charge / constraint data and update UI
             checkChargesInData();
+            checkMagmomsInData();
             checkConstraintsInData();
             updateChargeUI();
             updateElementColorGridUI();

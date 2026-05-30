@@ -39,14 +39,27 @@ function readAllWithFallback(text, format) {
   }
 }
 
-function toNumberArray(value, label) {
+function toPerAtomScalarArray(value, nAtoms, label, { allowVectors = false } = {}) {
   if (!Array.isArray(value)) {
     throw new Error(`Expected ${label} to be an array.`);
   }
-  return value.map((item) => {
+  if (value.length !== nAtoms) {
+    throw new Error(`Expected ${label} to contain ${nAtoms} per-atom values.`);
+  }
+  return value.map((item, index) => {
+    if (allowVectors && Array.isArray(item)) {
+      if (item.length < 3) {
+        throw new Error(`Expected ${label}[${index}] to contain 3 values.`);
+      }
+      const xyz = item.slice(0, 3).map((x) => Number(x));
+      if (xyz.some((x) => !Number.isFinite(x))) {
+        throw new Error(`Expected ${label}[${index}] vector values to be numeric.`);
+      }
+      return Math.hypot(...xyz);
+    }
     const n = Number(item);
     if (!Number.isFinite(n)) {
-      throw new Error(`Expected ${label} to contain numeric values.`);
+      throw new Error(`Expected ${label}[${index}] to be numeric.`);
     }
     return n;
   });
@@ -150,7 +163,20 @@ function atomsToViewerFrame(atoms) {
     ? getArray("charges", true)
     : atoms.getInitialCharges?.();
   if (chargesRaw) {
-    frame.charges = toNumberArray(chargesRaw, "charges");
+    frame.charges = toPerAtomScalarArray(chargesRaw, symbols.length, "charges");
+  }
+
+  const magmomsRaw = has("magmoms")
+    ? getArray("magmoms", true)
+    : has("magmom")
+      ? getArray("magmom", true)
+      : has("initial_magmoms")
+        ? getArray("initial_magmoms", true)
+        : atoms.getInitialMagneticMoments?.();
+  if (magmomsRaw) {
+    frame.magmoms = toPerAtomScalarArray(magmomsRaw, symbols.length, "magmoms", {
+      allowVectors: true,
+    });
   }
 
   const fixedRaw = has("fixed") ? getArray("fixed", true) : undefined;
