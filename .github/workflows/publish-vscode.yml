@@ -30,6 +30,9 @@ on:
 jobs:
   build-vsix:
     runs-on: ubuntu-latest
+    outputs:
+      version_filename: ${{ steps.vsix.outputs.version_filename }}
+      latest_filename: ${{ steps.vsix.outputs.latest_filename }}
     steps:
       - uses: actions/checkout@v4
 
@@ -103,9 +106,8 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           tag="${{ steps.release.outputs.tag }}"
-          version="${tag#v}"
-          version_asset="dist/aseview-vscode-${version}.vsix"
-          latest_asset="dist/aseview-latest.vsix"
+          version_asset="dist/${{ needs.build-vsix.outputs.version_filename }}"
+          latest_asset="dist/${{ needs.build-vsix.outputs.latest_filename }}"
           assets=("$version_asset" "$latest_asset")
 
           for asset in "${assets[@]}"; do
