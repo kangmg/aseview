@@ -7,6 +7,7 @@
     <title>Normal Mode Viewer</title>
     <style>
         :root {
+            --aseview-sidebar-width: clamp(260px, 30vw, 320px);
             --sidebar-bg: #1f2937;
             --card-bg: #374151;
             --border-color: #4b5563;
@@ -39,7 +40,7 @@
 
         /* Sidebar */
         .sidebar {
-            width: 320px;
+            width: var(--aseview-sidebar-width);
             background-color: var(--sidebar-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
@@ -461,6 +462,75 @@
         .anim-btn.active {
             background-color: var(--accent-color);
         }
+    /* Responsive sidebar */
+    .app {
+        position: relative;
+    }
+
+    .sidebar {
+        width: var(--aseview-sidebar-width);
+        max-width: 100vw;
+    }
+
+    .sidebar-content {
+        min-width: 0;
+    }
+
+    .sidebar.collapsed {
+        width: 0;
+    }
+
+    @media (max-width: 900px) {
+        .sidebar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            height: 100vh;
+            width: min(var(--aseview-sidebar-width), calc(100vw - 3rem));
+            max-width: calc(100vw - 3rem);
+            z-index: 90;
+            transform: translateX(0);
+            box-shadow: 18px 0 42px rgba(0, 0, 0, 0.28);
+        }
+
+        .sidebar.collapsed {
+            width: min(var(--aseview-sidebar-width), calc(100vw - 3rem));
+            max-width: calc(100vw - 3rem);
+            transform: translateX(-100%);
+            border-right-color: transparent;
+        }
+
+        .sidebar-content {
+            min-width: 0;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .sidebar {
+            top: auto;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            max-width: none;
+            height: min(72vh, 430px);
+            border-right: none;
+            border-top: 1px solid var(--border-color, var(--border, var(--line, rgba(148, 163, 184, 0.35))));
+            border-radius: 0.75rem 0.75rem 0 0;
+            transform: translateY(0);
+            box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.32);
+        }
+
+        .sidebar.collapsed {
+            width: 100%;
+            max-width: none;
+            height: min(72vh, 430px);
+            transform: translateY(100%);
+            border-top-color: transparent;
+        }
+    }
+
+
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -3331,12 +3401,8 @@
         function toggleSidebar() {
             sidebarOpen = !sidebarOpen;
             const sidebar = document.getElementById('sidebar');
-            if (sidebarOpen) {
-                sidebar.style.width = '320px';
-                sidebar.classList.remove('collapsed');
-            } else {
-                sidebar.style.width = '0';
-                sidebar.classList.add('collapsed');
+            if (sidebar) {
+                sidebar.classList.toggle('collapsed', !sidebarOpen);
             }
 
             setTimeout(() => {
