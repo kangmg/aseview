@@ -36,6 +36,20 @@ def _available_theme_files():
     return result
 
 
+def _molecular_template_files():
+    """Return all molecular viewer templates that should stay behaviorally aligned."""
+    result = []
+    base_path = os.path.join(TEMPLATE_DIR, "molecular_viewer.html")
+    if os.path.exists(base_path):
+        result.append(("templates", "molecular_viewer.html", base_path))
+    result.extend(
+        (theme, name, path)
+        for theme, name, path in _available_theme_files()
+        if name == "molecular_viewer.html"
+    )
+    return result
+
+
 def _has_node():
     try:
         subprocess.run(["node", "--version"], capture_output=True, check=True)
@@ -202,3 +216,31 @@ class TestHTMLTemplateScripts:
             assert (
                 "findBondsSpatialGrid" in content or "bondPairs" in content
             ), f"{path} should use spatial grid bond detection"
+
+
+class TestMolecularConstraintHighlightWiring:
+    """Keep fixed-constraint highlights wired through cinematic atom/bond styles."""
+
+    @pytest.fixture(
+        params=_molecular_template_files(),
+        ids=lambda t: f"{t[0]}/{t[1]}",
+    )
+    def molecular_template(self, request):
+        return request.param
+
+    def test_fixed_constraints_pass_highlight_helpers(self, molecular_template):
+        _theme, _name, path = molecular_template
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        required_snippets = [
+            "const constraintHighlightColor = 0xffeb3b;",
+            "highlightAtoms: fixedIndexSet",
+            "highlightColor: constraintHighlightColor",
+            "bondAtoms: [i, j]",
+            "atomIndex: i",
+            "styleName,\n                            bondHelpers",
+            "styleName, atomHelpers",
+        ]
+        for snippet in required_snippets:
+            assert snippet in content, f"{path} missing {snippet!r}"

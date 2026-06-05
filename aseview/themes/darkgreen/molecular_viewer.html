@@ -2627,6 +2627,10 @@
                 (settings.colorBy === 'Magmom' && magmomStats.hasMagmoms)
             ) && scalarValues.length === positions.length;
             const useConstraintColor = settings.showConstraint && fixedIndexSet.size > 0;
+            const constraintHighlightColor = 0xffeb3b;
+            const renderHelpers = useConstraintColor
+                ? { ...helpers, highlightAtoms: fixedIndexSet, highlightColor: constraintHighlightColor }
+                : helpers;
 
 
             // Pre-calculate per-atom colors
@@ -2646,6 +2650,9 @@
                 for (let b = 0; b < bondPairs.length; b++) {
                     const { i, j } = bondPairs[b];
                     if (isBondHidden(symbols[i], symbols[j])) continue;
+                    const bondHelpers = useConstraintColor
+                        ? { ...renderHelpers, bondAtoms: [i, j] }
+                        : renderHelpers;
                     let bond;
                     if (useChargeColor) {
                         bond = createBondWithColor(
@@ -2658,7 +2665,7 @@
                             atomChargeColors[i],
                             atomChargeColors[j],
                             styleName,
-                            helpers
+                            bondHelpers
                         );
                     } else {
                         bond = bondFactory(
@@ -2668,7 +2675,7 @@
                             symbols[j],
                             bondRadius,
                             atomScale,
-                            helpers
+                            bondHelpers
                         );
                     }
                     if (bond) {
@@ -2699,13 +2706,16 @@
                 let atom;
                 if (isHydrogenHidden(symbols[i])) continue;
                 const atomRenderScale = getAdjustedAtomScale(symbols[i], atomScale, radiusScaleBySymbol);
+                const atomHelpers = useConstraintColor
+                    ? { ...renderHelpers, atomIndex: i }
+                    : renderHelpers;
 
                 if (useChargeColor) {
-                    atom = createAtomWithColor(positions[i], symbols[i], atomRenderScale, atomChargeColors[i], styleName, helpers);
+                    atom = createAtomWithColor(positions[i], symbols[i], atomRenderScale, atomChargeColors[i], styleName, atomHelpers);
                 } else {
-                    atom = atomFactory(positions[i], symbols[i], atomRenderScale, helpers);
+                    atom = atomFactory(positions[i], symbols[i], atomRenderScale, atomHelpers);
                     if (!atom) {
-                        atom = atomFactories['default'](positions[i], symbols[i], atomRenderScale, helpers);
+                        atom = atomFactories['default'](positions[i], symbols[i], atomRenderScale, atomHelpers);
                     }
                 }
 
@@ -2718,7 +2728,7 @@
             // Highlight fixed atoms with yellow semi-transparent sphere overlay
             if (useConstraintColor) {
                 const fixedMat = new THREE.MeshBasicMaterial({
-                    color: 0xeab308, transparent: true, opacity: 0.72, depthWrite: false,
+                    color: constraintHighlightColor, transparent: true, opacity: 0.72, depthWrite: false,
                 });
                 for (const idx of fixedIndexSet) {
                     if (idx >= positions.length) continue;
@@ -2735,7 +2745,7 @@
                 // Highlight bonds between fixed atoms with yellow semi-transparent cylinder overlay
                 if (settings.showBond) {
                     const fixedBondMat = new THREE.MeshBasicMaterial({
-                        color: 0xeab308, transparent: true, opacity: 0.72, depthWrite: false,
+                        color: constraintHighlightColor, transparent: true, opacity: 0.72, depthWrite: false,
                     });
                     for (let b = 0; b < bondPairs.length; b++) {
                         const { i, j } = bondPairs[b];
