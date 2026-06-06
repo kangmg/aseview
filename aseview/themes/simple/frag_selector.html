@@ -472,12 +472,16 @@
                         <div class="control-group">
                             <div class="control-label"><span>3D Style</span></div>
                             <select class="select" id="style-select">
-                                <option value="cartoon">Cartoon</option>
-                                <option value="glossy">Glossy</option>
                                 <option value="default">Default</option>
-                                <option value="bubble">Bubble</option>
+                                <option value="2d">2D</option>
+                                <option value="cartoon">Cartoon</option>
+                                <option value="neon">Neon</option>
+                                <option value="glossy">Glossy</option>
                                 <option value="metallic">Metallic</option>
                                 <option value="cinematic">Cinematic</option>
+                                <option value="bubble">Bubble</option>
+                                <option value="rowan">Rowan</option>
+                                <option value="grey">Grey</option>
                             </select>
                         </div>
 
@@ -539,15 +543,7 @@
                                 </label>
                             </div>
                         </div>
-                        <div class="control-group">
-                            <div class="control-label">
-                                <span>Hide H</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="hide-h-toggle">
-                                    <span class="slider-switch"></span>
-                                </label>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
 
@@ -688,6 +684,7 @@
             showCell: true,
             cellColor: '#808080',
             showAxis: true,
+            viewMode: 'Orthographic',
         }, _readInjectedJSON('__frag_settings__', {}));
 
         function isHydrogenSymbol(symbol) {
@@ -748,6 +745,7 @@
 
         const atomFactories = {
             'default':  (pos, sym, s)          => createAtomStyleDefault(pos, sym, s),
+            '2d':       (pos, sym, s)          => createAtomStyle2D(pos, sym, s),
             'cartoon':  (pos, sym, s)          => createAtomStyleCartoon(pos, sym, s),
             'glossy':   (pos, sym, s)          => createAtomStyleGlossy(pos, sym, s),
             'metallic': (pos, sym, s)          => createAtomStyleMetallic(pos, sym, s),
@@ -760,6 +758,7 @@
 
         const bondFactories = {
             'default':  (p1, p2, s1, s2, r, as)          => createBondStyleDefault(p1, p2, s1, s2, r, as, 'default'),
+            '2d':       (p1, p2, s1, s2, r, as, helpers) => createBondStyle2D(p1, p2, s1, s2, r, as, helpers),
             'cartoon':  (p1, p2, s1, s2, r, as)          => createBondStyleCartoon(p1, p2, s1, s2, r, as),
             'glossy':   (p1, p2, s1, s2, r, as)          => createBondStyleDefault(p1, p2, s1, s2, r, as, 'glossy'),
             'metallic': (p1, p2, s1, s2, r, as)          => createBondStyleDefault(p1, p2, s1, s2, r, as, 'metallic'),
@@ -779,7 +778,6 @@
         // Selection state
         // ─────────────────────────────────────────────────────────────────────
         const selectedAtoms = new Set();
-        let hideHydrogens = false;
 
         // ─────────────────────────────────────────────────────────────────────
         // THREE.js state
@@ -1716,7 +1714,6 @@
             projected.forEach(([px, py, pz], i) => {
                 if (isHydrogenHidden(cachedSymbols[i])) return;
                 if (pz > 1) return;  // behind camera — skip
-                if (hideHydrogens && cachedSymbols[i] === 'H') return;
                 if (mode === 'rect') {
                     const xs   = localPts.map(p => p[0]);
                     const ys   = localPts.map(p => p[1]);
@@ -2424,6 +2421,51 @@
             axisScene3D.add(new THREE.AmbientLight(0xffffff, 1.0));
         }
 
+        function isOrthographicView3D() {
+            return String(fragSettings.viewMode || 'Orthographic').toLowerCase() === 'orthographic';
+        }
+
+        function createCamera3D(width, height) {
+            const aspect = Math.max(width, 1) / Math.max(height, 1);
+            if (isOrthographicView3D()) {
+                const frustumSize = 20;
+                return new THREE.OrthographicCamera(
+                    (frustumSize * aspect) / -2,
+                    (frustumSize * aspect) / 2,
+                    frustumSize / 2,
+                    frustumSize / -2,
+                    -1000,
+                    1000
+                );
+            }
+            return new THREE.PerspectiveCamera(55, aspect, 0.1, 2000);
+        }
+
+        function updateCamera3DProjection(width, height) {
+            if (!camera3D) return;
+            const aspect = Math.max(width, 1) / Math.max(height, 1);
+            if (camera3D.isPerspectiveCamera) {
+                camera3D.aspect = aspect;
+            } else {
+                const frustumSize = 20;
+                camera3D.left = (frustumSize * aspect) / -2;
+                camera3D.right = (frustumSize * aspect) / 2;
+                camera3D.top = frustumSize / 2;
+                camera3D.bottom = frustumSize / -2;
+            }
+            camera3D.updateProjectionMatrix();
+        }
+
+        function updateOrthographicTrackballPanSpeed3D() {
+            if (!renderer3D || !camera3D || !controls3D || !camera3D.isOrthographicCamera) return;
+            const canvasWidth = renderer3D.domElement ? renderer3D.domElement.clientWidth : 0;
+            const panel = document.getElementById('panel-3d');
+            const fallbackWidth = panel ? panel.clientWidth : 800;
+            const width = Math.max(canvasWidth || fallbackWidth, 1);
+            const distance = Math.max(camera3D.position.distanceTo(controls3D.target), 0.1);
+            controls3D.panSpeed = width / distance;
+        }
+
         function init3D() {
             const panel  = document.getElementById('panel-3d');
             const canvas = document.getElementById('molecule-canvas-3d');
@@ -2445,7 +2487,7 @@
             renderer3D.setSize(w, h);
 
             scene3D  = new THREE.Scene();
-            camera3D = new THREE.PerspectiveCamera(55, w / h, 0.1, 2000);
+            camera3D = createCamera3D(w, h);
             camera3D.position.set(0, 0, 10);
             updateBgColor3D();
 
@@ -2587,10 +2629,10 @@
             const w = Math.max(panel.clientWidth,  1);
             const h = Math.max(panel.clientHeight, 1);
             renderer3D.setSize(w, h);
-            camera3D.aspect = w / h;
-            camera3D.updateProjectionMatrix();
+            updateCamera3DProjection(w, h);
             if (controls3D && typeof controls3D.handleResize === 'function')
                 controls3D.handleResize();
+            updateOrthographicTrackballPanSpeed3D();
         }
 
         function updateBgColor3D() {
@@ -2628,13 +2670,24 @@
             const center  = box.getCenter(new THREE.Vector3());
             const size    = box.getSize(new THREE.Vector3());
             const maxDim  = Math.max(size.x, size.y, size.z, 1);
-            const halfFov = THREE.MathUtils.degToRad(camera3D.fov / 2);
-            const dist    = maxDim / (2 * Math.tan(halfFov)) + maxDim;
-            camera3D.position.copy(center.clone().add(new THREE.Vector3(dist, dist * 0.5, dist)));
+            if (camera3D.isPerspectiveCamera) {
+                const halfFov = THREE.MathUtils.degToRad(camera3D.fov / 2);
+                const dist    = maxDim / (2 * Math.tan(halfFov)) + maxDim;
+                camera3D.position.copy(center.clone().add(new THREE.Vector3(dist, dist * 0.5, dist)));
+            } else {
+                const dist = maxDim * 3;
+                camera3D.position.copy(center.clone().add(new THREE.Vector3(dist, dist * 0.5, dist)));
+                camera3D.zoom = Math.max(0.01, 20 / (maxDim * 2.4));
+                const panel = document.getElementById('panel-3d');
+                const w = panel ? Math.max(panel.clientWidth, 1) : 1;
+                const h = panel ? Math.max(panel.clientHeight, 1) : 1;
+                updateCamera3DProjection(w, h);
+            }
             controls3D.target.copy(center);
             controls3D.update();
             camera3D.lookAt(center);
             camera3D.updateProjectionMatrix();
+            updateOrthographicTrackballPanSpeed3D();
         }
 
         /** Full 3-D molecule re-render (atoms + bonds). */
@@ -2741,7 +2794,7 @@
             // Atom spheres
             for (const idx of selectedAtoms) {
                 if (idx >= cachedPos3D.length) continue;
-                if (hideHydrogens && cachedSymbols[idx] === 'H') continue;
+                if (isHydrogenHidden(cachedSymbols[idx])) continue;
                 const sym   = cachedSymbols[idx] || 'C';
                 const info  = atomInfo[sym] || atomInfo['default'];
                 const r     = info.radius * atomScale * 1.50;
@@ -2757,7 +2810,7 @@
                 layout2D.bonds.forEach(([a, b]) => {
                     if (!selectedAtoms.has(a) || !selectedAtoms.has(b)) return;
                     if (a >= cachedPos3D.length || b >= cachedPos3D.length) return;
-                    if (hideHydrogens && (cachedSymbols[a] === 'H' || cachedSymbols[b] === 'H')) return;
+                    if (isBondHidden(cachedSymbols[a], cachedSymbols[b])) return;
                     const pA = cachedPos3D[a], pB = cachedPos3D[b];
                     const dir = new THREE.Vector3().subVectors(pB, pA);
                     const len = dir.length();
@@ -2821,6 +2874,7 @@
         function applyHideHydrogens() {
             if (!molData) return;
             const syms = molData.symbols;
+            const hideHydrogens = !!fragSettings.hideHydrogens;
             if (hideHydrogens) {
                 let changed = false;
                 for (const idx of [...selectedAtoms]) {
@@ -3041,14 +3095,6 @@
                 });
                 updateSelectionVisuals();
             });
-            const hideHCb = document.getElementById('hide-h-toggle');
-            if (hideHCb) {
-                hideHCb.addEventListener('change', function () {
-                    hideHydrogens = this.checked;
-                    applyHideHydrogens();
-                });
-            }
-
             // Clipboard helper — works in file:// / iframe contexts without HTTPS
             function copyText(text) {
                 if (navigator.clipboard && navigator.clipboard.writeText) {

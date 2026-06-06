@@ -378,7 +378,7 @@ class MolecularViewer(BaseViewer):
             "colorScheme": "Jmol",       # "Jmol" (default), "CPK", "PyMOL", or "VMD"
             "normalizeCharges": False,   # Normalize charges to symmetric range
             "chargeColormap": "coolwarm",
-            "viewMode": "Perspective",
+            "viewMode": "Orthographic",
             "rotationMode": "TrackBall",
             "selectionMode": "Lasso",
             "performanceMode": "auto",   # "auto", "high", or "normal"
@@ -647,6 +647,7 @@ class NormalViewer(BaseViewer):
             "showBlur": False,
             "blurStrength": 1.5,
             "showShadow": False,
+            "viewMode": "Orthographic",
             "displacementAmplitude": 0.75,
             "showModeVector": False,
             "initialModeIndex": 0,
@@ -1047,7 +1048,7 @@ class OverlayViewer(BaseViewer):
             "showBlur": False,
             "blurStrength": 1.5,
             "showShadow": False,
-            "viewMode": "Perspective",
+            "viewMode": "Orthographic",
             "rotationMode": "TrackBall",
             "colorBy": "Atom",
             "performanceMode": "auto",  # "auto", "high", or "normal"
@@ -1256,6 +1257,7 @@ class FragSelector(BaseViewer):
             "blurStrength":  1.5,
             "showShading":   True,
             "backgroundColor": _theme_bg(self._theme, 'frag'),
+            "viewMode": "Orthographic",
             **kwargs,
         }
 
@@ -1368,7 +1370,7 @@ class LiteViewer(BaseViewer):
             "bondThickness": 0.09,
             "atomSize": 0.4,
             "showCell": True,
-            "viewMode": "Perspective",
+            "viewMode": "Orthographic",
             "colorScheme": "Jmol",
             "backgroundColor": background,
             "highPerformance": bool(high_performance),

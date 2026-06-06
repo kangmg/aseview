@@ -36,6 +36,17 @@ def _available_theme_files():
     return result
 
 
+def _all_template_files():
+    """Return base and themed viewer templates."""
+    result = []
+    for name in TEMPLATE_NAMES:
+        path = os.path.join(TEMPLATE_DIR, name)
+        if os.path.exists(path):
+            result.append(("templates", name, path))
+    result.extend(_available_theme_files())
+    return result
+
+
 def _molecular_template_files():
     """Return all molecular viewer templates that should stay behaviorally aligned."""
     result = []
@@ -194,9 +205,9 @@ class TestJSFiles:
 
 
 class TestHTMLTemplateScripts:
-    """Test all HTML templates across every installed theme."""
+    """Test all base and themed HTML templates."""
 
-    @pytest.fixture(params=_available_theme_files(), ids=lambda t: f"{t[0]}/{t[1]}")
+    @pytest.fixture(params=_all_template_files(), ids=lambda t: f"{t[0]}/{t[1]}")
     def theme_template(self, request):
         return request.param  # (theme, name, path)
 
@@ -216,6 +227,37 @@ class TestHTMLTemplateScripts:
             assert (
                 "findBondsSpatialGrid" in content or "bondPairs" in content
             ), f"{path} should use spatial grid bond detection"
+
+    def test_projection_defaults_to_orthographic(self, theme_template):
+        """Projection defaults and active buttons should stay orthographic."""
+        _theme, name, path = theme_template
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        if name == "frag_selector.html":
+            assert "viewMode: 'Orthographic'" in content
+            assert "camera3D = createCamera3D(w, h);" in content
+            assert "camera3D = new THREE.PerspectiveCamera(55, w / h" not in content
+        else:
+            assert "viewMode: 'Orthographic'" in content
+            assert '<button class="btn active" id="orthographic-btn">' in content
+            assert '<button class="btn active" id="perspective-btn">' not in content
+
+    def test_frag_selector_exposes_all_styles_once(self, theme_template):
+        """Frag selector style UI should match supported renderer factories."""
+        _theme, name, path = theme_template
+        if name != "frag_selector.html":
+            return
+
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        for style in ["default", "2d", "cartoon", "neon", "glossy",
+                      "metallic", "cinematic", "bubble", "rowan", "grey"]:
+            assert content.count(f'<option value="{style}">') == 1
+        assert 'id="hide-hydrogens"' in content
+        assert 'id="hide-h-toggle"' not in content
+        assert "<span>Hide H</span>" not in content
 
 
 class TestMolecularConstraintHighlightWiring:

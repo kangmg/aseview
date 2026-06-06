@@ -52,6 +52,7 @@ class TestMolecularViewer:
         assert viewer.settings["style"] == "cartoon"
         assert viewer.settings["performanceMode"] == "auto"
         assert viewer.settings["showBond"] is True
+        assert viewer.settings["viewMode"] == "Orthographic"
 
     def test_custom_settings(self, h2o):
         viewer = MolecularViewer(h2o, style="glossy", performanceMode="high")
@@ -107,6 +108,7 @@ class TestNormalViewer:
         viewer = NormalViewer(h2o)
         assert viewer.settings["performanceMode"] == "auto"
         assert viewer.settings["style"] == "cartoon"
+        assert viewer.settings["viewMode"] == "Orthographic"
 
     def test_generate_html(self, h2o):
         viewer = NormalViewer(h2o)
@@ -130,6 +132,7 @@ class TestOverlayViewer:
     def test_default_settings(self, h2o):
         viewer = OverlayViewer(h2o)
         assert viewer.settings["performanceMode"] == "auto"
+        assert viewer.settings["viewMode"] == "Orthographic"
 
     def test_generate_html(self, h2o):
         viewer = OverlayViewer(h2o)
@@ -156,6 +159,10 @@ class TestFragSelector:
         viewer = FragSelector(h2o)
         assert viewer.data is not None
 
+    def test_default_settings(self, h2o):
+        viewer = FragSelector(h2o)
+        assert viewer.settings["viewMode"] == "Orthographic"
+
     def test_generate_html(self, h2o):
         viewer = FragSelector(h2o)
         html = viewer.get_html()
@@ -172,7 +179,7 @@ class TestLiteViewer:
         assert viewer.settings["style"] == "cinematic"
         assert viewer.settings["bondThickness"] == 0.09
         assert viewer.settings["atomSize"] == 0.4
-        assert viewer.settings["viewMode"] == "Perspective"
+        assert viewer.settings["viewMode"] == "Orthographic"
         assert viewer.settings["colorScheme"] == "Jmol"
         assert viewer.settings["backgroundColor"] == "#000000"
         assert viewer.settings["centerByCOM"] is False
