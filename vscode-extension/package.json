@@ -2,7 +2,7 @@
   "name": "aseview-vscode",
   "displayName": "ASEView",
   "description": "Read-only ASE structure viewer inside VS Code using ase-ts.",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "publisher": "aseview-local",
   "license": "MIT",
   "repository": {
