@@ -56,6 +56,13 @@ aseview is a powerful, browser-based molecular viewer that integrates seamlessly
 pip install aseview
 ```
 
+For Python PNG/GIF export:
+
+```bash
+pip install "aseview[export]"
+python -m playwright install chromium
+```
+
 Or install from source:
 
 ```bash

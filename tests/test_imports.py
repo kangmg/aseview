@@ -16,6 +16,7 @@ def test_import_package():
     assert hasattr(aseview, "set_theme")
     assert hasattr(aseview, "get_theme")
     assert hasattr(aseview, "list_themes")
+    assert hasattr(aseview, "ImageExportError")
 
 
 def test_theme_api():

@@ -213,9 +213,28 @@ viewer.save_html(filename)
 | `filename` | `str` | Output file path |
 
 !!! note "Image export"
-    `MolecularViewer` saves self-contained HTML from Python. It does not provide
-    Python headless `save_png()` or `save_gif()` methods, and the CLI does not
-    provide `--save-png` or `--save-gif`.
+    `MolecularViewer` can save PNG/GIF images from Python when the optional
+    export dependency is installed:
+
+    ```bash
+    pip install "aseview[export]"
+    python -m playwright install chromium
+    ```
+
+    ```python
+    viewer.save_png(
+        "molecule.png",
+        width=1600,
+        height=1200,
+        transparent=False,
+        background_color="#ffffff",
+    )
+    viewer.save_gif("trajectory.gif", frames=30, quality="high")
+    ```
+
+    PNG quality is controlled by `scale`, `width`, and `height`; GIF
+    `quality="low" | "medium" | "high"` maps to encoder sampling quality.
+    The CLI does not provide `--save-png` or `--save-gif`.
 
     In the browser JavaScript module, `ASEView.MolecularViewer` exposes
     `setView(viewSpec)`, `resetView()`, `savePNG(options)`, and

@@ -29,6 +29,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+export = [
+    "playwright>=1.40",
+]
 dev = [
     "pytest",
     "black",

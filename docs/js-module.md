@@ -548,8 +548,22 @@ Successful export promises resolve with
 `OverlayViewer` supports PNG only; `saveGIF()` rejects with
 `code: 'unsupported_export'`.
 
-The Python API and CLI save HTML viewers. They do not provide headless
-`save_png()` / `save_gif()` methods or CLI `--save-png` / `--save-gif` options.
+Python viewers also expose headless `save_png()` and `save_gif()` when installed
+with the optional export dependency:
+
+```bash
+pip install "aseview[export]"
+python -m playwright install chromium
+```
+
+```python
+viewer.save_png("structure.png", scale=2, transparent=False)
+viewer.save_gif("trajectory.gif", frames=30, quality="high")
+```
+
+PNG quality is controlled by `scale`, `width`, and `height`. GIF
+`quality="low" | "medium" | "high"` maps to the encoder sample interval.
+The CLI still does not provide `--save-png` or `--save-gif`.
 
 #### Common Settings (All Viewers)
 

@@ -15,8 +15,10 @@ from .wrapper import (
     MolecularViewer, NormalViewer, OverlayViewer, FragSelector, MolecularData,
     LiteViewer, view, set_theme, get_theme, list_themes,
 )
+from .export import ImageExportError
 
 __all__ = [
     "MolecularViewer", "NormalViewer", "OverlayViewer", "FragSelector", "MolecularData",
     "LiteViewer", "view", "set_theme", "get_theme", "list_themes",
+    "ImageExportError",
 ]

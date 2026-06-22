@@ -350,6 +350,70 @@ class BaseViewer:
             f.write(html)
         print(f"Saved viewer to {filename}")
 
+    def save_png(
+        self,
+        filename: str,
+        *,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        scale: Optional[float] = None,
+        transparent: bool = True,
+        background_color: Optional[str] = None,
+        quality: Optional[str] = None,
+        timeout_ms: int = 30000,
+        browser_executable_path: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        from .export import save_png
+
+        return save_png(
+            self,
+            filename,
+            width=width,
+            height=height,
+            scale=scale,
+            transparent=transparent,
+            background_color=background_color,
+            quality=quality,
+            timeout_ms=timeout_ms,
+            browser_executable_path=browser_executable_path,
+        )
+
+    def save_gif(
+        self,
+        filename: str,
+        *,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        scale: Optional[float] = None,
+        transparent: bool = True,
+        background_color: Optional[str] = None,
+        frames: Optional[int] = None,
+        fps: Optional[float] = None,
+        delay: Optional[float] = None,
+        sample_interval: Optional[int] = None,
+        quality: Optional[str] = None,
+        timeout_ms: int = 30000,
+        browser_executable_path: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        from .export import save_gif
+
+        return save_gif(
+            self,
+            filename,
+            width=width,
+            height=height,
+            scale=scale,
+            transparent=transparent,
+            background_color=background_color,
+            frames=frames,
+            fps=fps,
+            delay=delay,
+            sample_interval=sample_interval,
+            quality=quality,
+            timeout_ms=timeout_ms,
+            browser_executable_path=browser_executable_path,
+        )
+
     def _generate_html(self) -> str:
         """Generate the HTML content for the viewer."""
         # This will be implemented by subclasses

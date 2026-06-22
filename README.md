@@ -30,6 +30,12 @@ uv run aseview -h
 pip install aseview
 ```
 
+For Python PNG/GIF export:
+
+```bash
+pip install "aseview[export]"
+python -m playwright install chromium
+```
 
 For development:
 
@@ -433,8 +439,26 @@ and for GIF, `frames`, `delay`, and `sampleInterval`. Promises resolve with
 that carries `code`, `message`, `type`, and when available `requestId`.
 `OverlayViewer.saveGIF()` rejects with `code: "unsupported_export"`.
 
-Python and the CLI save self-contained HTML only. There is no Python headless
-`save_png()` / `save_gif()` API and no CLI `--save-png` / `--save-gif` option.
+Python viewers expose headless `save_png()` and `save_gif()` when installed
+with the `export` extra:
+
+```python
+viewer = MolecularViewer(atoms, viewPreset="top-c")
+viewer.save_png(
+    "top.png",
+    width=1600,
+    height=1200,
+    transparent=False,
+    background_color="#ffffff",
+)
+viewer.save_gif("trajectory.gif", frames=30, quality="high")
+```
+
+PNG quality is controlled through `scale`, `width`, and `height`. GIF
+`quality="low" | "medium" | "high"` maps to the GIF encoder sample interval.
+`OverlayViewer.save_gif()` is unsupported because overlay animation is not a
+GIF export surface yet. The CLI still does not provide `--save-png` or
+`--save-gif`.
 
 ## Supported Formats
 

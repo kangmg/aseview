@@ -127,9 +127,26 @@ viewer.save_html(filename)
 ```
 
 !!! note "Image export"
-    `OverlayViewer` saves self-contained HTML from Python. It does not provide
-    Python headless `save_png()` or `save_gif()` methods, and the CLI does not
-    provide `--save-png` or `--save-gif`.
+    `OverlayViewer` can save PNG images from Python when the optional export
+    dependency is installed:
+
+    ```bash
+    pip install "aseview[export]"
+    python -m playwright install chromium
+    ```
+
+    ```python
+    viewer.save_png(
+        "overlay.png",
+        scale=2,
+        transparent=False,
+        background_color="#ffffff",
+    )
+    ```
+
+    `OverlayViewer.save_gif()` remains unsupported because overlay GIF export
+    is not implemented in the renderer. The CLI does not provide `--save-png`
+    or `--save-gif`.
 
     In the browser JavaScript module, `ASEView.OverlayViewer` exposes
     `setView(viewSpec)`, `resetView()`, and `savePNG(options)`. Export options
