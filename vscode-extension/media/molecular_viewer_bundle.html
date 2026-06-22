@@ -8039,6 +8039,10 @@ function createHydrogenBond(p1, p2) {
                     const originalHeight = canvas.height;
                     const originalStyleWidth = canvas.style.width;
                     const originalStyleHeight = canvas.style.height;
+                    const originalBackground = scene.background;
+                    const originalClearColor = new THREE.Color();
+                    renderer.getClearColor(originalClearColor);
+                    const originalClearAlpha = typeof renderer.getClearAlpha === 'function' ? renderer.getClearAlpha() : 1;
                     const targetWidth = opts.width || Math.max(1, Math.round(originalWidth * opts.scale));
                     const targetHeight = opts.height || Math.max(1, Math.round(originalHeight * opts.scale));
                     const originalFrame = animationState.currentFrame;
@@ -8049,6 +8053,16 @@ function createHydrogenBond(p1, p2) {
                     try {
                         if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
                             renderer.setSize(targetWidth, targetHeight, false);
+                        }
+                        const transparent = opts.transparent !== undefined ? !!opts.transparent : true;
+                        if (transparent) {
+                            scene.background = null;
+                            renderer.setClearColor(0x000000, 0);
+                        } else {
+                            const bgColor = opts.backgroundColor || settings.backgroundColor || '#111827';
+                            const color = new THREE.Color(bgColor);
+                            scene.background = color;
+                            renderer.setClearColor(color, 1);
                         }
                         for (let i = 0; i < frameCount; i++) {
                             animationState.currentFrame = Math.min(totalFrames - 1, Math.floor(i * totalFrames / frameCount));
@@ -8062,6 +8076,8 @@ function createHydrogenBond(p1, p2) {
                         renderMolecule();
                         restoreCameraState(cameraState);
                         cameraViewLock = false;
+                        scene.background = originalBackground;
+                        renderer.setClearColor(originalClearColor, originalClearAlpha);
                         if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
                             renderer.setSize(originalWidth, originalHeight, false);
                             canvas.style.width = originalStyleWidth;
