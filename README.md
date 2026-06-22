@@ -14,6 +14,7 @@ Molecular structure viewer for ASE (Atomic Simulation Environment).
 - Visual styles including cartoon, glossy, metallic, cinematic, bubble, neon, grey, and 2D
 - Hide hydrogens without deleting data, and apply optional render blur to saved images
 - Clipboard export for current frame or full trajectory as `xyz`, `extxyz`, `cif`, or `POSCAR`
+- Cell-aware camera presets and browser PNG/GIF export for rendered viewers
 
 ## Installation
 
@@ -263,9 +264,19 @@ viewer = MolecularViewer(
     polyhedronOpacity=0.25,
     showRings=True,         # ring face highlighting (molecules, 4-8 atom rings)
     ringOpacity=0.35,
+    viewPreset='top-c',     # top-c/c/top, bottom-c, side-a/a, side-b/b, front/back/left/right
+    viewFit=1.1,            # camera fit multiplier
 )
 viewer.show(width='100%', height=800)
 ```
+
+Camera settings accepted by `MolecularViewer`, `OverlayViewer`, and
+`NormalViewer` are `viewPreset`, `viewDirection`, `viewEuler`, `viewUp`, and
+`viewFit`. Presets `top-c`, `bottom-c`, `side-a`, and `side-b` use valid unit
+cell vectors; `c` is an alias for `top-c`, `a` for `side-a`, and `b` for
+`side-b`. The `top` preset also prefers the cell `c` axis when a valid cell is
+present. Missing, non-periodic, zero-length, or degenerate cells fall back to
+Cartesian `top`, `bottom`, `front`, `back`, `left`, and `right` directions.
 
 ### Save to HTML
 
@@ -394,7 +405,7 @@ Use aseview in any web page without Python:
 
 <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/aseview.js"></script>
 <script>
-    const viewer = new ASEView.MolecularViewer('#viewer');
+    const viewer = new ASEView.MolecularViewer('#viewer', { viewPreset: 'top-c' });
     viewer.setData({
         symbols: ['O', 'H', 'H'],
         positions: [
@@ -403,10 +414,27 @@ Use aseview in any web page without Python:
             [0.0, -0.757, -0.469]
         ]
     });
+
+    viewer.setView({ preset: 'front' }).then(() => {
+        return viewer.savePNG({ returnDataUrl: true, download: false });
+    }).then((png) => {
+        console.log(png.filename, png.dataUrl.length);
+    });
 </script>
 ```
 
 See the [JavaScript Module documentation](https://kangmg.github.io/aseview/js-module/) for full API reference.
+
+Browser viewers expose `setView(viewSpec)`, `resetView()`, `savePNG(options)`,
+and `saveGIF(options)`. Export options include `filename`, `download`,
+`returnDataUrl`, `scale`, `width`, `height`, `transparent`, `backgroundColor`,
+and for GIF, `frames`, `delay`, and `sampleInterval`. Promises resolve with
+`{ ok, type, filename, dataUrl?, width?, height? }` or reject with an `Error`
+that carries `code`, `message`, `type`, and when available `requestId`.
+`OverlayViewer.saveGIF()` rejects with `code: "unsupported_export"`.
+
+Python and the CLI save self-contained HTML only. There is no Python headless
+`save_png()` / `save_gif()` API and no CLI `--save-png` / `--save-gif` option.
 
 ## Supported Formats
 

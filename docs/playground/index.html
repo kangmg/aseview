@@ -573,7 +573,7 @@
     </div>
     <textarea id="export-code" readonly spellcheck="false"></textarea>
     <div class="export-footer">
-      <span class="paste-hint">Includes current molecule data &amp; viewer settings</span>
+      <span class="paste-hint">Includes current molecule data, viewer settings, and camera options</span>
       <button class="btn primary" id="export-copy-btn">Copy</button>
     </div>
   </div>
@@ -1413,11 +1413,21 @@ function buildExportSnippet(iframeSettings) {
   const theme = document.getElementById('theme-type').value;
   const viewerClass = currentType;
 
-  // Merge iframe settings with theme; drop keys irrelevant to embeds
+  // Merge iframe settings with theme; drop keys irrelevant to embeds.
   const SKIP = new Set(['animationSpeed', 'forceScale']);
+  const CAMERA_DEFAULTS = {
+    viewPreset: null,
+    viewDirection: null,
+    viewEuler: null,
+    viewUp: null,
+    viewFit: 1
+  };
   const opts = { theme };
   for (const [k, v] of Object.entries(iframeSettings)) {
     if (!SKIP.has(k)) opts[k] = v;
+    if (Object.prototype.hasOwnProperty.call(CAMERA_DEFAULTS, k) && v === CAMERA_DEFAULTS[k]) {
+      delete opts[k];
+    }
   }
 
   // Compact but readable options block

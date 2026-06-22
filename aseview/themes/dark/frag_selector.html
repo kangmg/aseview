@@ -799,7 +799,7 @@
             backgroundColor: '#1f2937',
             style: 'cartoon',
             atomSize: 0.4,
-            bondThickness: 0.1,
+            bondThickness: 0.09,
             bondThreshold: 1.2,
             showBond: true,
             hideHydrogens: false,
@@ -808,7 +808,7 @@
             showCell: true,
             cellColor: '#808080',
             showAxis: true,
-            viewMode: 'Orthographic',
+            viewMode: 'Perspective',
             showShading: true,
             colorScheme: 'Jmol',
         }, _readInjectedJSON('__frag_settings__', {}));
@@ -2548,7 +2548,7 @@
         }
 
         function isOrthographicView3D() {
-            return String(fragSettings.viewMode || 'Orthographic').toLowerCase() === 'orthographic';
+            return String(fragSettings.viewMode || 'Perspective').toLowerCase() === 'orthographic';
         }
 
         function createCamera3D(width, height) {

@@ -29,6 +29,14 @@ _THEME_BG_DEFAULTS: Dict[str, str] = {
 }
 _FALLBACK_BG = '#1f2937'  # used when theme is unknown
 
+_CAMERA_SETTING_DEFAULTS: Dict[str, Any] = {
+    "viewPreset": None,
+    "viewDirection": None,
+    "viewEuler": None,
+    "viewUp": None,
+    "viewFit": 1.0,
+}
+
 
 def _theme_bg(theme: str, viewer: str = None) -> str:
     """Return the default backgroundColor for a given theme."""
@@ -357,7 +365,7 @@ class MolecularViewer(BaseViewer):
         self.settings = {
             "bondThreshold": 1.2,  # Scale factor for covalent radii sum
             "hBondThreshold": 2.5, # H...A distance cutoff for hydrogen-bond detection (Å)
-            "bondThickness": 0.1,
+            "bondThickness": 0.09,
             "atomSize": 0.4,
             "animationSpeed": 30,
             "forceScale": 1.0,
@@ -378,7 +386,8 @@ class MolecularViewer(BaseViewer):
             "colorScheme": "Jmol",       # "Jmol" (default), "CPK", "PyMOL", or "VMD"
             "normalizeCharges": False,   # Normalize charges to symmetric range
             "chargeColormap": "coolwarm",
-            "viewMode": "Orthographic",
+            "viewMode": "Perspective",
+            **_CAMERA_SETTING_DEFAULTS,
             "rotationMode": "TrackBall",
             "selectionMode": "Lasso",
             "performanceMode": "auto",   # "auto", "high", or "normal"
@@ -635,7 +644,7 @@ class NormalViewer(BaseViewer):
 
         self.settings = {
             "bondThreshold": 1.2,
-            "bondThickness": 0.1,
+            "bondThickness": 0.09,
             "atomSize": 0.4,
             "animationSpeed": 30,
             "backgroundColor": _theme_bg(self._theme, 'normal'),
@@ -647,7 +656,8 @@ class NormalViewer(BaseViewer):
             "showBlur": False,
             "blurStrength": 1.5,
             "showShadow": False,
-            "viewMode": "Orthographic",
+            "viewMode": "Perspective",
+            **_CAMERA_SETTING_DEFAULTS,
             "displacementAmplitude": 0.75,
             "showModeVector": False,
             "initialModeIndex": 0,
@@ -1038,7 +1048,7 @@ class OverlayViewer(BaseViewer):
 
         self.settings = {
             "bondThreshold": 1.2,  # Scale factor for covalent radii sum
-            "bondThickness": 0.1,
+            "bondThickness": 0.09,
             "atomSize": 0.4,
             "backgroundColor": _theme_bg(self._theme, 'overlay'),
             "style": "cartoon",
@@ -1048,7 +1058,8 @@ class OverlayViewer(BaseViewer):
             "showBlur": False,
             "blurStrength": 1.5,
             "showShadow": False,
-            "viewMode": "Orthographic",
+            "viewMode": "Perspective",
+            **_CAMERA_SETTING_DEFAULTS,
             "rotationMode": "TrackBall",
             "colorBy": "Atom",
             "performanceMode": "auto",  # "auto", "high", or "normal"
@@ -1257,7 +1268,7 @@ class FragSelector(BaseViewer):
             "blurStrength":  1.5,
             "showShading":   True,
             "backgroundColor": _theme_bg(self._theme, 'frag'),
-            "viewMode": "Orthographic",
+            "viewMode": "Perspective",
             **kwargs,
         }
 
@@ -1370,7 +1381,7 @@ class LiteViewer(BaseViewer):
             "bondThickness": 0.09,
             "atomSize": 0.4,
             "showCell": True,
-            "viewMode": "Orthographic",
+            "viewMode": "Perspective",
             "colorScheme": "Jmol",
             "backgroundColor": background,
             "highPerformance": bool(high_performance),

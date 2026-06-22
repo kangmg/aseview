@@ -228,20 +228,20 @@ class TestHTMLTemplateScripts:
                 "findBondsSpatialGrid" in content or "bondPairs" in content
             ), f"{path} should use spatial grid bond detection"
 
-    def test_projection_defaults_to_orthographic(self, theme_template):
-        """Projection defaults and active buttons should stay orthographic."""
+    def test_projection_defaults_to_perspective(self, theme_template):
+        """Projection defaults and active buttons should stay perspective."""
         _theme, name, path = theme_template
         with open(path, "r", encoding="utf-8") as f:
             content = f.read()
 
         if name == "frag_selector.html":
-            assert "viewMode: 'Orthographic'" in content
+            assert "viewMode: 'Perspective'" in content
             assert "camera3D = createCamera3D(w, h);" in content
             assert "camera3D = new THREE.PerspectiveCamera(55, w / h" not in content
         else:
-            assert "viewMode: 'Orthographic'" in content
-            assert '<button class="btn active" id="orthographic-btn">' in content
-            assert '<button class="btn active" id="perspective-btn">' not in content
+            assert "viewMode: 'Perspective'" in content
+            assert '<button class="btn active" id="perspective-btn">' in content
+            assert '<button class="btn active" id="orthographic-btn">' not in content
 
     def test_frag_selector_exposes_all_styles_once(self, theme_template):
         """Frag selector style UI should match supported renderer factories."""

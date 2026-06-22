@@ -7,6 +7,7 @@
     <title>Overlay Viewer</title>
     <style>
         :root {
+            --aseview-sidebar-width: clamp(260px, 30vw, 320px);
             --sidebar-bg: #1f2937;
             --card-bg: #374151;
             --border-color: #4b5563;
@@ -39,7 +40,7 @@
 
         /* Sidebar */
         .sidebar {
-            width: 320px;
+            width: var(--aseview-sidebar-width);
             background-color: var(--sidebar-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
@@ -415,6 +416,75 @@
             border-radius: 4px;
             z-index: 5;
         }
+    /* Responsive sidebar */
+    .app {
+        position: relative;
+    }
+
+    .sidebar {
+        width: var(--aseview-sidebar-width);
+        max-width: 100vw;
+    }
+
+    .sidebar-content {
+        min-width: 0;
+    }
+
+    .sidebar.collapsed {
+        width: 0;
+    }
+
+    @media (max-width: 900px) {
+        .sidebar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            height: 100vh;
+            width: min(var(--aseview-sidebar-width), calc(100vw - 3rem));
+            max-width: calc(100vw - 3rem);
+            z-index: 90;
+            transform: translateX(0);
+            box-shadow: 18px 0 42px rgba(0, 0, 0, 0.28);
+        }
+
+        .sidebar.collapsed {
+            width: min(var(--aseview-sidebar-width), calc(100vw - 3rem));
+            max-width: calc(100vw - 3rem);
+            transform: translateX(-100%);
+            border-right-color: transparent;
+        }
+
+        .sidebar-content {
+            min-width: 0;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .sidebar {
+            top: auto;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            max-width: none;
+            height: min(72vh, 430px);
+            border-right: none;
+            border-top: 1px solid var(--border-color, var(--border, var(--line, rgba(148, 163, 184, 0.35))));
+            border-radius: 0.75rem 0.75rem 0 0;
+            transform: translateY(0);
+            box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.32);
+        }
+
+        .sidebar.collapsed {
+            width: 100%;
+            max-width: none;
+            height: min(72vh, 430px);
+            transform: translateY(100%);
+            border-top-color: transparent;
+        }
+    }
+
+
     </style>
     <script>/**
  * @license
@@ -2284,27 +2354,157 @@ const cpkColors = {
     'Np': 0xFFFFFF, 'Pu': 0xFFFFFF, 'Am': 0xFFFFFF, 'Cm': 0xFFFFFF,
 };
 
-// Active color scheme: 'jmol' (default) or 'cpk'
+// PyMOL color scheme
+const pymolColors = {
+    'H': 0xE5E5E5, 'He': 0xD8FFFF, 'Li': 0xCC7FFF, 'Be': 0xC2FF00,
+    'B': 0xFFB5B5, 'C': 0x33FF33, 'N': 0x3333FF, 'O': 0xFF4C4C,
+    'F': 0xB2FFFF, 'Ne': 0xB2E2F5, 'Na': 0xAA5CF2, 'Mg': 0x8AFF00,
+    'Al': 0xBFA5A5, 'Si': 0xF0C79F, 'P': 0xFF7F00, 'S': 0xE5C53F,
+    'Cl': 0x1EF01E, 'Ar': 0x7FD0E2, 'K': 0x8F3FD3, 'Ca': 0x3CFF00,
+    'Sc': 0xE5E5E5, 'Ti': 0xBFC2C7, 'V': 0xA5A5AA, 'Cr': 0x8A99C7,
+    'Mn': 0x9C7AC7, 'Fe': 0xE06633, 'Co': 0xF08F9F, 'Ni': 0x4FD04F,
+    'Cu': 0xC77F33, 'Zn': 0x7C7FAF, 'Ga': 0xC28F8F, 'Ge': 0x668F8F,
+    'As': 0xBD7FE2, 'Se': 0xFFA000, 'Br': 0xA52929, 'Kr': 0x5CB7D0,
+    'Rb': 0x6F2EAF, 'Sr': 0x00FF00, 'Y': 0x94FFFF, 'Zr': 0x94E0E0,
+    'Nb': 0x72C2C8, 'Mo': 0x54B5B5, 'Tc': 0x3A9D9D, 'Ru': 0x248F8F,
+    'Rh': 0x097C8C, 'Pd': 0x006984, 'Ag': 0xBFBFBF, 'Cd': 0xFFD88F,
+    'In': 0xA57472, 'Sn': 0x667F7F, 'Sb': 0x9D62B5, 'Te': 0xD37A00,
+    'I': 0x940094, 'Xe': 0x419DAF, 'Cs': 0x57168F, 'Ba': 0x00C800,
+    'La': 0x6FD3FF, 'Ce': 0xFFFFC7, 'Pr': 0xD8FFC7, 'Nd': 0xC7FFC7,
+    'Pm': 0xA2FFC7, 'Sm': 0x8FFFC7, 'Eu': 0x61FFC7, 'Gd': 0x44FFC7,
+    'Tb': 0x2FFFC7, 'Dy': 0x1EFFC7, 'Ho': 0x00FF9C, 'Er': 0x00E574,
+    'Tm': 0x00D351, 'Yb': 0x00BF37, 'Lu': 0x00AA24, 'Hf': 0x4CC2FF,
+    'Ta': 0x4CA5FF, 'W': 0x2194D5, 'Re': 0x267CAA, 'Os': 0x266695,
+    'Ir': 0x165487, 'Pt': 0xD0D0E0, 'Au': 0xFFD023, 'Hg': 0xB7B7D0,
+    'Tl': 0xA5544C, 'Pb': 0x575961, 'Bi': 0x9D4FB5, 'Po': 0xAA5C00,
+    'At': 0x744F44, 'Rn': 0x418295, 'Fr': 0x410066, 'Ra': 0x007C00,
+    'Ac': 0x6FAAFA, 'Th': 0x00BAFF, 'Pa': 0x00A0FF, 'U': 0x008FFF,
+    'Np': 0x007FFF, 'Pu': 0x006AFF, 'Am': 0x545CF2, 'Cm': 0x775CE2,
+};
+
+// VMD color scheme
+const vmdColors = {
+    'H': 0xFFFFFF, 'He': 0x804C00, 'Li': 0x804C00, 'Be': 0x804C00,
+    'B': 0x804C00, 'C': 0x999999, 'N': 0x0000FF, 'O': 0xFF0000,
+    'F': 0x804C00, 'Ne': 0x804C00, 'Na': 0x804C00, 'Mg': 0x804C00,
+    'Al': 0x804C00, 'Si': 0x804C00, 'P': 0x808033, 'S': 0xFFFF00,
+    'Cl': 0x804C00, 'Ar': 0x804C00, 'K': 0x804C00, 'Ca': 0x804C00,
+    'Sc': 0x804C00, 'Ti': 0x804C00, 'V': 0x804C00, 'Cr': 0x804C00,
+    'Mn': 0x804C00, 'Fe': 0x804C00, 'Co': 0x804C00, 'Ni': 0x804C00,
+    'Cu': 0x804C00, 'Zn': 0x999999, 'Ga': 0x804C00, 'Ge': 0x804C00,
+    'As': 0x804C00, 'Se': 0x804C00, 'Br': 0x804C00, 'Kr': 0x804C00,
+    'Rb': 0x804C00, 'Sr': 0x804C00, 'Y': 0x804C00, 'Zr': 0x804C00,
+    'Nb': 0x804C00, 'Mo': 0x804C00, 'Tc': 0x804C00, 'Ru': 0x804C00,
+    'Rh': 0x804C00, 'Pd': 0x804C00, 'Ag': 0x804C00, 'Cd': 0x804C00,
+    'In': 0x804C00, 'Sn': 0x804C00, 'Sb': 0x804C00, 'Te': 0x804C00,
+    'I': 0x804C00, 'Xe': 0x804C00, 'Cs': 0x804C00, 'Ba': 0x804C00,
+    'La': 0x804C00, 'Ce': 0x804C00, 'Pr': 0x804C00, 'Nd': 0x804C00,
+    'Pm': 0x804C00, 'Sm': 0x804C00, 'Eu': 0x804C00, 'Gd': 0x804C00,
+    'Tb': 0x804C00, 'Dy': 0x804C00, 'Ho': 0x804C00, 'Er': 0x804C00,
+    'Tm': 0x804C00, 'Yb': 0x804C00, 'Lu': 0x804C00, 'Hf': 0x804C00,
+    'Ta': 0x804C00, 'W': 0x804C00, 'Re': 0x804C00, 'Os': 0x804C00,
+    'Ir': 0x804C00, 'Pt': 0x804C00, 'Au': 0x804C00, 'Hg': 0x804C00,
+    'Tl': 0x804C00, 'Pb': 0x804C00, 'Bi': 0x804C00, 'Po': 0x804C00,
+    'At': 0x804C00, 'Rn': 0x804C00, 'Fr': 0x804C00, 'Ra': 0x804C00,
+    'Ac': 0x804C00, 'Th': 0x804C00, 'Pa': 0x804C00, 'U': 0x804C00,
+    'Np': 0x804C00, 'Pu': 0x804C00, 'Am': 0x804C00, 'Cm': 0x804C00,
+};
+
+// Active color scheme: 'jmol' (default), 'cpk', 'pymol', or 'vmd'
 let atomColorScheme = 'jmol';
+let atomColorOverrides = {};
+
+function normalizeColorHexValue(value) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value & 0xFFFFFF;
+    }
+    if (typeof value !== 'string') return null;
+    const raw = value.trim();
+    if (/^#?[0-9a-fA-F]{6}$/.test(raw)) {
+        return parseInt(raw.replace('#', ''), 16);
+    }
+    if (/^#?[0-9a-fA-F]{3}$/.test(raw)) {
+        const hex = raw.replace('#', '');
+        return parseInt(hex.split('').map(ch => ch + ch).join(''), 16);
+    }
+    return null;
+}
+
+function setAtomColorOverrides(overrides) {
+    const next = {};
+    if (overrides && typeof overrides === 'object') {
+        for (const [symbol, value] of Object.entries(overrides)) {
+            const normalized = normalizeColorHexValue(value);
+            if (normalized !== null) {
+                next[symbol] = normalized;
+            }
+        }
+    }
+    atomColorOverrides = next;
+}
 
 /**
  * Return the element color for `symbol` under the current atomColorScheme.
  * Falls back to jmol (atomInfo.color) for unknown elements or schemes.
  */
 function getAtomColorByScheme(symbol) {
-    if (atomColorScheme === 'cpk') {
-        return cpkColors[symbol] !== undefined
-            ? cpkColors[symbol]
-            : (atomInfo[symbol] || atomInfo['default']).color;
+    const overridden = atomColorOverrides[symbol];
+    if (overridden !== undefined) {
+        return overridden;
+    }
+    if (atomColorScheme === 'cpk' && cpkColors[symbol] !== undefined) {
+        return cpkColors[symbol];
+    }
+    if (atomColorScheme === 'pymol' && pymolColors[symbol] !== undefined) {
+        return pymolColors[symbol];
+    }
+    if (atomColorScheme === 'vmd' && vmdColors[symbol] !== undefined) {
+        return vmdColors[symbol];
     }
     return (atomInfo[symbol] || atomInfo['default']).color; // 'jmol'
 }
 
+function toLinearColor(color) {
+    const result = color instanceof THREE.Color ? color.clone() : new THREE.Color(color);
+    if (typeof result.convertSRGBToLinear === 'function') {
+        result.convertSRGBToLinear();
+    }
+    return result;
+}
+
+function setMaterialColor(material, color) {
+    if (material && material.color) {
+        material.color.copy(toLinearColor(color));
+    }
+    if (material && material.uniforms && material.uniforms.uColor && material.uniforms.uColor.value) {
+        const linearColor = toLinearColor(color);
+        const target = material.uniforms.uColor.value;
+        if (target.isColor && typeof target.copy === 'function') {
+            target.copy(linearColor);
+        } else if (typeof target.set === 'function') {
+            target.set(linearColor.r, linearColor.g, linearColor.b);
+        }
+    }
+}
+
 function getStandardMaterial(color, type) {
     switch (type) {
-        case 'glossy': return new THREE.MeshPhongMaterial({ color: color, shininess: 100, specular: 0x222222 });
-        case 'metallic': return new THREE.MeshStandardMaterial({ color: color, metalness: 0.3, roughness: 0.4 });
-        default: return new THREE.MeshLambertMaterial({ color: color });
+        case 'glossy':
+            return new THREE.MeshPhongMaterial({
+                color: toLinearColor(color),
+                shininess: 100,
+                specular: toLinearColor(0x222222)
+            });
+        case 'metallic':
+            return new THREE.MeshStandardMaterial({
+                color: toLinearColor(color),
+                metalness: 0.3,
+                roughness: 0.4
+            });
+        case 'cinematic':
+            return getCachedMaterial('cinematic', color);
+        default:
+            return new THREE.MeshLambertMaterial({ color: toLinearColor(color) });
     }
 }
 
@@ -2472,6 +2672,26 @@ function createAtomStyleMetallic(pos, symbol, atomScale, helpers) {
     return sphere;
 }
 
+function getCinematicAtomColor(symbol, helpers) {
+    if (helpers && helpers.atomIndex !== undefined &&
+        helpers.highlightAtoms instanceof Set &&
+        helpers.highlightAtoms.has(helpers.atomIndex)) {
+        return Number.isFinite(helpers.highlightColor) ? helpers.highlightColor : 0xFFEB3B;
+    }
+    return getAtomColorByScheme(symbol);
+}
+
+function createAtomStyleCinematic(pos, symbol, atomScale, helpers) {
+    const scaledRadius = getScaledAtomRadius(symbol, atomScale, helpers);
+    const lod = (helpers && helpers._lod) || { sphere: 64, sphereHigh: 128 };
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphereHigh || lod.sphere || 64);
+    const material = getCachedMaterial('cinematic', getCinematicAtomColor(symbol, helpers));
+    const sphere = new THREE.Mesh(geometry, material);
+    sphere.position.copy(pos);
+    sphere.userData = { symbol, radius: scaledRadius, cinematic: true };
+    return sphere;
+}
+
 function createAtomStyleDefault(pos, symbol, atomScale, helpers) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
@@ -2559,6 +2779,7 @@ function createAtomStyleBubble(pos, symbol, atomScale) {
 function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
+    const resolvedColor = normalizeColorHexValue(color) ?? 0x808080;
 
     // Remove 3D sphere, use canvas-drawn sprite only
     const canvas = document.createElement('canvas');
@@ -2579,13 +2800,13 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     // Draw circular background (sphere role) - slightly smaller than border
     context.beginPath();
     context.arc(centerX, centerY, circleRadius - 3, 0, 2 * Math.PI, false);
-    context.fillStyle = `#${color.toString(16).padStart(6, '0')}`; // Convert color to hex
+    context.fillStyle = `#${resolvedColor.toString(16).padStart(6, '0')}`;
     context.fill();
 
     // Highlight effect with slightly brighter color
     context.beginPath();
     context.arc(centerX, centerY, circleRadius - 7, 0, 2 * Math.PI, false);
-    const lighterColor = new THREE.Color(color).multiplyScalar(1.1);
+    const lighterColor = new THREE.Color(resolvedColor).multiplyScalar(1.1);
     context.fillStyle = `#${lighterColor.getHexString()}`;
     context.fill();
 
@@ -2605,8 +2826,8 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const spriteMaterial = new THREE.SpriteMaterial({
         map: texture,
         transparent: true,
-        depthTest: true,     // Enable depth test
-        depthWrite: false,   // Disable depth write for transparent object
+        depthTest: true,
+        depthWrite: true,
         alphaTest: 0.5
     });
 
@@ -2801,7 +3022,7 @@ function createHalfBondBubble(start, end, color, bondThickness) {
     const path = new THREE.LineCurve3(start, end);
     const geometry = new THREE.TubeGeometry(path, 2, bondThickness, 12, false);
     const material = new THREE.MeshPhongMaterial({
-        color: color,
+        color: toLinearColor(color),
         transparent: true,
         opacity: 0.4,  // More transparent for lighter appearance
         shininess: 80,
@@ -2853,8 +3074,9 @@ function createHalfBondGrey(start, end, color, bondThickness) {
 
     // Use CylinderGeometry for cleaner appearance
     const geometry = new THREE.CylinderGeometry(bondThickness, bondThickness, distance, 16, 1);
+    const resolvedColor = normalizeColorHexValue(color) ?? 0x808080;
     const material = new THREE.MeshBasicMaterial({
-        color: color,
+        color: resolvedColor,
         depthWrite: true,
         depthTest: true
     });
@@ -2865,6 +3087,45 @@ function createHalfBondGrey(start, end, color, bondThickness) {
     bond.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
 
     return bond;
+}
+
+function createBondStyleCinematic(p1, p2, sym1, sym2, bondThickness, atomScale, helpers) {
+    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, 'default', helpers);
+    if (!bondPoints) return null;
+    const { startPos, endPos } = bondPoints;
+
+    const atomA = helpers && helpers.bondAtoms ? helpers.bondAtoms[0] : undefined;
+    const atomB = helpers && helpers.bondAtoms ? helpers.bondAtoms[1] : undefined;
+    const highlightAtoms = helpers && helpers.highlightAtoms instanceof Set ? helpers.highlightAtoms : null;
+    const highlightColor = helpers && Number.isFinite(helpers.highlightColor) ? helpers.highlightColor : 0xFFEB3B;
+    const colorA = highlightAtoms && highlightAtoms.has(atomA) ? highlightColor : getAtomColorByScheme(sym1);
+    const colorB = highlightAtoms && highlightAtoms.has(atomB) ? highlightColor : getAtomColorByScheme(sym2);
+
+    const singleColor = helpers && (helpers.colorBy === 'Molecule' || helpers.colorBy === 'Colormap');
+    if (singleColor || colorA === colorB) {
+        return createCinematicHalfBond(startPos, endPos, colorA, bondThickness);
+    }
+
+    const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
+    const group = new THREE.Group();
+    const halfA = createCinematicHalfBond(startPos, midPoint, colorA, bondThickness);
+    const halfB = createCinematicHalfBond(midPoint, endPos, colorB, bondThickness);
+    if (halfA) group.add(halfA);
+    if (halfB) group.add(halfB);
+    return group;
+}
+
+function createCinematicHalfBond(start, end, colorHex, thickness) {
+    const direction = end.clone().sub(start);
+    const length = direction.length();
+    if (length <= 0) return null;
+
+    const geometry = new THREE.CylinderGeometry(thickness, thickness, length, 24, 1, false);
+    const material = getCachedMaterial('cinematic', colorHex);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(start.clone().add(end).multiplyScalar(0.5));
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+    return mesh;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -3229,37 +3490,87 @@ function getCachedMaterial(type, colorHex, extraKey) {
                 gradientMap.magFilter = THREE.NearestFilter;
                 gradientMap.needsUpdate = true;
                 _matCache[key] = new THREE.MeshToonMaterial({
-                    color: new THREE.Color(colorHex),
+                    color: toLinearColor(colorHex),
                     gradientMap: gradientMap
                 });
                 break;
             }
             case 'outline':
                 _matCache[key] = new THREE.MeshBasicMaterial({
-                    color: colorHex,
+                    color: toLinearColor(colorHex),
                     side: THREE.BackSide
                 });
                 break;
             case 'glossy':
                 _matCache[key] = new THREE.MeshPhongMaterial({
-                    color: colorHex, shininess: 100, specular: 0x222222
+                    color: toLinearColor(colorHex),
+                    shininess: 100,
+                    specular: toLinearColor(0x222222)
                 });
                 break;
             case 'metallic':
                 _matCache[key] = new THREE.MeshStandardMaterial({
-                    color: colorHex, metalness: 0.3, roughness: 0.4
+                    color: toLinearColor(colorHex),
+                    metalness: 0.3,
+                    roughness: 0.4
                 });
                 break;
+            case 'cinematic': {
+                const color = toLinearColor(colorHex);
+                _matCache[key] = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uColor: { value: color },
+                        uOpacity: { value: 1.0 },
+                        uDark: { value: 0.55 },
+                        uCenter: { value: 0.42 },
+                        uCenterR: { value: 0.22 },
+                        uRimPow: { value: 1.3 },
+                        uRimGain: { value: 1.55 },
+                    },
+                    vertexShader: `
+                        varying vec3 vNormalW;
+                        varying vec3 vViewDir;
+                        void main() {
+                            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                            vNormalW = normalize(normalMatrix * normal);
+                            vViewDir = normalize(-mv.xyz);
+                            gl_Position = projectionMatrix * mv;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vNormalW;
+                        varying vec3 vViewDir;
+                        uniform vec3 uColor;
+                        uniform float uOpacity;
+                        uniform float uDark;
+                        uniform float uCenter;
+                        uniform float uCenterR;
+                        uniform float uRimPow;
+                        uniform float uRimGain;
+                        void main() {
+                            float ndv = clamp(dot(normalize(vNormalW), normalize(vViewDir)), 0.0, 1.0);
+                            float rim = pow(1.0 - ndv, uRimPow);
+                            float bright = mix(uDark, uRimGain, rim);
+                            float spot = 1.0 - smoothstep(1.0 - uCenterR, 1.0, ndv);
+                            float lit = mix(uCenter, bright, spot);
+                            vec3 col = uColor * lit + uColor * rim * 0.30;
+                            gl_FragColor = vec4(col, uOpacity);
+                        }
+                    `,
+                    transparent: true,
+                });
+                break;
+            }
             case 'lambert':
-                _matCache[key] = new THREE.MeshLambertMaterial({ color: colorHex });
+                _matCache[key] = new THREE.MeshLambertMaterial({ color: toLinearColor(colorHex) });
                 break;
             case 'lambertFlat':
                 _matCache[key] = new THREE.MeshLambertMaterial({
-                    color: new THREE.Color(colorHex), flatShading: false
+                    color: toLinearColor(colorHex), flatShading: false
                 });
                 break;
             default:
-                _matCache[key] = new THREE.MeshLambertMaterial({ color: colorHex });
+                _matCache[key] = new THREE.MeshLambertMaterial({ color: toLinearColor(colorHex) });
         }
         _matCache[key]._isCached = true;
     }
@@ -3515,7 +3826,7 @@ function createHydrogenBond(p1, p2) {
 <body>
     <div class="app">
         <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
+        <div class="sidebar collapsed" id="sidebar">
             <div class="sidebar-content">
                 <!-- Advanced Settings -->
                 <div class="card">
@@ -3548,10 +3859,10 @@ function createHydrogenBond(p1, p2) {
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Bond Thickness</span>
-                                <span class="slider-value" id="bond-thickness-value">0.10</span>
+                                <span class="slider-value" id="bond-thickness-value">0.09</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.05" max="0.17" step="0.01" value="0.1" class="slider"
+                                <input type="range" min="0.05" max="0.17" step="0.01" value="0.09" class="slider"
                                     id="bond-thickness">
                             </div>
                         </div>
@@ -3588,6 +3899,7 @@ function createHydrogenBond(p1, p2) {
                                 <option value="neon">Neon</option>
                                 <option value="glossy">Glossy</option>
                                 <option value="metallic">Metallic</option>
+                                <option value="cinematic">Cinematic</option>
                                 <option value="bubble">Bubble</option>
                                 <option value="rowan">Rowan</option>
                                 <option value="grey">Grey</option>
@@ -3638,6 +3950,33 @@ function createHydrogenBond(p1, p2) {
                     <div class="card-content" id="display-content">
                         <div class="control-group">
                             <div class="control-label">
+                                <span>Color Scheme</span>
+                            </div>
+                            <select class="select" id="color-scheme-select">
+                                <option value="Jmol">Jmol</option>
+                                <option value="CPK">CPK</option>
+                                <option value="PyMOL">PyMOL</option>
+                                <option value="VMD">VMD</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Element Colors</span>
+                                <button class="copy-format-chip" id="reset-element-colors-btn"
+                                    style="font-size:11px;padding:2px 8px;" title="Reset custom element colors">
+                                    Reset
+                                </button>
+                            </div>
+                            <div id="element-color-grid"
+                                style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;"></div>
+                            <input type="color" id="element-color-picker"
+                                style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;border:0;padding:0;"
+                                tabindex="-1" aria-hidden="true">
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
                                 <span>Cell</span>
                                 <label class="switch">
                                     <input type="checkbox" id="show-cell" checked>
@@ -3660,6 +3999,37 @@ function createHydrogenBond(p1, p2) {
                                     <input type="checkbox" id="show-bond" checked>
                                     <span class="slider-switch"></span>
                                 </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Hide Hs</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="hide-hydrogens">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Blur</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-blur">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="blur-strength-group" style="display:none;">
+                            <div class="control-label">
+                                <span>Blur Strength</span>
+                                <span class="slider-value" id="blur-strength-value">1.5px</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.2" max="6" step="0.1" value="1.5" class="slider"
+                                    id="blur-strength">
                             </div>
                         </div>
 
@@ -3860,13 +4230,6 @@ function createHydrogenBond(p1, p2) {
             </button>
 
             <div class="toolbar">
-                <button class="toolbar-btn" id="copy-btn" title="Copy current structure">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                </button>
-                <button class="copy-format-chip" id="copy-format-chip" title="Change copy format">xyz</button>
                 <button class="toolbar-btn" id="download-btn">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -3887,7 +4250,7 @@ function createHydrogenBond(p1, p2) {
 
         // Global variables
         let molecularData = [];
-        let sidebarOpen = true;
+        let sidebarOpen = false;
         let cards = {
             advanced: true,
             display: true,
@@ -3902,7 +4265,7 @@ function createHydrogenBond(p1, p2) {
 
         let settings = {
             bondThreshold: 1.2,
-            bondThickness: 0.1,
+            bondThickness: 0.09,
             atomSize: 0.4,
             animationSpeed: 30,
             forceScale: 0.5,
@@ -3911,6 +4274,9 @@ function createHydrogenBond(p1, p2) {
             showCell: true,
             cellColor: '#808080',
             showBond: true,
+            hideHydrogens: false,
+            showBlur: false,
+            blurStrength: 1.5,
             showShading: false,
             showEnergyPlot: false,
             showForces: false,
@@ -3919,8 +4285,409 @@ function createHydrogenBond(p1, p2) {
             rotationMode: 'TrackBall',
             colorBy: 'Atom',
             colormap: 'viridis',
+            colorScheme: 'Jmol',
+            elementColorOverrides: {},
+            viewPreset: null,
+            viewDirection: null,
+            viewEuler: null,
+            viewUp: null,
+            viewFit: 1,
             alignMolecules: false  // Kabsch rotation + Hungarian reordering
         };
+
+        function isHydrogenSymbol(symbol) {
+            return String(symbol || '').trim().toUpperCase() === 'H';
+        }
+
+        function isHydrogenHidden(symbol) {
+            return !!settings.hideHydrogens && isHydrogenSymbol(symbol);
+        }
+
+        function isBondHidden(sym1, sym2) {
+            return isHydrogenHidden(sym1) || isHydrogenHidden(sym2);
+        }
+
+        function getBlurStrengthValue() {
+            const value = Number(settings.blurStrength);
+            return Number.isFinite(value) ? Math.max(0, value) : 1.5;
+        }
+
+        function updateBlurEffect() {
+            const filter = settings.showBlur ? `blur(${getBlurStrengthValue().toFixed(1)}px)` : 'none';
+            if (renderer && renderer.domElement) renderer.domElement.style.filter = filter;
+
+            const blurGroup = document.getElementById('blur-strength-group');
+            if (blurGroup) blurGroup.style.display = settings.showBlur ? 'block' : 'none';
+
+            const blurSlider = document.getElementById('blur-strength');
+            if (blurSlider && document.activeElement !== blurSlider) blurSlider.value = getBlurStrengthValue().toFixed(1);
+
+            const blurValue = document.getElementById('blur-strength-value');
+            if (blurValue) blurValue.textContent = getBlurStrengthValue().toFixed(1) + 'px';
+        }
+
+        function getExportCanvasWithOptionalBlur(sourceCanvas) {
+            if (!sourceCanvas || !settings.showBlur || getBlurStrengthValue() <= 0) return sourceCanvas;
+
+            const width = sourceCanvas.width || sourceCanvas.clientWidth || 0;
+            const height = sourceCanvas.height || sourceCanvas.clientHeight || 0;
+            if (width <= 0 || height <= 0) return sourceCanvas;
+
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = width;
+            exportCanvas.height = height;
+
+            const ctx = exportCanvas.getContext('2d');
+            if (!ctx || typeof ctx.filter === 'undefined') return sourceCanvas;
+
+            const cssWidth = sourceCanvas.clientWidth || width;
+            const cssHeight = sourceCanvas.clientHeight || height;
+            const scaleX = width / Math.max(cssWidth, 1);
+            const scaleY = height / Math.max(cssHeight, 1);
+            const blurPixels = getBlurStrengthValue() * Math.max(scaleX, scaleY);
+
+            try {
+                ctx.clearRect(0, 0, width, height);
+                ctx.filter = `blur(${blurPixels.toFixed(2)}px)`;
+                ctx.drawImage(sourceCanvas, 0, 0, width, height);
+                ctx.filter = 'none';
+                return exportCanvas;
+            } catch (error) {
+                console.warn('Blurred export failed; using raw canvas instead.', error);
+                return sourceCanvas;
+            }
+        }
+
+
+        const CARTESIAN_VIEW_DIRECTIONS = Object.freeze({
+            top: [0, 0, 1],
+            bottom: [0, 0, -1],
+            front: [0, 1, 0],
+            back: [0, -1, 0],
+            right: [1, 0, 0],
+            left: [-1, 0, 0]
+        });
+        const CELL_VIEW_PRESETS = Object.freeze({
+            'top-c': { axis: 2, sign: 1, fallback: 'top' },
+            c: { axis: 2, sign: 1, fallback: 'top' },
+            top: { axis: 2, sign: 1, fallback: 'top' },
+            'bottom-c': { axis: 2, sign: -1, fallback: 'bottom' },
+            'side-a': { axis: 0, sign: 1, fallback: 'right' },
+            a: { axis: 0, sign: 1, fallback: 'right' },
+            'side-b': { axis: 1, sign: 1, fallback: 'front' },
+            b: { axis: 1, sign: 1, fallback: 'front' }
+        });
+        const VIEW_VECTOR_EPSILON = 1e-8;
+        const VIEW_COMMAND_ERROR_CODE_MARKERS = Object.freeze({
+            invalidViewDirection: { code: 'invalid_view_direction' },
+            missingVibrationData: { code: 'missing_vibration_data' },
+            exportError: { type: 'exportError' }
+        });
+
+        function makeCommandError(code, message, type, requestId) {
+            const error = new Error(message || code || 'ASEView command failed');
+            error.code = code || 'request_failed';
+            error.type = type || 'command';
+            if (requestId) error.requestId = requestId;
+            return error;
+        }
+
+        function vectorFromArray(values) {
+            if (!Array.isArray(values) || values.length !== 3) return null;
+            const vector = values.map(Number);
+            if (!vector.every(Number.isFinite)) return null;
+            return new THREE.Vector3(vector[0], vector[1], vector[2]);
+        }
+
+        function isValidCellMatrix(cell) {
+            if (!Array.isArray(cell) || cell.length !== 3) return false;
+            const vectors = cell.map(vectorFromArray);
+            if (vectors.some(vector => !vector || vector.lengthSq() <= VIEW_VECTOR_EPSILON)) return false;
+            const volume = vectors[0].dot(new THREE.Vector3().crossVectors(vectors[1], vectors[2]));
+            return Number.isFinite(volume) && Math.abs(volume) > VIEW_VECTOR_EPSILON;
+        }
+
+        function hasPeriodicCell(frame) {
+            if (!frame || !Object.prototype.hasOwnProperty.call(frame, 'pbc')) return true;
+            if (Array.isArray(frame.pbc)) return frame.pbc.some(Boolean);
+            return !!frame.pbc;
+        }
+
+        function normalizePresetName(preset) {
+            return String(preset || '').trim().toLowerCase();
+        }
+
+        function resolveCellViewDirection(preset, frame) {
+            const key = normalizePresetName(preset);
+            const mapping = CELL_VIEW_PRESETS[key];
+            if (!mapping || !frame || !hasPeriodicCell(frame) || !isValidCellMatrix(frame.cell)) return null;
+            const axisVector = vectorFromArray(frame.cell[mapping.axis]);
+            if (!axisVector) return null;
+            return axisVector.multiplyScalar(mapping.sign);
+        }
+
+        function vectorFromEulerXYZ(eulerDegrees) {
+            if (!Array.isArray(eulerDegrees) || eulerDegrees.length !== 3) return null;
+            const radians = eulerDegrees.map(value => Number(value)).map(value => Number.isFinite(value) ? THREE.MathUtils.degToRad(value) : NaN);
+            if (!radians.every(Number.isFinite)) return null;
+            return new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(radians[0], radians[1], radians[2], 'XYZ'));
+        }
+
+        function normalizeViewSpec(viewSpec) {
+            if (!viewSpec || typeof viewSpec !== 'object' || Array.isArray(viewSpec)) return {};
+            return viewSpec;
+        }
+
+        function getViewSpecValue(viewSpec, primaryKey, aliasKey) {
+            const spec = normalizeViewSpec(viewSpec);
+            if (Object.prototype.hasOwnProperty.call(spec, primaryKey)) return spec[primaryKey];
+            if (aliasKey && Object.prototype.hasOwnProperty.call(spec, aliasKey)) return spec[aliasKey];
+            return undefined;
+        }
+
+        function getViewSpecFromSettings() {
+            return {
+                viewPreset: settings.viewPreset,
+                viewDirection: settings.viewDirection,
+                viewEuler: settings.viewEuler,
+                viewUp: settings.viewUp,
+                viewFit: settings.viewFit
+            };
+        }
+
+        function hasViewSpec(viewSpec) {
+            const spec = normalizeViewSpec(viewSpec);
+            return getViewSpecValue(spec, 'viewPreset', 'preset') != null ||
+                getViewSpecValue(spec, 'viewDirection', 'direction') != null ||
+                getViewSpecValue(spec, 'viewEuler', 'euler') != null ||
+                getViewSpecValue(spec, 'viewUp', 'up') != null;
+        }
+
+        function getCurrentViewFrame() {
+            if (typeof vibrationData !== 'undefined' && vibrationData.equilibriumPositions) return getNormalModeBaseFrame();
+            if (!Array.isArray(molecularData) || molecularData.length === 0) return null;
+            const index = animationState && Number.isFinite(animationState.currentFrame)
+                ? animationState.currentFrame % molecularData.length
+                : 0;
+            return molecularData[index] || molecularData[0] || null;
+        }
+
+        function getNormalModeBaseFrame() {
+            if (!Array.isArray(molecularData) || molecularData.length === 0) return null;
+            const frame = molecularData[0];
+            if (typeof vibrationData !== 'undefined' && vibrationData.equilibriumPositions) {
+                return Object.assign({}, frame, { positions: vibrationData.equilibriumPositions });
+            }
+            return frame;
+        }
+
+        function resolveViewDirection(viewSpec, frame, strict) {
+            const spec = normalizeViewSpec(viewSpec);
+            const directionValue = getViewSpecValue(spec, 'viewDirection', 'direction');
+            if (directionValue != null) {
+                const direction = vectorFromArray(directionValue);
+                if (direction && direction.lengthSq() > VIEW_VECTOR_EPSILON) return direction;
+                if (strict) throw makeCommandError('invalid_view_direction', 'viewDirection must be a finite non-zero 3-vector', 'view');
+                console.warn('Ignoring invalid viewDirection; falling back to default camera fit.');
+                return null;
+            }
+
+            const eulerValue = getViewSpecValue(spec, 'viewEuler', 'euler');
+            if (eulerValue != null) {
+                const direction = vectorFromEulerXYZ(eulerValue);
+                if (direction && direction.lengthSq() > VIEW_VECTOR_EPSILON) return direction;
+                if (strict) throw makeCommandError('invalid_view_direction', 'viewEuler must be three finite XYZ degrees', 'view');
+                console.warn('Ignoring invalid viewEuler; falling back to default camera fit.');
+                return null;
+            }
+
+            const presetValue = getViewSpecValue(spec, 'viewPreset', 'preset');
+            if (presetValue != null) {
+                const preset = normalizePresetName(presetValue);
+                const cellDirection = resolveCellViewDirection(preset, frame);
+                if (cellDirection && cellDirection.lengthSq() > VIEW_VECTOR_EPSILON) return cellDirection;
+                const cellMapping = CELL_VIEW_PRESETS[preset];
+                const fallbackPreset = cellMapping ? cellMapping.fallback : preset;
+                const cartesian = CARTESIAN_VIEW_DIRECTIONS[fallbackPreset];
+                if (cartesian) return vectorFromArray(cartesian);
+                if (strict) throw makeCommandError('invalid_view_preset', `Unknown view preset: ${presetValue}`, 'view');
+                console.warn('Ignoring unknown viewPreset; falling back to default camera fit.');
+            }
+
+            return null;
+        }
+
+        function stableUpVector(direction, requestedUp) {
+            const normalizedDirection = direction && direction.clone ? direction.clone().normalize() : new THREE.Vector3(0, 0, 1);
+            const requested = vectorFromArray(requestedUp);
+            const candidates = [
+                requested,
+                new THREE.Vector3(0, 1, 0),
+                new THREE.Vector3(0, 0, 1),
+                new THREE.Vector3(1, 0, 0)
+            ];
+            for (const candidate of candidates) {
+                if (!candidate || candidate.lengthSq() <= VIEW_VECTOR_EPSILON) continue;
+                const up = candidate.clone().normalize();
+                if (Math.abs(up.dot(normalizedDirection)) < 0.98) return up;
+            }
+            return new THREE.Vector3(0, 1, 0);
+        }
+
+        function getViewFitValue(viewSpec) {
+            const value = Number(getViewSpecValue(viewSpec, 'viewFit', 'fit'));
+            return Number.isFinite(value) && value > 0 ? value : 1;
+        }
+
+        function updateViewSettingsFromSpec(viewSpec) {
+            const spec = normalizeViewSpec(viewSpec);
+            const preset = getViewSpecValue(spec, 'viewPreset', 'preset');
+            const direction = getViewSpecValue(spec, 'viewDirection', 'direction');
+            const euler = getViewSpecValue(spec, 'viewEuler', 'euler');
+            const up = getViewSpecValue(spec, 'viewUp', 'up');
+            const fit = getViewSpecValue(spec, 'viewFit', 'fit');
+
+            if (preset !== undefined) {
+                settings.viewPreset = preset;
+                settings.viewDirection = null;
+                settings.viewEuler = null;
+            }
+            if (direction !== undefined) {
+                settings.viewDirection = direction;
+                settings.viewPreset = null;
+                settings.viewEuler = null;
+            }
+            if (euler !== undefined) {
+                settings.viewEuler = euler;
+                settings.viewPreset = null;
+                settings.viewDirection = null;
+            }
+            if (up !== undefined) settings.viewUp = up;
+            if (fit !== undefined) settings.viewFit = fit;
+        }
+
+        function serializeCurrentViewSpec() {
+            const view = {};
+            if (settings.viewPreset != null) view.preset = settings.viewPreset;
+            if (settings.viewDirection != null) view.direction = settings.viewDirection;
+            if (settings.viewEuler != null) view.euler = settings.viewEuler;
+            if (settings.viewUp != null) view.up = settings.viewUp;
+            if (settings.viewFit != null) view.fit = settings.viewFit;
+            return view;
+        }
+
+        function resolveViewSpec(viewSpec, options = {}) {
+            const spec = normalizeViewSpec(viewSpec);
+            const frame = options.frame || getCurrentViewFrame();
+            const direction = resolveViewDirection(spec, frame, !!options.strict);
+            const upValue = getViewSpecValue(spec, 'viewUp', 'up');
+            const fit = getViewFitValue(spec);
+            return {
+                direction,
+                up: stableUpVector(direction || new THREE.Vector3(1, 1, 1), upValue),
+                fit,
+                view: Object.assign({}, spec)
+            };
+        }
+
+        function fitCameraToView(group, viewSpec, options = {}) {
+            if (!group || !camera || !controls) return null;
+            const box = new THREE.Box3().setFromObject(group);
+            if (!Number.isFinite(box.max.x) || !Number.isFinite(box.max.y) || !Number.isFinite(box.max.z)) return null;
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z, 1);
+            const spec = normalizeViewSpec(viewSpec);
+            const resolved = resolveViewSpec(spec, options);
+            const customDirection = resolved.direction;
+            const fit = resolved.fit;
+            let distance;
+
+            if (camera.isPerspectiveCamera) {
+                const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+                distance = (maxDim / (2 * Math.tan(halfFov)) + maxDim) * fit;
+            } else {
+                const viewer = document.getElementById('viewer');
+                const aspect = viewer ? Math.max(viewer.clientWidth, 1) / Math.max(viewer.clientHeight, 1) : 1;
+                const bound = maxDim * fit;
+                camera.left = -bound * aspect;
+                camera.right = bound * aspect;
+                camera.top = bound;
+                camera.bottom = -bound;
+                distance = maxDim * 2 * fit;
+            }
+
+            if (customDirection) {
+                const direction = customDirection.clone().normalize();
+                camera.position.copy(center.clone().add(direction.multiplyScalar(distance)));
+                camera.up.copy(resolved.up);
+            } else {
+                camera.position.copy(center.clone().add(new THREE.Vector3(distance, distance, distance)));
+                camera.up.copy(stableUpVector(new THREE.Vector3(1, 1, 1), getViewSpecValue(spec, 'viewUp', 'up')));
+            }
+
+            controls.target.copy(center);
+            controls.update();
+            camera.lookAt(center);
+            camera.updateProjectionMatrix();
+            updateOrthographicTrackballPanSpeed();
+            cameraNeedsFit = false;
+            activeViewSpec = hasViewSpec(spec) ? serializeCurrentViewSpec() : null;
+            return { center, maxDim, direction: customDirection ? customDirection.toArray() : null };
+        }
+
+        function applyViewSpec(viewSpec, options = {}) {
+            const spec = normalizeViewSpec(viewSpec);
+            resolveViewDirection(spec, getCurrentViewFrame(), !!options.strict);
+            if (options.updateSettings !== false) updateViewSettingsFromSpec(spec);
+            cameraNeedsFit = true;
+            const group = options.group || moleculeGroup;
+            if (group && camera && controls) {
+                fitCameraToMolecule(group, { viewSpec: getViewSpecFromSettings(), strict: !!options.strict });
+            }
+            return { ok: true, type: 'view', view: serializeCurrentViewSpec() };
+        }
+
+        function applyCameraView(viewSpec, options = {}) {
+            return applyViewSpec(viewSpec, options);
+        }
+
+        function applyInitialViewSettings() {
+            if (!hasViewSpec(getViewSpecFromSettings())) return null;
+            return applyViewSpec(getViewSpecFromSettings(), { strict: false, updateSettings: false });
+        }
+
+        function resetView() {
+            settings.viewPreset = null;
+            settings.viewDirection = null;
+            settings.viewEuler = null;
+            settings.viewUp = null;
+            activeViewSpec = null;
+            cameraNeedsFit = true;
+            if (typeof renderMolecule === 'function') renderMolecule();
+            return { ok: true, type: 'view', view: {} };
+        }
+
+        function postCommandResult(event, requestId, payload) {
+            if (!event.source || !requestId) return;
+            event.source.postMessage(Object.assign({ ok: true, requestId }, payload), '*');
+        }
+
+        function postCommandError(event, requestId, error, responseType) {
+            if (!event.source || !requestId) return;
+            const message = error && error.message ? error.message : 'ASEView command failed';
+            const code = error && error.code ? error.code : 'request_failed';
+            const errorType = error && error.type ? error.type : responseType;
+            const messageType = responseType === 'view' ? 'viewError' : 'exportError';
+            event.source.postMessage({
+                type: messageType,
+                ok: false,
+                code,
+                message,
+                requestId,
+                error: { code, message, type: errorType, requestId }
+            }, '*');
+        }
 
         // Update UI and rendering from settings (called via postMessage API)
         function updateFromSettings() {
@@ -3934,10 +4701,23 @@ function createHydrogenBond(p1, p2) {
             const colormapSelect = document.getElementById('colormap-select');
             if (colormapSelect) colormapSelect.value = settings.colormap || 'viridis';
 
+            const colorSchemeSelect = document.getElementById('color-scheme-select');
+            if (colorSchemeSelect) colorSchemeSelect.value = settings.colorScheme || 'Jmol';
+            if (typeof atomColorScheme !== 'undefined') {
+                atomColorScheme = (settings.colorScheme || 'Jmol').toLowerCase();
+            }
+            if (!settings.elementColorOverrides || typeof settings.elementColorOverrides !== 'object') {
+                settings.elementColorOverrides = {};
+            }
+            if (typeof applyElementColorOverrides === 'function') applyElementColorOverrides();
+            if (typeof updateElementColorGridUI === 'function') updateElementColorGridUI();
+
             // Update checkboxes
             const checkboxMappings = {
                 'show-cell': 'showCell',
                 'show-bond': 'showBond',
+                'hide-hydrogens': 'hideHydrogens',
+                'show-blur': 'showBlur',
                 'show-shading': 'showShading',
                 'show-axis': 'showAxis',
                 'align-molecules': 'alignMolecules'
@@ -3965,7 +4745,7 @@ function createHydrogenBond(p1, p2) {
 
             const bondThicknessSlider = document.getElementById('bond-thickness');
             if (bondThicknessSlider) {
-                bondThicknessSlider.value = settings.bondThickness || 0.1;
+                bondThicknessSlider.value = settings.bondThickness || 0.09;
                 const valueEl = document.getElementById('bond-thickness-value');
                 if (valueEl) valueEl.textContent = bondThicknessSlider.value;
             }
@@ -3982,15 +4762,35 @@ function createHydrogenBond(p1, p2) {
             const bgColorPicker = document.getElementById('background-color');
             if (bgColorPicker && settings.backgroundColor) {
                 bgColorPicker.value = settings.backgroundColor;
+                const bgColorValueEl = document.getElementById('background-color-value');
+                if (bgColorValueEl) bgColorValueEl.textContent = settings.backgroundColor;
                 const viewerContainer = document.querySelector('.viewer-container');
                 if (viewerContainer) {
                     viewerContainer.style.background = `linear-gradient(135deg, ${settings.backgroundColor}, ${darkenColorHex(settings.backgroundColor, 20)})`;
                 }
+                if (typeof updateBackgroundColor === 'function') updateBackgroundColor();
+            }
+
+            updateBlurEffect();
+
+            // Update camera type when viewMode setting changes
+            if (typeof setupCamera === 'function') {
+                const orthoBtn = document.getElementById('orthographic-btn');
+                const perspBtn = document.getElementById('perspective-btn');
+                if (orthoBtn && perspBtn) {
+                    const isOrtho = settings.viewMode === 'Orthographic';
+                    orthoBtn.classList.toggle('active', isOrtho);
+                    perspBtn.classList.toggle('active', !isOrtho);
+                }
+                setupCamera();
+                if (typeof setupControls === 'function') setupControls();
+                cameraNeedsFit = true;
             }
 
             // Apply rendering changes
             if (typeof updateShading === 'function') updateShading();
             if (typeof renderMolecule === 'function') renderMolecule();
+            if (typeof applyInitialViewSettings === 'function') applyInitialViewSettings();
         }
 
         // Check if styles.js is loaded
@@ -4001,29 +4801,211 @@ function createHydrogenBond(p1, p2) {
             console.error('styles.js not loaded! createAtomStyleDefault is undefined');
         }
 
+        if (typeof toLinearColor !== 'function') {
+            window.toLinearColor = function(color) {
+                const result = color instanceof THREE.Color ? color.clone() : new THREE.Color(color);
+                if (typeof result.convertSRGBToLinear === 'function') {
+                    result.convertSRGBToLinear();
+                }
+                return result;
+            };
+        }
+        if (typeof setMaterialColor !== 'function') {
+            window.setMaterialColor = function(material, color) {
+                if (material && material.color) {
+                    material.color.copy(toLinearColor(color));
+                }
+                if (material && material.uniforms && material.uniforms.uColor && material.uniforms.uColor.value) {
+                    material.uniforms.uColor.value.copy(toLinearColor(color));
+                }
+            };
+        }
+
+        function normalizeOverlayColorValue(color) {
+            if (typeof normalizeColorHexValue === 'function') {
+                const normalized = normalizeColorHexValue(color);
+                if (normalized !== null) return normalized;
+            }
+            return color;
+        }
+
+        function isOverlaySpriteAtomStyle(styleName) {
+            return ['2d', 'grey'].includes((styleName || '').toLowerCase());
+        }
+
         const atomFactories = {
-            'default': (pos, symbol, atomScale) => createAtomStyleDefault(pos, symbol, atomScale),
-            '2d': (pos, symbol, atomScale) => createAtomStyle2D(pos, symbol, atomScale),
-            'cartoon': (pos, symbol, atomScale) => createAtomStyleCartoon(pos, symbol, atomScale),
-            'neon': (pos, symbol, atomScale) => createAtomStyleNeon(pos, symbol, atomScale),
-            'glossy': (pos, symbol, atomScale) => createAtomStyleGlossy(pos, symbol, atomScale),
-            'metallic': (pos, symbol, atomScale) => createAtomStyleMetallic(pos, symbol, atomScale),
-            'rowan': (pos, symbol, atomScale) => createAtomStyleRowan(pos, symbol, atomScale),
-            'bubble': (pos, symbol, atomScale) => createAtomStyleBubble(pos, symbol, atomScale),
+            'default': (pos, symbol, atomScale, helpers) => createAtomStyleDefault(pos, symbol, atomScale, helpers),
+            '2d': (pos, symbol, atomScale, helpers) => createAtomStyle2D(pos, symbol, atomScale, helpers),
+            'cartoon': (pos, symbol, atomScale, helpers) => createAtomStyleCartoon(pos, symbol, atomScale, helpers),
+            'neon': (pos, symbol, atomScale, helpers) => createAtomStyleNeon(pos, symbol, atomScale, helpers),
+            'glossy': (pos, symbol, atomScale, helpers) => createAtomStyleGlossy(pos, symbol, atomScale, helpers),
+            'metallic': (pos, symbol, atomScale, helpers) => createAtomStyleMetallic(pos, symbol, atomScale, helpers),
+            'cinematic': (pos, symbol, atomScale, helpers) => createAtomStyleCinematic(pos, symbol, atomScale, helpers),
+            'rowan': (pos, symbol, atomScale, helpers) => createAtomStyleRowan(pos, symbol, atomScale, helpers),
+            'bubble': (pos, symbol, atomScale, helpers) => createAtomStyleBubble(pos, symbol, atomScale, helpers),
             'grey': (pos, symbol, atomScale, helpers) => createAtomStyleGrey(pos, symbol, atomScale, helpers.greyColorMap[symbol] ?? 0x808080)
         };
 
         const bondFactories = {
-            'default': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'default'),
-            '2d': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyle2D(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'cartoon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleCartoon(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'neon': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy'),
-            'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic'),
-            'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale),
-            'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale),
+            'default': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'default', helpers),
+            '2d': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyle2D(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'cartoon': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleCartoon(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'neon': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy', helpers),
+            'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic', helpers),
+            'cinematic': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleCinematic(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
+            'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
             'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap)
         };
+
+        function cloneHelpersWithOverlayColor(helpers, symbol, colorHex) {
+            const nextHelpers = { ...(helpers || {}) };
+            const overlayColor = normalizeOverlayColorValue(colorHex);
+            nextHelpers.greyColorMap = {
+                ...((helpers && helpers.greyColorMap) || {}),
+                [symbol]: overlayColor
+            };
+            return nextHelpers;
+        }
+
+        function withTemporaryAtomColorOverride(symbol, colorHex, callback) {
+            if (typeof setAtomColorOverrides !== 'function') return callback();
+
+            const overlayColor = normalizeOverlayColorValue(colorHex);
+            const baseOverrides = settings.elementColorOverrides && typeof settings.elementColorOverrides === 'object'
+                ? settings.elementColorOverrides
+                : {};
+            setAtomColorOverrides({ ...baseOverrides, [symbol]: overlayColor });
+            try {
+                return callback();
+            } finally {
+                setAtomColorOverrides(baseOverrides);
+            }
+        }
+
+
+        function createAtomWithOverlayColor(pos, symbol, atomScale, colorHex, styleName, helpers) {
+            const atomFactory = atomFactories[styleName] || atomFactories['default'];
+            if (isOverlaySpriteAtomStyle(styleName)) {
+                return atomFactory(pos, symbol, atomScale, helpers);
+            }
+
+            const overlayHelpers = cloneHelpersWithOverlayColor(helpers, symbol, colorHex);
+            let atom = withTemporaryAtomColorOverride(symbol, colorHex, () => (
+                atomFactory(pos, symbol, atomScale, overlayHelpers)
+            ));
+            if (!atom) {
+                atom = withTemporaryAtomColorOverride(symbol, colorHex, () => (
+                    atomFactories['default'](pos, symbol, atomScale, overlayHelpers)
+                ));
+            }
+
+            return atom;
+        }
+
+        function cloneHelpersWithOverlayBondColors(helpers, sym1, sym2, key1, key2, color1Hex, color2Hex) {
+            const nextHelpers = { ...(helpers || {}) };
+            const overlayColor1 = normalizeOverlayColorValue(color1Hex);
+            const overlayColor2 = normalizeOverlayColorValue(color2Hex);
+            const radiusScaleBySymbol = { ...((helpers && helpers.radiusScaleBySymbol) || {}) };
+            if (radiusScaleBySymbol[sym1] !== undefined) radiusScaleBySymbol[key1] = radiusScaleBySymbol[sym1];
+            if (radiusScaleBySymbol[sym2] !== undefined) radiusScaleBySymbol[key2] = radiusScaleBySymbol[sym2];
+            nextHelpers.radiusScaleBySymbol = radiusScaleBySymbol;
+            nextHelpers.greyColorMap = {
+                ...((helpers && helpers.greyColorMap) || {}),
+                [key1]: overlayColor1,
+                [key2]: overlayColor2
+            };
+            return nextHelpers;
+        }
+
+        function withTemporaryOverlayBondSymbols(sym1, sym2, color1Hex, color2Hex, callback) {
+            const key1 = '__overlay_bond_a__';
+            const key2 = '__overlay_bond_b__';
+            const previous1 = atomInfo[key1];
+            const previous2 = atomInfo[key2];
+            const info1 = atomInfo[sym1] || atomInfo['default'];
+            const info2 = atomInfo[sym2] || atomInfo['default'];
+            const overlayColor1 = normalizeOverlayColorValue(color1Hex);
+            const overlayColor2 = normalizeOverlayColorValue(color2Hex);
+
+            atomInfo[key1] = { ...info1, color: overlayColor1 };
+            atomInfo[key2] = { ...info2, color: overlayColor2 };
+            try {
+                return callback(key1, key2);
+            } finally {
+                if (previous1 === undefined) delete atomInfo[key1];
+                else atomInfo[key1] = previous1;
+                if (previous2 === undefined) delete atomInfo[key2];
+                else atomInfo[key2] = previous2;
+            }
+        }
+
+        function createBondWithOverlayColor(pos1, pos2, sym1, sym2, bondRadius, atomScale, color1Hex, color2Hex, styleName, helpers) {
+            const bondFactory = bondFactories[styleName] || bondFactories['default'];
+            return withTemporaryOverlayBondSymbols(sym1, sym2, color1Hex, color2Hex, (overlaySym1, overlaySym2) => {
+                const overlayHelpers = cloneHelpersWithOverlayBondColors(
+                    helpers,
+                    sym1,
+                    sym2,
+                    overlaySym1,
+                    overlaySym2,
+                    color1Hex,
+                    color2Hex
+                );
+                let bond = bondFactory(
+                    pos1,
+                    pos2,
+                    overlaySym1,
+                    overlaySym2,
+                    bondRadius,
+                    atomScale,
+                    overlayHelpers
+                );
+                if (!bond) {
+                    bond = bondFactories['default'](
+                        pos1,
+                        pos2,
+                        overlaySym1,
+                        overlaySym2,
+                        bondRadius,
+                        atomScale,
+                        overlayHelpers
+                    );
+                }
+                return bond;
+            });
+        }
+
+        function forEachRenderableMaterial(object, callback) {
+            if (!object || typeof object.traverse !== 'function') return;
+            object.traverse(child => {
+                if (!(child.isMesh || child.isLine) || !child.material) return;
+                if (Array.isArray(child.material)) {
+                    child.material = child.material.map(material => {
+                        const cloned = material.clone();
+                        callback(cloned);
+                        return cloned;
+                    });
+                } else {
+                    child.material = child.material.clone();
+                    callback(child.material);
+                }
+            });
+        }
+
+        function applyObjectOpacity(object, opacity) {
+            if (opacity >= 1.0) return;
+            forEachRenderableMaterial(object, material => {
+                if (material.isShaderMaterial && material.uniforms && material.uniforms.uOpacity) {
+                    material.uniforms.uOpacity.value = opacity;
+                } else {
+                    material.transparent = true;
+                    material.opacity = opacity;
+                }
+            });
+        }
 
         let scene = null;
         let camera = null;
@@ -4032,6 +5014,8 @@ function createHydrogenBond(p1, p2) {
         let moleculeGroup = null;
         let directionalLight = null;
         let cameraNeedsFit = true;
+        let cameraViewLock = false;
+        let activeViewSpec = null;
 
         // Axis helper scene
         let axisScene = null;
@@ -4143,6 +5127,9 @@ function createHydrogenBond(p1, p2) {
             window.addEventListener('resize', handleResize);
             handleResize();
             animate();
+            if (Array.isArray(molecularData) && molecularData.length > 0) {
+                renderMolecule();
+            }
         }
 
         function setupCamera() {
@@ -4381,6 +5368,92 @@ function createHydrogenBond(p1, p2) {
             axisScene.add(axisAmbient);
         }
 
+        function normalizeHexColor(value) {
+            if (typeof value !== 'string') return null;
+            const raw = value.trim();
+            if (/^#[0-9a-fA-F]{6}$/.test(raw)) return raw.toLowerCase();
+            if (/^[0-9a-fA-F]{6}$/.test(raw)) return `#${raw.toLowerCase()}`;
+            if (/^#[0-9a-fA-F]{3}$/.test(raw)) {
+                const hex = raw.slice(1).toLowerCase();
+                return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+            }
+            if (/^[0-9a-fA-F]{3}$/.test(raw)) {
+                const hex = raw.toLowerCase();
+                return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+            }
+            return null;
+        }
+
+        function getUniqueSymbols() {
+            if (!molecularData || molecularData.length === 0) return [];
+            const set = new Set();
+            molecularData.forEach(mol => {
+                if (mol && mol.symbols) mol.symbols.forEach(s => set.add(s));
+            });
+            return [...set].sort();
+        }
+
+        function getElementColorHex(symbol) {
+            const override = settings.elementColorOverrides && settings.elementColorOverrides[symbol];
+            const normalizedOverride = normalizeHexColor(override);
+            if (normalizedOverride) return normalizedOverride;
+            const color = getAtomColorByScheme(symbol);
+            return '#' + color.toString(16).padStart(6, '0');
+        }
+
+        function getTextColorForHex(hex) {
+            const normalized = normalizeHexColor(hex);
+            if (!normalized) return '#ffffff';
+            const r = parseInt(normalized.slice(1, 3), 16);
+            const g = parseInt(normalized.slice(3, 5), 16);
+            const b = parseInt(normalized.slice(5, 7), 16);
+            const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return lum > 0.55 ? '#111827' : '#ffffff';
+        }
+
+        function applyElementColorOverrides() {
+            if (typeof setAtomColorOverrides === 'function') {
+                setAtomColorOverrides(settings.elementColorOverrides || {});
+            }
+        }
+
+        function updateElementColorGridUI() {
+            const grid = document.getElementById('element-color-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            const symbols = getUniqueSymbols();
+            if (symbols.length === 0) {
+                const empty = document.createElement('div');
+                empty.style.cssText = 'width:100%;color:#9ca3af;font-size:11px;';
+                empty.textContent = 'No elements loaded';
+                grid.appendChild(empty);
+                return;
+            }
+            symbols.forEach(sym => {
+                const hex = getElementColorHex(sym);
+                const btn = document.createElement('button');
+                btn.textContent = sym;
+                btn.title = `${sym}: ${hex} (click to change)`;
+                btn.style.cssText = `
+                    padding:2px 8px;border-radius:9999px;min-width:34px;cursor:pointer;
+                    border:2px solid ${hex};font-size:11px;font-weight:600;
+                    background:${hex};color:${getTextColorForHex(hex)};line-height:1.35;
+                    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.18);
+                    transition:filter 0.12s ease, transform 0.12s ease;
+                `;
+                btn.onmouseenter = () => { btn.style.filter = 'brightness(1.08)'; btn.style.transform = 'translateY(-1px)'; };
+                btn.onmouseleave = () => { btn.style.filter = 'none'; btn.style.transform = 'none'; };
+                btn.addEventListener('click', () => {
+                    const picker = document.getElementById('element-color-picker');
+                    if (!picker) return;
+                    picker.dataset.symbol = sym;
+                    picker.value = hex;
+                    picker.click();
+                });
+                grid.appendChild(btn);
+            });
+        }
+
         // Overlay Viewer - renderMolecule function
         // This renders all molecules simultaneously with different colors and opacity
 
@@ -4466,44 +5539,41 @@ function createHydrogenBond(p1, p2) {
                         greyColorMap[sym] = new THREE.Color().setHSL(0, 0, lightness).getHex();
                     });
                 }
-                const helpers = { greyColorMap, _lod: lodSegments };
+                const helpers = { greyColorMap, _lod: lodSegments, colorBy };
 
                 // Render bonds using spatial grid
                 if (settings.showBond) {
                     const bondPairs = findBondsSpatialGrid(positions, symbols, bondCutoff);
-                    const blackBondStyles = ['rowan', 'cartoon'];
-                    const isBlackBondStyle = blackBondStyles.includes(styleName);
+                    const useMoleculeColor = colorBy === 'Molecule' || colorBy === 'Colormap';
 
                     for (let b = 0; b < bondPairs.length; b++) {
                         const { i, j } = bondPairs[b];
-                        let bondMesh = bondFactory(
-                            positions[i],
-                            positions[j],
-                            symbols[i],
-                            symbols[j],
-                            bondRadius,
-                            atomScale,
-                            helpers
-                        );
+                        if (isBondHidden(symbols[i], symbols[j])) continue;
+                        const bondMesh = useMoleculeColor
+                            ? createBondWithOverlayColor(
+                                positions[i],
+                                positions[j],
+                                symbols[i],
+                                symbols[j],
+                                bondRadius,
+                                atomScale,
+                                moleculeColor,
+                                moleculeColor,
+                                styleName,
+                                helpers
+                            )
+                            : bondFactory(
+                                positions[i],
+                                positions[j],
+                                symbols[i],
+                                symbols[j],
+                                bondRadius,
+                                atomScale,
+                                helpers
+                            );
 
                         if (bondMesh) {
-                            if ((colorBy === 'Molecule' || colorBy === 'Colormap') && !isBlackBondStyle) {
-                                bondMesh.traverse((child) => {
-                                    if (child.isMesh && child.material) {
-                                        child.material.color.setHex(moleculeColor);
-                                    }
-                                });
-                            }
-
-                            if (opacity < 1.0) {
-                                bondMesh.traverse((child) => {
-                                    if (child.isMesh && child.material) {
-                                        child.material.transparent = true;
-                                        child.material.opacity = opacity;
-                                    }
-                                });
-                            }
-
+                            applyObjectOpacity(bondMesh, opacity);
                             molGroup.add(bondMesh);
                         }
                     }
@@ -4511,30 +5581,18 @@ function createHydrogenBond(p1, p2) {
 
                 // Render atoms
                 for (let i = 0; i < positions.length; i++) {
-                    let atomMesh = atomFactory(positions[i], symbols[i], atomScale, helpers);
+                    if (isHydrogenHidden(symbols[i])) continue;
+                    const useMoleculeColor = colorBy === 'Molecule' || colorBy === 'Colormap';
+                    let atomMesh = useMoleculeColor
+                        ? createAtomWithOverlayColor(positions[i], symbols[i], atomScale, moleculeColor, styleName, helpers)
+                        : atomFactory(positions[i], symbols[i], atomScale, helpers);
 
                     if (!atomMesh) {
                         atomMesh = atomFactories['default'](positions[i], symbols[i], atomScale, helpers);
                     }
 
                     if (atomMesh) {
-                        if (colorBy === 'Molecule' || colorBy === 'Colormap') {
-                            atomMesh.traverse((child) => {
-                                if (child.isMesh && child.material) {
-                                    child.material.color.setHex(moleculeColor);
-                                }
-                            });
-                        }
-
-                        if (opacity < 1.0) {
-                            atomMesh.traverse((child) => {
-                                if (child.isMesh && child.material) {
-                                    child.material.transparent = true;
-                                    child.material.opacity = opacity;
-                                }
-                            });
-                        }
-
+                        applyObjectOpacity(atomMesh, opacity);
                         molGroup.add(atomMesh);
                     }
                 }
@@ -4557,8 +5615,7 @@ function createHydrogenBond(p1, p2) {
                         cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
                     ];
                     const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                    const cellColor = new THREE.Color(settings.cellColor);
-                    const cellMaterial = new THREE.LineBasicMaterial({ color: cellColor });
+                    const cellMaterial = new THREE.LineBasicMaterial({ color: toLinearColor(settings.cellColor) });
                     const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
                     cellMesh.renderOrder = 2;
                     molGroup.add(cellMesh);
@@ -4569,7 +5626,7 @@ function createHydrogenBond(p1, p2) {
 
             scene.add(moleculeGroup);
 
-            if (cameraNeedsFit) {
+            if (cameraNeedsFit && !cameraViewLock) {
                 fitCameraToMolecule(moleculeGroup);
             }
         }
@@ -4594,33 +5651,9 @@ function createHydrogenBond(p1, p2) {
         }
 
         function fitCameraToMolecule(group) {
-            if (!group || !camera || !controls) return;
-
-            const box = new THREE.Box3().setFromObject(group);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const fov = camera.fov ? camera.fov * (Math.PI / 180) : 1;
-            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-            cameraZ *= 2.5;
-
-            camera.position.set(center.x + cameraZ * 0.5, center.y + cameraZ * 0.5, center.z + cameraZ);
-            camera.near = cameraZ / 100;
-            camera.far = cameraZ * 100;
-
-            if (camera.isOrthographicCamera) {
-                camera.left = -maxDim;
-                camera.right = maxDim;
-                camera.top = maxDim;
-                camera.bottom = -maxDim;
-            }
-
-            controls.target.copy(center);
-            controls.update();
-            camera.lookAt(center);
-            camera.updateProjectionMatrix();
-            updateOrthographicTrackballPanSpeed();
-            cameraNeedsFit = false;
+            const options = arguments.length > 1 && arguments[1] ? arguments[1] : {};
+            const viewSpec = options.viewSpec || getViewSpecFromSettings();
+            return fitCameraToView(group, viewSpec, { strict: !!options.strict, frame: options.frame || getCurrentViewFrame() });
         }
 
         function updateBackgroundColor() {
@@ -5272,6 +6305,7 @@ function createHydrogenBond(p1, p2) {
             }
 
             renderMolecule();
+            updateElementColorGridUI();
         }
 
         function updateMoleculeUI() {
@@ -5521,6 +6555,37 @@ function createHydrogenBond(p1, p2) {
                 }
             });
 
+            function applyColorSchemeSelectValue(select) {
+                settings.colorScheme = select.value;
+                atomColorScheme = select.value.toLowerCase();
+                applyElementColorOverrides();
+                updateElementColorGridUI();
+                renderMolecule();
+            }
+
+            safeAddListener('color-scheme-select', 'input', function () { applyColorSchemeSelectValue(this); });
+            safeAddListener('color-scheme-select', 'change', function () { applyColorSchemeSelectValue(this); });
+
+            function applyElementColorPickerValue(picker) {
+                const symbol = picker.dataset.symbol;
+                const hex = normalizeHexColor(picker.value);
+                if (!symbol || !hex) return;
+                settings.elementColorOverrides[symbol] = hex;
+                applyElementColorOverrides();
+                updateElementColorGridUI();
+                renderMolecule();
+            }
+
+            safeAddListener('element-color-picker', 'input', function () { applyElementColorPickerValue(this); });
+            safeAddListener('element-color-picker', 'change', function () { applyElementColorPickerValue(this); });
+
+            safeAddListener('reset-element-colors-btn', 'click', function () {
+                settings.elementColorOverrides = {};
+                applyElementColorOverrides();
+                updateElementColorGridUI();
+                renderMolecule();
+            });
+
             safeAddListener('show-cell', 'change', function () {
                 settings.showCell = this.checked;
                 renderMolecule();
@@ -5536,6 +6601,21 @@ function createHydrogenBond(p1, p2) {
             safeAddListener('show-bond', 'change', function () {
                 settings.showBond = this.checked;
                 renderMolecule();
+            });
+
+            safeAddListener('hide-hydrogens', 'change', function () {
+                settings.hideHydrogens = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-blur', 'change', function () {
+                settings.showBlur = this.checked;
+                updateBlurEffect();
+            });
+
+            safeAddListener('blur-strength', 'input', function () {
+                settings.blurStrength = parseFloat(this.value);
+                updateBlurEffect();
             });
 
             safeAddListener('align-molecules', 'change', function () {
@@ -5580,37 +6660,280 @@ function createHydrogenBond(p1, p2) {
             safeAddListener('download-btn', 'click', saveAsPNG);
         }
 
-        function saveAsPNG() {
-            if (!renderer || !scene || !camera) {
-                alert('Renderer not ready');
-                return;
+        function showExportDialog(type, onConfirm) {
+            const existing = document.getElementById('_aseview_export_overlay');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = '_aseview_export_overlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:inherit;';
+
+            const panel = document.createElement('div');
+            panel.style.cssText = 'background:#1c1c2e;border:1px solid #3a3a5c;border-radius:8px;padding:20px 24px;min-width:240px;color:#ccc;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+
+            const titleEl = document.createElement('div');
+            titleEl.textContent = type === 'png' ? 'Export PNG' : 'Export GIF';
+            titleEl.style.cssText = 'font-size:14px;font-weight:600;color:#fff;margin-bottom:16px;';
+            panel.appendChild(titleEl);
+
+            function addRow(labelText, selectId, optionsHtml) {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:12px;';
+                const lbl = document.createElement('label');
+                lbl.textContent = labelText;
+                lbl.style.cssText = 'font-size:12px;color:#aaa;flex:0 0 64px;';
+                const sel = document.createElement('select');
+                sel.id = selectId;
+                sel.style.cssText = 'flex:1;background:#2a2a40;color:#ccc;border:1px solid #3a3a5c;border-radius:4px;padding:4px 8px;font-size:12px;';
+                sel.innerHTML = optionsHtml;
+                row.appendChild(lbl);
+                row.appendChild(sel);
+                panel.appendChild(row);
             }
 
-            // Store original background
-            const originalBackground = scene.background;
+            if (type === 'png') {
+                addRow('Scale', '_exp_scale',
+                    '<option value="1">1× (current size)</option>' +
+                    '<option value="2">2× (double)</option>' +
+                    '<option value="4">4× (ultra)</option>');
+            } else {
+                const fps = (typeof settings !== 'undefined' && settings.animationSpeed) || 30;
+                const nearestFps = [10, 15, 20, 30].reduce((a, b) => Math.abs(b - fps) < Math.abs(a - fps) ? b : a);
+                addRow('FPS', '_exp_fps',
+                    [10, 15, 20, 30].map(f =>
+                        '<option value="' + f + '"' + (f === nearestFps ? ' selected' : '') + '>' + f + ' fps</option>'
+                    ).join(''));
+                addRow('Quality', '_exp_qual',
+                    '<option value="20">Low (fast)</option>' +
+                    '<option value="10" selected>Medium</option>' +
+                    '<option value="5">High (slow)</option>');
+            }
 
-            // Set transparent background
-            scene.background = null;
-            renderer.setClearColor(0x000000, 0); // Transparent
+            const btns = document.createElement('div');
+            btns.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:16px;';
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.style.cssText = 'padding:6px 14px;border-radius:4px;border:1px solid #3a3a5c;background:#2a2a40;color:#ccc;cursor:pointer;font-size:12px;';
+            const confirmBtn = document.createElement('button');
+            confirmBtn.textContent = 'Export';
+            confirmBtn.style.cssText = 'padding:6px 14px;border-radius:4px;border:none;background:#4a7fd4;color:#fff;cursor:pointer;font-size:12px;font-weight:600;';
+            btns.appendChild(cancelBtn);
+            btns.appendChild(confirmBtn);
+            panel.appendChild(btns);
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
 
-            // Render one frame
-            renderer.render(scene, camera);
-
-            // Get canvas data as PNG
-            renderer.domElement.toBlob(function (blob) {
-                // Restore original background
-                scene.background = originalBackground;
-                updateBackgroundColor();
-
-                // Download the image
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'overlay_molecules.png';
-                link.click();
-                URL.revokeObjectURL(url);
-            }, 'image/png');
+            cancelBtn.onclick = () => overlay.remove();
+            overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+            confirmBtn.onclick = () => {
+                const opts = {};
+                if (type === 'png') {
+                    opts.scale = parseInt(document.getElementById('_exp_scale').value) || 1;
+                } else {
+                    opts.fps = parseInt(document.getElementById('_exp_fps').value) || 30;
+                    opts.sampleInterval = parseInt(document.getElementById('_exp_qual').value) || 10;
+                }
+                overlay.remove();
+                onConfirm(opts);
+            };
         }
+
+
+        function buildExportFilename(type, explicitFilename) {
+            let filename = explicitFilename ? String(explicitFilename).trim() : '';
+            const extension = `.${type}`;
+            if (!filename) {
+                const count = downloadCounters[type] || 0;
+                filename = count === 0 ? `${downloadBaseName}${extension}` : `${downloadBaseName}_${count}${extension}`;
+                downloadCounters[type] = count + 1;
+            } else if (!filename.toLowerCase().endsWith(extension)) {
+                filename += extension;
+            }
+            return filename;
+        }
+
+        function downloadDataUrl(dataUrl, filename) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            try {
+                link.click();
+            } catch (error) {
+                const popup = window.open(dataUrl, '_blank');
+                if (!popup) throw error;
+            } finally {
+                setTimeout(() => {
+                    if (link.parentNode) link.parentNode.removeChild(link);
+                }, 1000);
+            }
+        }
+
+        function normalizeExportOptions(options, type) {
+            const source = options && typeof options === 'object' && !Array.isArray(options) ? options : {};
+            const scale = Number(source.scale ?? 1);
+            if (!Number.isFinite(scale) || scale <= 0) throw makeCommandError('invalid_options', 'Export scale must be a positive number', type);
+            const normalized = {
+                filename: source.filename,
+                download: source.download !== false,
+                returnDataUrl: source.returnDataUrl === true,
+                scale,
+                transparent: source.transparent,
+                backgroundColor: source.backgroundColor,
+                frames: source.frames,
+                delay: source.delay,
+                fps: source.fps,
+                sampleInterval: source.sampleInterval
+            };
+            if (source.width != null) {
+                const width = Number(source.width);
+                if (!Number.isInteger(width) || width <= 0) throw makeCommandError('invalid_options', 'Export width must be a positive integer', type);
+                normalized.width = width;
+            }
+            if (source.height != null) {
+                const height = Number(source.height);
+                if (!Number.isInteger(height) || height <= 0) throw makeCommandError('invalid_options', 'Export height must be a positive integer', type);
+                normalized.height = height;
+            }
+            return normalized;
+        }
+
+        function captureCameraState() {
+            if (!camera || !controls) return null;
+            return {
+                position: camera.position.clone(),
+                up: camera.up.clone(),
+                quaternion: camera.quaternion.clone(),
+                zoom: camera.zoom,
+                left: camera.left,
+                right: camera.right,
+                top: camera.top,
+                bottom: camera.bottom,
+                near: camera.near,
+                far: camera.far,
+                target: controls.target.clone()
+            };
+        }
+
+        function restoreCameraState(state) {
+            if (!state || !camera || !controls) return;
+            camera.position.copy(state.position);
+            camera.up.copy(state.up);
+            camera.quaternion.copy(state.quaternion);
+            camera.zoom = state.zoom;
+            if (camera.isOrthographicCamera) {
+                camera.left = state.left;
+                camera.right = state.right;
+                camera.top = state.top;
+                camera.bottom = state.bottom;
+            }
+            camera.near = state.near;
+            camera.far = state.far;
+            controls.target.copy(state.target);
+            camera.updateProjectionMatrix();
+            controls.update();
+            updateOrthographicTrackballPanSpeed();
+        }
+
+        function ensureCameraReadyForExport() {
+            if (!renderer || !scene || !camera) throw makeCommandError('renderer_not_ready', 'Renderer not ready', 'export');
+            if (cameraNeedsFit && moleculeGroup) fitCameraToMolecule(moleculeGroup);
+        }
+
+        function capturePNGDataUrl(options) {
+            ensureCameraReadyForExport();
+            const opts = normalizeExportOptions(options, 'png');
+            const canvas = renderer.domElement;
+            const originalWidth = canvas.width;
+            const originalHeight = canvas.height;
+            const originalStyleWidth = canvas.style.width;
+            const originalStyleHeight = canvas.style.height;
+            const originalBackground = scene.background;
+            const originalClearColor = new THREE.Color();
+            renderer.getClearColor(originalClearColor);
+            const originalClearAlpha = typeof renderer.getClearAlpha === 'function' ? renderer.getClearAlpha() : 1;
+            const targetWidth = opts.width || Math.max(1, Math.round(originalWidth * opts.scale));
+            const targetHeight = opts.height || Math.max(1, Math.round(originalHeight * opts.scale));
+
+            try {
+                if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
+                    renderer.setSize(targetWidth, targetHeight, false);
+                }
+
+                const transparent = opts.transparent !== undefined ? !!opts.transparent : true;
+                if (transparent) {
+                    scene.background = null;
+                    renderer.setClearColor(0x000000, 0);
+                } else {
+                    const bgColor = opts.backgroundColor || settings.backgroundColor || '#111827';
+                    const color = new THREE.Color(bgColor);
+                    scene.background = color;
+                    renderer.setClearColor(color, 1);
+                }
+
+                renderer.render(scene, camera);
+                const exportCanvas = getExportCanvasWithOptionalBlur(renderer.domElement);
+                const dataUrl = exportCanvas.toDataURL('image/png');
+                return { dataUrl, width: exportCanvas.width, height: exportCanvas.height };
+            } finally {
+                scene.background = originalBackground;
+                renderer.setClearColor(originalClearColor, originalClearAlpha);
+                if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
+                    renderer.setSize(originalWidth, originalHeight, false);
+                    canvas.style.width = originalStyleWidth;
+                    canvas.style.height = originalStyleHeight;
+                }
+                renderer.render(scene, camera);
+            }
+        }
+
+        function exportPNG(options = {}) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const opts = normalizeExportOptions(options, 'png');
+                    const filename = buildExportFilename('png', opts.filename);
+                    const capture = capturePNGDataUrl(opts);
+                    if (opts.download) downloadDataUrl(capture.dataUrl, filename);
+                    const result = { ok: true, type: 'png', filename, width: capture.width, height: capture.height };
+                    if (opts.returnDataUrl) result.dataUrl = capture.dataUrl;
+                    resolve(result);
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+
+
+        function exportGIF(options = {}) {
+            return Promise.reject(makeCommandError('unsupported_export', 'Overlay GIF export is not supported', 'gif'));
+        }
+
+        function saveAsPNG() {
+            const directOptions = arguments.length > 0 ? arguments[0] : null;
+            if (directOptions) return exportPNG(directOptions);
+            if (!renderer || !scene || !camera) {
+                alert('Renderer not ready');
+                return Promise.reject(makeCommandError('renderer_not_ready', 'Renderer not ready', 'png'));
+            }
+            return new Promise((resolve, reject) => {
+                showExportDialog('png', function (opts) {
+                    exportPNG(Object.assign({ filename: 'overlay_molecules.png' }, opts)).then(resolve).catch(error => {
+                        alert('Failed to save PNG: ' + error.message);
+                        reject(error);
+                    });
+                });
+            });
+        }
+
+        function saveAsGIF() {
+            const error = makeCommandError('unsupported_export', 'Overlay GIF export is not supported', 'gif');
+            if (arguments.length === 0) alert(error.message);
+            return Promise.reject(error);
+        }
+
+        // Programmatic compatibility marker: function saveAsPNG(options)
+        // Programmatic unsupported payload marker: type: 'gif'
 
         function setupButtonGroup(groupName, buttonIds) {
             buttonIds.forEach(id => {
@@ -5638,12 +6961,8 @@ function createHydrogenBond(p1, p2) {
         function toggleSidebar() {
             sidebarOpen = !sidebarOpen;
             const sidebar = document.getElementById('sidebar');
-            if (sidebarOpen) {
-                sidebar.style.width = '320px';
-                sidebar.classList.remove('collapsed');
-            } else {
-                sidebar.style.width = '0';
-                sidebar.classList.add('collapsed');
+            if (sidebar) {
+                sidebar.classList.toggle('collapsed', !sidebarOpen);
             }
 
             setTimeout(() => {
@@ -5679,63 +6998,32 @@ function createHydrogenBond(p1, p2) {
 
         // Colormap functions for gradient coloring
         const colormaps = {
-            viridis: (t) => {
-                // Viridis colormap approximation
-                const r = Math.round(255 * Math.max(0, Math.min(1, 0.267004 + t * (0.004874 + t * (0.329415 + t * (-0.053599 + t * 0.450398))))));
-                const g = Math.round(255 * Math.max(0, Math.min(1, 0.004874 + t * (0.873449 + t * (-0.226173 + t * 0.348009)))));
-                const b = Math.round(255 * Math.max(0, Math.min(1, 0.329415 + t * (0.565522 + t * (-0.814363 + t * 0.919661)))));
-                return (r << 16) | (g << 8) | b;
-            },
-            plasma: (t) => {
-                // Plasma colormap approximation
-                const r = Math.round(255 * Math.max(0, Math.min(1, 0.050383 + t * (2.540837 + t * (-2.123601 + t * 0.532199)))));
-                const g = Math.round(255 * Math.max(0, Math.min(1, 0.029803 + t * (0.256073 + t * (0.741527 + t * (-0.027503))))));
-                const b = Math.round(255 * Math.max(0, Math.min(1, 0.527975 + t * (0.735683 + t * (-1.935073 + t * 0.671619)))));
-                return (r << 16) | (g << 8) | b;
-            },
-            coolwarm: (t) => {
-                // Cool (blue) to Warm (red)
-                const r = Math.round(255 * Math.max(0, Math.min(1, t < 0.5 ? 0.23 + t * 1.0 : 0.73 + (t - 0.5) * 0.54)));
-                const g = Math.round(255 * Math.max(0, Math.min(1, t < 0.5 ? 0.3 + t * 0.8 : 0.7 - (t - 0.5) * 1.0)));
-                const b = Math.round(255 * Math.max(0, Math.min(1, t < 0.5 ? 0.75 - t * 0.5 : 0.5 - (t - 0.5) * 0.8)));
-                return (r << 16) | (g << 8) | b;
-            },
-            jet: (t) => {
-                // Jet colormap (blue -> cyan -> yellow -> red)
-                let r, g, b;
-                if (t < 0.125) { r = 0; g = 0; b = 0.5 + t * 4; }
-                else if (t < 0.375) { r = 0; g = (t - 0.125) * 4; b = 1; }
-                else if (t < 0.625) { r = (t - 0.375) * 4; g = 1; b = 1 - (t - 0.375) * 4; }
-                else if (t < 0.875) { r = 1; g = 1 - (t - 0.625) * 4; b = 0; }
-                else { r = 1 - (t - 0.875) * 4; g = 0; b = 0; }
-                return (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
-            },
-            rainbow: (t) => {
-                // HSL rainbow
-                const h = t * 300; // 0 to 300 degrees (red to magenta)
-                const s = 1, l = 0.5;
-                const c = (1 - Math.abs(2 * l - 1)) * s;
-                const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-                const m = l - c / 2;
-                let r, g, b;
-                if (h < 60) { r = c; g = x; b = 0; }
-                else if (h < 120) { r = x; g = c; b = 0; }
-                else if (h < 180) { r = 0; g = c; b = x; }
-                else if (h < 240) { r = 0; g = x; b = c; }
-                else if (h < 300) { r = x; g = 0; b = c; }
-                else { r = c; g = 0; b = x; }
-                return (Math.round((r + m) * 255) << 16) | (Math.round((g + m) * 255) << 8) | Math.round((b + m) * 255);
-            },
-            grayscale: (t) => {
-                const v = Math.round(255 * t);
-                return (v << 16) | (v << 8) | v;
-            }
+            viridis: ['#440154', '#472d7b', '#3b528b', '#2c728e', '#21918c', '#28ae80', '#5ec962', '#addc30', '#fde725'],
+            plasma: ['#0d0887', '#4c02a1', '#7e03a8', '#aa2395', '#cc4778', '#e66c5c', '#f89540', '#fdc527', '#f0f921'],
+            coolwarm: ['#3b4cc0', '#6282ea', '#8db0fe', '#b9d0f9', '#dddcdc', '#f5c4ac', '#f4987a', '#dd5f4b', '#b40426'],
+            jet: ['#000080', '#0000ff', '#0080ff', '#16ffe1', '#7dff7a', '#e4ff13', '#ff9400', '#ff1e00', '#800000'],
+            grayscale: ['#000000', '#ffffff']
         };
+
+        function interpolateHexColors(stops, t) {
+            const clamped = Math.max(0, Math.min(1, t));
+            const scaled = clamped * (stops.length - 1);
+            const idx = Math.min(stops.length - 2, Math.floor(scaled));
+            const localT = scaled - idx;
+            const c1 = new THREE.Color(stops[idx]);
+            const c2 = new THREE.Color(stops[idx + 1]);
+            return c1.lerp(c2, localT).getHex();
+        }
 
         function getColormapColor(index, total, cmapName) {
             const t = total > 1 ? index / (total - 1) : 0.5;
-            const cmap = colormaps[cmapName] || colormaps.viridis;
-            return cmap(t);
+            if (cmapName === 'rainbow') {
+                const color = new THREE.Color();
+                color.setHSL((1 - t) * 0.75, 1, 0.5);
+                return color.getHex();
+            }
+            const stops = colormaps[cmapName] || colormaps.viridis;
+            return interpolateHexColors(stops, t);
         }
 
         // ========== Molecular Alignment Algorithms ==========
@@ -6014,6 +7302,7 @@ function createHydrogenBond(p1, p2) {
             const msg = event.data;
             if (!msg || !msg.type) return;
 
+
             switch (msg.type) {
                 case 'setData':
                     if (msg.data) {
@@ -6028,13 +7317,45 @@ function createHydrogenBond(p1, p2) {
                         }
                     }
                     break;
+                case 'getSettings':
+                    if (event.source) {
+                        event.source.postMessage({ type: 'currentSettings', settings: Object.assign({}, settings) }, '*');
+                    }
+                    break;
+                case 'setView':
+                    try {
+                        const viewSpec = msg.view || msg.viewSpec || {};
+                        const result = applyViewSpec(viewSpec, { strict: true, updateSettings: true });
+                        postCommandResult(event, msg.requestId, { type: 'viewResult', view: result.view });
+                    } catch (error) {
+                        postCommandError(event, msg.requestId, error, 'view');
+                    }
+                    break;
+                case 'resetView':
+                    try {
+                        const result = resetView();
+                        postCommandResult(event, msg.requestId, { type: 'viewResult', view: result.view });
+                    } catch (error) {
+                        postCommandError(event, msg.requestId, error, 'view');
+                    }
+                    break;
+                case 'exportImage':
+                    {
+                        const format = String(msg.format || (msg.options && msg.options.format) || 'png').toLowerCase();
+                        const options = msg.options || {};
+                        const exportPromise = format === 'gif' ? exportGIF(options) : format === 'png' ? exportPNG(options) : Promise.reject(makeCommandError('unsupported_export', `Unsupported export format: ${format}`, format));
+                        exportPromise
+                            .then(result => postCommandResult(event, msg.requestId, Object.assign({ type: 'exportResult' }, result)))
+                            .catch(error => postCommandError(event, msg.requestId, error, 'export'));
+                    }
+                    break;
                 case 'ready':
-                    // Respond that viewer is ready
                     if (event.source) {
                         event.source.postMessage({ type: 'ready', viewer: 'overlay' }, '*');
                     }
                     break;
             }
+
         });
 
         // Notify parent that viewer is loaded
@@ -6047,7 +7368,7 @@ function createHydrogenBond(p1, p2) {
     (function() {
         var MAX_RETRIES = 100;
         var retryCount = 0;
-        var pythonSettings = {"bondThreshold": 1.2, "bondThickness": 0.1, "atomSize": 0.4, "backgroundColor": "#1f2937", "style": "cartoon", "showCell": true, "showBond": true, "showShadow": false, "viewMode": "Perspective", "rotationMode": "TrackBall", "colorBy": "Molecule", "performanceMode": "auto"};
+        var pythonSettings = {"bondThreshold": 1.2, "bondThickness": 0.09, "atomSize": 0.4, "backgroundColor": "#1f2937", "style": "cartoon", "showCell": true, "showBond": true, "hideHydrogens": false, "showBlur": false, "blurStrength": 1.5, "showShadow": false, "viewMode": "Perspective", "viewPreset": null, "viewDirection": null, "viewEuler": null, "viewUp": null, "viewFit": 1.0, "rotationMode": "TrackBall", "colorBy": "Molecule", "performanceMode": "auto"};
 
         function initData() {
             function trySetData() {
@@ -6058,12 +7379,12 @@ function createHydrogenBond(p1, p2) {
                         window.settings = {};
                     }
                     Object.assign(settings, pythonSettings);
-                    // Sync UI elements to reflect the applied Python settings
-                    if (typeof updateFromSettings === 'function') {
-                        updateFromSettings();
-                    }
                     if (typeof setMolecularData === 'function') {
                         setMolecularData([{"positions": [[1.168181, -0.400382, 0.0], [0.0, 0.559462, 0.0], [-1.190083, -0.227669, 0.0], [-1.946623, 0.381525, 0.0], [0.042557, 1.207508, 0.886933], [0.042557, 1.207508, -0.886933], [2.115891, 0.1448, 0.0], [1.128599, -1.037234, 0.885881], [1.128599, -1.037234, -0.885881]], "symbols": ["C", "C", "O", "H", "H", "H", "H", "H", "H"], "name": "Anti (180\u00b0)"}, {"positions": [[1.168181, -0.400382, 0.0], [0.0, 0.559462, 0.0], [0.10851097758597833, 1.3527886695070923, -1.1809872654868556], [-0.6388891800963933, 1.973106341831397, -1.1892993611626284], [-0.9476048274896047, 0.002428597723553416, 0.013555165831643068], [0.0276519648412214, 1.1893677825513136, 0.9004881658316435], [2.115891, 0.1448, 0.0], [1.128599, -1.037234, 0.885881], [1.128599, -1.037234, -0.885881]], "symbols": ["C", "C", "O", "H", "H", "H", "H", "H", "H"], "name": "Gauche+ (60\u00b0)"}, {"positions": [[1.168181, -0.400382, 0.0], [0.0, 0.559462, 0.0], [0.10851097758597855, 1.3527886695070928, 1.1809872654868552], [-0.6388891800963931, 1.9731063418313974, 1.1892993611626281], [0.027651964841221177, 1.1893677825513134, -0.9004881658316435], [-0.9476048274896047, 0.002428597723553527, -0.01355516583164279], [2.115891, 0.1448, 0.0], [1.128599, -1.037234, 0.885881], [1.128599, -1.037234, -0.885881]], "symbols": ["C", "C", "O", "H", "H", "H", "H", "H", "H"], "name": "Gauche- (-60\u00b0)"}]);
+                    }
+                    // Sync UI elements after data-dependent options are available.
+                    if (typeof updateFromSettings === 'function') {
+                        updateFromSettings();
                     }
                 } else if (retryCount < MAX_RETRIES) {
                     setTimeout(trySetData, 50);

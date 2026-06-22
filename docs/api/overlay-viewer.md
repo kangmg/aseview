@@ -33,7 +33,7 @@ The mode is inferred automatically from the type of `index_list`:
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `atomSize` | `float` | Atom sphere radius scale | `0.4` |
-| `bondThickness` | `float` | Bond cylinder radius | `0.1` |
+| `bondThickness` | `float` | Bond cylinder radius | `0.09` |
 | `bondThreshold` | `float` | Bond detection threshold | `1.2` |
 
 #### Style Settings
@@ -86,7 +86,19 @@ The mode is inferred automatically from the type of `index_list`:
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `viewMode` | `str` | `"Perspective"` or `"Orthographic"` | `"Perspective"` |
+| `viewPreset` | `str`, `None` | Initial named camera direction (`"top-c"`, `"side-a"`, `"front"`, etc.) | `None` |
+| `viewDirection` | `list[float]`, `None` | Explicit target-to-camera direction vector | `None` |
+| `viewEuler` | `list[float]`, `None` | `[rx, ry, rz]` degrees in XYZ order, applied to `[0, 0, 1]` | `None` |
+| `viewUp` | `list[float]`, `None` | Optional camera up-vector hint | `None` |
+| `viewFit` | `float` | Camera fit multiplier | `1.0` |
 | `rotationMode` | `str` | `"TrackBall"` or `"Orbit"` | `"TrackBall"` |
+
+`viewDirection` and preset directions are target-to-camera vectors. Presets
+`top`, `bottom`, `front`, `back`, `left`, and `right` use Cartesian axes.
+Presets `top-c`, `bottom-c`, `side-a`, and `side-b` use valid unit-cell
+vectors. Aliases `c` and `top` prefer the cell `c` axis, while `a` and `b`
+prefer the cell `a` and `b` axes. Missing, non-periodic, zero-length, or
+degenerate cells fall back to Cartesian directions.
 
 ## Methods
 
@@ -113,6 +125,20 @@ Save the viewer as an HTML file.
 ```python
 viewer.save_html(filename)
 ```
+
+!!! note "Image export"
+    `OverlayViewer` saves self-contained HTML from Python. It does not provide
+    Python headless `save_png()` or `save_gif()` methods, and the CLI does not
+    provide `--save-png` or `--save-gif`.
+
+    In the browser JavaScript module, `ASEView.OverlayViewer` exposes
+    `setView(viewSpec)`, `resetView()`, and `savePNG(options)`. Export options
+    are `filename`, `download`, `returnDataUrl`, `scale`, `width`, `height`,
+    `transparent`, and `backgroundColor`. PNG export promises resolve with
+    `{ ok: true, type: "png", filename, dataUrl?, width?, height? }` or reject
+    with an `Error` carrying `code`, `message`, `type`, and when available
+    `requestId`. `saveGIF(options)` is intentionally unsupported and rejects
+    with `code: "unsupported_export"`.
 
 ## UI Controls (Interactive)
 

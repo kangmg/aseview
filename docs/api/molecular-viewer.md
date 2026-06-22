@@ -22,7 +22,7 @@ MolecularViewer(data, **kwargs)
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `atomSize` | `float` | Atom sphere radius scale | `0.4` |
-| `bondThickness` | `float` | Bond cylinder radius | `0.1` |
+| `bondThickness` | `float` | Bond cylinder radius | `0.09` |
 | `bondThreshold` | `float` | Bond detection threshold (multiplier for covalent radii sum) | `1.2` |
 | `radiusContrast` | `float` | Relative atom radius contrast (`0.0` = uniform radii, `1.0` = full element radii) | `1.0` |
 | `radiusContrastMode` | `str` | Radius contrast mapping: `"linear"` or `"log"` | `"log"` |
@@ -160,8 +160,20 @@ The copy-format chip cycles through `xyz`, `extxyz`, `cif`, and `POSCAR`.
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `viewMode` | `str` | Camera projection: `"Perspective"` or `"Orthographic"` | `"Perspective"` |
+| `viewPreset` | `str`, `None` | Initial named camera direction (`"top-c"`, `"side-a"`, `"front"`, etc.) | `None` |
+| `viewDirection` | `list[float]`, `None` | Explicit target-to-camera direction vector | `None` |
+| `viewEuler` | `list[float]`, `None` | `[rx, ry, rz]` degrees in XYZ order, applied to `[0, 0, 1]` | `None` |
+| `viewUp` | `list[float]`, `None` | Optional camera up-vector hint | `None` |
+| `viewFit` | `float` | Camera fit multiplier | `1.0` |
 | `rotationMode` | `str` | Rotation control: `"TrackBall"` or `"Orbit"` | `"TrackBall"` |
 | `selectionMode` | `str` | Selection mode: `"Lasso"` or `"Click"` | `"Lasso"` |
+
+`viewDirection` and preset directions are target-to-camera vectors. Presets
+`top`, `bottom`, `front`, `back`, `left`, and `right` use Cartesian axes.
+Presets `top-c`, `bottom-c`, `side-a`, and `side-b` use valid unit-cell
+vectors. Aliases `c` and `top` prefer the cell `c` axis, while `a` and `b`
+prefer the cell `a` and `b` axes. Missing, non-periodic, zero-length, or
+degenerate cells fall back to Cartesian directions.
 
 ## Methods
 
@@ -200,6 +212,21 @@ viewer.save_html(filename)
 |-----------|------|-------------|
 | `filename` | `str` | Output file path |
 
+!!! note "Image export"
+    `MolecularViewer` saves self-contained HTML from Python. It does not provide
+    Python headless `save_png()` or `save_gif()` methods, and the CLI does not
+    provide `--save-png` or `--save-gif`.
+
+    In the browser JavaScript module, `ASEView.MolecularViewer` exposes
+    `setView(viewSpec)`, `resetView()`, `savePNG(options)`, and
+    `saveGIF(options)`. Export options are `filename`, `download`,
+    `returnDataUrl`, `scale`, `width`, `height`, `transparent`,
+    `backgroundColor`, plus GIF-only `frames`, `delay`, and `sampleInterval`.
+    Export promises resolve with
+    `{ ok: true, type: "png" | "gif", filename, dataUrl?, width?, height? }` or
+    reject with an `Error` carrying `code`, `message`, `type`, and when
+    available `requestId`.
+
 ## Examples
 
 ### Basic Usage
@@ -221,7 +248,9 @@ viewer = MolecularViewer(
     style="neon",
     atomSize=0.5,
     bondThickness=0.15,
-    backgroundColor="#000000"
+    backgroundColor="#000000",
+    viewPreset="top-c",
+    viewFit=1.1
 )
 viewer.show()
 ```

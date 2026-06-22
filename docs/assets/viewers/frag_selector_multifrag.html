@@ -1873,27 +1873,157 @@ const cpkColors = {
     'Np': 0xFFFFFF, 'Pu': 0xFFFFFF, 'Am': 0xFFFFFF, 'Cm': 0xFFFFFF,
 };
 
-// Active color scheme: 'jmol' (default) or 'cpk'
+// PyMOL color scheme
+const pymolColors = {
+    'H': 0xE5E5E5, 'He': 0xD8FFFF, 'Li': 0xCC7FFF, 'Be': 0xC2FF00,
+    'B': 0xFFB5B5, 'C': 0x33FF33, 'N': 0x3333FF, 'O': 0xFF4C4C,
+    'F': 0xB2FFFF, 'Ne': 0xB2E2F5, 'Na': 0xAA5CF2, 'Mg': 0x8AFF00,
+    'Al': 0xBFA5A5, 'Si': 0xF0C79F, 'P': 0xFF7F00, 'S': 0xE5C53F,
+    'Cl': 0x1EF01E, 'Ar': 0x7FD0E2, 'K': 0x8F3FD3, 'Ca': 0x3CFF00,
+    'Sc': 0xE5E5E5, 'Ti': 0xBFC2C7, 'V': 0xA5A5AA, 'Cr': 0x8A99C7,
+    'Mn': 0x9C7AC7, 'Fe': 0xE06633, 'Co': 0xF08F9F, 'Ni': 0x4FD04F,
+    'Cu': 0xC77F33, 'Zn': 0x7C7FAF, 'Ga': 0xC28F8F, 'Ge': 0x668F8F,
+    'As': 0xBD7FE2, 'Se': 0xFFA000, 'Br': 0xA52929, 'Kr': 0x5CB7D0,
+    'Rb': 0x6F2EAF, 'Sr': 0x00FF00, 'Y': 0x94FFFF, 'Zr': 0x94E0E0,
+    'Nb': 0x72C2C8, 'Mo': 0x54B5B5, 'Tc': 0x3A9D9D, 'Ru': 0x248F8F,
+    'Rh': 0x097C8C, 'Pd': 0x006984, 'Ag': 0xBFBFBF, 'Cd': 0xFFD88F,
+    'In': 0xA57472, 'Sn': 0x667F7F, 'Sb': 0x9D62B5, 'Te': 0xD37A00,
+    'I': 0x940094, 'Xe': 0x419DAF, 'Cs': 0x57168F, 'Ba': 0x00C800,
+    'La': 0x6FD3FF, 'Ce': 0xFFFFC7, 'Pr': 0xD8FFC7, 'Nd': 0xC7FFC7,
+    'Pm': 0xA2FFC7, 'Sm': 0x8FFFC7, 'Eu': 0x61FFC7, 'Gd': 0x44FFC7,
+    'Tb': 0x2FFFC7, 'Dy': 0x1EFFC7, 'Ho': 0x00FF9C, 'Er': 0x00E574,
+    'Tm': 0x00D351, 'Yb': 0x00BF37, 'Lu': 0x00AA24, 'Hf': 0x4CC2FF,
+    'Ta': 0x4CA5FF, 'W': 0x2194D5, 'Re': 0x267CAA, 'Os': 0x266695,
+    'Ir': 0x165487, 'Pt': 0xD0D0E0, 'Au': 0xFFD023, 'Hg': 0xB7B7D0,
+    'Tl': 0xA5544C, 'Pb': 0x575961, 'Bi': 0x9D4FB5, 'Po': 0xAA5C00,
+    'At': 0x744F44, 'Rn': 0x418295, 'Fr': 0x410066, 'Ra': 0x007C00,
+    'Ac': 0x6FAAFA, 'Th': 0x00BAFF, 'Pa': 0x00A0FF, 'U': 0x008FFF,
+    'Np': 0x007FFF, 'Pu': 0x006AFF, 'Am': 0x545CF2, 'Cm': 0x775CE2,
+};
+
+// VMD color scheme
+const vmdColors = {
+    'H': 0xFFFFFF, 'He': 0x804C00, 'Li': 0x804C00, 'Be': 0x804C00,
+    'B': 0x804C00, 'C': 0x999999, 'N': 0x0000FF, 'O': 0xFF0000,
+    'F': 0x804C00, 'Ne': 0x804C00, 'Na': 0x804C00, 'Mg': 0x804C00,
+    'Al': 0x804C00, 'Si': 0x804C00, 'P': 0x808033, 'S': 0xFFFF00,
+    'Cl': 0x804C00, 'Ar': 0x804C00, 'K': 0x804C00, 'Ca': 0x804C00,
+    'Sc': 0x804C00, 'Ti': 0x804C00, 'V': 0x804C00, 'Cr': 0x804C00,
+    'Mn': 0x804C00, 'Fe': 0x804C00, 'Co': 0x804C00, 'Ni': 0x804C00,
+    'Cu': 0x804C00, 'Zn': 0x999999, 'Ga': 0x804C00, 'Ge': 0x804C00,
+    'As': 0x804C00, 'Se': 0x804C00, 'Br': 0x804C00, 'Kr': 0x804C00,
+    'Rb': 0x804C00, 'Sr': 0x804C00, 'Y': 0x804C00, 'Zr': 0x804C00,
+    'Nb': 0x804C00, 'Mo': 0x804C00, 'Tc': 0x804C00, 'Ru': 0x804C00,
+    'Rh': 0x804C00, 'Pd': 0x804C00, 'Ag': 0x804C00, 'Cd': 0x804C00,
+    'In': 0x804C00, 'Sn': 0x804C00, 'Sb': 0x804C00, 'Te': 0x804C00,
+    'I': 0x804C00, 'Xe': 0x804C00, 'Cs': 0x804C00, 'Ba': 0x804C00,
+    'La': 0x804C00, 'Ce': 0x804C00, 'Pr': 0x804C00, 'Nd': 0x804C00,
+    'Pm': 0x804C00, 'Sm': 0x804C00, 'Eu': 0x804C00, 'Gd': 0x804C00,
+    'Tb': 0x804C00, 'Dy': 0x804C00, 'Ho': 0x804C00, 'Er': 0x804C00,
+    'Tm': 0x804C00, 'Yb': 0x804C00, 'Lu': 0x804C00, 'Hf': 0x804C00,
+    'Ta': 0x804C00, 'W': 0x804C00, 'Re': 0x804C00, 'Os': 0x804C00,
+    'Ir': 0x804C00, 'Pt': 0x804C00, 'Au': 0x804C00, 'Hg': 0x804C00,
+    'Tl': 0x804C00, 'Pb': 0x804C00, 'Bi': 0x804C00, 'Po': 0x804C00,
+    'At': 0x804C00, 'Rn': 0x804C00, 'Fr': 0x804C00, 'Ra': 0x804C00,
+    'Ac': 0x804C00, 'Th': 0x804C00, 'Pa': 0x804C00, 'U': 0x804C00,
+    'Np': 0x804C00, 'Pu': 0x804C00, 'Am': 0x804C00, 'Cm': 0x804C00,
+};
+
+// Active color scheme: 'jmol' (default), 'cpk', 'pymol', or 'vmd'
 let atomColorScheme = 'jmol';
+let atomColorOverrides = {};
+
+function normalizeColorHexValue(value) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value & 0xFFFFFF;
+    }
+    if (typeof value !== 'string') return null;
+    const raw = value.trim();
+    if (/^#?[0-9a-fA-F]{6}$/.test(raw)) {
+        return parseInt(raw.replace('#', ''), 16);
+    }
+    if (/^#?[0-9a-fA-F]{3}$/.test(raw)) {
+        const hex = raw.replace('#', '');
+        return parseInt(hex.split('').map(ch => ch + ch).join(''), 16);
+    }
+    return null;
+}
+
+function setAtomColorOverrides(overrides) {
+    const next = {};
+    if (overrides && typeof overrides === 'object') {
+        for (const [symbol, value] of Object.entries(overrides)) {
+            const normalized = normalizeColorHexValue(value);
+            if (normalized !== null) {
+                next[symbol] = normalized;
+            }
+        }
+    }
+    atomColorOverrides = next;
+}
 
 /**
  * Return the element color for `symbol` under the current atomColorScheme.
  * Falls back to jmol (atomInfo.color) for unknown elements or schemes.
  */
 function getAtomColorByScheme(symbol) {
-    if (atomColorScheme === 'cpk') {
-        return cpkColors[symbol] !== undefined
-            ? cpkColors[symbol]
-            : (atomInfo[symbol] || atomInfo['default']).color;
+    const overridden = atomColorOverrides[symbol];
+    if (overridden !== undefined) {
+        return overridden;
+    }
+    if (atomColorScheme === 'cpk' && cpkColors[symbol] !== undefined) {
+        return cpkColors[symbol];
+    }
+    if (atomColorScheme === 'pymol' && pymolColors[symbol] !== undefined) {
+        return pymolColors[symbol];
+    }
+    if (atomColorScheme === 'vmd' && vmdColors[symbol] !== undefined) {
+        return vmdColors[symbol];
     }
     return (atomInfo[symbol] || atomInfo['default']).color; // 'jmol'
 }
 
+function toLinearColor(color) {
+    const result = color instanceof THREE.Color ? color.clone() : new THREE.Color(color);
+    if (typeof result.convertSRGBToLinear === 'function') {
+        result.convertSRGBToLinear();
+    }
+    return result;
+}
+
+function setMaterialColor(material, color) {
+    if (material && material.color) {
+        material.color.copy(toLinearColor(color));
+    }
+    if (material && material.uniforms && material.uniforms.uColor && material.uniforms.uColor.value) {
+        const linearColor = toLinearColor(color);
+        const target = material.uniforms.uColor.value;
+        if (target.isColor && typeof target.copy === 'function') {
+            target.copy(linearColor);
+        } else if (typeof target.set === 'function') {
+            target.set(linearColor.r, linearColor.g, linearColor.b);
+        }
+    }
+}
+
 function getStandardMaterial(color, type) {
     switch (type) {
-        case 'glossy': return new THREE.MeshPhongMaterial({ color: color, shininess: 100, specular: 0x222222 });
-        case 'metallic': return new THREE.MeshStandardMaterial({ color: color, metalness: 0.3, roughness: 0.4 });
-        default: return new THREE.MeshLambertMaterial({ color: color });
+        case 'glossy':
+            return new THREE.MeshPhongMaterial({
+                color: toLinearColor(color),
+                shininess: 100,
+                specular: toLinearColor(0x222222)
+            });
+        case 'metallic':
+            return new THREE.MeshStandardMaterial({
+                color: toLinearColor(color),
+                metalness: 0.3,
+                roughness: 0.4
+            });
+        case 'cinematic':
+            return getCachedMaterial('cinematic', color);
+        default:
+            return new THREE.MeshLambertMaterial({ color: toLinearColor(color) });
     }
 }
 
@@ -2061,6 +2191,26 @@ function createAtomStyleMetallic(pos, symbol, atomScale, helpers) {
     return sphere;
 }
 
+function getCinematicAtomColor(symbol, helpers) {
+    if (helpers && helpers.atomIndex !== undefined &&
+        helpers.highlightAtoms instanceof Set &&
+        helpers.highlightAtoms.has(helpers.atomIndex)) {
+        return Number.isFinite(helpers.highlightColor) ? helpers.highlightColor : 0xFFEB3B;
+    }
+    return getAtomColorByScheme(symbol);
+}
+
+function createAtomStyleCinematic(pos, symbol, atomScale, helpers) {
+    const scaledRadius = getScaledAtomRadius(symbol, atomScale, helpers);
+    const lod = (helpers && helpers._lod) || { sphere: 64, sphereHigh: 128 };
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphereHigh || lod.sphere || 64);
+    const material = getCachedMaterial('cinematic', getCinematicAtomColor(symbol, helpers));
+    const sphere = new THREE.Mesh(geometry, material);
+    sphere.position.copy(pos);
+    sphere.userData = { symbol, radius: scaledRadius, cinematic: true };
+    return sphere;
+}
+
 function createAtomStyleDefault(pos, symbol, atomScale, helpers) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
@@ -2148,6 +2298,7 @@ function createAtomStyleBubble(pos, symbol, atomScale) {
 function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
+    const resolvedColor = normalizeColorHexValue(color) ?? 0x808080;
 
     // Remove 3D sphere, use canvas-drawn sprite only
     const canvas = document.createElement('canvas');
@@ -2168,13 +2319,13 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     // Draw circular background (sphere role) - slightly smaller than border
     context.beginPath();
     context.arc(centerX, centerY, circleRadius - 3, 0, 2 * Math.PI, false);
-    context.fillStyle = `#${color.toString(16).padStart(6, '0')}`; // Convert color to hex
+    context.fillStyle = `#${resolvedColor.toString(16).padStart(6, '0')}`;
     context.fill();
 
     // Highlight effect with slightly brighter color
     context.beginPath();
     context.arc(centerX, centerY, circleRadius - 7, 0, 2 * Math.PI, false);
-    const lighterColor = new THREE.Color(color).multiplyScalar(1.1);
+    const lighterColor = new THREE.Color(resolvedColor).multiplyScalar(1.1);
     context.fillStyle = `#${lighterColor.getHexString()}`;
     context.fill();
 
@@ -2194,8 +2345,8 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const spriteMaterial = new THREE.SpriteMaterial({
         map: texture,
         transparent: true,
-        depthTest: true,     // Enable depth test
-        depthWrite: false,   // Disable depth write for transparent object
+        depthTest: true,
+        depthWrite: true,
         alphaTest: 0.5
     });
 
@@ -2390,7 +2541,7 @@ function createHalfBondBubble(start, end, color, bondThickness) {
     const path = new THREE.LineCurve3(start, end);
     const geometry = new THREE.TubeGeometry(path, 2, bondThickness, 12, false);
     const material = new THREE.MeshPhongMaterial({
-        color: color,
+        color: toLinearColor(color),
         transparent: true,
         opacity: 0.4,  // More transparent for lighter appearance
         shininess: 80,
@@ -2442,8 +2593,9 @@ function createHalfBondGrey(start, end, color, bondThickness) {
 
     // Use CylinderGeometry for cleaner appearance
     const geometry = new THREE.CylinderGeometry(bondThickness, bondThickness, distance, 16, 1);
+    const resolvedColor = normalizeColorHexValue(color) ?? 0x808080;
     const material = new THREE.MeshBasicMaterial({
-        color: color,
+        color: resolvedColor,
         depthWrite: true,
         depthTest: true
     });
@@ -2454,6 +2606,45 @@ function createHalfBondGrey(start, end, color, bondThickness) {
     bond.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
 
     return bond;
+}
+
+function createBondStyleCinematic(p1, p2, sym1, sym2, bondThickness, atomScale, helpers) {
+    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, 'default', helpers);
+    if (!bondPoints) return null;
+    const { startPos, endPos } = bondPoints;
+
+    const atomA = helpers && helpers.bondAtoms ? helpers.bondAtoms[0] : undefined;
+    const atomB = helpers && helpers.bondAtoms ? helpers.bondAtoms[1] : undefined;
+    const highlightAtoms = helpers && helpers.highlightAtoms instanceof Set ? helpers.highlightAtoms : null;
+    const highlightColor = helpers && Number.isFinite(helpers.highlightColor) ? helpers.highlightColor : 0xFFEB3B;
+    const colorA = highlightAtoms && highlightAtoms.has(atomA) ? highlightColor : getAtomColorByScheme(sym1);
+    const colorB = highlightAtoms && highlightAtoms.has(atomB) ? highlightColor : getAtomColorByScheme(sym2);
+
+    const singleColor = helpers && (helpers.colorBy === 'Molecule' || helpers.colorBy === 'Colormap');
+    if (singleColor || colorA === colorB) {
+        return createCinematicHalfBond(startPos, endPos, colorA, bondThickness);
+    }
+
+    const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
+    const group = new THREE.Group();
+    const halfA = createCinematicHalfBond(startPos, midPoint, colorA, bondThickness);
+    const halfB = createCinematicHalfBond(midPoint, endPos, colorB, bondThickness);
+    if (halfA) group.add(halfA);
+    if (halfB) group.add(halfB);
+    return group;
+}
+
+function createCinematicHalfBond(start, end, colorHex, thickness) {
+    const direction = end.clone().sub(start);
+    const length = direction.length();
+    if (length <= 0) return null;
+
+    const geometry = new THREE.CylinderGeometry(thickness, thickness, length, 24, 1, false);
+    const material = getCachedMaterial('cinematic', colorHex);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(start.clone().add(end).multiplyScalar(0.5));
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+    return mesh;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -2818,37 +3009,87 @@ function getCachedMaterial(type, colorHex, extraKey) {
                 gradientMap.magFilter = THREE.NearestFilter;
                 gradientMap.needsUpdate = true;
                 _matCache[key] = new THREE.MeshToonMaterial({
-                    color: new THREE.Color(colorHex),
+                    color: toLinearColor(colorHex),
                     gradientMap: gradientMap
                 });
                 break;
             }
             case 'outline':
                 _matCache[key] = new THREE.MeshBasicMaterial({
-                    color: colorHex,
+                    color: toLinearColor(colorHex),
                     side: THREE.BackSide
                 });
                 break;
             case 'glossy':
                 _matCache[key] = new THREE.MeshPhongMaterial({
-                    color: colorHex, shininess: 100, specular: 0x222222
+                    color: toLinearColor(colorHex),
+                    shininess: 100,
+                    specular: toLinearColor(0x222222)
                 });
                 break;
             case 'metallic':
                 _matCache[key] = new THREE.MeshStandardMaterial({
-                    color: colorHex, metalness: 0.3, roughness: 0.4
+                    color: toLinearColor(colorHex),
+                    metalness: 0.3,
+                    roughness: 0.4
                 });
                 break;
+            case 'cinematic': {
+                const color = toLinearColor(colorHex);
+                _matCache[key] = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uColor: { value: color },
+                        uOpacity: { value: 1.0 },
+                        uDark: { value: 0.55 },
+                        uCenter: { value: 0.42 },
+                        uCenterR: { value: 0.22 },
+                        uRimPow: { value: 1.3 },
+                        uRimGain: { value: 1.55 },
+                    },
+                    vertexShader: `
+                        varying vec3 vNormalW;
+                        varying vec3 vViewDir;
+                        void main() {
+                            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                            vNormalW = normalize(normalMatrix * normal);
+                            vViewDir = normalize(-mv.xyz);
+                            gl_Position = projectionMatrix * mv;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vNormalW;
+                        varying vec3 vViewDir;
+                        uniform vec3 uColor;
+                        uniform float uOpacity;
+                        uniform float uDark;
+                        uniform float uCenter;
+                        uniform float uCenterR;
+                        uniform float uRimPow;
+                        uniform float uRimGain;
+                        void main() {
+                            float ndv = clamp(dot(normalize(vNormalW), normalize(vViewDir)), 0.0, 1.0);
+                            float rim = pow(1.0 - ndv, uRimPow);
+                            float bright = mix(uDark, uRimGain, rim);
+                            float spot = 1.0 - smoothstep(1.0 - uCenterR, 1.0, ndv);
+                            float lit = mix(uCenter, bright, spot);
+                            vec3 col = uColor * lit + uColor * rim * 0.30;
+                            gl_FragColor = vec4(col, uOpacity);
+                        }
+                    `,
+                    transparent: true,
+                });
+                break;
+            }
             case 'lambert':
-                _matCache[key] = new THREE.MeshLambertMaterial({ color: colorHex });
+                _matCache[key] = new THREE.MeshLambertMaterial({ color: toLinearColor(colorHex) });
                 break;
             case 'lambertFlat':
                 _matCache[key] = new THREE.MeshLambertMaterial({
-                    color: new THREE.Color(colorHex), flatShading: false
+                    color: toLinearColor(colorHex), flatShading: false
                 });
                 break;
             default:
-                _matCache[key] = new THREE.MeshLambertMaterial({ color: colorHex });
+                _matCache[key] = new THREE.MeshLambertMaterial({ color: toLinearColor(colorHex) });
         }
         _matCache[key]._isCached = true;
     }
@@ -3101,6 +3342,7 @@ function createHydrogenBond(p1, p2) {
 </script>
     <style>
         :root {
+            --aseview-sidebar-width: clamp(240px, 30vw, 280px);
             --sidebar-bg: #1f2937;
             --card-bg: #374151;
             --border-color: #4b5563;
@@ -3129,7 +3371,7 @@ function createHydrogenBond(p1, p2) {
 
         /* ── Sidebar ── */
         .sidebar {
-            width: 280px;
+            width: var(--aseview-sidebar-width);
             background-color: var(--sidebar-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
@@ -3145,7 +3387,7 @@ function createHydrogenBond(p1, p2) {
             padding: 1rem;
             overflow-y: auto;
             flex: 1;
-            min-width: 280px;
+            min-width: 0;
         }
 
         .sidebar-toggle {
@@ -3323,8 +3565,8 @@ function createHydrogenBond(p1, p2) {
             flex: 1;
         }
 
-        #panel-2d { background: #111827; }
-        #panel-3d { background: #111827; }
+        #panel-2d { background: #1f2937; }
+        #panel-3d { background: #1f2937; }
 
         .panel-label {
             position: absolute;
@@ -3472,6 +3714,7 @@ function createHydrogenBond(p1, p2) {
         /* Navigate mode: cursor for SVG */
         #lewis-svg.mode-navigate { cursor: grab; }
         #lewis-svg.mode-navigate.panning { cursor: grabbing; }
+        #lewis-svg.mode-navigate.rotating { cursor: crosshair; }
         #lewis-svg.mode-click,
         #lewis-svg.mode-rect,
         #lewis-svg.mode-lasso { cursor: crosshair; }
@@ -3518,13 +3761,82 @@ function createHydrogenBond(p1, p2) {
             align-self: center;
         }
 
+  /* Responsive sidebar */
+  .app {
+      position: relative;
+  }
+
+  .sidebar {
+      width: var(--aseview-sidebar-width);
+      max-width: 100vw;
+  }
+
+  .sidebar-content {
+      min-width: 0;
+  }
+
+  .sidebar.collapsed {
+      width: 0;
+  }
+
+  @media (max-width: 900px) {
+      .sidebar {
+          position: absolute;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          height: 100vh;
+          width: min(var(--aseview-sidebar-width), calc(100vw - 3rem));
+          max-width: calc(100vw - 3rem);
+          z-index: 90;
+          transform: translateX(0);
+          box-shadow: 18px 0 42px rgba(0, 0, 0, 0.28);
+      }
+
+      .sidebar.collapsed {
+          width: min(var(--aseview-sidebar-width), calc(100vw - 3rem));
+          max-width: calc(100vw - 3rem);
+          transform: translateX(-100%);
+          border-right-color: transparent;
+      }
+
+      .sidebar-content {
+          min-width: 0;
+      }
+  }
+
+  @media (max-width: 560px) {
+      .sidebar {
+          top: auto;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          max-width: none;
+          height: min(72vh, 430px);
+          border-right: none;
+          border-top: 1px solid var(--border-color, var(--border, var(--line, rgba(148, 163, 184, 0.35))));
+          border-radius: 0.75rem 0.75rem 0 0;
+          transform: translateY(0);
+          box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.32);
+      }
+
+      .sidebar.collapsed {
+          width: 100%;
+          max-width: none;
+          height: min(72vh, 430px);
+          transform: translateY(100%);
+          border-top-color: transparent;
+      }
+  }
+
+
   </style>
 </head>
 
 <body>
     <div class="app">
         <!-- ── Sidebar ── -->
-        <div class="sidebar" id="sidebar">
+        <div class="sidebar collapsed" id="sidebar">
             <div class="sidebar-content">
 
                 <!-- Selection Info -->
@@ -3562,6 +3874,7 @@ function createHydrogenBond(p1, p2) {
                             <button class="btn" id="select-all-btn">Select All</button>
                             <button class="btn" id="clear-btn">Clear</button>
                             <button class="btn" id="invert-btn">Invert</button>
+                            <button class="btn" id="expand-h-btn" title="Add H atoms bonded to selected atoms">Expand H</button>
                         </div>
                         <div class="control-group" style="margin-top:0.75rem;">
                             <div class="control-label" style="margin-bottom:0.3rem;">
@@ -3613,12 +3926,44 @@ function createHydrogenBond(p1, p2) {
                         <div class="control-group">
                             <div class="control-label"><span>3D Style</span></div>
                             <select class="select" id="style-select">
-                                <option value="cartoon">Cartoon</option>
-                                <option value="glossy">Glossy</option>
                                 <option value="default">Default</option>
-                                <option value="bubble">Bubble</option>
+                                <option value="2d">2D</option>
+                                <option value="cartoon">Cartoon</option>
+                                <option value="neon">Neon</option>
+                                <option value="glossy">Glossy</option>
                                 <option value="metallic">Metallic</option>
+                                <option value="cinematic">Cinematic</option>
+                                <option value="bubble">Bubble</option>
+                                <option value="rowan">Rowan</option>
+                                <option value="grey">Grey</option>
                             </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Hide Hs</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="hide-hydrogens">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Blur</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-blur">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group" id="blur-strength-group" style="display:none;">
+                            <div class="control-label">
+                                <span>Blur Strength</span>
+                                <span class="slider-value" id="blur-strength-value">1.5px</span>
+                            </div>
+                            <input type="range" min="0.2" max="6" step="0.1" value="1.5" class="slider"
+                                id="blur-strength">
                         </div>
                         <div class="control-group">
                             <div class="control-label"><span>Background</span></div>
@@ -3652,6 +3997,7 @@ function createHydrogenBond(p1, p2) {
                                 </label>
                             </div>
                         </div>
+
                     </div>
                 </div>
 
@@ -3761,7 +4107,7 @@ function createHydrogenBond(p1, p2) {
 
     <!-- Data injection via JSON script tags (safe for CDN use without server-side rendering) -->
     <script type="application/json" id="__frag_mol_data__">[{"positions": [[0.0, 0.0, 0.119262], [0.0, 0.763239, -0.477047], [0.0, -0.763239, -0.477047], [5.0, 0.0, 0.119262], [5.0, 0.763239, -0.477047], [5.0, -0.763239, -0.477047]], "symbols": ["O", "H", "H", "O", "H", "H"]}]</script>
-    <script type="application/json" id="__frag_settings__">{"bondThreshold": 1.2, "atomSize": 0.4, "style": "cartoon", "showBond": true, "showShading": true, "backgroundColor": "#1f2937"}</script>
+    <script type="application/json" id="__frag_settings__">{"bondThreshold": 1.2, "atomSize": 0.4, "style": "cartoon", "showBond": true, "hideHydrogens": false, "showBlur": false, "blurStrength": 1.5, "showShading": true, "backgroundColor": "#1f2937", "viewMode": "Perspective"}</script>
 
     <script>
         // ─────────────────────────────────────────────────────────────────────
@@ -3784,24 +4130,83 @@ function createHydrogenBond(p1, p2) {
             backgroundColor: '#1f2937',
             style: 'cartoon',
             atomSize: 0.4,
-            bondThickness: 0.1,
+            bondThickness: 0.09,
             bondThreshold: 1.2,
             showBond: true,
+            hideHydrogens: false,
+            showBlur: false,
+            blurStrength: 1.5,
             showCell: true,
             cellColor: '#808080',
             showAxis: true,
+            viewMode: 'Perspective',
             showShading: true,
             colorScheme: 'Jmol',
         }, _readInjectedJSON('__frag_settings__', {}));
 
+        function isHydrogenSymbol(symbol) {
+            return String(symbol || '').trim().toUpperCase() === 'H';
+        }
+
+        function isHydrogenHidden(symbol) {
+            return !!fragSettings.hideHydrogens && isHydrogenSymbol(symbol);
+        }
+
+        function isBondHidden(sym1, sym2) {
+            return isHydrogenHidden(sym1) || isHydrogenHidden(sym2);
+        }
+
+        function getBlurStrengthValue() {
+            const value = Number(fragSettings.blurStrength);
+            return Number.isFinite(value) ? Math.max(0, value) : 1.5;
+        }
+
+        function updateBlurEffect() {
+            const filter = fragSettings.showBlur ? `blur(${getBlurStrengthValue().toFixed(1)}px)` : 'none';
+            const svg = document.getElementById('lewis-svg');
+            if (svg) svg.style.filter = filter;
+            if (renderer3D && renderer3D.domElement) renderer3D.domElement.style.filter = filter;
+
+            const blurGroup = document.getElementById('blur-strength-group');
+            if (blurGroup) blurGroup.style.display = fragSettings.showBlur ? 'block' : 'none';
+
+            const blurSlider = document.getElementById('blur-strength');
+            if (blurSlider && document.activeElement !== blurSlider) blurSlider.value = getBlurStrengthValue().toFixed(1);
+
+            const blurValue = document.getElementById('blur-strength-value');
+            if (blurValue) blurValue.textContent = getBlurStrengthValue().toFixed(1) + 'px';
+        }
+
         // ─────────────────────────────────────────────────────────────────────
         // atom/bond factory tables  (mirrors molecular_viewer.html)
         // ─────────────────────────────────────────────────────────────────────
+        if (typeof toLinearColor !== 'function') {
+            window.toLinearColor = function(color) {
+                const result = color instanceof THREE.Color ? color.clone() : new THREE.Color(color);
+                if (typeof result.convertSRGBToLinear === 'function') {
+                    result.convertSRGBToLinear();
+                }
+                return result;
+            };
+        }
+        if (typeof setMaterialColor !== 'function') {
+            window.setMaterialColor = function(material, color) {
+                if (material && material.color) {
+                    material.color.copy(toLinearColor(color));
+                }
+                if (material && material.uniforms && material.uniforms.uColor && material.uniforms.uColor.value) {
+                    material.uniforms.uColor.value.copy(toLinearColor(color));
+                }
+            };
+        }
+
         const atomFactories = {
             'default':  (pos, sym, s)          => createAtomStyleDefault(pos, sym, s),
+            '2d':       (pos, sym, s)          => createAtomStyle2D(pos, sym, s),
             'cartoon':  (pos, sym, s)          => createAtomStyleCartoon(pos, sym, s),
             'glossy':   (pos, sym, s)          => createAtomStyleGlossy(pos, sym, s),
             'metallic': (pos, sym, s)          => createAtomStyleMetallic(pos, sym, s),
+            'cinematic': (pos, sym, s, helpers) => createAtomStyleCinematic(pos, sym, s, helpers),
             'bubble':   (pos, sym, s)          => createAtomStyleBubble(pos, sym, s),
             'rowan':    (pos, sym, s)          => createAtomStyleRowan(pos, sym, s),
             'neon':     (pos, sym, s)          => createAtomStyleNeon(pos, sym, s),
@@ -3810,9 +4215,11 @@ function createHydrogenBond(p1, p2) {
 
         const bondFactories = {
             'default':  (p1, p2, s1, s2, r, as)          => createBondStyleDefault(p1, p2, s1, s2, r, as, 'default'),
+            '2d':       (p1, p2, s1, s2, r, as, helpers) => createBondStyle2D(p1, p2, s1, s2, r, as, helpers),
             'cartoon':  (p1, p2, s1, s2, r, as)          => createBondStyleCartoon(p1, p2, s1, s2, r, as),
             'glossy':   (p1, p2, s1, s2, r, as)          => createBondStyleDefault(p1, p2, s1, s2, r, as, 'glossy'),
             'metallic': (p1, p2, s1, s2, r, as)          => createBondStyleDefault(p1, p2, s1, s2, r, as, 'metallic'),
+            'cinematic': (p1, p2, s1, s2, r, as, helpers) => createBondStyleCinematic(p1, p2, s1, s2, r, as, helpers),
             'bubble':   (p1, p2, s1, s2, r, as)          => createBondStyleBubble(p1, p2, s1, s2, r, as),
             'rowan':    (p1, p2, s1, s2, r, as)          => createBondStyleRowan(p1, p2, s1, s2, r, as),
             'neon':     (p1, p2, s1, s2, r, as)          => createBondStyleNeon(p1, p2, s1, s2, r, as),
@@ -3845,7 +4252,8 @@ function createHydrogenBond(p1, p2) {
         // ─────────────────────────────────────────────────────────────────────
         // 2D layout state
         // ─────────────────────────────────────────────────────────────────────
-        let svgTx = 0, svgTy = 0, svgScale = 1;
+        let svgTx = 0, svgTy = 0, svgScale = 1, svgAngle = 0;
+        let svgComX = 0, svgComY = 0;   // 2D layout COM (layout units)
         let layout2D = null;   // { coords2d: [[x,y]...], bonds: [[i,j]...], comps: [[idx,...]...] }
 
         // ═════════════════════════════════════════════════════════════════════
@@ -3900,48 +4308,241 @@ function createHydrogenBond(p1, p2) {
             return C.map(p => [dot3(p, v1), dot3(p, v2)]);
         }
 
-        /** Fruchterman-Reingold force-directed layout in 2-D. */
-        function fruchtermanReingold(coords, bonds, iters) {
-            const n = coords.length;
-            if (n <= 1) return coords.map(c => [...c]);
-            iters = iters || Math.min(120, Math.max(40, Math.floor(3000 / n)));
-            const k   = Math.sqrt(1.0 / n);
-            const pos = coords.map(p => [p[0], p[1]]);
-            for (let it = 0; it < iters; it++) {
-                const temp = k * (1 - it / iters);
-                const disp = Array.from({ length: n }, () => [0, 0]);
-                for (let i = 0; i < n; i++) {
-                    for (let j = i + 1; j < n; j++) {
-                        let dx = pos[i][0] - pos[j][0];
-                        let dy = pos[i][1] - pos[j][1];
-                        let d  = Math.hypot(dx, dy);
-                        if (d < 1e-9) {
-                            // Exact coincidence — inject a tiny random nudge so repulsion has direction
-                            dx = (Math.random() - 0.5) * 1e-4;
-                            dy = (Math.random() - 0.5) * 1e-4;
-                            d  = Math.hypot(dx, dy) || 1e-8;
-                        }
-                        const f = k * k / d;
-                        disp[i][0] += dx/d * f;  disp[i][1] += dy/d * f;
-                        disp[j][0] -= dx/d * f;  disp[j][1] -= dy/d * f;
+        // ── 2D post-processing: ring regularisation + angle snapping ─────────
+
+        /** BFS shortest-cycle per bond → SSSR-like ring list, sorted smallest first. */
+        function detectRings(nAtoms, bonds, adj, maxSize) {
+            maxSize = maxSize || 8;
+            const rings = [], seen = new Set();
+            for (const [ea, eb] of bonds) {
+                const prev = new Int32Array(nAtoms).fill(-1);
+                const vis  = new Uint8Array(nAtoms);
+                vis[ea] = 1;
+                const q = [ea];
+                let found = false;
+                outer: while (q.length) {
+                    const v = q.shift();
+                    for (const u of adj[v]) {
+                        if ((v===ea&&u===eb)||(v===eb&&u===ea)) continue;
+                        if (vis[u]) continue;
+                        prev[u] = v; vis[u] = 1;
+                        if (u === eb) { found = true; break outer; }
+                        q.push(u);
                     }
                 }
-                for (const [a, b] of bonds) {
-                    let dx = pos[a][0] - pos[b][0];
-                    let dy = pos[a][1] - pos[b][1];
-                    const d = Math.hypot(dx, dy) || 0.001;
-                    const f = d * d / k;
-                    disp[a][0] -= dx/d * f;  disp[a][1] -= dy/d * f;
-                    disp[b][0] += dx/d * f;  disp[b][1] += dy/d * f;
+                if (!found) continue;
+                const path = [];
+                for (let v = eb; v !== -1; v = prev[v]) path.push(v);
+                path.reverse();
+                if (path.length < 3 || path.length > maxSize) continue;
+                const key = [...path].sort((a,b)=>a-b).join(',');
+                if (!seen.has(key)) { seen.add(key); rings.push(path); }
+            }
+            rings.sort((a,b) => a.length - b.length);
+            return rings;
+        }
+
+        function regulariseRing(coords, ring, fixed, bondLen) {
+            bondLen = bondLen || 1.5;
+            const n   = ring.length;
+            const r   = bondLen / (2 * Math.sin(Math.PI / n));
+            const apo = bondLen / (2 * Math.tan(Math.PI / n));
+
+            const anchors = ring.filter(i => fixed.has(i));
+            let cx, cy, startAngle, dir = 1;
+
+            if (anchors.length >= 2) {
+                let fa = anchors[0], fb = anchors[1];
+                outerAnchor:
+                for (let ai = 0; ai < anchors.length; ai++) {
+                    const ka = ring.indexOf(anchors[ai]);
+                    for (let bi = 0; bi < anchors.length; bi++) {
+                        if (ai === bi) continue;
+                        const kb = ring.indexOf(anchors[bi]);
+                        if (Math.abs(ka - kb) === 1 || Math.abs(ka - kb) === n - 1) {
+                            fa = anchors[ai]; fb = anchors[bi]; break outerAnchor;
+                        }
+                    }
                 }
-                for (let i = 0; i < n; i++) {
-                    const d = Math.hypot(disp[i][0], disp[i][1]) || 0.001;
-                    const s = Math.min(d, temp) / d;
-                    pos[i][0] += disp[i][0] * s;
-                    pos[i][1] += disp[i][1] * s;
+                const ax = coords[fa][0], ay = coords[fa][1];
+                const bx = coords[fb][0], by = coords[fb][1];
+                const mx = (ax + bx) / 2, my = (ay + by) / 2;
+                const edgeAngle = Math.atan2(by - ay, bx - ax);
+                const c1 = [mx + apo * Math.cos(edgeAngle + Math.PI/2),
+                             my + apo * Math.sin(edgeAngle + Math.PI/2)];
+                const c2 = [mx + apo * Math.cos(edgeAngle - Math.PI/2),
+                             my + apo * Math.sin(edgeAngle - Math.PI/2)];
+                // Choose center farther from other already-placed rings, else closer to unplaced PCA atoms
+                const ringSet = new Set(ring);
+                const otherFixed = Array.from(fixed).filter(i => !ringSet.has(i));
+                if (otherFixed.length > 0) {
+                    let ox = 0, oy = 0;
+                    for (const i of otherFixed) { ox += coords[i][0]; oy += coords[i][1]; }
+                    ox /= otherFixed.length; oy /= otherFixed.length;
+                    [cx, cy] = Math.hypot(c1[0]-ox,c1[1]-oy) > Math.hypot(c2[0]-ox,c2[1]-oy) ? c1 : c2;
+                } else {
+                    const unpl = ring.filter(i => !fixed.has(i));
+                    let ux = 0, uy = 0;
+                    const ref = unpl.length ? unpl : ring;
+                    for (const i of ref) { ux += coords[i][0]; uy += coords[i][1]; }
+                    ux /= ref.length; uy /= ref.length;
+                    [cx, cy] = Math.hypot(c1[0]-ux,c1[1]-uy) < Math.hypot(c2[0]-ux,c2[1]-uy) ? c1 : c2;
+                }
+                const ka = ring.indexOf(fa);
+                const crossVec = (ax - cx) * (by - cy) - (ay - cy) * (bx - cx);
+                dir = crossVec >= 0 ? 1 : -1;
+                startAngle = Math.atan2(ay - cy, ax - cx) - dir * (2 * Math.PI * ka / n);
+            } else if (anchors.length === 1) {
+                let pcx = 0, pcy = 0;
+                for (const i of ring) { pcx += coords[i][0]; pcy += coords[i][1]; }
+                cx = pcx / n; cy = pcy / n;
+                const ka = ring.indexOf(anchors[0]);
+                startAngle = Math.atan2(coords[anchors[0]][1] - cy, coords[anchors[0]][0] - cx) - (2 * Math.PI * ka / n);
+            } else {
+                let pcx = 0, pcy = 0;
+                for (const i of ring) { pcx += coords[i][0]; pcy += coords[i][1]; }
+                cx = pcx / n; cy = pcy / n;
+                startAngle = Math.atan2(coords[ring[0]][1] - cy, coords[ring[0]][0] - cx);
+            }
+
+            for (let k = 0; k < n; k++) {
+                if (!fixed.has(ring[k])) {
+                    const angle = startAngle + dir * (2 * Math.PI * k) / n;
+                    coords[ring[k]] = [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
                 }
             }
-            return pos;
+        }
+
+        function outgoingAngles(inAngle, totalDeg, nOut) {
+            const angles = [];
+            if (nOut <= 0) return angles;
+            const step      = (2 * Math.PI) / Math.max(totalDeg, 2);
+            const backAngle = inAngle + Math.PI;
+            for (let k = 1; k <= nOut; k++) angles.push(backAngle + k * step);
+            return angles;
+        }
+
+        function snapChainAngles(coords, adj, nAtoms, fixed, bondLen) {
+            bondLen = bondLen || 1.5;
+            const queued = new Set([...fixed]);
+            const queue  = [];
+
+            for (const v of fixed) {
+                const unqueued = adj[v].filter(nb => !queued.has(nb));
+                if (!unqueued.length) continue;
+
+                const ringNbs = adj[v].filter(nb => queued.has(nb));
+                let angles;
+
+                if (ringNbs.length >= 2) {
+                    const ra = ringNbs
+                        .map(nb => Math.atan2(coords[nb][1] - coords[v][1],
+                                              coords[nb][0] - coords[v][0]))
+                        .sort((a, b) => a - b);
+                    const m = ra.length;
+                    let maxGap = -1, gapStart = 0;
+                    for (let i = 0; i < m; i++) {
+                        const a1 = ra[i];
+                        const a2 = (i + 1 < m) ? ra[i + 1] : ra[0] + 2 * Math.PI;
+                        const gap = a2 - a1;
+                        if (gap > maxGap) { maxGap = gap; gapStart = a1; }
+                    }
+                    const step = maxGap / (unqueued.length + 1);
+                    angles = unqueued.map((_, k) => gapStart + (k + 1) * step);
+                } else if (ringNbs.length === 1) {
+                    const inAngle = Math.atan2(
+                        coords[v][1] - coords[ringNbs[0]][1],
+                        coords[v][0] - coords[ringNbs[0]][0]
+                    );
+                    angles = outgoingAngles(inAngle, adj[v].length, unqueued.length);
+                } else {
+                    angles = unqueued.map(nb =>
+                        Math.atan2(coords[nb][1] - coords[v][1],
+                                   coords[nb][0] - coords[v][0])
+                    );
+                }
+
+                unqueued.forEach((nb, k) => {
+                    const theta = angles[k] ?? 0;
+                    coords[nb] = [coords[v][0] + bondLen * Math.cos(theta),
+                                  coords[v][1] + bondLen * Math.sin(theta)];
+                    queue.push([v, nb, theta]);
+                    queued.add(nb);
+                });
+            }
+
+            if (fixed.size === 0) {
+                fixed.add(0); queued.add(0);
+                const deg  = adj[0].length || 1;
+                const step = (2 * Math.PI) / deg;
+                adj[0].forEach((nb, k) => {
+                    if (queued.has(nb)) return;
+                    const theta = k * step;
+                    coords[nb] = [coords[0][0] + bondLen * Math.cos(theta),
+                                  coords[0][1] + bondLen * Math.sin(theta)];
+                    queue.push([0, nb, theta]);
+                    queued.add(nb);
+                });
+            }
+
+            while (queue.length) {
+                const [par, atom, inAngle] = queue.shift();
+                fixed.add(atom);
+                coords[atom] = [
+                    coords[par][0] + bondLen * Math.cos(inAngle),
+                    coords[par][1] + bondLen * Math.sin(inAngle),
+                ];
+                const out = adj[atom].filter(nb => !queued.has(nb));
+                if (!out.length) continue;
+                const a = outgoingAngles(inAngle, adj[atom].length, out.length);
+                out.forEach((nb, k) => {
+                    const theta = a[k];
+                    coords[nb] = [coords[atom][0] + bondLen * Math.cos(theta),
+                                  coords[atom][1] + bondLen * Math.sin(theta)];
+                    queue.push([atom, nb, theta]);
+                    queued.add(nb);
+                });
+            }
+        }
+
+        function refine2DLayout(coords, bonds, nAtoms) {
+            const adj = Array.from({length: nAtoms}, () => []);
+            for (const [a, b] of bonds) { adj[a].push(b); adj[b].push(a); }
+            const rings = detectRings(nAtoms, bonds, adj);
+            const fixed = new Set();
+            if (rings.length > 0) {
+                const ringAdj = rings.map(() => []);
+                for (let i = 0; i < rings.length; i++) {
+                    const si = new Set(rings[i]);
+                    for (let j = i + 1; j < rings.length; j++) {
+                        if (rings[j].filter(a => si.has(a)).length >= 2) {
+                            ringAdj[i].push(j); ringAdj[j].push(i);
+                        }
+                    }
+                }
+                const visited = new Uint8Array(rings.length);
+                const queue = [0];
+                visited[0] = 1;
+                regulariseRing(coords, rings[0], fixed);
+                for (const a of rings[0]) fixed.add(a);
+                while (queue.length) {
+                    const ri = queue.shift();
+                    for (const rj of ringAdj[ri]) {
+                        if (visited[rj]) continue;
+                        visited[rj] = 1;
+                        regulariseRing(coords, rings[rj], fixed);
+                        for (const a of rings[rj]) fixed.add(a);
+                        queue.push(rj);
+                    }
+                }
+                for (let i = 1; i < rings.length; i++) {
+                    if (visited[i]) continue;
+                    regulariseRing(coords, rings[i], fixed);
+                    for (const a of rings[i]) fixed.add(a);
+                }
+            }
+            snapChainAngles(coords, adj, nAtoms, fixed);
+            return coords;
         }
 
         /** BFS-based connected components. */
@@ -3962,6 +4563,100 @@ function createHydrogenBond(p1, p2) {
                 comps.push(comp);
             }
             return comps;
+        }
+
+        /** Place H atoms around their parent heavy atoms after heavy-atom layout. */
+        function placeHydrogens(coords, bonds, isH, bondLen) {
+            bondLen = bondLen || 1.5;
+            const n = coords.length;
+            const adj = Array.from({length: n}, () => []);
+            for (const [a, b] of bonds) { adj[a].push(b); adj[b].push(a); }
+            const hByParent = new Map();
+            for (let i = 0; i < n; i++) {
+                if (!isH[i]) continue;
+                const par = adj[i].find(nb => !isH[nb]);
+                if (par === undefined) continue;
+                if (!hByParent.has(par)) hByParent.set(par, []);
+                hByParent.get(par).push(i);
+            }
+            for (const [par, hList] of hByParent) {
+                const pp = coords[par];
+                const heavyNbs = adj[par].filter(nb => !isH[nb]);
+                const nH = hList.length;
+                if (heavyNbs.length === 1) {
+                    const totalDeg = heavyNbs.length + nH;
+                    const step = (2 * Math.PI) / Math.max(totalDeg, 2);
+                    const inAngle = Math.atan2(pp[1] - coords[heavyNbs[0]][1], pp[0] - coords[heavyNbs[0]][0]);
+                    const backAngle = inAngle + Math.PI;
+                    let startShift = 0;
+                    if (nH === 3) {
+                        let bestD2 = -1;
+                        for (let s = 0; s < 18; s++) {
+                            const shift = s * Math.PI / 36;
+                            let minD2 = Infinity;
+                            for (let k = 0; k < 3; k++) {
+                                const a = backAngle + shift + (k + 1) * step;
+                                const hx = pp[0] + bondLen * Math.cos(a);
+                                const hy = pp[1] + bondLen * Math.sin(a);
+                                for (let ci = 0; ci < n; ci++) {
+                                    if (isH[ci] || ci === par) continue;
+                                    const dx = hx - coords[ci][0], dy = hy - coords[ci][1];
+                                    const d2 = dx*dx + dy*dy;
+                                    if (d2 < minD2) minD2 = d2;
+                                }
+                            }
+                            if (minD2 > bestD2) { bestD2 = minD2; startShift = shift; }
+                        }
+                    }
+                    hList.forEach((hi, k) => {
+                        const angle = backAngle + startShift + (k + 1) * step;
+                        coords[hi] = [pp[0] + bondLen * Math.cos(angle), pp[1] + bondLen * Math.sin(angle)];
+                    });
+                } else {
+                    const heavyAngles = heavyNbs.map(nb => Math.atan2(coords[nb][1]-pp[1], coords[nb][0]-pp[0]));
+                    const m = heavyAngles.length;
+                    const sorted = [...heavyAngles].sort((a, b) => a - b);
+                    const gaps = [];
+                    for (let i = 0; i < m; i++) {
+                        const a1 = sorted[i];
+                        const a2 = i + 1 < m ? sorted[i+1] : sorted[0] + 2 * Math.PI;
+                        gaps.push({ start: a1, size: a2 - a1, count: 0 });
+                    }
+                    let distribute = false;
+                    if (m === 2) {
+                        const v1 = [coords[heavyNbs[0]][0]-pp[0], coords[heavyNbs[0]][1]-pp[1]];
+                        const v2 = [coords[heavyNbs[1]][0]-pp[0], coords[heavyNbs[1]][1]-pp[1]];
+                        const dot = v1[0]*v2[0] + v1[1]*v2[1];
+                        const cosA = dot / (Math.hypot(v1[0],v1[1]) * Math.hypot(v2[0],v2[1]));
+                        if (cosA < -0.6) distribute = true;
+                    }
+                    if (distribute) {
+                        for (let i = 0; i < nH; i++) {
+                            let best = 0;
+                            for (let g = 1; g < gaps.length; g++) {
+                                if (gaps[g].size / (gaps[g].count + 1) > gaps[best].size / (gaps[best].count + 1))
+                                    best = g;
+                            }
+                            gaps[best].count++;
+                        }
+                    } else {
+                        let best = 0;
+                        for (let g = 1; g < gaps.length; g++) {
+                            if (gaps[g].size > gaps[best].size) best = g;
+                        }
+                        gaps[best].count = nH;
+                    }
+                    let hIdx = 0;
+                    for (const gap of gaps) {
+                        if (gap.count === 0) continue;
+                        const step = gap.size / (gap.count + 1);
+                        for (let k = 1; k <= gap.count; k++) {
+                            coords[hList[hIdx++]] = [pp[0] + bondLen * Math.cos(gap.start + k * step),
+                                                      pp[1] + bondLen * Math.sin(gap.start + k * step)];
+                        }
+                    }
+                }
+            }
         }
 
         /**
@@ -3998,22 +4693,31 @@ function createHydrogenBond(p1, p2) {
                     .filter(([a, b]) => compSet.has(a) && compSet.has(b))
                     .map(([a, b])    => [globalToLocal.get(a), globalToLocal.get(b)]);
 
+                const localIsH = comp.map(gi => symbols[gi] === 'H');
+                const heavyLocalBonds = localBonds.filter(([a, b]) => !localIsH[a] && !localIsH[b]);
+
                 let local2d;
                 if (comp.length === 1) {
                     local2d = [[0, 0]];
                 } else if (comp.length === 2) {
                     local2d = [[-0.75, 0], [0.75, 0]];
                 } else {
-                    // Project to 2D with PCA, then normalise to unit scale before FR
+                    // Project to 2D with PCA, then refine with ring regularisation + angle snapping
                     const pca2d = pca3Dto2D(pts3d);
-                    const allX  = pca2d.map(p => p[0]), allY = pca2d.map(p => p[1]);
-                    const span  = Math.max(
-                        Math.max(...allX) - Math.min(...allX),
-                        Math.max(...allY) - Math.min(...allY),
-                        1e-9,
-                    );
-                    const scaled = pca2d.map(p => [p[0] / span, p[1] / span]);
-                    local2d = fruchtermanReingold(scaled, localBonds);
+                    // Scale PCA using heavy bonds so average heavy bond length = 1.5
+                    const scaleBonds = heavyLocalBonds.length > 0 ? heavyLocalBonds : localBonds;
+                    let _totLen = 0;
+                    for (const [_a, _b] of scaleBonds) {
+                        const _dx = pca2d[_a][0] - pca2d[_b][0];
+                        const _dy = pca2d[_a][1] - pca2d[_b][1];
+                        _totLen += Math.sqrt(_dx*_dx + _dy*_dy);
+                    }
+                    const _s = _totLen > 0 ? 1.5 * scaleBonds.length / _totLen : 1;
+                    const scaled = pca2d.map(p => [p[0] * _s, p[1] * _s]);
+                    // Layout heavy atoms only (H atoms keep scaled PCA positions for now)
+                    local2d = refine2DLayout(scaled, heavyLocalBonds, comp.length);
+                    // Place H atoms around their heavy-atom parents
+                    placeHydrogens(local2d, localBonds, localIsH, 1.5);
                 }
 
                 // Centre this component's Y around 0
@@ -4060,7 +4764,9 @@ function createHydrogenBond(p1, p2) {
 
         function applySVGTransform() {
             const g = document.getElementById('svg-content');
-            if (g) g.setAttribute('transform', `translate(${svgTx},${svgTy}) scale(${svgScale})`);
+            if (g) g.setAttribute('transform',
+                `translate(${svgTx},${svgTy}) scale(${svgScale}) translate(${svgComX},${svgComY}) rotate(${svgAngle}) translate(${-svgComX},${-svgComY})`
+            );
         }
 
         function fitSVG() {
@@ -4072,7 +4778,14 @@ function createHydrogenBond(p1, p2) {
             const { coords2d } = layout2D;
             if (!coords2d || coords2d.length === 0) return;
 
-            const xs = coords2d.map(c => c[0]), ys = coords2d.map(c => c[1]);
+            const n = coords2d.length;
+            svgComX = coords2d.reduce((s, c) => s + c[0], 0) / n;
+            svgComY = coords2d.reduce((s, c) => s + c[1], 0) / n;
+            svgAngle = 0;
+
+            const visibleCoords = coords2d.filter((_, i) => !isHydrogenHidden(molData.symbols[i]));
+            const fitCoords = visibleCoords.length > 0 ? visibleCoords : coords2d;
+            const xs = fitCoords.map(c => c[0]), ys = fitCoords.map(c => c[1]);
             const minX = Math.min(...xs), maxX = Math.max(...xs);
             const minY = Math.min(...ys), maxY = Math.max(...ys);
             const molW = (maxX - minX) || 2, molH = (maxY - minY) || 2;
@@ -4103,6 +4816,7 @@ function createHydrogenBond(p1, p2) {
 
             // ── Bonds (split-colour, each half atom's colour) ──
             for (const [a, b] of bonds) {
+                if (isBondHidden(symbols[a], symbols[b])) continue;
                 const [x1, y1] = coords2d[a];
                 const [x2, y2] = coords2d[b];
                 const mx = (x1+x2)/2, my = (y1+y2)/2;
@@ -4129,6 +4843,7 @@ function createHydrogenBond(p1, p2) {
 
             // ── Atoms ──
             for (let i = 0; i < symbols.length; i++) {
+                if (isHydrogenHidden(symbols[i])) continue;
                 const [cx, cy] = coords2d[i];
                 const sym  = symbols[i];
                 const info = atomInfo[sym] || atomInfo['default'];
@@ -4142,6 +4857,7 @@ function createHydrogenBond(p1, p2) {
                 const grp = document.createElementNS(SVG_NS, 'g');
                 grp.setAttribute('class', 'atom-group');
                 grp.setAttribute('data-atom-idx', i);
+                if (sym === 'H') grp.setAttribute('data-is-h', '');
                 grp.style.cursor = 'pointer';
 
                 // Selection ring (hidden by default) — yellow highlight
@@ -4204,6 +4920,7 @@ function createHydrogenBond(p1, p2) {
 
                 atomsLayer.appendChild(grp);
             }
+            applyHideHydrogens();
         }
 
         /** Update SVG highlight rings and bond colours to match current selection. */
@@ -4288,7 +5005,15 @@ function createHydrogenBond(p1, p2) {
             const rect = svg.getBoundingClientRect();
             const px   = clientX - rect.left;
             const py   = clientY - rect.top;
-            return [(px - svgTx) / svgScale, (py - svgTy) / svgScale];
+            // Remove translate + scale
+            const qx = (px - svgTx) / svgScale;
+            const qy = (py - svgTy) / svgScale;
+            // Remove rotation around COM (inverse = rotate by -svgAngle)
+            if (svgAngle === 0) return [qx, qy];
+            const rad = -svgAngle * Math.PI / 180;
+            const cos = Math.cos(rad), sin = Math.sin(rad);
+            const dx = qx - svgComX, dy = qy - svgComY;
+            return [svgComX + cos * dx - sin * dy, svgComY + sin * dx + cos * dy];
         }
 
         /** Ray-casting point-in-polygon test (layout coordinates). */
@@ -4317,12 +5042,14 @@ function createHydrogenBond(p1, p2) {
                 const minX = Math.min(...xs), maxX = Math.max(...xs);
                 const minY = Math.min(...ys), maxY = Math.max(...ys);
                 layout2D.coords2d.forEach(([ax, ay], i) => {
+                    if (isHydrogenHidden(molData.symbols[i])) return;
                     if (ax >= minX && ax <= maxX && ay >= minY && ay <= maxY)
                         selectedAtoms.add(i);
                 });
             } else {
                 // lasso
                 layout2D.coords2d.forEach(([ax, ay], i) => {
+                    if (isHydrogenHidden(molData.symbols[i])) return;
                     if (pointInPolygon(ax, ay, layoutPts)) selectedAtoms.add(i);
                 });
             }
@@ -4442,6 +5169,7 @@ function createHydrogenBond(p1, p2) {
 
             const projected = projectAtoms3D();
             projected.forEach(([px, py, pz], i) => {
+                if (isHydrogenHidden(cachedSymbols[i])) return;
                 if (pz > 1) return;  // behind camera — skip
                 if (mode === 'rect') {
                     const xs   = localPts.map(p => p[0]);
@@ -4956,6 +5684,10 @@ function createHydrogenBond(p1, p2) {
             let panning  = false;
             let panSX = 0, panSY = 0, panTX0 = 0, panTY0 = 0;
 
+            // Rotate state
+            let rotating = false;
+            let rotComX = 0, rotComY = 0, rotStartAngle = 0, rotAngle0 = 0;
+
             // Selection drag state
             let selDragging  = false;
             let selStartX    = 0, selStartY = 0;
@@ -4985,10 +5717,24 @@ function createHydrogenBond(p1, p2) {
                 e.preventDefault();
 
                 if (currentMode === 'navigate') {
-                    panning = true;
-                    panSX   = e.clientX; panSY = e.clientY;
-                    panTX0  = svgTx;     panTY0 = svgTy;
-                    svg.classList.add('panning');
+                    const onMolecule = !!e.target.closest('.atom-group, .bond-seg');
+                    if (onMolecule) {
+                        panning = true;
+                        panSX  = e.clientX; panSY = e.clientY;
+                        panTX0 = svgTx;     panTY0 = svgTy;
+                        svg.classList.add('panning');
+                    } else {
+                        rotating = true;
+                        const svgRect = svg.getBoundingClientRect();
+                        // COM screen position (SVG viewport coords, stable during drag)
+                        rotComX = svgComX * svgScale + svgTx;
+                        rotComY = svgComY * svgScale + svgTy;
+                        const mx = e.clientX - svgRect.left;
+                        const my = e.clientY - svgRect.top;
+                        rotStartAngle = Math.atan2(my - rotComY, mx - rotComX);
+                        rotAngle0 = svgAngle;
+                        svg.classList.add('rotating');
+                    }
 
                 } else if (currentMode === 'rect') {
                     selDragging = true;
@@ -5011,6 +5757,14 @@ function createHydrogenBond(p1, p2) {
                     svgTy = panTY0 + (e.clientY - panSY);
                     applySVGTransform();
 
+                } else if (rotating && currentMode === 'navigate') {
+                    const svgRect = svg.getBoundingClientRect();
+                    const mx = e.clientX - svgRect.left;
+                    const my = e.clientY - svgRect.top;
+                    const curAngle = Math.atan2(my - rotComY, mx - rotComX);
+                    svgAngle = rotAngle0 + (curAngle - rotStartAngle) * 180 / Math.PI;
+                    applySVGTransform();
+
                 } else if (selDragging && currentMode === 'rect') {
                     updateSelRectOverlay(selStartX, selStartY, e.clientX, e.clientY);
 
@@ -5026,6 +5780,10 @@ function createHydrogenBond(p1, p2) {
                 if (panning) {
                     panning = false;
                     svg.classList.remove('panning');
+                }
+                if (rotating) {
+                    rotating = false;
+                    svg.classList.remove('rotating');
                 }
 
                 if (selDragging) {
@@ -5120,6 +5878,51 @@ function createHydrogenBond(p1, p2) {
             axisScene3D.add(new THREE.AmbientLight(0xffffff, 1.0));
         }
 
+        function isOrthographicView3D() {
+            return String(fragSettings.viewMode || 'Perspective').toLowerCase() === 'orthographic';
+        }
+
+        function createCamera3D(width, height) {
+            const aspect = Math.max(width, 1) / Math.max(height, 1);
+            if (isOrthographicView3D()) {
+                const frustumSize = 20;
+                return new THREE.OrthographicCamera(
+                    (frustumSize * aspect) / -2,
+                    (frustumSize * aspect) / 2,
+                    frustumSize / 2,
+                    frustumSize / -2,
+                    -1000,
+                    1000
+                );
+            }
+            return new THREE.PerspectiveCamera(55, aspect, 0.1, 2000);
+        }
+
+        function updateCamera3DProjection(width, height) {
+            if (!camera3D) return;
+            const aspect = Math.max(width, 1) / Math.max(height, 1);
+            if (camera3D.isPerspectiveCamera) {
+                camera3D.aspect = aspect;
+            } else {
+                const frustumSize = 20;
+                camera3D.left = (frustumSize * aspect) / -2;
+                camera3D.right = (frustumSize * aspect) / 2;
+                camera3D.top = frustumSize / 2;
+                camera3D.bottom = frustumSize / -2;
+            }
+            camera3D.updateProjectionMatrix();
+        }
+
+        function updateOrthographicTrackballPanSpeed3D() {
+            if (!renderer3D || !camera3D || !controls3D || !camera3D.isOrthographicCamera) return;
+            const canvasWidth = renderer3D.domElement ? renderer3D.domElement.clientWidth : 0;
+            const panel = document.getElementById('panel-3d');
+            const fallbackWidth = panel ? panel.clientWidth : 800;
+            const width = Math.max(canvasWidth || fallbackWidth, 1);
+            const distance = Math.max(camera3D.position.distanceTo(controls3D.target), 0.1);
+            controls3D.panSpeed = width / distance;
+        }
+
         function init3D() {
             const panel  = document.getElementById('panel-3d');
             const canvas = document.getElementById('molecule-canvas-3d');
@@ -5141,7 +5944,7 @@ function createHydrogenBond(p1, p2) {
             renderer3D.setSize(w, h);
 
             scene3D  = new THREE.Scene();
-            camera3D = new THREE.PerspectiveCamera(55, w / h, 0.1, 2000);
+            camera3D = createCamera3D(w, h);
             camera3D.position.set(0, 0, 10);
             updateBgColor3D();
 
@@ -5283,10 +6086,10 @@ function createHydrogenBond(p1, p2) {
             const w = Math.max(panel.clientWidth,  1);
             const h = Math.max(panel.clientHeight, 1);
             renderer3D.setSize(w, h);
-            camera3D.aspect = w / h;
-            camera3D.updateProjectionMatrix();
+            updateCamera3DProjection(w, h);
             if (controls3D && typeof controls3D.handleResize === 'function')
                 controls3D.handleResize();
+            updateOrthographicTrackballPanSpeed3D();
         }
 
         function updateBgColor3D() {
@@ -5294,6 +6097,15 @@ function createHydrogenBond(p1, p2) {
             const col = new THREE.Color(fragSettings.backgroundColor);
             scene3D.background = col;
             renderer3D.setClearColor(col, 1);
+            const p2d = document.getElementById('panel-2d');
+            if (p2d) {
+                const off = 10 / 255;
+                p2d.style.background = '#' + new THREE.Color(
+                    Math.min(1, col.r + off),
+                    Math.min(1, col.g + off),
+                    Math.min(1, col.b + off)
+                ).getHexString();
+            }
         }
 
         function disposeObj3D(obj) {
@@ -5315,13 +6127,24 @@ function createHydrogenBond(p1, p2) {
             const center  = box.getCenter(new THREE.Vector3());
             const size    = box.getSize(new THREE.Vector3());
             const maxDim  = Math.max(size.x, size.y, size.z, 1);
-            const halfFov = THREE.MathUtils.degToRad(camera3D.fov / 2);
-            const dist    = maxDim / (2 * Math.tan(halfFov)) + maxDim;
-            camera3D.position.copy(center.clone().add(new THREE.Vector3(dist, dist * 0.5, dist)));
+            if (camera3D.isPerspectiveCamera) {
+                const halfFov = THREE.MathUtils.degToRad(camera3D.fov / 2);
+                const dist    = maxDim / (2 * Math.tan(halfFov)) + maxDim;
+                camera3D.position.copy(center.clone().add(new THREE.Vector3(dist, dist * 0.5, dist)));
+            } else {
+                const dist = maxDim * 3;
+                camera3D.position.copy(center.clone().add(new THREE.Vector3(dist, dist * 0.5, dist)));
+                camera3D.zoom = Math.max(0.01, 20 / (maxDim * 2.4));
+                const panel = document.getElementById('panel-3d');
+                const w = panel ? Math.max(panel.clientWidth, 1) : 1;
+                const h = panel ? Math.max(panel.clientHeight, 1) : 1;
+                updateCamera3DProjection(w, h);
+            }
             controls3D.target.copy(center);
             controls3D.update();
             camera3D.lookAt(center);
             camera3D.updateProjectionMatrix();
+            updateOrthographicTrackballPanSpeed3D();
         }
 
         /** Full 3-D molecule re-render (atoms + bonds). */
@@ -5359,18 +6182,21 @@ function createHydrogenBond(p1, p2) {
                 const bp = findBondsSpatialGrid(positions, symbols, cutoff);
                 for (let b = 0; b < bp.length; b++) {
                     const { i, j } = bp[b];
+                    if (isBondHidden(symbols[i], symbols[j])) continue;
                     const bond = bf(positions[i], positions[j], symbols[i], symbols[j], bondRadius, atomScale, helpers);
-                    if (bond) { bond.renderOrder = 1; moleculeGroup3D.add(bond); }
+                    if (bond) { bond.userData.bondA = i; bond.userData.bondB = j; bond.renderOrder = 1; moleculeGroup3D.add(bond); }
                 }
             }
 
             // Atoms (tag each mesh for raycasting)
             for (let i = 0; i < positions.length; i++) {
+                if (isHydrogenHidden(symbols[i])) continue;
                 const atom = af(positions[i], symbols[i], atomScale, helpers);
                 if (atom) {
                     atom.traverse(child => {
                         if (child.isMesh) { child.userData.atomIndex = i; atomMeshes3D.push(child); }
                     });
+                    atom.userData.atomIndex = i;
                     atom.renderOrder = 0;
                     moleculeGroup3D.add(atom);
                 }
@@ -5394,7 +6220,7 @@ function createHydrogenBond(p1, p2) {
                     cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
                 ];
                 const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                const cellMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(fragSettings.cellColor) });
+                const cellMaterial = new THREE.LineBasicMaterial({ color: toLinearColor(fragSettings.cellColor) });
                 const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
                 cellMesh.renderOrder = 2;
                 moleculeGroup3D.add(cellMesh);
@@ -5409,6 +6235,7 @@ function createHydrogenBond(p1, p2) {
             scene3D.add(moleculeGroup3D);
             if (fitOnNextRender) { fitCamera3D(moleculeGroup3D); fitOnNextRender = false; }
             renderSelOverlay3D();
+            applyHideHydrogens();
         }
 
         /** Rebuild the transparent yellow selection-sphere + bond overlay. */
@@ -5424,6 +6251,7 @@ function createHydrogenBond(p1, p2) {
             // Atom spheres
             for (const idx of selectedAtoms) {
                 if (idx >= cachedPos3D.length) continue;
+                if (isHydrogenHidden(cachedSymbols[idx])) continue;
                 const sym   = cachedSymbols[idx] || 'C';
                 const info  = atomInfo[sym] || atomInfo['default'];
                 const r     = info.radius * atomScale * 1.50;
@@ -5439,6 +6267,7 @@ function createHydrogenBond(p1, p2) {
                 layout2D.bonds.forEach(([a, b]) => {
                     if (!selectedAtoms.has(a) || !selectedAtoms.has(b)) return;
                     if (a >= cachedPos3D.length || b >= cachedPos3D.length) return;
+                    if (isBondHidden(cachedSymbols[a], cachedSymbols[b])) return;
                     const pA = cachedPos3D[a], pB = cachedPos3D[b];
                     const dir = new THREE.Vector3().subVectors(pB, pA);
                     const len = dir.length();
@@ -5497,6 +6326,38 @@ function createHydrogenBond(p1, p2) {
             updateSVGSelection();
             renderSelOverlay3D();
             updateIndexPanel();
+        }
+
+        function applyHideHydrogens() {
+            if (!molData) return;
+            const syms = molData.symbols;
+            const hideHydrogens = !!fragSettings.hideHydrogens;
+            if (hideHydrogens) {
+                let changed = false;
+                for (const idx of [...selectedAtoms]) {
+                    if (syms[idx] === 'H') { selectedAtoms.delete(idx); changed = true; }
+                }
+                if (changed) updateIndexPanel();
+            }
+            document.querySelectorAll('.atom-group[data-is-h]').forEach(grp => {
+                grp.style.display = hideHydrogens ? 'none' : '';
+            });
+            document.querySelectorAll('.bond-seg').forEach(el => {
+                const a = parseInt(el.getAttribute('data-bond-a'));
+                const b = parseInt(el.getAttribute('data-bond-b'));
+                if (syms[a] === 'H' || syms[b] === 'H')
+                    el.style.display = hideHydrogens ? 'none' : '';
+            });
+            if (moleculeGroup3D) {
+                moleculeGroup3D.children.forEach(obj => {
+                    if (obj.userData.atomIndex !== undefined && syms[obj.userData.atomIndex] === 'H')
+                        obj.visible = !hideHydrogens;
+                    else if (obj.userData.bondA !== undefined &&
+                            (syms[obj.userData.bondA] === 'H' || syms[obj.userData.bondB] === 'H'))
+                        obj.visible = !hideHydrogens;
+                });
+            }
+            renderSelOverlay3D();
         }
 
         function updateIndexPanel() {
@@ -5594,6 +6455,36 @@ function createHydrogenBond(p1, p2) {
                 renderMolecule3D();
             });
 
+            const hideHydrogensCb = document.getElementById('hide-hydrogens');
+            if (hideHydrogensCb) {
+                hideHydrogensCb.checked = !!fragSettings.hideHydrogens;
+                hideHydrogensCb.addEventListener('change', function () {
+                    fragSettings.hideHydrogens = this.checked;
+                    buildSVG();
+                    fitSVG();
+                    renderMolecule3D();
+                });
+            }
+
+            const showBlurCb = document.getElementById('show-blur');
+            if (showBlurCb) {
+                showBlurCb.checked = !!fragSettings.showBlur;
+                showBlurCb.addEventListener('change', function () {
+                    fragSettings.showBlur = this.checked;
+                    updateBlurEffect();
+                });
+            }
+
+            const blurSlider = document.getElementById('blur-strength');
+            if (blurSlider) {
+                blurSlider.value = getBlurStrengthValue().toFixed(1);
+                blurSlider.addEventListener('input', function () {
+                    fragSettings.blurStrength = parseFloat(this.value);
+                    updateBlurEffect();
+                });
+            }
+            updateBlurEffect();
+
             // Background colour
             const bgInput = document.getElementById('bg-color');
             bgInput.value = fragSettings.backgroundColor || '#1f2937';
@@ -5652,7 +6543,15 @@ function createHydrogenBond(p1, p2) {
                 });
                 updateSelectionVisuals();
             });
-
+            document.getElementById('expand-h-btn').addEventListener('click', () => {
+                if (!molData || !layout2D) return;
+                const syms = molData.symbols;
+                layout2D.bonds.forEach(([a, b]) => {
+                    if (selectedAtoms.has(a) && syms[b] === 'H') selectedAtoms.add(b);
+                    if (selectedAtoms.has(b) && syms[a] === 'H') selectedAtoms.add(a);
+                });
+                updateSelectionVisuals();
+            });
             // Clipboard helper — works in file:// / iframe contexts without HTTPS
             function copyText(text) {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -5815,6 +6714,19 @@ function createHydrogenBond(p1, p2) {
                         if (showAxisCbMsg && msg.settings.showAxis !== undefined) {
                             showAxisCbMsg.checked = fragSettings.showAxis;
                         }
+                        const hideHydrogensCbMsg = document.getElementById('hide-hydrogens');
+                        if (hideHydrogensCbMsg && msg.settings.hideHydrogens !== undefined) {
+                            hideHydrogensCbMsg.checked = !!fragSettings.hideHydrogens;
+                        }
+                        const showBlurCbMsg = document.getElementById('show-blur');
+                        if (showBlurCbMsg && msg.settings.showBlur !== undefined) {
+                            showBlurCbMsg.checked = !!fragSettings.showBlur;
+                        }
+                        const blurSliderMsg = document.getElementById('blur-strength');
+                        if (blurSliderMsg && msg.settings.blurStrength !== undefined) {
+                            blurSliderMsg.value = getBlurStrengthValue().toFixed(1);
+                        }
+                        updateBlurEffect();
                         recompute();
                     }
                     break;

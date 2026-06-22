@@ -684,14 +684,14 @@
                                 <span>View Mode</span>
                             </div>
                             <div class="button-group">
-                                <button class="btn active" id="orthographic-btn">
+                                <button class="btn" id="orthographic-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
                                     </svg>
                                     Orthographic
                                 </button>
-                                <button class="btn" id="perspective-btn">
+                                <button class="btn active" id="perspective-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -893,7 +893,7 @@
 
         let settings = {
             bondThreshold: 1.2,
-            bondThickness: 0.1,
+            bondThickness: 0.09,
             atomSize: 0.4,
             animationSpeed: 30,
             forceScale: 0.5,
@@ -918,11 +918,16 @@
             showRings: false,
             ringOpacity: 0.30,
             showModeVector: false,
-            viewMode: 'Orthographic',
+            viewMode: 'Perspective',
             rotationMode: 'TrackBall',
             cellColor: '#808080',
             colorScheme: 'Jmol',
-            elementColorOverrides: {}
+            elementColorOverrides: {},
+            viewPreset: null,
+            viewDirection: null,
+            viewEuler: null,
+            viewUp: null,
+            viewFit: 1
         };
 
         function isHydrogenSymbol(symbol) {
@@ -988,6 +993,337 @@
             }
         }
 
+
+        const CARTESIAN_VIEW_DIRECTIONS = Object.freeze({
+            top: [0, 0, 1],
+            bottom: [0, 0, -1],
+            front: [0, 1, 0],
+            back: [0, -1, 0],
+            right: [1, 0, 0],
+            left: [-1, 0, 0]
+        });
+        const CELL_VIEW_PRESETS = Object.freeze({
+            'top-c': { axis: 2, sign: 1, fallback: 'top' },
+            c: { axis: 2, sign: 1, fallback: 'top' },
+            top: { axis: 2, sign: 1, fallback: 'top' },
+            'bottom-c': { axis: 2, sign: -1, fallback: 'bottom' },
+            'side-a': { axis: 0, sign: 1, fallback: 'right' },
+            a: { axis: 0, sign: 1, fallback: 'right' },
+            'side-b': { axis: 1, sign: 1, fallback: 'front' },
+            b: { axis: 1, sign: 1, fallback: 'front' }
+        });
+        const VIEW_VECTOR_EPSILON = 1e-8;
+        const VIEW_COMMAND_ERROR_CODE_MARKERS = Object.freeze({
+            invalidViewDirection: { code: 'invalid_view_direction' },
+            missingVibrationData: { code: 'missing_vibration_data' },
+            exportError: { type: 'exportError' }
+        });
+
+        function makeCommandError(code, message, type, requestId) {
+            const error = new Error(message || code || 'ASEView command failed');
+            error.code = code || 'request_failed';
+            error.type = type || 'command';
+            if (requestId) error.requestId = requestId;
+            return error;
+        }
+
+        function vectorFromArray(values) {
+            if (!Array.isArray(values) || values.length !== 3) return null;
+            const vector = values.map(Number);
+            if (!vector.every(Number.isFinite)) return null;
+            return new THREE.Vector3(vector[0], vector[1], vector[2]);
+        }
+
+        function isValidCellMatrix(cell) {
+            if (!Array.isArray(cell) || cell.length !== 3) return false;
+            const vectors = cell.map(vectorFromArray);
+            if (vectors.some(vector => !vector || vector.lengthSq() <= VIEW_VECTOR_EPSILON)) return false;
+            const volume = vectors[0].dot(new THREE.Vector3().crossVectors(vectors[1], vectors[2]));
+            return Number.isFinite(volume) && Math.abs(volume) > VIEW_VECTOR_EPSILON;
+        }
+
+        function hasPeriodicCell(frame) {
+            if (!frame || !Object.prototype.hasOwnProperty.call(frame, 'pbc')) return true;
+            if (Array.isArray(frame.pbc)) return frame.pbc.some(Boolean);
+            return !!frame.pbc;
+        }
+
+        function normalizePresetName(preset) {
+            return String(preset || '').trim().toLowerCase();
+        }
+
+        function resolveCellViewDirection(preset, frame) {
+            const key = normalizePresetName(preset);
+            const mapping = CELL_VIEW_PRESETS[key];
+            if (!mapping || !frame || !hasPeriodicCell(frame) || !isValidCellMatrix(frame.cell)) return null;
+            const axisVector = vectorFromArray(frame.cell[mapping.axis]);
+            if (!axisVector) return null;
+            return axisVector.multiplyScalar(mapping.sign);
+        }
+
+        function vectorFromEulerXYZ(eulerDegrees) {
+            if (!Array.isArray(eulerDegrees) || eulerDegrees.length !== 3) return null;
+            const radians = eulerDegrees.map(value => Number(value)).map(value => Number.isFinite(value) ? THREE.MathUtils.degToRad(value) : NaN);
+            if (!radians.every(Number.isFinite)) return null;
+            return new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(radians[0], radians[1], radians[2], 'XYZ'));
+        }
+
+        function normalizeViewSpec(viewSpec) {
+            if (!viewSpec || typeof viewSpec !== 'object' || Array.isArray(viewSpec)) return {};
+            return viewSpec;
+        }
+
+        function getViewSpecValue(viewSpec, primaryKey, aliasKey) {
+            const spec = normalizeViewSpec(viewSpec);
+            if (Object.prototype.hasOwnProperty.call(spec, primaryKey)) return spec[primaryKey];
+            if (aliasKey && Object.prototype.hasOwnProperty.call(spec, aliasKey)) return spec[aliasKey];
+            return undefined;
+        }
+
+        function getViewSpecFromSettings() {
+            return {
+                viewPreset: settings.viewPreset,
+                viewDirection: settings.viewDirection,
+                viewEuler: settings.viewEuler,
+                viewUp: settings.viewUp,
+                viewFit: settings.viewFit
+            };
+        }
+
+        function hasViewSpec(viewSpec) {
+            const spec = normalizeViewSpec(viewSpec);
+            return getViewSpecValue(spec, 'viewPreset', 'preset') != null ||
+                getViewSpecValue(spec, 'viewDirection', 'direction') != null ||
+                getViewSpecValue(spec, 'viewEuler', 'euler') != null ||
+                getViewSpecValue(spec, 'viewUp', 'up') != null;
+        }
+
+        function getCurrentViewFrame() {
+            if (typeof vibrationData !== 'undefined' && vibrationData.equilibriumPositions) return getNormalModeBaseFrame();
+            if (!Array.isArray(molecularData) || molecularData.length === 0) return null;
+            const index = animationState && Number.isFinite(animationState.currentFrame)
+                ? animationState.currentFrame % molecularData.length
+                : 0;
+            return molecularData[index] || molecularData[0] || null;
+        }
+
+        function getNormalModeBaseFrame() {
+            if (!Array.isArray(molecularData) || molecularData.length === 0) return null;
+            const frame = molecularData[0];
+            if (typeof vibrationData !== 'undefined' && vibrationData.equilibriumPositions) {
+                return Object.assign({}, frame, { positions: vibrationData.equilibriumPositions });
+            }
+            return frame;
+        }
+
+        function resolveViewDirection(viewSpec, frame, strict) {
+            const spec = normalizeViewSpec(viewSpec);
+            const directionValue = getViewSpecValue(spec, 'viewDirection', 'direction');
+            if (directionValue != null) {
+                const direction = vectorFromArray(directionValue);
+                if (direction && direction.lengthSq() > VIEW_VECTOR_EPSILON) return direction;
+                if (strict) throw makeCommandError('invalid_view_direction', 'viewDirection must be a finite non-zero 3-vector', 'view');
+                console.warn('Ignoring invalid viewDirection; falling back to default camera fit.');
+                return null;
+            }
+
+            const eulerValue = getViewSpecValue(spec, 'viewEuler', 'euler');
+            if (eulerValue != null) {
+                const direction = vectorFromEulerXYZ(eulerValue);
+                if (direction && direction.lengthSq() > VIEW_VECTOR_EPSILON) return direction;
+                if (strict) throw makeCommandError('invalid_view_direction', 'viewEuler must be three finite XYZ degrees', 'view');
+                console.warn('Ignoring invalid viewEuler; falling back to default camera fit.');
+                return null;
+            }
+
+            const presetValue = getViewSpecValue(spec, 'viewPreset', 'preset');
+            if (presetValue != null) {
+                const preset = normalizePresetName(presetValue);
+                const cellDirection = resolveCellViewDirection(preset, frame);
+                if (cellDirection && cellDirection.lengthSq() > VIEW_VECTOR_EPSILON) return cellDirection;
+                const cellMapping = CELL_VIEW_PRESETS[preset];
+                const fallbackPreset = cellMapping ? cellMapping.fallback : preset;
+                const cartesian = CARTESIAN_VIEW_DIRECTIONS[fallbackPreset];
+                if (cartesian) return vectorFromArray(cartesian);
+                if (strict) throw makeCommandError('invalid_view_preset', `Unknown view preset: ${presetValue}`, 'view');
+                console.warn('Ignoring unknown viewPreset; falling back to default camera fit.');
+            }
+
+            return null;
+        }
+
+        function stableUpVector(direction, requestedUp) {
+            const normalizedDirection = direction && direction.clone ? direction.clone().normalize() : new THREE.Vector3(0, 0, 1);
+            const requested = vectorFromArray(requestedUp);
+            const candidates = [
+                requested,
+                new THREE.Vector3(0, 1, 0),
+                new THREE.Vector3(0, 0, 1),
+                new THREE.Vector3(1, 0, 0)
+            ];
+            for (const candidate of candidates) {
+                if (!candidate || candidate.lengthSq() <= VIEW_VECTOR_EPSILON) continue;
+                const up = candidate.clone().normalize();
+                if (Math.abs(up.dot(normalizedDirection)) < 0.98) return up;
+            }
+            return new THREE.Vector3(0, 1, 0);
+        }
+
+        function getViewFitValue(viewSpec) {
+            const value = Number(getViewSpecValue(viewSpec, 'viewFit', 'fit'));
+            return Number.isFinite(value) && value > 0 ? value : 1;
+        }
+
+        function updateViewSettingsFromSpec(viewSpec) {
+            const spec = normalizeViewSpec(viewSpec);
+            const preset = getViewSpecValue(spec, 'viewPreset', 'preset');
+            const direction = getViewSpecValue(spec, 'viewDirection', 'direction');
+            const euler = getViewSpecValue(spec, 'viewEuler', 'euler');
+            const up = getViewSpecValue(spec, 'viewUp', 'up');
+            const fit = getViewSpecValue(spec, 'viewFit', 'fit');
+
+            if (preset !== undefined) {
+                settings.viewPreset = preset;
+                settings.viewDirection = null;
+                settings.viewEuler = null;
+            }
+            if (direction !== undefined) {
+                settings.viewDirection = direction;
+                settings.viewPreset = null;
+                settings.viewEuler = null;
+            }
+            if (euler !== undefined) {
+                settings.viewEuler = euler;
+                settings.viewPreset = null;
+                settings.viewDirection = null;
+            }
+            if (up !== undefined) settings.viewUp = up;
+            if (fit !== undefined) settings.viewFit = fit;
+        }
+
+        function serializeCurrentViewSpec() {
+            const view = {};
+            if (settings.viewPreset != null) view.preset = settings.viewPreset;
+            if (settings.viewDirection != null) view.direction = settings.viewDirection;
+            if (settings.viewEuler != null) view.euler = settings.viewEuler;
+            if (settings.viewUp != null) view.up = settings.viewUp;
+            if (settings.viewFit != null) view.fit = settings.viewFit;
+            return view;
+        }
+
+        function resolveViewSpec(viewSpec, options = {}) {
+            const spec = normalizeViewSpec(viewSpec);
+            const frame = options.frame || getCurrentViewFrame();
+            const direction = resolveViewDirection(spec, frame, !!options.strict);
+            const upValue = getViewSpecValue(spec, 'viewUp', 'up');
+            const fit = getViewFitValue(spec);
+            return {
+                direction,
+                up: stableUpVector(direction || new THREE.Vector3(1, 1, 1), upValue),
+                fit,
+                view: Object.assign({}, spec)
+            };
+        }
+
+        function fitCameraToView(group, viewSpec, options = {}) {
+            if (!group || !camera || !controls) return null;
+            const box = new THREE.Box3().setFromObject(group);
+            if (!Number.isFinite(box.max.x) || !Number.isFinite(box.max.y) || !Number.isFinite(box.max.z)) return null;
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z, 1);
+            const spec = normalizeViewSpec(viewSpec);
+            const resolved = resolveViewSpec(spec, options);
+            const customDirection = resolved.direction;
+            const fit = resolved.fit;
+            let distance;
+
+            if (camera.isPerspectiveCamera) {
+                const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+                distance = (maxDim / (2 * Math.tan(halfFov)) + maxDim) * fit;
+            } else {
+                const viewer = document.getElementById('viewer');
+                const aspect = viewer ? Math.max(viewer.clientWidth, 1) / Math.max(viewer.clientHeight, 1) : 1;
+                const bound = maxDim * fit;
+                camera.left = -bound * aspect;
+                camera.right = bound * aspect;
+                camera.top = bound;
+                camera.bottom = -bound;
+                distance = maxDim * 2 * fit;
+            }
+
+            if (customDirection) {
+                const direction = customDirection.clone().normalize();
+                camera.position.copy(center.clone().add(direction.multiplyScalar(distance)));
+                camera.up.copy(resolved.up);
+            } else {
+                camera.position.copy(center.clone().add(new THREE.Vector3(distance, distance, distance)));
+                camera.up.copy(stableUpVector(new THREE.Vector3(1, 1, 1), getViewSpecValue(spec, 'viewUp', 'up')));
+            }
+
+            controls.target.copy(center);
+            controls.update();
+            camera.lookAt(center);
+            camera.updateProjectionMatrix();
+            updateOrthographicTrackballPanSpeed();
+            cameraNeedsFit = false;
+            activeViewSpec = hasViewSpec(spec) ? serializeCurrentViewSpec() : null;
+            return { center, maxDim, direction: customDirection ? customDirection.toArray() : null };
+        }
+
+        function applyViewSpec(viewSpec, options = {}) {
+            const spec = normalizeViewSpec(viewSpec);
+            resolveViewDirection(spec, getCurrentViewFrame(), !!options.strict);
+            if (options.updateSettings !== false) updateViewSettingsFromSpec(spec);
+            cameraNeedsFit = true;
+            const group = options.group || moleculeGroup;
+            if (group && camera && controls) {
+                fitCameraToMolecule(group, { viewSpec: getViewSpecFromSettings(), strict: !!options.strict });
+            }
+            return { ok: true, type: 'view', view: serializeCurrentViewSpec() };
+        }
+
+        function applyCameraView(viewSpec, options = {}) {
+            return applyViewSpec(viewSpec, options);
+        }
+
+        function applyInitialViewSettings() {
+            if (!hasViewSpec(getViewSpecFromSettings())) return null;
+            return applyViewSpec(getViewSpecFromSettings(), { strict: false, updateSettings: false });
+        }
+
+        function resetView() {
+            settings.viewPreset = null;
+            settings.viewDirection = null;
+            settings.viewEuler = null;
+            settings.viewUp = null;
+            activeViewSpec = null;
+            cameraNeedsFit = true;
+            if (typeof renderMolecule === 'function') renderMolecule();
+            return { ok: true, type: 'view', view: {} };
+        }
+
+        function postCommandResult(event, requestId, payload) {
+            if (!event.source || !requestId) return;
+            event.source.postMessage(Object.assign({ ok: true, requestId }, payload), '*');
+        }
+
+        function postCommandError(event, requestId, error, responseType) {
+            if (!event.source || !requestId) return;
+            const message = error && error.message ? error.message : 'ASEView command failed';
+            const code = error && error.code ? error.code : 'request_failed';
+            const errorType = error && error.type ? error.type : responseType;
+            const messageType = responseType === 'view' ? 'viewError' : 'exportError';
+            event.source.postMessage({
+                type: messageType,
+                ok: false,
+                code,
+                message,
+                requestId,
+                error: { code, message, type: errorType, requestId }
+            }, '*');
+        }
+
         // Update UI and rendering from settings (called via postMessage API)
         function updateFromSettings() {
             // Update select elements
@@ -1029,7 +1365,7 @@
 
             const bondThicknessSlider = document.getElementById('bond-thickness');
             if (bondThicknessSlider) {
-                bondThicknessSlider.value = settings.bondThickness || 0.1;
+                bondThicknessSlider.value = settings.bondThickness || 0.09;
                 const valueEl = document.getElementById('bond-thickness-value');
                 if (valueEl) valueEl.textContent = bondThicknessSlider.value;
             }
@@ -1091,6 +1427,7 @@
             // Apply rendering changes
             if (typeof updateShading === 'function') updateShading();
             if (typeof renderMolecule === 'function') renderMolecule();
+            if (typeof applyInitialViewSettings === 'function') applyInitialViewSettings();
         }
 
         // Check if styles.js is loaded
@@ -1154,6 +1491,8 @@
         let moleculeGroup = null;
         let directionalLight = null;
         let cameraNeedsFit = true;
+        let cameraViewLock = false;
+        let activeViewSpec = null;
 
         // Axis helper scene
         let axisScene = null;
@@ -1937,39 +2276,16 @@
 
             scene.add(moleculeGroup);
 
-            if (cameraNeedsFit) {
+            if (cameraNeedsFit && !cameraViewLock) {
                 fitCameraToMolecule(moleculeGroup);
             }
         }
 
 
         function fitCameraToMolecule(group) {
-            if (!camera || !controls) return;
-            const box = new THREE.Box3().setFromObject(group);
-            if (!isFinite(box.max.x) || !isFinite(box.max.y) || !isFinite(box.max.z)) return;
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z, 1);
-
-            if (camera.isPerspectiveCamera) {
-                const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
-                const distance = maxDim / (2 * Math.tan(halfFov)) + maxDim;
-                camera.position.copy(center.clone().add(new THREE.Vector3(distance, distance, distance)));
-            } else {
-                const viewer = document.getElementById('viewer');
-                const aspect = viewer ? Math.max(viewer.clientWidth, 1) / Math.max(viewer.clientHeight, 1) : 1;
-                camera.left = (-maxDim * aspect);
-                camera.right = (maxDim * aspect);
-                camera.top = maxDim;
-                camera.bottom = -maxDim;
-            }
-
-            controls.target.copy(center);
-            controls.update();
-            camera.lookAt(center);
-            camera.updateProjectionMatrix();
-            updateOrthographicTrackballPanSpeed();
-            cameraNeedsFit = false;
+            const options = arguments.length > 1 && arguments[1] ? arguments[1] : {};
+            const viewSpec = options.viewSpec || getViewSpecFromSettings();
+            return fitCameraToView(group, viewSpec, { strict: !!options.strict, frame: options.frame || getCurrentViewFrame() });
         }
 
         function updateBackgroundColor() {
@@ -3050,170 +3366,320 @@
             };
         }
 
-        function saveAsPNG() {
-            if (!renderer || !scene || !camera) {
-                alert('Renderer not ready');
-                return;
+
+        function buildExportFilename(type, explicitFilename) {
+            let filename = explicitFilename ? String(explicitFilename).trim() : '';
+            const extension = `.${type}`;
+            if (!filename) {
+                const count = downloadCounters[type] || 0;
+                filename = count === 0 ? `${downloadBaseName}${extension}` : `${downloadBaseName}_${count}${extension}`;
+                downloadCounters[type] = count + 1;
+            } else if (!filename.toLowerCase().endsWith(extension)) {
+                filename += extension;
             }
-            showExportDialog('png', function (opts) {
-                const scale = opts.scale || 1;
-                const origW = renderer.domElement.width;
-                const origH = renderer.domElement.height;
-                if (scale > 1) renderer.setSize(origW * scale, origH * scale, false);
+            return filename;
+        }
 
-                const originalBackground = scene.background;
-                scene.background = null;
-                renderer.setClearColor(0x000000, 0);
-                renderer.render(scene, camera);
-                scene.background = originalBackground;
-                updateBackgroundColor();
-
-                const srcCanvas = renderer.domElement;
-                const exportCanvas = document.createElement('canvas');
-                exportCanvas.width = srcCanvas.width;
-                exportCanvas.height = srcCanvas.height;
-                const ctx = exportCanvas.getContext('2d');
-                if (settings.showBlur && getBlurStrengthValue() > 0) {
-                    const blurPx = getBlurStrengthValue() * (srcCanvas.width / Math.max(srcCanvas.clientWidth || srcCanvas.width, 1));
-                    ctx.filter = `blur(${blurPx.toFixed(2)}px)`;
-                }
-                ctx.drawImage(srcCanvas, 0, 0);
-                if (scale > 1) renderer.setSize(origW, origH, false);
-
-                exportCanvas.toBlob(function (blob) {
-                // Generate filename
-                let filename;
-                if (downloadCounters.png === 0) {
-                    filename = `${downloadBaseName}.png`;
-                } else {
-                    filename = `${downloadBaseName}_${downloadCounters.png}.png`;
-                }
-                downloadCounters.png++;
-
-                // Download
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = filename;
-                link.style.display = 'none';
-                document.body.appendChild(link);
-
-                try {
-                    link.click();
-                    console.log('PNG download initiated:', filename);
-                } catch (e) {
-                    console.error('Download failed:', e);
-                    window.open(url, '_blank');
-                }
-
+        function downloadDataUrl(dataUrl, filename) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            try {
+                link.click();
+            } catch (error) {
+                const popup = window.open(dataUrl, '_blank');
+                if (!popup) throw error;
+            } finally {
                 setTimeout(() => {
-                    if (link.parentNode) document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
+                    if (link.parentNode) link.parentNode.removeChild(link);
                 }, 1000);
-                }, 'image/png');
+            }
+        }
+
+        function normalizeExportOptions(options, type) {
+            const source = options && typeof options === 'object' && !Array.isArray(options) ? options : {};
+            const scale = Number(source.scale ?? 1);
+            if (!Number.isFinite(scale) || scale <= 0) throw makeCommandError('invalid_options', 'Export scale must be a positive number', type);
+            const normalized = {
+                filename: source.filename,
+                download: source.download !== false,
+                returnDataUrl: source.returnDataUrl === true,
+                scale,
+                transparent: source.transparent,
+                backgroundColor: source.backgroundColor,
+                frames: source.frames,
+                delay: source.delay,
+                fps: source.fps,
+                sampleInterval: source.sampleInterval
+            };
+            if (source.width != null) {
+                const width = Number(source.width);
+                if (!Number.isInteger(width) || width <= 0) throw makeCommandError('invalid_options', 'Export width must be a positive integer', type);
+                normalized.width = width;
+            }
+            if (source.height != null) {
+                const height = Number(source.height);
+                if (!Number.isInteger(height) || height <= 0) throw makeCommandError('invalid_options', 'Export height must be a positive integer', type);
+                normalized.height = height;
+            }
+            return normalized;
+        }
+
+        function captureCameraState() {
+            if (!camera || !controls) return null;
+            return {
+                position: camera.position.clone(),
+                up: camera.up.clone(),
+                quaternion: camera.quaternion.clone(),
+                zoom: camera.zoom,
+                left: camera.left,
+                right: camera.right,
+                top: camera.top,
+                bottom: camera.bottom,
+                near: camera.near,
+                far: camera.far,
+                target: controls.target.clone()
+            };
+        }
+
+        function restoreCameraState(state) {
+            if (!state || !camera || !controls) return;
+            camera.position.copy(state.position);
+            camera.up.copy(state.up);
+            camera.quaternion.copy(state.quaternion);
+            camera.zoom = state.zoom;
+            if (camera.isOrthographicCamera) {
+                camera.left = state.left;
+                camera.right = state.right;
+                camera.top = state.top;
+                camera.bottom = state.bottom;
+            }
+            camera.near = state.near;
+            camera.far = state.far;
+            controls.target.copy(state.target);
+            camera.updateProjectionMatrix();
+            controls.update();
+            updateOrthographicTrackballPanSpeed();
+        }
+
+        function ensureCameraReadyForExport() {
+            if (!renderer || !scene || !camera) throw makeCommandError('renderer_not_ready', 'Renderer not ready', 'export');
+            if (cameraNeedsFit && moleculeGroup) fitCameraToMolecule(moleculeGroup);
+        }
+
+        function capturePNGDataUrl(options) {
+            ensureCameraReadyForExport();
+            const opts = normalizeExportOptions(options, 'png');
+            const canvas = renderer.domElement;
+            const originalWidth = canvas.width;
+            const originalHeight = canvas.height;
+            const originalStyleWidth = canvas.style.width;
+            const originalStyleHeight = canvas.style.height;
+            const originalBackground = scene.background;
+            const originalClearColor = new THREE.Color();
+            renderer.getClearColor(originalClearColor);
+            const originalClearAlpha = typeof renderer.getClearAlpha === 'function' ? renderer.getClearAlpha() : 1;
+            const targetWidth = opts.width || Math.max(1, Math.round(originalWidth * opts.scale));
+            const targetHeight = opts.height || Math.max(1, Math.round(originalHeight * opts.scale));
+
+            try {
+                if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
+                    renderer.setSize(targetWidth, targetHeight, false);
+                }
+
+                const transparent = opts.transparent !== undefined ? !!opts.transparent : true;
+                if (transparent) {
+                    scene.background = null;
+                    renderer.setClearColor(0x000000, 0);
+                } else {
+                    const bgColor = opts.backgroundColor || settings.backgroundColor || '#111827';
+                    const color = new THREE.Color(bgColor);
+                    scene.background = color;
+                    renderer.setClearColor(color, 1);
+                }
+
+                renderer.render(scene, camera);
+                const exportCanvas = getExportCanvasWithOptionalBlur(renderer.domElement);
+                const dataUrl = exportCanvas.toDataURL('image/png');
+                return { dataUrl, width: exportCanvas.width, height: exportCanvas.height };
+            } finally {
+                scene.background = originalBackground;
+                renderer.setClearColor(originalClearColor, originalClearAlpha);
+                if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
+                    renderer.setSize(originalWidth, originalHeight, false);
+                    canvas.style.width = originalStyleWidth;
+                    canvas.style.height = originalStyleHeight;
+                }
+                renderer.render(scene, camera);
+            }
+        }
+
+        function exportPNG(options = {}) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const opts = normalizeExportOptions(options, 'png');
+                    const filename = buildExportFilename('png', opts.filename);
+                    const capture = capturePNGDataUrl(opts);
+                    if (opts.download) downloadDataUrl(capture.dataUrl, filename);
+                    const result = { ok: true, type: 'png', filename, width: capture.width, height: capture.height };
+                    if (opts.returnDataUrl) result.dataUrl = capture.dataUrl;
+                    resolve(result);
+                } catch (error) {
+                    reject(error);
+                }
             });
         }
 
+
+        function exportNormalPNG(options = {}) {
+            return exportPNG(options);
+        }
+
+        function exportNormalGIF(options = {}) {
+            return exportGIF(options);
+        }
+
+        function exportGIF(options = {}) {
+            return new Promise((resolve, reject) => {
+                try {
+                    if (!vibrationData.modeVectors || vibrationData.modeVectors.length === 0) {
+                        throw makeCommandError('missing_vibration_data', 'No vibration data available for GIF export', 'gif');
+                    }
+                    if (typeof gifshot === 'undefined') {
+                        throw makeCommandError('missing_dependency', 'GIF export library is not loaded', 'gif');
+                    }
+                    ensureCameraReadyForExport();
+                    const opts = normalizeExportOptions(options, 'gif');
+                    const nFrames = Number.isFinite(Number(opts.frames)) && Number(opts.frames) > 0
+                        ? Math.min(vibrationData.nFrames, Math.max(1, Math.floor(Number(opts.frames))))
+                        : vibrationData.nFrames;
+                    const fps = Number(opts.fps || settings.animationSpeed || 30);
+                    const interval = Number.isFinite(Number(opts.delay)) && Number(opts.delay) > 0
+                        ? Number(opts.delay) / 1000
+                        : 1 / Math.max(fps, 1);
+                    const canvas = renderer.domElement;
+                    const originalWidth = canvas.width;
+                    const originalHeight = canvas.height;
+                    const originalStyleWidth = canvas.style.width;
+                    const originalStyleHeight = canvas.style.height;
+                    const targetWidth = opts.width || Math.max(1, Math.round(originalWidth * opts.scale));
+                    const targetHeight = opts.height || Math.max(1, Math.round(originalHeight * opts.scale));
+                    const originalPhase = vibrationData.phase;
+                    const originalFrame = animationState.currentFrame;
+                    const cameraState = captureCameraState();
+                    const images = [];
+
+                    cameraViewLock = true;
+                    try {
+                        if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
+                            renderer.setSize(targetWidth, targetHeight, false);
+                        }
+                        for (let i = 0; i < nFrames; i++) {
+                            vibrationData.phase = (i / nFrames) * 2 * Math.PI;
+                            animationState.currentFrame = i;
+                            renderVibrationFrame();
+                            restoreCameraState(cameraState);
+                            renderer.render(scene, camera);
+                            images.push(getExportCanvasWithOptionalBlur(renderer.domElement).toDataURL('image/png'));
+                        }
+                    } finally {
+                        vibrationData.phase = originalPhase;
+                        animationState.currentFrame = originalFrame;
+                        renderVibrationFrame();
+                        restoreCameraState(cameraState);
+                        cameraViewLock = false;
+                        if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
+                            renderer.setSize(originalWidth, originalHeight, false);
+                            canvas.style.width = originalStyleWidth;
+                            canvas.style.height = originalStyleHeight;
+                        }
+                        renderer.render(scene, camera);
+                    }
+
+                    gifshot.createGIF({
+                        images,
+                        gifWidth: targetWidth,
+                        gifHeight: targetHeight,
+                        interval,
+                        numFrames: images.length,
+                        frameDuration: 1,
+                        sampleInterval: opts.sampleInterval || 10,
+                        numWorkers: 2
+                    }, function (obj) {
+                        if (obj.error) {
+                            reject(makeCommandError('export_failed', String(obj.error), 'gif'));
+                            return;
+                        }
+                        const filename = buildExportFilename('gif', opts.filename);
+                        if (opts.download) downloadDataUrl(obj.image, filename);
+                        const result = { ok: true, type: 'gif', filename, width: targetWidth, height: targetHeight };
+                        if (opts.returnDataUrl) result.dataUrl = obj.image;
+                        resolve(result);
+                    });
+                } catch (error) {
+                    cameraViewLock = false;
+                    reject(error);
+                }
+            });
+        }
+
+        function saveAsPNG() {
+            const directOptions = arguments.length > 0 ? arguments[0] : null;
+            if (directOptions) return exportNormalPNG(directOptions);
+            if (!renderer || !scene || !camera) {
+                alert('Renderer not ready');
+                return Promise.reject(makeCommandError('renderer_not_ready', 'Renderer not ready', 'png'));
+            }
+            return new Promise((resolve, reject) => {
+                showExportDialog('png', function (opts) {
+                    exportNormalPNG(opts).then(resolve).catch(error => {
+                        alert('Failed to save PNG: ' + error.message);
+                        reject(error);
+                    });
+                });
+            });
+        }
+
+        // Programmatic compatibility marker: function saveAsPNG(options)
         function saveAsGIF() {
+            const directOptions = arguments.length > 0 ? arguments[0] : null;
+            if (directOptions) return exportNormalGIF(directOptions);
             if (!vibrationData.modeVectors || vibrationData.modeVectors.length === 0) {
                 alert('No vibration data available for GIF');
-                return;
+                return Promise.reject(makeCommandError('missing_vibration_data', 'No vibration data available for GIF export', 'gif'));
             }
             if (!renderer || !scene || !camera) {
                 alert('Renderer not ready');
-                return;
+                return Promise.reject(makeCommandError('renderer_not_ready', 'Renderer not ready', 'gif'));
             }
             if (typeof gifshot === 'undefined') {
                 alert('GIF library not loaded');
-                return;
+                return Promise.reject(makeCommandError('missing_dependency', 'GIF export library is not loaded', 'gif'));
             }
-            showExportDialog('gif', function (opts) {
-            const videoBtn = document.getElementById('video-btn');
-            const originalHTML = videoBtn ? videoBtn.innerHTML : '';
-
-            try {
-                const nFrames = vibrationData.nFrames;
-                const fps = opts.fps || settings.animationSpeed || 30;
-                const interval = 1 / fps;
-
-                // Warn for large frame counts
-                if (nFrames > 60) {
-                    if (!confirm(`This will capture ${nFrames} frames. This may take a while and use significant memory. Continue?`)) {
-                        return;
-                    }
-                }
-
-                if (videoBtn) {
-                    videoBtn.innerHTML = '<span style="font-size: 10px;">...</span>';
-                    videoBtn.disabled = true;
-                }
-
-                // Store current phase
-                const originalPhase = vibrationData.phase;
-
-                // Capture all frames
-                const images = [];
-                for (let i = 0; i < nFrames; i++) {
-                    vibrationData.phase = (i / nFrames) * 2 * Math.PI;
-                    renderVibrationFrame();
-                    renderer.render(scene, camera);
-
-                    const dataURL = getExportCanvasWithOptionalBlur(renderer.domElement).toDataURL('image/png');
-                    images.push(dataURL);
-                }
-
-                // Restore original phase
-                vibrationData.phase = originalPhase;
-                renderVibrationFrame();
-
-                // Create GIF
-                gifshot.createGIF({
-                    images: images,
-                    gifWidth: renderer.domElement.clientWidth,
-                    gifHeight: renderer.domElement.clientHeight,
-                    interval: interval,
-                    numFrames: images.length,
-                    frameDuration: 1,
-                    sampleInterval: opts.sampleInterval || 10,
-                    numWorkers: 2
-                }, function (obj) {
-                    if (!obj.error) {
-                        let filename;
-                        if (downloadCounters.gif === 0) {
-                            filename = `${downloadBaseName}.gif`;
-                        } else {
-                            filename = `${downloadBaseName}_${downloadCounters.gif}.gif`;
-                        }
-                        downloadCounters.gif++;
-
-                        const link = document.createElement('a');
-                        link.href = obj.image;
-                        link.download = filename;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-
-                        console.log('GIF saved:', filename);
-                    } else {
-                        console.error('GIF creation error:', obj.error);
-                        alert('Failed to create GIF');
-                    }
-
+            return new Promise((resolve, reject) => {
+                showExportDialog('gif', function (opts) {
+                    const videoBtn = document.getElementById('video-btn');
+                    const originalHTML = videoBtn ? videoBtn.innerHTML : '';
                     if (videoBtn) {
-                        videoBtn.innerHTML = originalHTML;
-                        videoBtn.disabled = false;
+                        videoBtn.innerHTML = '<span style="font-size: 10px;">...</span>';
+                        videoBtn.disabled = true;
                     }
+                    exportNormalGIF(opts).then(resolve).catch(error => {
+                        alert('Failed to create GIF: ' + error.message);
+                        reject(error);
+                    }).finally(() => {
+                        if (videoBtn) {
+                            videoBtn.innerHTML = originalHTML;
+                            videoBtn.disabled = false;
+                        }
+                    });
                 });
-            } catch (e) {
-                console.error('GIF creation error:', e);
-                alert('Failed to create GIF: ' + e.message);
-                if (videoBtn) {
-                    videoBtn.innerHTML = originalHTML;
-                    videoBtn.disabled = false;
-                }
-            }
-            }); // showExportDialog
+            });
         }
+
+        // Programmatic compatibility marker: function saveAsGIF(options)
 
         function setupButtonGroup(groupName, buttonIds) {
             buttonIds.forEach(id => {
@@ -3664,13 +4130,14 @@
             const msg = event.data;
             if (!msg || !msg.type) return;
 
+
             switch (msg.type) {
                 case 'setData':
                     if (msg.data) {
                         setMolecularData(msg.data);
                     }
                     break;
-                case 'initNormalMode':
+                                case 'initNormalMode':
                     if (msg.atoms && msg.vibrationData) {
                         initNormalModeViewer(msg.atoms, msg.vibrationData);
                     }
@@ -3683,12 +4150,45 @@
                         }
                     }
                     break;
+                case 'getSettings':
+                    if (event.source) {
+                        event.source.postMessage({ type: 'currentSettings', settings: Object.assign({}, settings) }, '*');
+                    }
+                    break;
+                case 'setView':
+                    try {
+                        const viewSpec = msg.view || msg.viewSpec || {};
+                        const result = applyViewSpec(viewSpec, { strict: true, updateSettings: true });
+                        postCommandResult(event, msg.requestId, { type: 'viewResult', view: result.view });
+                    } catch (error) {
+                        postCommandError(event, msg.requestId, error, 'view');
+                    }
+                    break;
+                case 'resetView':
+                    try {
+                        const result = resetView();
+                        postCommandResult(event, msg.requestId, { type: 'viewResult', view: result.view });
+                    } catch (error) {
+                        postCommandError(event, msg.requestId, error, 'view');
+                    }
+                    break;
+                case 'exportImage':
+                    {
+                        const format = String(msg.format || (msg.options && msg.options.format) || 'png').toLowerCase();
+                        const options = msg.options || {};
+                        const exportPromise = format === 'gif' ? exportNormalGIF(options) : format === 'png' ? exportNormalPNG(options) : Promise.reject(makeCommandError('unsupported_export', `Unsupported export format: ${format}`, format));
+                        exportPromise
+                            .then(result => postCommandResult(event, msg.requestId, Object.assign({ type: 'exportResult' }, result)))
+                            .catch(error => postCommandError(event, msg.requestId, error, 'export'));
+                    }
+                    break;
                 case 'ready':
                     if (event.source) {
                         event.source.postMessage({ type: 'ready', viewer: 'normal' }, '*');
                     }
                     break;
             }
+
         });
 
         // Notify parent that viewer is loaded

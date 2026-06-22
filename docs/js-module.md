@@ -25,7 +25,9 @@ The JavaScript module uses the **same templates as the Python package**, ensurin
 
         <script src="https://cdn.jsdelivr.net/gh/kangmg/aseview@main/aseview/static/js/aseview.js"></script>
         <script>
-            const viewer = new ASEView.MolecularViewer('#viewer');
+            const viewer = new ASEView.MolecularViewer('#viewer', {
+                viewPreset: 'top-c'
+            });
             viewer.setData({
                 symbols: ['O', 'H', 'H'],
                 positions: [
@@ -42,7 +44,7 @@ The JavaScript module uses the **same templates as the Python package**, ensurin
 === "JavaScript Only"
 
     ```javascript
-    const viewer = new ASEView.MolecularViewer('#viewer');
+    const viewer = new ASEView.MolecularViewer('#viewer', { viewPreset: 'top-c' });
     viewer.setData({
         symbols: ['O', 'H', 'H'],
         positions: [
@@ -475,6 +477,80 @@ Settings can also be updated at runtime:
 viewer.setSettings({ style: 'glossy', atomSize: 0.6 });
 ```
 
+### Camera Control
+
+Initial camera settings can be passed in the constructor, and runtime camera
+changes use `setView(viewSpec)`:
+
+```javascript
+const viewer = new ASEView.MolecularViewer('#viewer', {
+    viewPreset: 'top-c',
+    viewFit: 1.1
+});
+
+await viewer.setView({ preset: 'side-a', up: [0, 0, 1] });
+await viewer.setView({ direction: [1, 1, 1], fit: 1.2 });
+await viewer.setView({ euler: [45, 0, 30] });
+await viewer.resetView();
+```
+
+`viewDirection` and preset directions are target-to-camera vectors. The camera
+is placed along the normalized direction and looks back at the fitted structure
+center. `viewEuler` is `[rx, ry, rz]` in degrees, XYZ order, applied to the
+canonical target-to-camera vector `[0, 0, 1]`. `viewUp` is an optional up-vector
+hint; invalid or parallel hints use a stable fallback. `viewFit` is a fit
+multiplier.
+
+Supported Cartesian presets are `top`, `bottom`, `front`, `back`, `left`, and
+`right`. Cell-aware presets are `top-c`, `bottom-c`, `side-a`, and `side-b`.
+Aliases `c` and `top` prefer the cell `c` axis when a valid cell exists, while
+`a` and `b` prefer side views along the cell `a` and `b` vectors. Missing,
+non-periodic, zero-length, or degenerate cells fall back to the Cartesian
+direction for the requested preset.
+
+`setView(viewSpec)` resolves with
+`{ ok: true, type: 'view', view: object }`. Invalid runtime vectors reject with
+an `Error` carrying `code`, `message`, `type`, and when applicable `requestId`.
+
+### Image Export
+
+Browser viewers can export the rendered canvas:
+
+```javascript
+const png = await viewer.savePNG({
+    filename: 'structure.png',
+    download: false,
+    returnDataUrl: true,
+    scale: 2,
+    transparent: true
+});
+
+const gif = await viewer.saveGIF({
+    filename: 'vibration.gif',
+    frames: 30,
+    delay: 40,
+    sampleInterval: 20,
+    download: false,
+    returnDataUrl: true
+});
+```
+
+Common export options are `filename`, `download` (default `true`),
+`returnDataUrl` (default `false`), `scale` (default `1`), `width`, `height`,
+`transparent`, and `backgroundColor`. GIF-only options are `frames`, `delay`,
+and `sampleInterval`.
+
+Successful export promises resolve with
+`{ ok: true, type: 'png' | 'gif', filename, dataUrl?, width?, height? }`.
+`dataUrl` is present when `returnDataUrl: true`. Failures reject with an
+`Error` carrying `code`, `message`, `type`, and when applicable `requestId`.
+`MolecularViewer` and `NormalModeViewer` support PNG and GIF.
+`OverlayViewer` supports PNG only; `saveGIF()` rejects with
+`code: 'unsupported_export'`.
+
+The Python API and CLI save HTML viewers. They do not provide headless
+`save_png()` / `save_gif()` methods or CLI `--save-png` / `--save-gif` options.
+
 #### Common Settings (All Viewers)
 
 | Parameter | Type | Default | Description |
@@ -484,7 +560,7 @@ viewer.setSettings({ style: 'glossy', atomSize: 0.6 });
 | `backgroundColor` | string | `'#1f2937'` | Background color (hex) |
 | `atomSize` | float | `0.4` | Atom radius scale |
 | `bondThreshold` | float | `1.2` | Bond cutoff (multiple of covalent radii) |
-| `bondThickness` | float | `0.1` | Bond cylinder radius |
+| `bondThickness` | float | `0.09` | Bond cylinder radius |
 | `showBond` | boolean | `true` | Show bonds |
 | `showCell` | boolean | `true` | Show unit cell box |
 | `showShading` | boolean | `true` | Enable directional lighting |
@@ -500,6 +576,11 @@ viewer.setSettings({ style: 'glossy', atomSize: 0.6 });
 | `animationSpeed` | int | `30` | Frames per second |
 | `forceScale` | float | `0.5` | Force vector scale |
 | `viewMode` | string | `'Perspective'` | `'Perspective'` or `'Orthographic'` |
+| `viewPreset` | string \| null | `null` | Initial named camera view (`'top-c'`, `'side-a'`, `'front'`, etc.) |
+| `viewDirection` | number[] \| null | `null` | Explicit target-to-camera direction vector |
+| `viewEuler` | number[] \| null | `null` | XYZ Euler degrees applied to `[0, 0, 1]` |
+| `viewUp` | number[] \| null | `null` | Optional camera up-vector hint |
+| `viewFit` | number | `1` | Camera fit multiplier |
 | `rotationMode` | string | `'TrackBall'` | `'TrackBall'` or `'Orbit'` |
 
 **Available styles:** `default`, `2d`, `cartoon`, `neon`, `glossy`, `metallic`, `cinematic`, `rowan`, `bubble`, `grey`

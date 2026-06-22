@@ -4699,27 +4699,157 @@ const cpkColors = {
     'Np': 0xFFFFFF, 'Pu': 0xFFFFFF, 'Am': 0xFFFFFF, 'Cm': 0xFFFFFF,
 };
 
-// Active color scheme: 'jmol' (default) or 'cpk'
+// PyMOL color scheme
+const pymolColors = {
+    'H': 0xE5E5E5, 'He': 0xD8FFFF, 'Li': 0xCC7FFF, 'Be': 0xC2FF00,
+    'B': 0xFFB5B5, 'C': 0x33FF33, 'N': 0x3333FF, 'O': 0xFF4C4C,
+    'F': 0xB2FFFF, 'Ne': 0xB2E2F5, 'Na': 0xAA5CF2, 'Mg': 0x8AFF00,
+    'Al': 0xBFA5A5, 'Si': 0xF0C79F, 'P': 0xFF7F00, 'S': 0xE5C53F,
+    'Cl': 0x1EF01E, 'Ar': 0x7FD0E2, 'K': 0x8F3FD3, 'Ca': 0x3CFF00,
+    'Sc': 0xE5E5E5, 'Ti': 0xBFC2C7, 'V': 0xA5A5AA, 'Cr': 0x8A99C7,
+    'Mn': 0x9C7AC7, 'Fe': 0xE06633, 'Co': 0xF08F9F, 'Ni': 0x4FD04F,
+    'Cu': 0xC77F33, 'Zn': 0x7C7FAF, 'Ga': 0xC28F8F, 'Ge': 0x668F8F,
+    'As': 0xBD7FE2, 'Se': 0xFFA000, 'Br': 0xA52929, 'Kr': 0x5CB7D0,
+    'Rb': 0x6F2EAF, 'Sr': 0x00FF00, 'Y': 0x94FFFF, 'Zr': 0x94E0E0,
+    'Nb': 0x72C2C8, 'Mo': 0x54B5B5, 'Tc': 0x3A9D9D, 'Ru': 0x248F8F,
+    'Rh': 0x097C8C, 'Pd': 0x006984, 'Ag': 0xBFBFBF, 'Cd': 0xFFD88F,
+    'In': 0xA57472, 'Sn': 0x667F7F, 'Sb': 0x9D62B5, 'Te': 0xD37A00,
+    'I': 0x940094, 'Xe': 0x419DAF, 'Cs': 0x57168F, 'Ba': 0x00C800,
+    'La': 0x6FD3FF, 'Ce': 0xFFFFC7, 'Pr': 0xD8FFC7, 'Nd': 0xC7FFC7,
+    'Pm': 0xA2FFC7, 'Sm': 0x8FFFC7, 'Eu': 0x61FFC7, 'Gd': 0x44FFC7,
+    'Tb': 0x2FFFC7, 'Dy': 0x1EFFC7, 'Ho': 0x00FF9C, 'Er': 0x00E574,
+    'Tm': 0x00D351, 'Yb': 0x00BF37, 'Lu': 0x00AA24, 'Hf': 0x4CC2FF,
+    'Ta': 0x4CA5FF, 'W': 0x2194D5, 'Re': 0x267CAA, 'Os': 0x266695,
+    'Ir': 0x165487, 'Pt': 0xD0D0E0, 'Au': 0xFFD023, 'Hg': 0xB7B7D0,
+    'Tl': 0xA5544C, 'Pb': 0x575961, 'Bi': 0x9D4FB5, 'Po': 0xAA5C00,
+    'At': 0x744F44, 'Rn': 0x418295, 'Fr': 0x410066, 'Ra': 0x007C00,
+    'Ac': 0x6FAAFA, 'Th': 0x00BAFF, 'Pa': 0x00A0FF, 'U': 0x008FFF,
+    'Np': 0x007FFF, 'Pu': 0x006AFF, 'Am': 0x545CF2, 'Cm': 0x775CE2,
+};
+
+// VMD color scheme
+const vmdColors = {
+    'H': 0xFFFFFF, 'He': 0x804C00, 'Li': 0x804C00, 'Be': 0x804C00,
+    'B': 0x804C00, 'C': 0x999999, 'N': 0x0000FF, 'O': 0xFF0000,
+    'F': 0x804C00, 'Ne': 0x804C00, 'Na': 0x804C00, 'Mg': 0x804C00,
+    'Al': 0x804C00, 'Si': 0x804C00, 'P': 0x808033, 'S': 0xFFFF00,
+    'Cl': 0x804C00, 'Ar': 0x804C00, 'K': 0x804C00, 'Ca': 0x804C00,
+    'Sc': 0x804C00, 'Ti': 0x804C00, 'V': 0x804C00, 'Cr': 0x804C00,
+    'Mn': 0x804C00, 'Fe': 0x804C00, 'Co': 0x804C00, 'Ni': 0x804C00,
+    'Cu': 0x804C00, 'Zn': 0x999999, 'Ga': 0x804C00, 'Ge': 0x804C00,
+    'As': 0x804C00, 'Se': 0x804C00, 'Br': 0x804C00, 'Kr': 0x804C00,
+    'Rb': 0x804C00, 'Sr': 0x804C00, 'Y': 0x804C00, 'Zr': 0x804C00,
+    'Nb': 0x804C00, 'Mo': 0x804C00, 'Tc': 0x804C00, 'Ru': 0x804C00,
+    'Rh': 0x804C00, 'Pd': 0x804C00, 'Ag': 0x804C00, 'Cd': 0x804C00,
+    'In': 0x804C00, 'Sn': 0x804C00, 'Sb': 0x804C00, 'Te': 0x804C00,
+    'I': 0x804C00, 'Xe': 0x804C00, 'Cs': 0x804C00, 'Ba': 0x804C00,
+    'La': 0x804C00, 'Ce': 0x804C00, 'Pr': 0x804C00, 'Nd': 0x804C00,
+    'Pm': 0x804C00, 'Sm': 0x804C00, 'Eu': 0x804C00, 'Gd': 0x804C00,
+    'Tb': 0x804C00, 'Dy': 0x804C00, 'Ho': 0x804C00, 'Er': 0x804C00,
+    'Tm': 0x804C00, 'Yb': 0x804C00, 'Lu': 0x804C00, 'Hf': 0x804C00,
+    'Ta': 0x804C00, 'W': 0x804C00, 'Re': 0x804C00, 'Os': 0x804C00,
+    'Ir': 0x804C00, 'Pt': 0x804C00, 'Au': 0x804C00, 'Hg': 0x804C00,
+    'Tl': 0x804C00, 'Pb': 0x804C00, 'Bi': 0x804C00, 'Po': 0x804C00,
+    'At': 0x804C00, 'Rn': 0x804C00, 'Fr': 0x804C00, 'Ra': 0x804C00,
+    'Ac': 0x804C00, 'Th': 0x804C00, 'Pa': 0x804C00, 'U': 0x804C00,
+    'Np': 0x804C00, 'Pu': 0x804C00, 'Am': 0x804C00, 'Cm': 0x804C00,
+};
+
+// Active color scheme: 'jmol' (default), 'cpk', 'pymol', or 'vmd'
 let atomColorScheme = 'jmol';
+let atomColorOverrides = {};
+
+function normalizeColorHexValue(value) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value & 0xFFFFFF;
+    }
+    if (typeof value !== 'string') return null;
+    const raw = value.trim();
+    if (/^#?[0-9a-fA-F]{6}$/.test(raw)) {
+        return parseInt(raw.replace('#', ''), 16);
+    }
+    if (/^#?[0-9a-fA-F]{3}$/.test(raw)) {
+        const hex = raw.replace('#', '');
+        return parseInt(hex.split('').map(ch => ch + ch).join(''), 16);
+    }
+    return null;
+}
+
+function setAtomColorOverrides(overrides) {
+    const next = {};
+    if (overrides && typeof overrides === 'object') {
+        for (const [symbol, value] of Object.entries(overrides)) {
+            const normalized = normalizeColorHexValue(value);
+            if (normalized !== null) {
+                next[symbol] = normalized;
+            }
+        }
+    }
+    atomColorOverrides = next;
+}
 
 /**
  * Return the element color for `symbol` under the current atomColorScheme.
  * Falls back to jmol (atomInfo.color) for unknown elements or schemes.
  */
 function getAtomColorByScheme(symbol) {
-    if (atomColorScheme === 'cpk') {
-        return cpkColors[symbol] !== undefined
-            ? cpkColors[symbol]
-            : (atomInfo[symbol] || atomInfo['default']).color;
+    const overridden = atomColorOverrides[symbol];
+    if (overridden !== undefined) {
+        return overridden;
+    }
+    if (atomColorScheme === 'cpk' && cpkColors[symbol] !== undefined) {
+        return cpkColors[symbol];
+    }
+    if (atomColorScheme === 'pymol' && pymolColors[symbol] !== undefined) {
+        return pymolColors[symbol];
+    }
+    if (atomColorScheme === 'vmd' && vmdColors[symbol] !== undefined) {
+        return vmdColors[symbol];
     }
     return (atomInfo[symbol] || atomInfo['default']).color; // 'jmol'
 }
 
+function toLinearColor(color) {
+    const result = color instanceof THREE.Color ? color.clone() : new THREE.Color(color);
+    if (typeof result.convertSRGBToLinear === 'function') {
+        result.convertSRGBToLinear();
+    }
+    return result;
+}
+
+function setMaterialColor(material, color) {
+    if (material && material.color) {
+        material.color.copy(toLinearColor(color));
+    }
+    if (material && material.uniforms && material.uniforms.uColor && material.uniforms.uColor.value) {
+        const linearColor = toLinearColor(color);
+        const target = material.uniforms.uColor.value;
+        if (target.isColor && typeof target.copy === 'function') {
+            target.copy(linearColor);
+        } else if (typeof target.set === 'function') {
+            target.set(linearColor.r, linearColor.g, linearColor.b);
+        }
+    }
+}
+
 function getStandardMaterial(color, type) {
     switch (type) {
-        case 'glossy': return new THREE.MeshPhongMaterial({ color: color, shininess: 100, specular: 0x222222 });
-        case 'metallic': return new THREE.MeshStandardMaterial({ color: color, metalness: 0.3, roughness: 0.4 });
-        default: return new THREE.MeshLambertMaterial({ color: color });
+        case 'glossy':
+            return new THREE.MeshPhongMaterial({
+                color: toLinearColor(color),
+                shininess: 100,
+                specular: toLinearColor(0x222222)
+            });
+        case 'metallic':
+            return new THREE.MeshStandardMaterial({
+                color: toLinearColor(color),
+                metalness: 0.3,
+                roughness: 0.4
+            });
+        case 'cinematic':
+            return getCachedMaterial('cinematic', color);
+        default:
+            return new THREE.MeshLambertMaterial({ color: toLinearColor(color) });
     }
 }
 
@@ -4887,6 +5017,26 @@ function createAtomStyleMetallic(pos, symbol, atomScale, helpers) {
     return sphere;
 }
 
+function getCinematicAtomColor(symbol, helpers) {
+    if (helpers && helpers.atomIndex !== undefined &&
+        helpers.highlightAtoms instanceof Set &&
+        helpers.highlightAtoms.has(helpers.atomIndex)) {
+        return Number.isFinite(helpers.highlightColor) ? helpers.highlightColor : 0xFFEB3B;
+    }
+    return getAtomColorByScheme(symbol);
+}
+
+function createAtomStyleCinematic(pos, symbol, atomScale, helpers) {
+    const scaledRadius = getScaledAtomRadius(symbol, atomScale, helpers);
+    const lod = (helpers && helpers._lod) || { sphere: 64, sphereHigh: 128 };
+    const geometry = getCachedSphereGeometry(scaledRadius, lod.sphereHigh || lod.sphere || 64);
+    const material = getCachedMaterial('cinematic', getCinematicAtomColor(symbol, helpers));
+    const sphere = new THREE.Mesh(geometry, material);
+    sphere.position.copy(pos);
+    sphere.userData = { symbol, radius: scaledRadius, cinematic: true };
+    return sphere;
+}
+
 function createAtomStyleDefault(pos, symbol, atomScale, helpers) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
@@ -4974,6 +5124,7 @@ function createAtomStyleBubble(pos, symbol, atomScale) {
 function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
+    const resolvedColor = normalizeColorHexValue(color) ?? 0x808080;
 
     // Remove 3D sphere, use canvas-drawn sprite only
     const canvas = document.createElement('canvas');
@@ -4994,13 +5145,13 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     // Draw circular background (sphere role) - slightly smaller than border
     context.beginPath();
     context.arc(centerX, centerY, circleRadius - 3, 0, 2 * Math.PI, false);
-    context.fillStyle = `#${color.toString(16).padStart(6, '0')}`; // Convert color to hex
+    context.fillStyle = `#${resolvedColor.toString(16).padStart(6, '0')}`;
     context.fill();
 
     // Highlight effect with slightly brighter color
     context.beginPath();
     context.arc(centerX, centerY, circleRadius - 7, 0, 2 * Math.PI, false);
-    const lighterColor = new THREE.Color(color).multiplyScalar(1.1);
+    const lighterColor = new THREE.Color(resolvedColor).multiplyScalar(1.1);
     context.fillStyle = `#${lighterColor.getHexString()}`;
     context.fill();
 
@@ -5020,8 +5171,8 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const spriteMaterial = new THREE.SpriteMaterial({
         map: texture,
         transparent: true,
-        depthTest: true,     // Enable depth test
-        depthWrite: false,   // Disable depth write for transparent object
+        depthTest: true,
+        depthWrite: true,
         alphaTest: 0.5
     });
 
@@ -5216,7 +5367,7 @@ function createHalfBondBubble(start, end, color, bondThickness) {
     const path = new THREE.LineCurve3(start, end);
     const geometry = new THREE.TubeGeometry(path, 2, bondThickness, 12, false);
     const material = new THREE.MeshPhongMaterial({
-        color: color,
+        color: toLinearColor(color),
         transparent: true,
         opacity: 0.4,  // More transparent for lighter appearance
         shininess: 80,
@@ -5268,8 +5419,9 @@ function createHalfBondGrey(start, end, color, bondThickness) {
 
     // Use CylinderGeometry for cleaner appearance
     const geometry = new THREE.CylinderGeometry(bondThickness, bondThickness, distance, 16, 1);
+    const resolvedColor = normalizeColorHexValue(color) ?? 0x808080;
     const material = new THREE.MeshBasicMaterial({
-        color: color,
+        color: resolvedColor,
         depthWrite: true,
         depthTest: true
     });
@@ -5280,6 +5432,45 @@ function createHalfBondGrey(start, end, color, bondThickness) {
     bond.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
 
     return bond;
+}
+
+function createBondStyleCinematic(p1, p2, sym1, sym2, bondThickness, atomScale, helpers) {
+    const bondPoints = getBondPoints(p1, p2, sym1, sym2, atomScale, 'default', helpers);
+    if (!bondPoints) return null;
+    const { startPos, endPos } = bondPoints;
+
+    const atomA = helpers && helpers.bondAtoms ? helpers.bondAtoms[0] : undefined;
+    const atomB = helpers && helpers.bondAtoms ? helpers.bondAtoms[1] : undefined;
+    const highlightAtoms = helpers && helpers.highlightAtoms instanceof Set ? helpers.highlightAtoms : null;
+    const highlightColor = helpers && Number.isFinite(helpers.highlightColor) ? helpers.highlightColor : 0xFFEB3B;
+    const colorA = highlightAtoms && highlightAtoms.has(atomA) ? highlightColor : getAtomColorByScheme(sym1);
+    const colorB = highlightAtoms && highlightAtoms.has(atomB) ? highlightColor : getAtomColorByScheme(sym2);
+
+    const singleColor = helpers && (helpers.colorBy === 'Molecule' || helpers.colorBy === 'Colormap');
+    if (singleColor || colorA === colorB) {
+        return createCinematicHalfBond(startPos, endPos, colorA, bondThickness);
+    }
+
+    const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
+    const group = new THREE.Group();
+    const halfA = createCinematicHalfBond(startPos, midPoint, colorA, bondThickness);
+    const halfB = createCinematicHalfBond(midPoint, endPos, colorB, bondThickness);
+    if (halfA) group.add(halfA);
+    if (halfB) group.add(halfB);
+    return group;
+}
+
+function createCinematicHalfBond(start, end, colorHex, thickness) {
+    const direction = end.clone().sub(start);
+    const length = direction.length();
+    if (length <= 0) return null;
+
+    const geometry = new THREE.CylinderGeometry(thickness, thickness, length, 24, 1, false);
+    const material = getCachedMaterial('cinematic', colorHex);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(start.clone().add(end).multiplyScalar(0.5));
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+    return mesh;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -5644,37 +5835,87 @@ function getCachedMaterial(type, colorHex, extraKey) {
                 gradientMap.magFilter = THREE.NearestFilter;
                 gradientMap.needsUpdate = true;
                 _matCache[key] = new THREE.MeshToonMaterial({
-                    color: new THREE.Color(colorHex),
+                    color: toLinearColor(colorHex),
                     gradientMap: gradientMap
                 });
                 break;
             }
             case 'outline':
                 _matCache[key] = new THREE.MeshBasicMaterial({
-                    color: colorHex,
+                    color: toLinearColor(colorHex),
                     side: THREE.BackSide
                 });
                 break;
             case 'glossy':
                 _matCache[key] = new THREE.MeshPhongMaterial({
-                    color: colorHex, shininess: 100, specular: 0x222222
+                    color: toLinearColor(colorHex),
+                    shininess: 100,
+                    specular: toLinearColor(0x222222)
                 });
                 break;
             case 'metallic':
                 _matCache[key] = new THREE.MeshStandardMaterial({
-                    color: colorHex, metalness: 0.3, roughness: 0.4
+                    color: toLinearColor(colorHex),
+                    metalness: 0.3,
+                    roughness: 0.4
                 });
                 break;
+            case 'cinematic': {
+                const color = toLinearColor(colorHex);
+                _matCache[key] = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uColor: { value: color },
+                        uOpacity: { value: 1.0 },
+                        uDark: { value: 0.55 },
+                        uCenter: { value: 0.42 },
+                        uCenterR: { value: 0.22 },
+                        uRimPow: { value: 1.3 },
+                        uRimGain: { value: 1.55 },
+                    },
+                    vertexShader: `
+                        varying vec3 vNormalW;
+                        varying vec3 vViewDir;
+                        void main() {
+                            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                            vNormalW = normalize(normalMatrix * normal);
+                            vViewDir = normalize(-mv.xyz);
+                            gl_Position = projectionMatrix * mv;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vNormalW;
+                        varying vec3 vViewDir;
+                        uniform vec3 uColor;
+                        uniform float uOpacity;
+                        uniform float uDark;
+                        uniform float uCenter;
+                        uniform float uCenterR;
+                        uniform float uRimPow;
+                        uniform float uRimGain;
+                        void main() {
+                            float ndv = clamp(dot(normalize(vNormalW), normalize(vViewDir)), 0.0, 1.0);
+                            float rim = pow(1.0 - ndv, uRimPow);
+                            float bright = mix(uDark, uRimGain, rim);
+                            float spot = 1.0 - smoothstep(1.0 - uCenterR, 1.0, ndv);
+                            float lit = mix(uCenter, bright, spot);
+                            vec3 col = uColor * lit + uColor * rim * 0.30;
+                            gl_FragColor = vec4(col, uOpacity);
+                        }
+                    `,
+                    transparent: true,
+                });
+                break;
+            }
             case 'lambert':
-                _matCache[key] = new THREE.MeshLambertMaterial({ color: colorHex });
+                _matCache[key] = new THREE.MeshLambertMaterial({ color: toLinearColor(colorHex) });
                 break;
             case 'lambertFlat':
                 _matCache[key] = new THREE.MeshLambertMaterial({
-                    color: new THREE.Color(colorHex), flatShading: false
+                    color: toLinearColor(colorHex), flatShading: false
                 });
                 break;
             default:
-                _matCache[key] = new THREE.MeshLambertMaterial({ color: colorHex });
+                _matCache[key] = new THREE.MeshLambertMaterial({ color: toLinearColor(colorHex) });
         }
         _matCache[key]._isCached = true;
     }
@@ -5927,6 +6168,7 @@ function createHydrogenBond(p1, p2) {
 </script>
     <style>
         :root {
+            --aseview-sidebar-width: clamp(260px, 30vw, 320px);
             --sidebar-bg: #1f2937;
             --card-bg: #374151;
             --border-color: #4b5563;
@@ -5959,7 +6201,7 @@ function createHydrogenBond(p1, p2) {
 
         /* Sidebar */
         .sidebar {
-            width: 320px;
+            width: var(--aseview-sidebar-width);
             background-color: var(--sidebar-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
@@ -6365,13 +6607,82 @@ function createHydrogenBond(p1, p2) {
             border-radius: 4px;
             z-index: 5;
         }
+    /* Responsive sidebar */
+    .app {
+        position: relative;
+    }
+
+    .sidebar {
+        width: var(--aseview-sidebar-width);
+        max-width: 100vw;
+    }
+
+    .sidebar-content {
+        min-width: 0;
+    }
+
+    .sidebar.collapsed {
+        width: 0;
+    }
+
+    @media (max-width: 900px) {
+        .sidebar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            height: 100vh;
+            width: min(var(--aseview-sidebar-width), calc(100vw - 3rem));
+            max-width: calc(100vw - 3rem);
+            z-index: 90;
+            transform: translateX(0);
+            box-shadow: 18px 0 42px rgba(0, 0, 0, 0.28);
+        }
+
+        .sidebar.collapsed {
+            width: min(var(--aseview-sidebar-width), calc(100vw - 3rem));
+            max-width: calc(100vw - 3rem);
+            transform: translateX(-100%);
+            border-right-color: transparent;
+        }
+
+        .sidebar-content {
+            min-width: 0;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .sidebar {
+            top: auto;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            max-width: none;
+            height: min(72vh, 430px);
+            border-right: none;
+            border-top: 1px solid var(--border-color, var(--border, var(--line, rgba(148, 163, 184, 0.35))));
+            border-radius: 0.75rem 0.75rem 0 0;
+            transform: translateY(0);
+            box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.32);
+        }
+
+        .sidebar.collapsed {
+            width: 100%;
+            max-width: none;
+            height: min(72vh, 430px);
+            transform: translateY(100%);
+            border-top-color: transparent;
+        }
+    }
+
+
     </style>
 </head>
 
 <body>
     <div class="app">
         <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
+        <div class="sidebar collapsed" id="sidebar">
             <div class="sidebar-content">
                 <!-- Advanced Settings -->
                 <div class="card">
@@ -6392,16 +6703,6 @@ function createHydrogenBond(p1, p2) {
                     <div class="card-content" id="advanced-content">
                         <div class="control-group">
                             <div class="control-label">
-                                <span>Color Scheme</span>
-                            </div>
-                            <select class="select" id="color-scheme-select">
-                                <option value="Jmol">Jmol</option>
-                                <option value="CPK">CPK</option>
-                            </select>
-                        </div>
-
-                        <div class="control-group">
-                            <div class="control-label">
                                 <span>Bond Threshold Scale</span>
                                 <span class="slider-value" id="bond-threshold-value">1.2</span>
                             </div>
@@ -6414,10 +6715,10 @@ function createHydrogenBond(p1, p2) {
                         <div class="control-group">
                             <div class="control-label">
                                 <span>Bond Thickness</span>
-                                <span class="slider-value" id="bond-thickness-value">0.10</span>
+                                <span class="slider-value" id="bond-thickness-value">0.09</span>
                             </div>
                             <div class="slider-container">
-                                <input type="range" min="0.05" max="0.5" step="0.01" value="0.1" class="slider"
+                                <input type="range" min="0.05" max="0.5" step="0.01" value="0.09" class="slider"
                                     id="bond-thickness">
                             </div>
                         </div>
@@ -6469,43 +6770,6 @@ function createHydrogenBond(p1, p2) {
                                     id="force-scale">
                             </div>
                         </div>
-
-                        <div class="control-group">
-                            <div class="control-label">
-                                <span>Background Color</span>
-                            </div>
-                            <div class="color-picker">
-                                <input type="color" value="#1f2937" class="color-input" id="background-color">
-                                <span class="color-value" id="background-color-value">#1f2937</span>
-                            </div>
-                        </div>
-
-                        <div class="control-group" id="cell-color-group" style="display: none;">
-                            <div class="control-label">
-                                <span>Cell Color</span>
-                            </div>
-                            <div class="color-picker">
-                                <input type="color" value="#808080" class="color-input" id="cell-color">
-                                <span class="color-value" id="cell-color-value">#808080</span>
-                            </div>
-                        </div>
-
-                        <div class="control-group">
-                            <div class="control-label">
-                                <span>Style</span>
-                            </div>
-                            <select class="select" id="style">
-                                <option value="default">Default</option>
-                                <option value="2d">2D</option>
-                                <option value="cartoon" selected>Cartoon</option>
-                                <option value="neon">Neon</option>
-                                <option value="glossy">Glossy</option>
-                                <option value="metallic">Metallic</option>
-                                <option value="bubble">Bubble</option>
-                                <option value="rowan">Rowan</option>
-                                <option value="grey">Grey</option>
-                            </select>
-                        </div>
                     </div>
                 </div>
 
@@ -6526,11 +6790,76 @@ function createHydrogenBond(p1, p2) {
                     <div class="card-content" id="display-content">
                         <div class="control-group">
                             <div class="control-label">
+                                <span>Style</span>
+                            </div>
+                            <select class="select" id="style">
+                                <option value="default">Default</option>
+                                <option value="2d">2D</option>
+                                <option value="cartoon" selected>Cartoon</option>
+                                <option value="neon">Neon</option>
+                                <option value="glossy">Glossy</option>
+                                <option value="metallic">Metallic</option>
+                                <option value="cinematic">Cinematic</option>
+                                <option value="bubble">Bubble</option>
+                                <option value="rowan">Rowan</option>
+                                <option value="grey">Grey</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Color Scheme</span>
+                            </div>
+                            <select class="select" id="color-scheme-select">
+                                <option value="Jmol">Jmol</option>
+                                <option value="CPK">CPK</option>
+                                <option value="PyMOL">PyMOL</option>
+                                <option value="VMD">VMD</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Element Colors</span>
+                                <button class="copy-format-chip" id="reset-element-colors-btn"
+                                    style="font-size:11px;padding:2px 8px;" title="Reset custom element colors">
+                                    Reset
+                                </button>
+                            </div>
+                            <div id="element-color-grid"
+                                style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;"></div>
+                            <input type="color" id="element-color-picker"
+                                style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;border:0;padding:0;"
+                                tabindex="-1" aria-hidden="true">
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Background Color</span>
+                            </div>
+                            <div class="color-picker">
+                                <input type="color" value="#1f2937" class="color-input" id="background-color">
+                                <span class="color-value" id="background-color-value">#1f2937</span>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
                                 <span>Cell</span>
                                 <label class="switch">
                                     <input type="checkbox" id="show-cell" checked>
                                     <span class="slider-switch"></span>
                                 </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="cell-color-group" style="display: none;">
+                            <div class="control-label">
+                                <span>Cell Color</span>
+                            </div>
+                            <div class="color-picker">
+                                <input type="color" value="#808080" class="color-input" id="cell-color">
+                                <span class="color-value" id="cell-color-value">#808080</span>
                             </div>
                         </div>
 
@@ -6541,6 +6870,37 @@ function createHydrogenBond(p1, p2) {
                                     <input type="checkbox" id="show-bond" checked>
                                     <span class="slider-switch"></span>
                                 </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Hide Hs</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="hide-hydrogens">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Blur</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="show-blur">
+                                    <span class="slider-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="blur-strength-group" style="display:none;">
+                            <div class="control-label">
+                                <span>Blur Strength</span>
+                                <span class="slider-value" id="blur-strength-value">1.5px</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" min="0.2" max="6" step="0.1" value="1.5" class="slider"
+                                    id="blur-strength">
                             </div>
                         </div>
 
@@ -6695,7 +7055,7 @@ function createHydrogenBond(p1, p2) {
                             </div>
                         </div>
 
-                        <!-- Color By section - only visible when charges are present -->
+                        <!-- Color By section - only visible when scalar data is present -->
                         <div class="control-group" id="color-by-section" style="display: none;">
                             <div class="control-label">
                                 <span>Color By</span>
@@ -6703,6 +7063,7 @@ function createHydrogenBond(p1, p2) {
                             <select class="select" id="color-by-select">
                                 <option value="Element">Element</option>
                                 <option value="Charge">Charge</option>
+                                <option value="Magmom">Magmom</option>
                             </select>
                         </div>
 
@@ -6717,7 +7078,7 @@ function createHydrogenBond(p1, p2) {
                             </div>
                         </div>
 
-                        <!-- Show Charge Labels toggle - only visible when colorBy is Charge -->
+                        <!-- Show scalar labels toggle - only visible when colorBy is Charge or Magmom -->
                         <div class="control-group" id="show-charge-labels-section" style="display: none;">
                             <div class="control-label">
                                 <span>Show Labels</span>
@@ -6994,7 +7355,7 @@ function createHydrogenBond(p1, p2) {
 
         // Global variables
         let molecularData = [];
-        let sidebarOpen = true;
+        let sidebarOpen = false;
         let cards = {
             advanced: true,
             display: true,
@@ -7009,7 +7370,7 @@ function createHydrogenBond(p1, p2) {
 
         let settings = {
             bondThreshold: 1.2,
-            bondThickness: 0.1,
+            bondThickness: 0.09,
             atomSize: 0.4,
             radiusContrast: 1.0,
             radiusContrastMode: 'log',
@@ -7020,6 +7381,9 @@ function createHydrogenBond(p1, p2) {
             style: 'cartoon',
             showCell: true,
             showBond: true,
+            hideHydrogens: false,
+            showBlur: false,
+            blurStrength: 1.5,
             showHBond: false,
             showShading: true,
             showEnergyPlot: false,
@@ -7034,15 +7398,415 @@ function createHydrogenBond(p1, p2) {
             showRings: false,
             ringOpacity: 0.30,
             ringColor: null,          // null = auto (dominant-atom color)
-            colorBy: 'Element',  // 'Element' or 'Charge'
+            colorBy: 'Element',  // 'Element', 'Charge', or 'Magmom'
             showConstraint: false,
-            colorScheme: 'Jmol', // 'Jmol' or 'CPK'
+            colorScheme: 'Jmol', // 'Jmol', 'CPK', 'PyMOL', or 'VMD'
+            elementColorOverrides: {},
             normalizeCharges: false,
             showChargeLabels: false,
             chargeColormap: 'coolwarm',
             viewMode: 'Perspective',
-            rotationMode: 'TrackBall'
+            rotationMode: 'TrackBall',
+            viewPreset: null,
+            viewDirection: null,
+            viewEuler: null,
+            viewUp: null,
+            viewFit: 1
         };
+
+        function isHydrogenSymbol(symbol) {
+            return String(symbol || '').trim().toUpperCase() === 'H';
+        }
+
+        function isHydrogenHidden(symbol) {
+            return !!settings.hideHydrogens && isHydrogenSymbol(symbol);
+        }
+
+        function isBondHidden(sym1, sym2) {
+            return isHydrogenHidden(sym1) || isHydrogenHidden(sym2);
+        }
+
+        function getBlurStrengthValue() {
+            const value = Number(settings.blurStrength);
+            return Number.isFinite(value) ? Math.max(0, value) : 1.5;
+        }
+
+        function updateBlurEffect() {
+            const filter = settings.showBlur ? `blur(${getBlurStrengthValue().toFixed(1)}px)` : 'none';
+            if (renderer && renderer.domElement) renderer.domElement.style.filter = filter;
+
+            const blurGroup = document.getElementById('blur-strength-group');
+            if (blurGroup) blurGroup.style.display = settings.showBlur ? 'block' : 'none';
+
+            const blurSlider = document.getElementById('blur-strength');
+            if (blurSlider && document.activeElement !== blurSlider) blurSlider.value = getBlurStrengthValue().toFixed(1);
+
+            const blurValue = document.getElementById('blur-strength-value');
+            if (blurValue) blurValue.textContent = getBlurStrengthValue().toFixed(1) + 'px';
+        }
+
+        function getExportCanvasWithOptionalBlur(sourceCanvas) {
+            if (!sourceCanvas || !settings.showBlur || getBlurStrengthValue() <= 0) return sourceCanvas;
+
+            const width = sourceCanvas.width || sourceCanvas.clientWidth || 0;
+            const height = sourceCanvas.height || sourceCanvas.clientHeight || 0;
+            if (width <= 0 || height <= 0) return sourceCanvas;
+
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = width;
+            exportCanvas.height = height;
+
+            const ctx = exportCanvas.getContext('2d');
+            if (!ctx || typeof ctx.filter === 'undefined') return sourceCanvas;
+
+            const cssWidth = sourceCanvas.clientWidth || width;
+            const cssHeight = sourceCanvas.clientHeight || height;
+            const scaleX = width / Math.max(cssWidth, 1);
+            const scaleY = height / Math.max(cssHeight, 1);
+            const blurPixels = getBlurStrengthValue() * Math.max(scaleX, scaleY);
+
+            try {
+                ctx.clearRect(0, 0, width, height);
+                ctx.filter = `blur(${blurPixels.toFixed(2)}px)`;
+                ctx.drawImage(sourceCanvas, 0, 0, width, height);
+                ctx.filter = 'none';
+                return exportCanvas;
+            } catch (error) {
+                console.warn('Blurred export failed; using raw canvas instead.', error);
+                return sourceCanvas;
+            }
+        }
+
+
+        const CARTESIAN_VIEW_DIRECTIONS = Object.freeze({
+            top: [0, 0, 1],
+            bottom: [0, 0, -1],
+            front: [0, 1, 0],
+            back: [0, -1, 0],
+            right: [1, 0, 0],
+            left: [-1, 0, 0]
+        });
+        const CELL_VIEW_PRESETS = Object.freeze({
+            'top-c': { axis: 2, sign: 1, fallback: 'top' },
+            c: { axis: 2, sign: 1, fallback: 'top' },
+            top: { axis: 2, sign: 1, fallback: 'top' },
+            'bottom-c': { axis: 2, sign: -1, fallback: 'bottom' },
+            'side-a': { axis: 0, sign: 1, fallback: 'right' },
+            a: { axis: 0, sign: 1, fallback: 'right' },
+            'side-b': { axis: 1, sign: 1, fallback: 'front' },
+            b: { axis: 1, sign: 1, fallback: 'front' }
+        });
+        const VIEW_VECTOR_EPSILON = 1e-8;
+        const VIEW_COMMAND_ERROR_CODE_MARKERS = Object.freeze({
+            invalidViewDirection: { code: 'invalid_view_direction' },
+            missingVibrationData: { code: 'missing_vibration_data' },
+            exportError: { type: 'exportError' }
+        });
+
+        function makeCommandError(code, message, type, requestId) {
+            const error = new Error(message || code || 'ASEView command failed');
+            error.code = code || 'request_failed';
+            error.type = type || 'command';
+            if (requestId) error.requestId = requestId;
+            return error;
+        }
+
+        function vectorFromArray(values) {
+            if (!Array.isArray(values) || values.length !== 3) return null;
+            const vector = values.map(Number);
+            if (!vector.every(Number.isFinite)) return null;
+            return new THREE.Vector3(vector[0], vector[1], vector[2]);
+        }
+
+        function isValidCellMatrix(cell) {
+            if (!Array.isArray(cell) || cell.length !== 3) return false;
+            const vectors = cell.map(vectorFromArray);
+            if (vectors.some(vector => !vector || vector.lengthSq() <= VIEW_VECTOR_EPSILON)) return false;
+            const volume = vectors[0].dot(new THREE.Vector3().crossVectors(vectors[1], vectors[2]));
+            return Number.isFinite(volume) && Math.abs(volume) > VIEW_VECTOR_EPSILON;
+        }
+
+        function hasPeriodicCell(frame) {
+            if (!frame || !Object.prototype.hasOwnProperty.call(frame, 'pbc')) return true;
+            if (Array.isArray(frame.pbc)) return frame.pbc.some(Boolean);
+            return !!frame.pbc;
+        }
+
+        function normalizePresetName(preset) {
+            return String(preset || '').trim().toLowerCase();
+        }
+
+        function resolveCellViewDirection(preset, frame) {
+            const key = normalizePresetName(preset);
+            const mapping = CELL_VIEW_PRESETS[key];
+            if (!mapping || !frame || !hasPeriodicCell(frame) || !isValidCellMatrix(frame.cell)) return null;
+            const axisVector = vectorFromArray(frame.cell[mapping.axis]);
+            if (!axisVector) return null;
+            return axisVector.multiplyScalar(mapping.sign);
+        }
+
+        function vectorFromEulerXYZ(eulerDegrees) {
+            if (!Array.isArray(eulerDegrees) || eulerDegrees.length !== 3) return null;
+            const radians = eulerDegrees.map(value => Number(value)).map(value => Number.isFinite(value) ? THREE.MathUtils.degToRad(value) : NaN);
+            if (!radians.every(Number.isFinite)) return null;
+            return new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(radians[0], radians[1], radians[2], 'XYZ'));
+        }
+
+        function normalizeViewSpec(viewSpec) {
+            if (!viewSpec || typeof viewSpec !== 'object' || Array.isArray(viewSpec)) return {};
+            return viewSpec;
+        }
+
+        function getViewSpecValue(viewSpec, primaryKey, aliasKey) {
+            const spec = normalizeViewSpec(viewSpec);
+            if (Object.prototype.hasOwnProperty.call(spec, primaryKey)) return spec[primaryKey];
+            if (aliasKey && Object.prototype.hasOwnProperty.call(spec, aliasKey)) return spec[aliasKey];
+            return undefined;
+        }
+
+        function getViewSpecFromSettings() {
+            return {
+                viewPreset: settings.viewPreset,
+                viewDirection: settings.viewDirection,
+                viewEuler: settings.viewEuler,
+                viewUp: settings.viewUp,
+                viewFit: settings.viewFit
+            };
+        }
+
+        function hasViewSpec(viewSpec) {
+            const spec = normalizeViewSpec(viewSpec);
+            return getViewSpecValue(spec, 'viewPreset', 'preset') != null ||
+                getViewSpecValue(spec, 'viewDirection', 'direction') != null ||
+                getViewSpecValue(spec, 'viewEuler', 'euler') != null ||
+                getViewSpecValue(spec, 'viewUp', 'up') != null;
+        }
+
+        function getCurrentViewFrame() {
+            if (typeof vibrationData !== 'undefined' && vibrationData.equilibriumPositions) return getNormalModeBaseFrame();
+            if (!Array.isArray(molecularData) || molecularData.length === 0) return null;
+            const index = animationState && Number.isFinite(animationState.currentFrame)
+                ? animationState.currentFrame % molecularData.length
+                : 0;
+            return molecularData[index] || molecularData[0] || null;
+        }
+
+        function getNormalModeBaseFrame() {
+            if (!Array.isArray(molecularData) || molecularData.length === 0) return null;
+            const frame = molecularData[0];
+            if (typeof vibrationData !== 'undefined' && vibrationData.equilibriumPositions) {
+                return Object.assign({}, frame, { positions: vibrationData.equilibriumPositions });
+            }
+            return frame;
+        }
+
+        function resolveViewDirection(viewSpec, frame, strict) {
+            const spec = normalizeViewSpec(viewSpec);
+            const directionValue = getViewSpecValue(spec, 'viewDirection', 'direction');
+            if (directionValue != null) {
+                const direction = vectorFromArray(directionValue);
+                if (direction && direction.lengthSq() > VIEW_VECTOR_EPSILON) return direction;
+                if (strict) throw makeCommandError('invalid_view_direction', 'viewDirection must be a finite non-zero 3-vector', 'view');
+                console.warn('Ignoring invalid viewDirection; falling back to default camera fit.');
+                return null;
+            }
+
+            const eulerValue = getViewSpecValue(spec, 'viewEuler', 'euler');
+            if (eulerValue != null) {
+                const direction = vectorFromEulerXYZ(eulerValue);
+                if (direction && direction.lengthSq() > VIEW_VECTOR_EPSILON) return direction;
+                if (strict) throw makeCommandError('invalid_view_direction', 'viewEuler must be three finite XYZ degrees', 'view');
+                console.warn('Ignoring invalid viewEuler; falling back to default camera fit.');
+                return null;
+            }
+
+            const presetValue = getViewSpecValue(spec, 'viewPreset', 'preset');
+            if (presetValue != null) {
+                const preset = normalizePresetName(presetValue);
+                const cellDirection = resolveCellViewDirection(preset, frame);
+                if (cellDirection && cellDirection.lengthSq() > VIEW_VECTOR_EPSILON) return cellDirection;
+                const cellMapping = CELL_VIEW_PRESETS[preset];
+                const fallbackPreset = cellMapping ? cellMapping.fallback : preset;
+                const cartesian = CARTESIAN_VIEW_DIRECTIONS[fallbackPreset];
+                if (cartesian) return vectorFromArray(cartesian);
+                if (strict) throw makeCommandError('invalid_view_preset', `Unknown view preset: ${presetValue}`, 'view');
+                console.warn('Ignoring unknown viewPreset; falling back to default camera fit.');
+            }
+
+            return null;
+        }
+
+        function stableUpVector(direction, requestedUp) {
+            const normalizedDirection = direction && direction.clone ? direction.clone().normalize() : new THREE.Vector3(0, 0, 1);
+            const requested = vectorFromArray(requestedUp);
+            const candidates = [
+                requested,
+                new THREE.Vector3(0, 1, 0),
+                new THREE.Vector3(0, 0, 1),
+                new THREE.Vector3(1, 0, 0)
+            ];
+            for (const candidate of candidates) {
+                if (!candidate || candidate.lengthSq() <= VIEW_VECTOR_EPSILON) continue;
+                const up = candidate.clone().normalize();
+                if (Math.abs(up.dot(normalizedDirection)) < 0.98) return up;
+            }
+            return new THREE.Vector3(0, 1, 0);
+        }
+
+        function getViewFitValue(viewSpec) {
+            const value = Number(getViewSpecValue(viewSpec, 'viewFit', 'fit'));
+            return Number.isFinite(value) && value > 0 ? value : 1;
+        }
+
+        function updateViewSettingsFromSpec(viewSpec) {
+            const spec = normalizeViewSpec(viewSpec);
+            const preset = getViewSpecValue(spec, 'viewPreset', 'preset');
+            const direction = getViewSpecValue(spec, 'viewDirection', 'direction');
+            const euler = getViewSpecValue(spec, 'viewEuler', 'euler');
+            const up = getViewSpecValue(spec, 'viewUp', 'up');
+            const fit = getViewSpecValue(spec, 'viewFit', 'fit');
+
+            if (preset !== undefined) {
+                settings.viewPreset = preset;
+                settings.viewDirection = null;
+                settings.viewEuler = null;
+            }
+            if (direction !== undefined) {
+                settings.viewDirection = direction;
+                settings.viewPreset = null;
+                settings.viewEuler = null;
+            }
+            if (euler !== undefined) {
+                settings.viewEuler = euler;
+                settings.viewPreset = null;
+                settings.viewDirection = null;
+            }
+            if (up !== undefined) settings.viewUp = up;
+            if (fit !== undefined) settings.viewFit = fit;
+        }
+
+        function serializeCurrentViewSpec() {
+            const view = {};
+            if (settings.viewPreset != null) view.preset = settings.viewPreset;
+            if (settings.viewDirection != null) view.direction = settings.viewDirection;
+            if (settings.viewEuler != null) view.euler = settings.viewEuler;
+            if (settings.viewUp != null) view.up = settings.viewUp;
+            if (settings.viewFit != null) view.fit = settings.viewFit;
+            return view;
+        }
+
+        function resolveViewSpec(viewSpec, options = {}) {
+            const spec = normalizeViewSpec(viewSpec);
+            const frame = options.frame || getCurrentViewFrame();
+            const direction = resolveViewDirection(spec, frame, !!options.strict);
+            const upValue = getViewSpecValue(spec, 'viewUp', 'up');
+            const fit = getViewFitValue(spec);
+            return {
+                direction,
+                up: stableUpVector(direction || new THREE.Vector3(1, 1, 1), upValue),
+                fit,
+                view: Object.assign({}, spec)
+            };
+        }
+
+        function fitCameraToView(group, viewSpec, options = {}) {
+            if (!group || !camera || !controls) return null;
+            const box = new THREE.Box3().setFromObject(group);
+            if (!Number.isFinite(box.max.x) || !Number.isFinite(box.max.y) || !Number.isFinite(box.max.z)) return null;
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z, 1);
+            const spec = normalizeViewSpec(viewSpec);
+            const resolved = resolveViewSpec(spec, options);
+            const customDirection = resolved.direction;
+            const fit = resolved.fit;
+            let distance;
+
+            if (camera.isPerspectiveCamera) {
+                const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+                distance = (maxDim / (2 * Math.tan(halfFov)) + maxDim) * fit;
+            } else {
+                const viewer = document.getElementById('viewer');
+                const aspect = viewer ? Math.max(viewer.clientWidth, 1) / Math.max(viewer.clientHeight, 1) : 1;
+                const bound = maxDim * fit;
+                camera.left = -bound * aspect;
+                camera.right = bound * aspect;
+                camera.top = bound;
+                camera.bottom = -bound;
+                distance = maxDim * 2 * fit;
+            }
+
+            if (customDirection) {
+                const direction = customDirection.clone().normalize();
+                camera.position.copy(center.clone().add(direction.multiplyScalar(distance)));
+                camera.up.copy(resolved.up);
+            } else {
+                camera.position.copy(center.clone().add(new THREE.Vector3(distance, distance, distance)));
+                camera.up.copy(stableUpVector(new THREE.Vector3(1, 1, 1), getViewSpecValue(spec, 'viewUp', 'up')));
+            }
+
+            controls.target.copy(center);
+            controls.update();
+            camera.lookAt(center);
+            camera.updateProjectionMatrix();
+            updateOrthographicTrackballPanSpeed();
+            cameraNeedsFit = false;
+            activeViewSpec = hasViewSpec(spec) ? serializeCurrentViewSpec() : null;
+            return { center, maxDim, direction: customDirection ? customDirection.toArray() : null };
+        }
+
+        function applyViewSpec(viewSpec, options = {}) {
+            const spec = normalizeViewSpec(viewSpec);
+            resolveViewDirection(spec, getCurrentViewFrame(), !!options.strict);
+            if (options.updateSettings !== false) updateViewSettingsFromSpec(spec);
+            cameraNeedsFit = true;
+            const group = options.group || moleculeGroup;
+            if (group && camera && controls) {
+                fitCameraToMolecule(group, { viewSpec: getViewSpecFromSettings(), strict: !!options.strict });
+            }
+            return { ok: true, type: 'view', view: serializeCurrentViewSpec() };
+        }
+
+        function applyCameraView(viewSpec, options = {}) {
+            return applyViewSpec(viewSpec, options);
+        }
+
+        function applyInitialViewSettings() {
+            if (!hasViewSpec(getViewSpecFromSettings())) return null;
+            return applyViewSpec(getViewSpecFromSettings(), { strict: false, updateSettings: false });
+        }
+
+        function resetView() {
+            settings.viewPreset = null;
+            settings.viewDirection = null;
+            settings.viewEuler = null;
+            settings.viewUp = null;
+            activeViewSpec = null;
+            cameraNeedsFit = true;
+            if (typeof renderMolecule === 'function') renderMolecule();
+            return { ok: true, type: 'view', view: {} };
+        }
+
+        function postCommandResult(event, requestId, payload) {
+            if (!event.source || !requestId) return;
+            event.source.postMessage(Object.assign({ ok: true, requestId }, payload), '*');
+        }
+
+        function postCommandError(event, requestId, error, responseType) {
+            if (!event.source || !requestId) return;
+            const message = error && error.message ? error.message : 'ASEView command failed';
+            const code = error && error.code ? error.code : 'request_failed';
+            const errorType = error && error.type ? error.type : responseType;
+            const messageType = responseType === 'view' ? 'viewError' : 'exportError';
+            event.source.postMessage({
+                type: messageType,
+                ok: false,
+                code,
+                message,
+                requestId,
+                error: { code, message, type: errorType, requestId }
+            }, '*');
+        }
 
         // Update UI and rendering from settings (called via postMessage API)
         function updateFromSettings() {
@@ -7055,11 +7819,21 @@ function createHydrogenBond(p1, p2) {
 
             const colorSchemeSelect = document.getElementById('color-scheme-select');
             if (colorSchemeSelect) colorSchemeSelect.value = settings.colorScheme || 'Jmol';
+            if (typeof atomColorScheme !== 'undefined') {
+                atomColorScheme = (settings.colorScheme || 'Jmol').toLowerCase();
+            }
+            if (!settings.elementColorOverrides || typeof settings.elementColorOverrides !== 'object') {
+                settings.elementColorOverrides = {};
+            }
+            if (typeof applyElementColorOverrides === 'function') applyElementColorOverrides();
+            if (typeof updateElementColorGridUI === 'function') updateElementColorGridUI();
 
             // Update checkboxes
             const checkboxMappings = {
                 'show-cell': 'showCell',
                 'show-bond': 'showBond',
+                'hide-hydrogens': 'hideHydrogens',
+                'show-blur': 'showBlur',
                 'show-hbond': 'showHBond',
                 'show-shading': 'showShading',
                 'show-energy-plot': 'showEnergyPlot',
@@ -7101,7 +7875,7 @@ function createHydrogenBond(p1, p2) {
 
             const bondThicknessSlider = document.getElementById('bond-thickness');
             if (bondThicknessSlider) {
-                bondThicknessSlider.value = settings.bondThickness || 0.1;
+                bondThicknessSlider.value = settings.bondThickness || 0.09;
                 const valueEl = document.getElementById('bond-thickness-value');
                 if (valueEl) valueEl.textContent = bondThicknessSlider.value;
             }
@@ -7124,10 +7898,13 @@ function createHydrogenBond(p1, p2) {
             const bgColorPicker = document.getElementById('background-color');
             if (bgColorPicker && settings.backgroundColor) {
                 bgColorPicker.value = settings.backgroundColor;
+                const bgColorValueEl = document.getElementById('background-color-value');
+                if (bgColorValueEl) bgColorValueEl.textContent = settings.backgroundColor;
                 const viewerContainer = document.querySelector('.viewer-container');
                 if (viewerContainer) {
                     viewerContainer.style.background = `linear-gradient(135deg, ${settings.backgroundColor}, ${darkenColorHex(settings.backgroundColor, 20)})`;
                 }
+                if (typeof updateBackgroundColor === 'function') updateBackgroundColor();
             }
 
             const cellColorPicker = document.getElementById('cell-color');
@@ -7146,10 +7923,27 @@ function createHydrogenBond(p1, p2) {
                 }
             }
 
+            updateBlurEffect();
+
+            // Update camera type when viewMode setting changes
+            if (typeof setupCamera === 'function') {
+                const orthoBtn = document.getElementById('orthographic-btn');
+                const perspBtn = document.getElementById('perspective-btn');
+                if (orthoBtn && perspBtn) {
+                    const isOrtho = settings.viewMode === 'Orthographic';
+                    orthoBtn.classList.toggle('active', isOrtho);
+                    perspBtn.classList.toggle('active', !isOrtho);
+                }
+                setupCamera();
+                if (typeof setupControls === 'function') setupControls();
+                cameraNeedsFit = true;
+            }
+
             // Apply rendering changes
             if (typeof updateShading === 'function') updateShading();
             if (typeof updateChargeUI === 'function') updateChargeUI();
             if (typeof renderMolecule === 'function') renderMolecule();
+            if (typeof applyInitialViewSettings === 'function') applyInitialViewSettings();
         }
 
         // Check if styles.js is loaded
@@ -7160,15 +7954,36 @@ function createHydrogenBond(p1, p2) {
             console.error('styles.js not loaded! createAtomStyleDefault is undefined');
         }
 
+        if (typeof toLinearColor !== 'function') {
+            window.toLinearColor = function(color) {
+                const result = color instanceof THREE.Color ? color.clone() : new THREE.Color(color);
+                if (typeof result.convertSRGBToLinear === 'function') {
+                    result.convertSRGBToLinear();
+                }
+                return result;
+            };
+        }
+        if (typeof setMaterialColor !== 'function') {
+            window.setMaterialColor = function(material, color) {
+                if (material && material.color) {
+                    material.color.copy(toLinearColor(color));
+                }
+                if (material && material.uniforms && material.uniforms.uColor && material.uniforms.uColor.value) {
+                    material.uniforms.uColor.value.copy(toLinearColor(color));
+                }
+            };
+        }
+
         const atomFactories = {
-            'default': (pos, symbol, atomScale) => createAtomStyleDefault(pos, symbol, atomScale),
-            '2d': (pos, symbol, atomScale) => createAtomStyle2D(pos, symbol, atomScale),
-            'cartoon': (pos, symbol, atomScale) => createAtomStyleCartoon(pos, symbol, atomScale),
-            'neon': (pos, symbol, atomScale) => createAtomStyleNeon(pos, symbol, atomScale),
-            'glossy': (pos, symbol, atomScale) => createAtomStyleGlossy(pos, symbol, atomScale),
-            'metallic': (pos, symbol, atomScale) => createAtomStyleMetallic(pos, symbol, atomScale),
-            'rowan': (pos, symbol, atomScale) => createAtomStyleRowan(pos, symbol, atomScale),
-            'bubble': (pos, symbol, atomScale) => createAtomStyleBubble(pos, symbol, atomScale),
+            'default': (pos, symbol, atomScale, helpers) => createAtomStyleDefault(pos, symbol, atomScale, helpers),
+            '2d': (pos, symbol, atomScale, helpers) => createAtomStyle2D(pos, symbol, atomScale, helpers),
+            'cartoon': (pos, symbol, atomScale, helpers) => createAtomStyleCartoon(pos, symbol, atomScale, helpers),
+            'neon': (pos, symbol, atomScale, helpers) => createAtomStyleNeon(pos, symbol, atomScale, helpers),
+            'glossy': (pos, symbol, atomScale, helpers) => createAtomStyleGlossy(pos, symbol, atomScale, helpers),
+            'metallic': (pos, symbol, atomScale, helpers) => createAtomStyleMetallic(pos, symbol, atomScale, helpers),
+            'cinematic': (pos, symbol, atomScale, helpers) => createAtomStyleCinematic(pos, symbol, atomScale, helpers),
+            'rowan': (pos, symbol, atomScale, helpers) => createAtomStyleRowan(pos, symbol, atomScale, helpers),
+            'bubble': (pos, symbol, atomScale, helpers) => createAtomStyleBubble(pos, symbol, atomScale, helpers),
             'grey': (pos, symbol, atomScale, helpers) => createAtomStyleGrey(pos, symbol, atomScale, helpers.greyColorMap[symbol] ?? 0x808080)
         };
 
@@ -7179,6 +7994,7 @@ function createHydrogenBond(p1, p2) {
             'neon': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleNeon(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
             'glossy': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'glossy', helpers),
             'metallic': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleDefault(p1, p2, sym1, sym2, bondRadius, atomScale, 'metallic', helpers),
+            'cinematic': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleCinematic(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
             'rowan': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleRowan(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
             'bubble': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleBubble(p1, p2, sym1, sym2, bondRadius, atomScale, helpers),
             'grey': (p1, p2, sym1, sym2, bondRadius, atomScale, helpers) => createBondStyleGrey(p1, p2, sym1, sym2, bondRadius, atomScale, helpers.greyColorMap, helpers)
@@ -7256,8 +8072,9 @@ function createHydrogenBond(p1, p2) {
             return getElementRadius(symbol) * getAdjustedAtomScale(symbol, atomScale, radiusScaleBySymbol);
         }
 
-        // Charge coloring utilities
-        let chargeStats = { hasCharges: false, min: 0, max: 0, maxPositive: 0, minNegative: 0 };
+        // Scalar coloring utilities
+        let chargeStats = { hasCharges: false, min: 0, max: 0, absMax: 0, maxPositive: 0, minNegative: 0 };
+        let magmomStats = { hasMagmoms: false, min: 0, max: 0, absMax: 0, maxPositive: 0, minNegative: 0 };
         let fixedStats  = { hasFixed: false };
 
         function checkConstraintsInData() {
@@ -7272,35 +8089,62 @@ function createHydrogenBond(p1, p2) {
             return false;
         }
 
+        function resetScalarStats(stats, hasKey) {
+            stats[hasKey] = false;
+            stats.min = 0;
+            stats.max = 0;
+            stats.absMax = 0;
+            stats.maxPositive = 0;
+            stats.minNegative = 0;
+        }
 
-        function checkChargesInData() {
+        function collectScalarValues(frame, fieldName) {
+            if (!frame || !Array.isArray(frame[fieldName])) return [];
+            return frame[fieldName]
+                .map(value => Number(value))
+                .filter(value => Number.isFinite(value));
+        }
+
+        function updateScalarStats(fieldName, stats, hasKey) {
+            resetScalarStats(stats, hasKey);
             if (!molecularData || molecularData.length === 0) return false;
 
-            let hasCharges = false;
-            let allCharges = [];
-
+            let allValues = [];
             for (const frame of molecularData) {
-                if (frame.charges && Array.isArray(frame.charges) && frame.charges.length > 0) {
-                    hasCharges = true;
-                    allCharges = allCharges.concat(frame.charges);
-                }
+                allValues = allValues.concat(collectScalarValues(frame, fieldName));
             }
 
-            if (hasCharges && allCharges.length > 0) {
-                chargeStats.hasCharges = true;
-                chargeStats.min = Math.min(...allCharges);
-                chargeStats.max = Math.max(...allCharges);
-                chargeStats.absMax = Math.max(Math.abs(chargeStats.min), Math.abs(chargeStats.max));
-                // Track positive and negative ranges separately
-                const positiveCharges = allCharges.filter(c => c > 0);
-                const negativeCharges = allCharges.filter(c => c < 0);
-                chargeStats.maxPositive = positiveCharges.length > 0 ? Math.max(...positiveCharges) : 0;
-                chargeStats.minNegative = negativeCharges.length > 0 ? Math.min(...negativeCharges) : 0;
-            } else {
-                chargeStats.hasCharges = false;
-            }
+            if (allValues.length === 0) return false;
 
-            return hasCharges;
+            stats[hasKey] = true;
+            stats.min = Math.min(...allValues);
+            stats.max = Math.max(...allValues);
+            stats.absMax = Math.max(Math.abs(stats.min), Math.abs(stats.max));
+
+            const positiveValues = allValues.filter(value => value > 0);
+            const negativeValues = allValues.filter(value => value < 0);
+            stats.maxPositive = positiveValues.length > 0 ? Math.max(...positiveValues) : 0;
+            stats.minNegative = negativeValues.length > 0 ? Math.min(...negativeValues) : 0;
+            return true;
+        }
+
+        function checkChargesInData() {
+            return updateScalarStats('charges', chargeStats, 'hasCharges');
+        }
+
+        function checkMagmomsInData() {
+            return updateScalarStats('magmoms', magmomStats, 'hasMagmoms');
+        }
+
+        function getActiveScalarStats() {
+            return settings.colorBy === 'Magmom' ? magmomStats : chargeStats;
+        }
+
+        function scalarModeHasData(mode) {
+            if (mode === 'Element') return true;
+            if (mode === 'Charge') return chargeStats.hasCharges;
+            if (mode === 'Magmom') return magmomStats.hasMagmoms;
+            return false;
         }
 
         function updateChargeUI() {
@@ -7313,21 +8157,26 @@ function createHydrogenBond(p1, p2) {
 
             if (!colorBySection || !select) return;
 
-            // Rebuild Charge option dynamically
             [...select.options].forEach(o => { if (o.value !== 'Element') o.remove(); });
-            if (chargeStats.hasCharges) {
+            const scalarOptions = [
+                { value: 'Charge', label: 'Charge', available: chargeStats.hasCharges },
+                { value: 'Magmom', label: 'Magmom', available: magmomStats.hasMagmoms }
+            ];
+            scalarOptions.forEach(({ value, label, available }) => {
+                if (!available) return;
                 const opt = document.createElement('option');
-                opt.value = 'Charge'; opt.text = 'Charge';
+                opt.value = value;
+                opt.text = label;
                 select.add(opt);
-            }
+            });
 
-            // If selected colorBy is no longer valid, reset to Element
-            if (settings.colorBy === 'Charge' && !chargeStats.hasCharges) {
+            // If selected colorBy is no longer valid, reset to Element.
+            if (!scalarModeHasData(settings.colorBy)) {
                 settings.colorBy = 'Element';
             }
             select.value = settings.colorBy;
 
-            // Fixed Atoms toggle: show only when constraints are present
+            // Fixed Atoms toggle: show only when constraints are present.
             if (constraintSection) {
                 constraintSection.style.display = fixedStats.hasFixed ? 'block' : 'none';
                 if (!fixedStats.hasFixed) settings.showConstraint = false;
@@ -7335,14 +8184,15 @@ function createHydrogenBond(p1, p2) {
                 if (cb) cb.checked = !!settings.showConstraint;
             }
 
-            colorBySection.style.display = chargeStats.hasCharges ? 'block' : 'none';
+            const hasScalarData = chargeStats.hasCharges || magmomStats.hasMagmoms;
+            colorBySection.style.display = hasScalarData ? 'block' : 'none';
 
-            // Charge-specific sub-controls
-            const showChargeOptions = settings.colorBy === 'Charge';
-            if (normalizeSection) normalizeSection.style.display = showChargeOptions ? 'block' : 'none';
-            if (labelsSection)    labelsSection.style.display    = showChargeOptions ? 'block' : 'none';
-            if (colorbarSection)  colorbarSection.style.display  = showChargeOptions ? 'block' : 'none';
-            if (showChargeOptions) updateColorbarLabels();
+            const showScalarOptions = settings.colorBy === 'Charge' || settings.colorBy === 'Magmom';
+            const showNormalizeOptions = settings.colorBy === 'Charge';
+            if (normalizeSection) normalizeSection.style.display = showNormalizeOptions ? 'block' : 'none';
+            if (labelsSection)    labelsSection.style.display    = showScalarOptions ? 'block' : 'none';
+            if (colorbarSection)  colorbarSection.style.display  = showScalarOptions ? 'block' : 'none';
+            if (showScalarOptions) updateColorbarLabels();
         }
 
         function updateColorbarLabels() {
@@ -7352,13 +8202,12 @@ function createHydrogenBond(p1, p2) {
             if (!minLabel || !maxLabel) return;
 
             let minVal, maxVal;
-            if (settings.normalizeCharges) {
-                // Normalize mode: show -1.0 to +1.0 (full range used)
+            if (settings.colorBy === 'Charge' && settings.normalizeCharges) {
                 minVal = -1.0;
                 maxVal = 1.0;
             } else {
-                // Non-normalize mode: show symmetric range based on absMax
-                const absMax = chargeStats.absMax || 1.0;
+                const stats = getActiveScalarStats();
+                const absMax = stats.absMax || 1.0;
                 minVal = -absMax;
                 maxVal = absMax;
             }
@@ -7368,7 +8217,7 @@ function createHydrogenBond(p1, p2) {
         }
 
         // Coolwarm colormap: red (negative) -> white (zero) -> blue (positive)
-        function getChargeColor(charge, normalize = false) {
+        function getChargeColor(charge, normalize = false, stats = chargeStats) {
             // Standard convention: red = negative, blue = positive
             const negativeColor = new THREE.Color(0xb40426);  // Red
             const neutralColor = new THREE.Color(0xf7f7f7);   // White
@@ -7376,21 +8225,20 @@ function createHydrogenBond(p1, p2) {
 
             let resultColor = new THREE.Color();
             let t;
+            const scalarStats = stats || chargeStats;
 
             if (normalize) {
-                // Normalize: scale each direction to its max (full color range)
                 if (charge >= 0) {
-                    const maxPos = chargeStats.maxPositive || 1.0;
+                    const maxPos = scalarStats.maxPositive || 1.0;
                     t = maxPos > 0 ? Math.min(charge / maxPos, 1) : 0;
                     resultColor.lerpColors(neutralColor, positiveColor, t);
                 } else {
-                    const minNeg = chargeStats.minNegative || -1.0;
+                    const minNeg = scalarStats.minNegative || -1.0;
                     t = minNeg < 0 ? Math.min(Math.abs(charge) / Math.abs(minNeg), 1) : 0;
                     resultColor.lerpColors(neutralColor, negativeColor, t);
                 }
             } else {
-                // Non-normalize: use symmetric range based on absMax
-                const absMax = chargeStats.absMax || 1.0;
+                const absMax = scalarStats.absMax || 1.0;
                 if (charge >= 0) {
                     t = absMax > 0 ? Math.min(charge / absMax, 1) : 0;
                     resultColor.lerpColors(neutralColor, positiveColor, t);
@@ -7403,74 +8251,70 @@ function createHydrogenBond(p1, p2) {
             return resultColor.getHex();
         }
 
-        // Create atom with custom color (for charge coloring)
-        function createAtomWithColor(pos, symbol, atomScale, colorHex, styleName, lodSegments) {
-            const info = atomInfo[symbol] || atomInfo['default'];
-            const scaledRadius = info.radius * atomScale;
-            const seg = (lodSegments && lodSegments.sphere) || 32;
+        // Create atom with the selected style and scalar color.
+        function cloneHelpersWithScalarColor(helpers, symbol, colorHex) {
+            const nextHelpers = { ...(helpers || {}) };
+            nextHelpers.greyColorMap = {
+                ...((helpers && helpers.greyColorMap) || {}),
+                [symbol]: colorHex
+            };
+            return nextHelpers;
+        }
 
-            // Create geometry based on style
-            let geometry, material, mesh;
+        function withTemporaryAtomColorOverride(symbol, colorHex, callback) {
+            if (typeof setAtomColorOverrides !== 'function') return callback();
 
-            switch (styleName) {
-                case 'neon':
-                    geometry = getCachedSphereGeometry(scaledRadius, seg);
-                    material = new THREE.MeshBasicMaterial({
-                        color: colorHex,
-                        transparent: true,
-                        opacity: 0.9
-                    });
-                    mesh = new THREE.Mesh(geometry, material);
-                    mesh.position.copy(pos);
-
-                    // Add glow effect
-                    const glowGeometry = getCachedSphereGeometry(scaledRadius * 1.3, seg);
-                    const glowMaterial = new THREE.MeshBasicMaterial({
-                        color: colorHex,
-                        transparent: true,
-                        opacity: 0.3
-                    });
-                    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-                    glow.position.copy(pos);
-
-                    const group = new THREE.Group();
-                    group.add(glow);
-                    group.add(mesh);
-                    return group;
-
-                case 'glossy':
-                    geometry = getCachedSphereGeometry(scaledRadius, seg);
-                    material = new THREE.MeshPhongMaterial({
-                        color: colorHex,
-                        specular: 0x444444,
-                        shininess: 100
-                    });
-                    mesh = new THREE.Mesh(geometry, material);
-                    mesh.position.copy(pos);
-                    return mesh;
-
-                case 'metallic':
-                    geometry = getCachedSphereGeometry(scaledRadius, seg);
-                    material = new THREE.MeshStandardMaterial({
-                        color: colorHex,
-                        metalness: 0.8,
-                        roughness: 0.2
-                    });
-                    mesh = new THREE.Mesh(geometry, material);
-                    mesh.position.copy(pos);
-                    return mesh;
-
-                default:  // cartoon, default, etc.
-                    geometry = getCachedSphereGeometry(scaledRadius, seg);
-                    material = new THREE.MeshLambertMaterial({ color: colorHex });
-                    mesh = new THREE.Mesh(geometry, material);
-                    mesh.position.copy(pos);
-                    return mesh;
+            const baseOverrides = settings.elementColorOverrides && typeof settings.elementColorOverrides === 'object'
+                ? settings.elementColorOverrides
+                : {};
+            setAtomColorOverrides({ ...baseOverrides, [symbol]: colorHex });
+            try {
+                return callback();
+            } finally {
+                setAtomColorOverrides(baseOverrides);
             }
         }
 
+        function tintSpriteMaterials(object, colorHex) {
+            if (!object || typeof object.traverse !== 'function') return;
+            object.traverse(child => {
+                if (!child.isSprite || !child.material) return;
+                if (Array.isArray(child.material)) {
+                    child.material = child.material.map(material => {
+                        const cloned = material.clone();
+                        setMaterialColor(cloned, colorHex);
+                        return cloned;
+                    });
+                } else {
+                    child.material = child.material.clone();
+                    setMaterialColor(child.material, colorHex);
+                }
+            });
+        }
+
+        function createAtomWithColor(pos, symbol, atomScale, colorHex, styleName, helpers) {
+            const atomFactory = atomFactories[styleName] || atomFactories['default'];
+            const scalarHelpers = cloneHelpersWithScalarColor(helpers, symbol, colorHex);
+
+            let atom = withTemporaryAtomColorOverride(symbol, colorHex, () => (
+                atomFactory(pos, symbol, atomScale, scalarHelpers)
+            ));
+            if (!atom) {
+                atom = withTemporaryAtomColorOverride(symbol, colorHex, () => (
+                    atomFactories['default'](pos, symbol, atomScale, scalarHelpers)
+                ));
+            }
+
+            // 2D atoms draw a white canvas sprite, so tint the sprite material after creation.
+            if ((styleName || '').toLowerCase() === '2d') {
+                tintSpriteMaterials(atom, colorHex);
+            }
+
+            return atom;
+        }
+
         // Create charge label sprite
-        function createChargeLabelSprite(charge, position, atomScale, normalize) {
+        function createChargeLabelSprite(charge, position, atomScale, normalize, stats = chargeStats) {
             const canvas = document.createElement('canvas');
             canvas.width = 128;
             canvas.height = 64;
@@ -7491,7 +8335,7 @@ function createHydrogenBond(p1, p2) {
             ctx.strokeText(text, 64, 32);
 
             // Label color matches atom color (reflects normalization)
-            const colorHex = getChargeColor(charge, normalize || false);
+            const colorHex = getChargeColor(charge, normalize || false, stats);
             const labelColor = new THREE.Color(colorHex);
             ctx.fillStyle = '#' + labelColor.getHexString();
             ctx.fillText(text, 64, 32);
@@ -7512,90 +8356,75 @@ function createHydrogenBond(p1, p2) {
             return sprite;
         }
 
-        // Create bond with custom colors (for charge coloring)
-        function createBondWithColor(pos1, pos2, sym1, sym2, bondRadius, atomScale, color1Hex, color2Hex, styleName, helpers) {
-            const group = new THREE.Group();
+        // Create bond with the selected style and endpoint scalar colors.
+        function cloneHelpersWithBondScalarColors(helpers, sym1, sym2, key1, key2, color1Hex, color2Hex) {
+            const nextHelpers = { ...(helpers || {}) };
+            const radiusScaleBySymbol = { ...((helpers && helpers.radiusScaleBySymbol) || {}) };
+            if (radiusScaleBySymbol[sym1] !== undefined) radiusScaleBySymbol[key1] = radiusScaleBySymbol[sym1];
+            if (radiusScaleBySymbol[sym2] !== undefined) radiusScaleBySymbol[key2] = radiusScaleBySymbol[sym2];
+            nextHelpers.radiusScaleBySymbol = radiusScaleBySymbol;
+            nextHelpers.greyColorMap = {
+                ...((helpers && helpers.greyColorMap) || {}),
+                [key1]: color1Hex,
+                [key2]: color2Hex
+            };
+            return nextHelpers;
+        }
 
-            const direction = new THREE.Vector3().subVectors(pos2, pos1);
-            const length = direction.length();
-            if (length <= 0) return null;
+        function withTemporaryScalarBondSymbols(sym1, sym2, color1Hex, color2Hex, callback) {
+            const key1 = '__scalar_bond_a__';
+            const key2 = '__scalar_bond_b__';
+            const previous1 = atomInfo[key1];
+            const previous2 = atomInfo[key2];
+            const info1 = atomInfo[sym1] || atomInfo['default'];
+            const info2 = atomInfo[sym2] || atomInfo['default'];
 
-            const bondDirection = direction.clone().normalize();
-            const radiusScaleBySymbol = helpers?.radiusScaleBySymbol || {};
-            const offsetFactor = styleName === 'neon' ? 0.6 : 0.75;
-            const radius1 = getAdjustedAtomRadius(sym1, atomScale, radiusScaleBySymbol) * offsetFactor;
-            const radius2 = getAdjustedAtomRadius(sym2, atomScale, radiusScaleBySymbol) * offsetFactor;
-            const startPos = pos1.clone().add(bondDirection.clone().multiplyScalar(radius1));
-            const endPos = pos2.clone().sub(bondDirection.clone().multiplyScalar(radius2));
-            const adjustedLength = startPos.distanceTo(endPos);
-            if (adjustedLength <= 0.01) return null;
-
-            const midpoint = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5);
-            const halfLength = adjustedLength / 2;
-
-            // Darken colors for bonds
-            const darkenFactor = 0.7;
-            const bondColor1 = new THREE.Color(color1Hex).multiplyScalar(darkenFactor).getHex();
-            const bondColor2 = new THREE.Color(color2Hex).multiplyScalar(darkenFactor).getHex();
-
-            let material1, material2;
-
-            switch (styleName) {
-                case 'neon':
-                    // Use lines for neon style
-                    const points1 = [startPos, midpoint];
-                    const geometry1 = new THREE.BufferGeometry().setFromPoints(points1);
-                    material1 = new THREE.LineBasicMaterial({ color: bondColor1, linewidth: 2 });
-                    group.add(new THREE.Line(geometry1, material1));
-
-                    const points2 = [midpoint, endPos];
-                    const geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
-                    material2 = new THREE.LineBasicMaterial({ color: bondColor2, linewidth: 2 });
-                    group.add(new THREE.Line(geometry2, material2));
-                    return group;
-
-                case 'cartoon':
-                    material1 = new THREE.MeshToonMaterial({ color: bondColor1 });
-                    material2 = new THREE.MeshToonMaterial({ color: bondColor2 });
-                    break;
-
-                case 'metallic':
-                    material1 = new THREE.MeshStandardMaterial({ color: bondColor1, metalness: 0.8, roughness: 0.2 });
-                    material2 = new THREE.MeshStandardMaterial({ color: bondColor2, metalness: 0.8, roughness: 0.2 });
-                    break;
-
-                case 'glossy':
-                    material1 = new THREE.MeshPhongMaterial({ color: bondColor1, shininess: 100, specular: 0x444444 });
-                    material2 = new THREE.MeshPhongMaterial({ color: bondColor2, shininess: 100, specular: 0x444444 });
-                    break;
-
-                case 'bubble':
-                    material1 = new THREE.MeshPhongMaterial({ color: bondColor1, transparent: true, opacity: 0.6, shininess: 100, specular: 0xffffff });
-                    material2 = new THREE.MeshPhongMaterial({ color: bondColor2, transparent: true, opacity: 0.6, shininess: 100, specular: 0xffffff });
-                    break;
-
-                default:
-                    material1 = new THREE.MeshPhongMaterial({ color: bondColor1, shininess: 30 });
-                    material2 = new THREE.MeshPhongMaterial({ color: bondColor2, shininess: 30 });
+            atomInfo[key1] = { ...info1, color: color1Hex };
+            atomInfo[key2] = { ...info2, color: color2Hex };
+            try {
+                return callback(key1, key2);
+            } finally {
+                if (previous1 === undefined) delete atomInfo[key1];
+                else atomInfo[key1] = previous1;
+                if (previous2 === undefined) delete atomInfo[key2];
+                else atomInfo[key2] = previous2;
             }
+        }
 
-            // First half
-            const cylGeom1 = new THREE.CylinderGeometry(bondRadius, bondRadius, halfLength, 16);
-            const cylinder1 = new THREE.Mesh(cylGeom1, material1);
-            const half1Mid = new THREE.Vector3().addVectors(startPos, midpoint).multiplyScalar(0.5);
-            cylinder1.position.copy(half1Mid);
-            cylinder1.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bondDirection);
-            group.add(cylinder1);
-
-            // Second half
-            const cylGeom2 = new THREE.CylinderGeometry(bondRadius, bondRadius, halfLength, 16);
-            const cylinder2 = new THREE.Mesh(cylGeom2, material2);
-            const half2Mid = new THREE.Vector3().addVectors(midpoint, endPos).multiplyScalar(0.5);
-            cylinder2.position.copy(half2Mid);
-            cylinder2.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bondDirection);
-            group.add(cylinder2);
-
-            return group;
+        function createBondWithColor(pos1, pos2, sym1, sym2, bondRadius, atomScale, color1Hex, color2Hex, styleName, helpers) {
+            const bondFactory = bondFactories[styleName] || bondFactories['default'];
+            return withTemporaryScalarBondSymbols(sym1, sym2, color1Hex, color2Hex, (scalarSym1, scalarSym2) => {
+                const scalarHelpers = cloneHelpersWithBondScalarColors(
+                    helpers,
+                    sym1,
+                    sym2,
+                    scalarSym1,
+                    scalarSym2,
+                    color1Hex,
+                    color2Hex
+                );
+                let bond = bondFactory(
+                    pos1,
+                    pos2,
+                    scalarSym1,
+                    scalarSym2,
+                    bondRadius,
+                    atomScale,
+                    scalarHelpers
+                );
+                if (!bond) {
+                    bond = bondFactories['default'](
+                        pos1,
+                        pos2,
+                        scalarSym1,
+                        scalarSym2,
+                        bondRadius,
+                        atomScale,
+                        scalarHelpers
+                    );
+                }
+                return bond;
+            });
         }
 
         let scene = null;
@@ -7605,6 +8434,8 @@ function createHydrogenBond(p1, p2) {
         let moleculeGroup = null;
         let directionalLight = null;
         let cameraNeedsFit = true;
+        let cameraViewLock = false;
+        let activeViewSpec = null;
 
         // Axis helper scene
         let axisScene = null;
@@ -7737,6 +8568,9 @@ function createHydrogenBond(p1, p2) {
             window.addEventListener('resize', handleResize);
             handleResize();
             animate();
+            if (Array.isArray(molecularData) && molecularData.length > 0) {
+                renderMolecule();
+            }
         }
 
         function setupCamera() {
@@ -8005,19 +8839,93 @@ function createHydrogenBond(p1, p2) {
             return [...new Set(molecule.symbols || [])].sort();
         }
 
+        function normalizeHexColor(value) {
+            if (typeof value !== 'string') return null;
+            const raw = value.trim();
+            if (/^#[0-9a-fA-F]{6}$/.test(raw)) return raw.toLowerCase();
+            if (/^[0-9a-fA-F]{6}$/.test(raw)) return `#${raw.toLowerCase()}`;
+            if (/^#[0-9a-fA-F]{3}$/.test(raw)) {
+                const hex = raw.slice(1).toLowerCase();
+                return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+            }
+            if (/^[0-9a-fA-F]{3}$/.test(raw)) {
+                const hex = raw.toLowerCase();
+                return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+            }
+            return null;
+        }
+
+        function getElementColorHex(symbol) {
+            const override = settings.elementColorOverrides && settings.elementColorOverrides[symbol];
+            const normalizedOverride = normalizeHexColor(override);
+            if (normalizedOverride) return normalizedOverride;
+            const color = getAtomColorByScheme(symbol);
+            return '#' + color.toString(16).padStart(6, '0');
+        }
+
+        function getTextColorForHex(hex) {
+            const normalized = normalizeHexColor(hex);
+            if (!normalized) return '#ffffff';
+            const r = parseInt(normalized.slice(1, 3), 16);
+            const g = parseInt(normalized.slice(3, 5), 16);
+            const b = parseInt(normalized.slice(5, 7), 16);
+            const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return lum > 0.55 ? '#111827' : '#ffffff';
+        }
+
+        function applyElementColorOverrides() {
+            if (typeof setAtomColorOverrides === 'function') {
+                setAtomColorOverrides(settings.elementColorOverrides || {});
+            }
+        }
+
+        function updateElementColorGridUI() {
+            const grid = document.getElementById('element-color-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const symbols = getUniqueSymbols();
+            if (symbols.length === 0) {
+                const empty = document.createElement('div');
+                empty.style.cssText = 'width:100%;color:#9ca3af;font-size:11px;';
+                empty.textContent = 'No elements loaded';
+                grid.appendChild(empty);
+                return;
+            }
+
+            symbols.forEach(sym => {
+                const hex = getElementColorHex(sym);
+                const btn = document.createElement('button');
+                btn.textContent = sym;
+                btn.title = `${sym}: ${hex} (click to change)`;
+                btn.style.cssText = `
+                    padding:2px 8px;border-radius:9999px;min-width:34px;cursor:pointer;
+                    border:2px solid ${hex};font-size:11px;font-weight:600;
+                    background:${hex};color:${getTextColorForHex(hex)};line-height:1.35;
+                    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.18);
+                    transition:filter 0.12s ease, transform 0.12s ease;
+                `;
+                btn.onmouseenter = () => { btn.style.filter = 'brightness(1.08)'; btn.style.transform = 'translateY(-1px)'; };
+                btn.onmouseleave = () => { btn.style.filter = 'none'; btn.style.transform = 'none'; };
+                btn.addEventListener('click', () => {
+                    const picker = document.getElementById('element-color-picker');
+                    if (!picker) return;
+                    picker.dataset.symbol = sym;
+                    picker.value = hex;
+                    picker.click();
+                });
+                grid.appendChild(btn);
+            });
+        }
+
         /**
          * Make a styled element chip button that cycles through available elements on click.
          * @param {string} sym - current element symbol
          * @param {Function} onCycle - called with (newSym) when user cycles the element
          */
         function makeElemChip(sym, onCycle) {
-            const info = atomInfo[sym] || atomInfo['default'];
-            const hex = '#' + info.color.toString(16).padStart(6, '0');
-            const r = (info.color >> 16) & 0xff;
-            const g = (info.color >> 8) & 0xff;
-            const b = info.color & 0xff;
-            const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            const txtColor = lum > 0.55 ? '#111827' : '#ffffff';
+            const hex = getElementColorHex(sym);
+            const txtColor = getTextColorForHex(hex);
 
             const chip = document.createElement('button');
             chip.textContent = sym;
@@ -8031,17 +8939,12 @@ function createHydrogenBond(p1, p2) {
                 const syms = getUniqueSymbols();
                 const cur = chip.dataset.symbol;
                 const next = syms[(syms.indexOf(cur) + 1) % syms.length] || cur;
-                const ni = atomInfo[next] || atomInfo['default'];
-                const nh = '#' + ni.color.toString(16).padStart(6, '0');
-                const nr2 = (ni.color >> 16) & 0xff;
-                const ng = (ni.color >> 8) & 0xff;
-                const nb = ni.color & 0xff;
-                const nl = (0.299 * nr2 + 0.587 * ng + 0.114 * nb) / 255;
+                const nh = getElementColorHex(next);
                 chip.dataset.symbol = next;
                 chip.textContent = next;
                 chip.style.borderColor = nh;
                 chip.style.background = nh;
-                chip.style.color = nl > 0.55 ? '#111827' : '#ffffff';
+                chip.style.color = getTextColorForHex(nh);
                 onCycle(next);
             });
             return chip;
@@ -8175,6 +9078,7 @@ function createHydrogenBond(p1, p2) {
 
             // Sync color scheme global (styles.js) with current setting
             atomColorScheme = (settings.colorScheme || 'Jmol').toLowerCase();
+            applyElementColorOverrides();
 
             if (moleculeGroup) {
                 scene.remove(moleculeGroup);
@@ -8248,26 +9152,36 @@ function createHydrogenBond(p1, p2) {
                     cellVectors[1].clone().add(cellVectors[2]), cellVectors[0].clone().add(cellVectors[1]).add(cellVectors[2])
                 ];
                 const cellGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                const cellColor = new THREE.Color(settings.cellColor);
-                const cellMaterial = new THREE.LineBasicMaterial({ color: cellColor });
+                const cellMaterial = new THREE.LineBasicMaterial({ color: toLinearColor(settings.cellColor) });
                 const cellMesh = new THREE.LineSegments(cellGeometry, cellMaterial);
                 cellMesh.renderOrder = 2;
                 moleculeGroup.add(cellMesh);
             }
 
-            // Get charges for current frame (if available)
+            // Get scalar values for current frame (if available)
             const frameCharges = molecule.charges || [];
+            const frameMagmoms = molecule.magmoms || [];
+            const scalarValues = settings.colorBy === 'Magmom' ? frameMagmoms : frameCharges;
+            const scalarStats = getActiveScalarStats();
+            const normalizeScalarColor = settings.colorBy === 'Charge' && settings.normalizeCharges;
             const fixedIndexSet = getFixedIndexSet(molecule);
-            const useChargeColor     = settings.colorBy === 'Charge' && chargeStats.hasCharges && frameCharges.length === positions.length;
+            const useChargeColor = (
+                (settings.colorBy === 'Charge' && chargeStats.hasCharges) ||
+                (settings.colorBy === 'Magmom' && magmomStats.hasMagmoms)
+            ) && scalarValues.length === positions.length;
             const useConstraintColor = settings.showConstraint && fixedIndexSet.size > 0;
+            const constraintHighlightColor = 0xffeb3b;
+            const renderHelpers = useConstraintColor
+                ? { ...helpers, highlightAtoms: fixedIndexSet, highlightColor: constraintHighlightColor }
+                : helpers;
 
 
             // Pre-calculate per-atom colors
             const atomChargeColors = [];
             if (useChargeColor) {
                 for (let i = 0; i < positions.length; i++) {
-                    const charge = frameCharges[i] || 0;
-                    atomChargeColors[i] = getChargeColor(charge, settings.normalizeCharges);
+                    const scalarValue = scalarValues[i] || 0;
+                    atomChargeColors[i] = getChargeColor(scalarValue, normalizeScalarColor, scalarStats);
                 }
             }
 
@@ -8276,11 +9190,14 @@ function createHydrogenBond(p1, p2) {
 
             if (settings.showBond) {
                 let bondCount = 0;
-                const fixedBondStyles = ['rowan', 'neon', 'cartoon', '2d'];
                 for (let b = 0; b < bondPairs.length; b++) {
                     const { i, j } = bondPairs[b];
+                    if (isBondHidden(symbols[i], symbols[j])) continue;
+                    const bondHelpers = useConstraintColor
+                        ? { ...renderHelpers, bondAtoms: [i, j] }
+                        : renderHelpers;
                     let bond;
-                    if (useChargeColor && !fixedBondStyles.includes(styleName)) {
+                    if (useChargeColor) {
                         bond = createBondWithColor(
                             positions[i],
                             positions[j],
@@ -8291,7 +9208,7 @@ function createHydrogenBond(p1, p2) {
                             atomChargeColors[i],
                             atomChargeColors[j],
                             styleName,
-                            helpers
+                            bondHelpers
                         );
                     } else {
                         bond = bondFactory(
@@ -8301,7 +9218,7 @@ function createHydrogenBond(p1, p2) {
                             symbols[j],
                             bondRadius,
                             atomScale,
-                            helpers
+                            bondHelpers
                         );
                     }
                     if (bond) {
@@ -8319,6 +9236,7 @@ function createHydrogenBond(p1, p2) {
                 });
                 for (let b = 0; b < hbondPairs.length; b++) {
                     const { h, a } = hbondPairs[b];
+                    if (isBondHidden(symbols[h], symbols[a])) continue;
                     const hbond = createHydrogenBond(positions[h], positions[a]);
                     if (hbond) {
                         hbond.renderOrder = 1;
@@ -8329,14 +9247,18 @@ function createHydrogenBond(p1, p2) {
 
             for (let i = 0; i < positions.length; i++) {
                 let atom;
+                if (isHydrogenHidden(symbols[i])) continue;
                 const atomRenderScale = getAdjustedAtomScale(symbols[i], atomScale, radiusScaleBySymbol);
+                const atomHelpers = useConstraintColor
+                    ? { ...renderHelpers, atomIndex: i }
+                    : renderHelpers;
 
                 if (useChargeColor) {
-                    atom = createAtomWithColor(positions[i], symbols[i], atomRenderScale, atomChargeColors[i], styleName, lodSegments);
+                    atom = createAtomWithColor(positions[i], symbols[i], atomRenderScale, atomChargeColors[i], styleName, atomHelpers);
                 } else {
-                    atom = atomFactory(positions[i], symbols[i], atomRenderScale, helpers);
+                    atom = atomFactory(positions[i], symbols[i], atomRenderScale, atomHelpers);
                     if (!atom) {
-                        atom = atomFactories['default'](positions[i], symbols[i], atomRenderScale, helpers);
+                        atom = atomFactories['default'](positions[i], symbols[i], atomRenderScale, atomHelpers);
                     }
                 }
 
@@ -8349,11 +9271,12 @@ function createHydrogenBond(p1, p2) {
             // Highlight fixed atoms with yellow semi-transparent sphere overlay
             if (useConstraintColor) {
                 const fixedMat = new THREE.MeshBasicMaterial({
-                    color: 0xeab308, transparent: true, opacity: 0.72, depthWrite: false,
+                    color: constraintHighlightColor, transparent: true, opacity: 0.72, depthWrite: false,
                 });
                 for (const idx of fixedIndexSet) {
                     if (idx >= positions.length) continue;
-                    const r = getAdjustedAtomRadius(symbols[idx], atomScale, radiusScaleBySymbol) * 1.30;
+                    if (isHydrogenHidden(symbols[idx])) continue;
+                    const r = getAdjustedAtomRadius(symbols[idx], atomScale, radiusScaleBySymbol) * 1.20;
                     const mesh = new THREE.Mesh(
                         new THREE.SphereGeometry(r, 16, 12), fixedMat
                     );
@@ -8361,14 +9284,36 @@ function createHydrogenBond(p1, p2) {
                     mesh.renderOrder = 5;
                     moleculeGroup.add(mesh);
                 }
+
+                // Highlight bonds between fixed atoms with yellow semi-transparent cylinder overlay
+                if (settings.showBond) {
+                    const fixedBondMat = new THREE.MeshBasicMaterial({
+                        color: constraintHighlightColor, transparent: true, opacity: 0.72, depthWrite: false,
+                    });
+                    for (let b = 0; b < bondPairs.length; b++) {
+                        const { i, j } = bondPairs[b];
+                        if (!fixedIndexSet.has(i) || !fixedIndexSet.has(j)) continue;
+                        if (isBondHidden(symbols[i], symbols[j])) continue;
+                        const dir = new THREE.Vector3().subVectors(positions[j], positions[i]);
+                        const len = dir.length();
+                        if (len <= 0) continue;
+                        const cylGeom = new THREE.CylinderGeometry(bondRadius * 1.3, bondRadius * 1.3, len, 16);
+                        const cylinder = new THREE.Mesh(cylGeom, fixedBondMat);
+                        cylinder.position.copy(new THREE.Vector3().addVectors(positions[i], positions[j]).multiplyScalar(0.5));
+                        cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+                        cylinder.renderOrder = 5;
+                        moleculeGroup.add(cylinder);
+                    }
+                }
             }
 
-            // Add charge labels if enabled
-            if (settings.showChargeLabels && useChargeColor && frameCharges.length > 0) {
+            // Add scalar labels if enabled
+            if (settings.showChargeLabels && useChargeColor && scalarValues.length > 0) {
                 for (let i = 0; i < positions.length; i++) {
-                    const charge = frameCharges[i] || 0;
+                    if (isHydrogenHidden(symbols[i])) continue;
+                    const scalarValue = scalarValues[i] || 0;
                     const atomRenderScale = getAdjustedAtomScale(symbols[i], atomScale, radiusScaleBySymbol);
-                    const label = createChargeLabelSprite(charge, positions[i], atomRenderScale, settings.normalizeCharges);
+                    const label = createChargeLabelSprite(scalarValue, positions[i], atomRenderScale, normalizeScalarColor, scalarStats);
                     if (label) {
                         label.renderOrder = 4;
                         moleculeGroup.add(label);
@@ -8382,6 +9327,7 @@ function createHydrogenBond(p1, p2) {
                 const headLength = 0.2;
                 const headWidth = 0.1;
                 for (let i = 0; i < positions.length; i++) {
+                    if (isHydrogenHidden(symbols[i])) continue;
                     const forceVec = new THREE.Vector3(...molecule.forces[i]);
                     if (forceVec.lengthSq() === 0) continue;
                     const direction = forceVec.clone().normalize();
@@ -8398,6 +9344,7 @@ function createHydrogenBond(p1, p2) {
             if (settings.showPolyhedron || settings.showRings) {
                 for (let b = 0; b < bondPairs.length; b++) {
                     const { i, j } = bondPairs[b];
+                    if (isBondHidden(symbols[i], symbols[j])) continue;
                     adjacency[i].push(j);
                     adjacency[j].push(i);
                 }
@@ -8409,6 +9356,7 @@ function createHydrogenBond(p1, p2) {
                 if (pairs.length === 0) {
                     // No pairs defined → draw all atoms with CN≥4 (fallback / discovery mode)
                     for (let i = 0; i < positions.length; i++) {
+                        if (isHydrogenHidden(symbols[i])) continue;
                         const neighbors = adjacency[i];
                         if (neighbors.length < 4) continue;
                         const neighborPositions = neighbors.map(ni => positions[ni]);
@@ -8424,6 +9372,7 @@ function createHydrogenBond(p1, p2) {
                     // center atom element matches and neighbor filter by neighbor element.
                     for (const { center, neighbor } of pairs) {
                         for (let i = 0; i < positions.length; i++) {
+                            if (isHydrogenHidden(symbols[i])) continue;
                             if (symbols[i] !== center) continue;
                             const nbrs = adjacency[i].filter(ni => symbols[ni] === neighbor);
                             if (nbrs.length < 4) continue;
@@ -8453,7 +9402,7 @@ function createHydrogenBond(p1, p2) {
                         .sort((a, b) => b[1] - a[1])[0][0];
                     const ringColor = settings.ringColor !== null
                         ? parseInt(settings.ringColor.replace('#', ''), 16)
-                        : (atomInfo[dominantSym] || atomInfo['default']).color;
+                        : getAtomColorByScheme(dominantSym);
 
                     const ringPositions = ring.map(idx => positions[idx]);
                     const face = createRingFace(ringPositions, ringColor, settings.ringOpacity);
@@ -8467,39 +9416,16 @@ function createHydrogenBond(p1, p2) {
             scene.add(moleculeGroup);
 
 
-            if (cameraNeedsFit) {
+            if (cameraNeedsFit && !cameraViewLock) {
                 fitCameraToMolecule(moleculeGroup);
             }
         }
 
 
         function fitCameraToMolecule(group) {
-            if (!camera || !controls) return;
-            const box = new THREE.Box3().setFromObject(group);
-            if (!isFinite(box.max.x) || !isFinite(box.max.y) || !isFinite(box.max.z)) return;
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z, 1);
-
-            if (camera.isPerspectiveCamera) {
-                const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
-                const distance = maxDim / (2 * Math.tan(halfFov)) + maxDim;
-                camera.position.copy(center.clone().add(new THREE.Vector3(distance, distance, distance)));
-            } else {
-                const viewer = document.getElementById('viewer');
-                const aspect = viewer ? Math.max(viewer.clientWidth, 1) / Math.max(viewer.clientHeight, 1) : 1;
-                camera.left = (-maxDim * aspect);
-                camera.right = (maxDim * aspect);
-                camera.top = maxDim;
-                camera.bottom = -maxDim;
-            }
-
-            controls.target.copy(center);
-            controls.update();
-            camera.lookAt(center);
-            camera.updateProjectionMatrix();
-            updateOrthographicTrackballPanSpeed();
-            cameraNeedsFit = false;
+            const options = arguments.length > 1 && arguments[1] ? arguments[1] : {};
+            const viewSpec = options.viewSpec || getViewSpecFromSettings();
+            return fitCameraToView(group, viewSpec, { strict: !!options.strict, frame: options.frame || getCurrentViewFrame() });
         }
 
         function updateBackgroundColor() {
@@ -9145,8 +10071,10 @@ function createHydrogenBond(p1, p2) {
 
             // Check for charge / constraint data and update UI
             checkChargesInData();
+            checkMagmomsInData();
             checkConstraintsInData();
             updateChargeUI();
+            updateElementColorGridUI();
 
             updatePlotControlsAvailability();
 
@@ -9309,6 +10237,7 @@ function createHydrogenBond(p1, p2) {
                 const frameNum = parseInt(this.value, 10);
                 animationState.currentFrame = frameNum - 1;  // 0-indexed
                 updateFrameDisplay();
+                updateElementColorGridUI();
                 renderMolecule();
                 // Update energy / force plot
                 if (settings.showEnergyPlot && hasAnyPlotData()) {
@@ -9352,6 +10281,21 @@ function createHydrogenBond(p1, p2) {
             safeAddListener('show-bond', 'change', function () {
                 settings.showBond = this.checked;
                 renderMolecule();
+            });
+
+            safeAddListener('hide-hydrogens', 'change', function () {
+                settings.hideHydrogens = this.checked;
+                renderMolecule();
+            });
+
+            safeAddListener('show-blur', 'change', function () {
+                settings.showBlur = this.checked;
+                updateBlurEffect();
+            });
+
+            safeAddListener('blur-strength', 'input', function () {
+                settings.blurStrength = parseFloat(this.value);
+                updateBlurEffect();
             });
 
             safeAddListener('show-hbond', 'change', function () {
@@ -9487,10 +10431,45 @@ function createHydrogenBond(p1, p2) {
                 renderMolecule();
             });
 
-            // Color scheme selection (Jmol / CPK)
+            // Color scheme selection (Jmol / CPK / PyMOL / VMD)
+            function applyColorSchemeSelectValue(select) {
+                settings.colorScheme = select.value;
+                atomColorScheme = select.value.toLowerCase(); // sync styles.js global
+                applyElementColorOverrides();
+                updateElementColorGridUI();
+                renderMolecule();
+            }
+
+            safeAddListener('color-scheme-select', 'input', function () {
+                applyColorSchemeSelectValue(this);
+            });
+
             safeAddListener('color-scheme-select', 'change', function () {
-                settings.colorScheme = this.value;
-                atomColorScheme = this.value.toLowerCase(); // sync styles.js global
+                applyColorSchemeSelectValue(this);
+            });
+
+            function applyElementColorPickerValue(picker) {
+                const symbol = picker.dataset.symbol;
+                const hex = normalizeHexColor(picker.value);
+                if (!symbol || !hex) return;
+                settings.elementColorOverrides[symbol] = hex;
+                applyElementColorOverrides();
+                updateElementColorGridUI();
+                renderMolecule();
+            }
+
+            safeAddListener('element-color-picker', 'input', function () {
+                applyElementColorPickerValue(this);
+            });
+
+            safeAddListener('element-color-picker', 'change', function () {
+                applyElementColorPickerValue(this);
+            });
+
+            safeAddListener('reset-element-colors-btn', 'click', function () {
+                settings.elementColorOverrides = {};
+                applyElementColorOverrides();
+                updateElementColorGridUI();
                 renderMolecule();
             });
 
@@ -9560,219 +10539,388 @@ function createHydrogenBond(p1, p2) {
             });
         }
 
-        function saveAsPNG() {
-            if (!renderer || !scene || !camera) {
-                alert('Renderer not ready');
-                return;
+        function showExportDialog(type, onConfirm) {
+            const existing = document.getElementById('_aseview_export_overlay');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = '_aseview_export_overlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:inherit;';
+
+            const panel = document.createElement('div');
+            panel.style.cssText = 'background:#1c1c2e;border:1px solid #3a3a5c;border-radius:8px;padding:20px 24px;min-width:240px;color:#ccc;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+
+            const titleEl = document.createElement('div');
+            titleEl.textContent = type === 'png' ? 'Export PNG' : 'Export GIF';
+            titleEl.style.cssText = 'font-size:14px;font-weight:600;color:#fff;margin-bottom:16px;';
+            panel.appendChild(titleEl);
+
+            function addRow(labelText, selectId, optionsHtml) {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:12px;';
+                const lbl = document.createElement('label');
+                lbl.textContent = labelText;
+                lbl.style.cssText = 'font-size:12px;color:#aaa;flex:0 0 64px;';
+                const sel = document.createElement('select');
+                sel.id = selectId;
+                sel.style.cssText = 'flex:1;background:#2a2a40;color:#ccc;border:1px solid #3a3a5c;border-radius:4px;padding:4px 8px;font-size:12px;';
+                sel.innerHTML = optionsHtml;
+                row.appendChild(lbl);
+                row.appendChild(sel);
+                panel.appendChild(row);
             }
 
-            // Store original background
-            const originalBackground = scene.background;
+            if (type === 'png') {
+                addRow('Scale', '_exp_scale',
+                    '<option value="1">1× (current size)</option>' +
+                    '<option value="2">2× (double)</option>' +
+                    '<option value="4">4× (ultra)</option>');
+            } else {
+                const fps = (typeof settings !== 'undefined' && settings.animationSpeed) || 30;
+                const nearestFps = [10, 15, 20, 30].reduce((a, b) => Math.abs(b - fps) < Math.abs(a - fps) ? b : a);
+                addRow('FPS', '_exp_fps',
+                    [10, 15, 20, 30].map(f =>
+                        '<option value="' + f + '"' + (f === nearestFps ? ' selected' : '') + '>' + f + ' fps</option>'
+                    ).join(''));
+                addRow('Quality', '_exp_qual',
+                    '<option value="20">Low (fast)</option>' +
+                    '<option value="10" selected>Medium</option>' +
+                    '<option value="5">High (slow)</option>');
+            }
 
-            // Set transparent background
-            scene.background = null;
-            renderer.setClearColor(0x000000, 0); // Transparent
+            const btns = document.createElement('div');
+            btns.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:16px;';
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.style.cssText = 'padding:6px 14px;border-radius:4px;border:1px solid #3a3a5c;background:#2a2a40;color:#ccc;cursor:pointer;font-size:12px;';
+            const confirmBtn = document.createElement('button');
+            confirmBtn.textContent = 'Export';
+            confirmBtn.style.cssText = 'padding:6px 14px;border-radius:4px;border:none;background:#4a7fd4;color:#fff;cursor:pointer;font-size:12px;font-weight:600;';
+            btns.appendChild(cancelBtn);
+            btns.appendChild(confirmBtn);
+            panel.appendChild(btns);
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
 
-            // Render one frame
-            renderer.render(scene, camera);
-
-            // Restore background immediately so the animation loop
-            // keeps the correct colour while toBlob() runs asynchronously
-            scene.background = originalBackground;
-            updateBackgroundColor();
-
-            // Get canvas data as PNG
-            renderer.domElement.toBlob(function (blob) {
-                // Generate filename with counter to avoid overwriting
-                let filename;
-                if (downloadCounters.png === 0) {
-                    filename = `${downloadBaseName}.png`;
+            cancelBtn.onclick = () => overlay.remove();
+            overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+            confirmBtn.onclick = () => {
+                const opts = {};
+                if (type === 'png') {
+                    opts.scale = parseInt(document.getElementById('_exp_scale').value) || 1;
                 } else {
-                    filename = `${downloadBaseName}_${downloadCounters.png}.png`;
+                    opts.fps = parseInt(document.getElementById('_exp_fps').value) || 30;
+                    opts.sampleInterval = parseInt(document.getElementById('_exp_qual').value) || 10;
                 }
-                downloadCounters.png++;
-
-                // Try multiple download methods for better compatibility
-                const url = URL.createObjectURL(blob);
-
-                // Method 1: Try standard download attribute
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = filename;
-                link.style.display = 'none';
-                document.body.appendChild(link);
-
-                try {
-                    link.click();
-                    console.log('PNG download initiated:', filename);
-                } catch (e) {
-                    console.log('Standard download failed, trying alternative:', e);
-                    // Method 2: Try opening in new window (for Jupyter)
-                    try {
-                        const win = window.open(url, '_blank');
-                        if (!win) {
-                            // Method 3: Try data URL
-                            const reader = new FileReader();
-                            reader.onload = function () {
-                                const dataUrl = reader.result;
-                                const newLink = document.createElement('a');
-                                newLink.href = dataUrl;
-                                newLink.download = filename;
-                                document.body.appendChild(newLink);
-                                newLink.click();
-                                document.body.removeChild(newLink);
-                            };
-                            reader.readAsDataURL(blob);
-                        }
-                    } catch (e2) {
-                        console.error('All download methods failed:', e2);
-                        alert('Download failed. Please try saving the HTML file and opening it directly in a browser.');
-                    }
-                }
-
-                // Cleanup
-                setTimeout(() => {
-                    if (link.parentNode) {
-                        document.body.removeChild(link);
-                    }
-                    URL.revokeObjectURL(url);
-                }, 1000);
-            }, 'image/png');
+                overlay.remove();
+                onConfirm(opts);
+            };
         }
 
-        function saveAsGIF() {
-            if (!molecularData || molecularData.length <= 1) {
-                alert('No animation frames available for GIF');
-                return;
-            }
 
-            if (!renderer || !scene || !camera) {
-                alert('Renderer not ready');
-                return;
+        function buildExportFilename(type, explicitFilename) {
+            let filename = explicitFilename ? String(explicitFilename).trim() : '';
+            const extension = `.${type}`;
+            if (!filename) {
+                const count = downloadCounters[type] || 0;
+                filename = count === 0 ? `${downloadBaseName}${extension}` : `${downloadBaseName}_${count}${extension}`;
+                downloadCounters[type] = count + 1;
+            } else if (!filename.toLowerCase().endsWith(extension)) {
+                filename += extension;
             }
+            return filename;
+        }
 
-            // Check if gifshot is loaded
-            if (typeof gifshot === 'undefined') {
-                alert('GIF library not loaded');
-                console.error('gifshot is undefined');
-                return;
+        function downloadDataUrl(dataUrl, filename) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            try {
+                link.click();
+            } catch (error) {
+                const popup = window.open(dataUrl, '_blank');
+                if (!popup) throw error;
+            } finally {
+                setTimeout(() => {
+                    if (link.parentNode) link.parentNode.removeChild(link);
+                }, 1000);
             }
+        }
 
-            const videoBtn = document.getElementById('video-btn');
-            const originalHTML = videoBtn ? videoBtn.innerHTML : '';
+        function normalizeExportOptions(options, type) {
+            const source = options && typeof options === 'object' && !Array.isArray(options) ? options : {};
+            const scale = Number(source.scale ?? 1);
+            if (!Number.isFinite(scale) || scale <= 0) throw makeCommandError('invalid_options', 'Export scale must be a positive number', type);
+            const normalized = {
+                filename: source.filename,
+                download: source.download !== false,
+                returnDataUrl: source.returnDataUrl === true,
+                scale,
+                transparent: source.transparent,
+                backgroundColor: source.backgroundColor,
+                frames: source.frames,
+                delay: source.delay,
+                fps: source.fps,
+                sampleInterval: source.sampleInterval
+            };
+            if (source.width != null) {
+                const width = Number(source.width);
+                if (!Number.isInteger(width) || width <= 0) throw makeCommandError('invalid_options', 'Export width must be a positive integer', type);
+                normalized.width = width;
+            }
+            if (source.height != null) {
+                const height = Number(source.height);
+                if (!Number.isInteger(height) || height <= 0) throw makeCommandError('invalid_options', 'Export height must be a positive integer', type);
+                normalized.height = height;
+            }
+            return normalized;
+        }
+
+        function captureCameraState() {
+            if (!camera || !controls) return null;
+            return {
+                position: camera.position.clone(),
+                up: camera.up.clone(),
+                quaternion: camera.quaternion.clone(),
+                zoom: camera.zoom,
+                left: camera.left,
+                right: camera.right,
+                top: camera.top,
+                bottom: camera.bottom,
+                near: camera.near,
+                far: camera.far,
+                target: controls.target.clone()
+            };
+        }
+
+        function restoreCameraState(state) {
+            if (!state || !camera || !controls) return;
+            camera.position.copy(state.position);
+            camera.up.copy(state.up);
+            camera.quaternion.copy(state.quaternion);
+            camera.zoom = state.zoom;
+            if (camera.isOrthographicCamera) {
+                camera.left = state.left;
+                camera.right = state.right;
+                camera.top = state.top;
+                camera.bottom = state.bottom;
+            }
+            camera.near = state.near;
+            camera.far = state.far;
+            controls.target.copy(state.target);
+            camera.updateProjectionMatrix();
+            controls.update();
+            updateOrthographicTrackballPanSpeed();
+        }
+
+        function ensureCameraReadyForExport() {
+            if (!renderer || !scene || !camera) throw makeCommandError('renderer_not_ready', 'Renderer not ready', 'export');
+            if (cameraNeedsFit && moleculeGroup) fitCameraToMolecule(moleculeGroup);
+        }
+
+        function capturePNGDataUrl(options) {
+            ensureCameraReadyForExport();
+            const opts = normalizeExportOptions(options, 'png');
+            const canvas = renderer.domElement;
+            const originalWidth = canvas.width;
+            const originalHeight = canvas.height;
+            const originalStyleWidth = canvas.style.width;
+            const originalStyleHeight = canvas.style.height;
+            const originalBackground = scene.background;
+            const originalClearColor = new THREE.Color();
+            renderer.getClearColor(originalClearColor);
+            const originalClearAlpha = typeof renderer.getClearAlpha === 'function' ? renderer.getClearAlpha() : 1;
+            const targetWidth = opts.width || Math.max(1, Math.round(originalWidth * opts.scale));
+            const targetHeight = opts.height || Math.max(1, Math.round(originalHeight * opts.scale));
 
             try {
-                const fps = settings.animationSpeed || 30;
-                const interval = 1 / fps;
-
-                console.log('Creating GIF at', fps, 'fps');
-                console.log('Total frames:', molecularData.length);
-
-                // Show progress message
-                if (videoBtn) {
-                    videoBtn.innerHTML = '<span style="font-size: 10px;">Processing...</span>';
-                    videoBtn.disabled = true;
+                if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
+                    renderer.setSize(targetWidth, targetHeight, false);
                 }
 
-                // Store current frame
-                const originalFrame = animationState.currentFrame;
-
-                // Capture all frames as data URLs
-                const images = [];
-                for (let i = 0; i < molecularData.length; i++) {
-                    animationState.currentFrame = i;
-                    renderMolecule();
-                    renderer.render(scene, camera);
-
-                    // Get frame as data URL
-                    const dataURL = renderer.domElement.toDataURL('image/png');
-                    images.push(dataURL);
-
-                    console.log('Captured frame', i + 1, 'of', molecularData.length);
+                const transparent = opts.transparent !== undefined ? !!opts.transparent : true;
+                if (transparent) {
+                    scene.background = null;
+                    renderer.setClearColor(0x000000, 0);
+                } else {
+                    const bgColor = opts.backgroundColor || settings.backgroundColor || '#111827';
+                    const color = new THREE.Color(bgColor);
+                    scene.background = color;
+                    renderer.setClearColor(color, 1);
                 }
 
-                // Restore original frame
-                animationState.currentFrame = originalFrame;
-                renderMolecule();
-
-                console.log('Creating GIF from', images.length, 'frames...');
-
-                // Create GIF using gifshot
-                gifshot.createGIF({
-                    images: images,
-                    gifWidth: renderer.domElement.clientWidth,
-                    gifHeight: renderer.domElement.clientHeight,
-                    interval: interval,
-                    numFrames: images.length,
-                    frameDuration: 1,
-                    sampleInterval: 10,
-                    numWorkers: 2
-                }, function (obj) {
-                    if (!obj.error) {
-                        console.log('GIF created successfully');
-
-                        // Generate filename with counter to avoid overwriting
-                        let filename;
-                        if (downloadCounters.gif === 0) {
-                            filename = `${downloadBaseName}.gif`;
-                        } else {
-                            filename = `${downloadBaseName}_${downloadCounters.gif}.gif`;
-                        }
-                        downloadCounters.gif++;
-
-                        // Try multiple download methods for better compatibility
-                        const link = document.createElement('a');
-                        link.href = obj.image;
-                        link.download = filename;
-                        link.style.display = 'none';
-                        document.body.appendChild(link);
-
-                        try {
-                            link.click();
-                        } catch (e) {
-                            // Try opening in new window (for Jupyter)
-                            try {
-                                const win = window.open(obj.image, '_blank');
-                                if (!win) {
-                                    alert('Download blocked. Please allow popups or save the HTML file and open it directly in a browser.');
-                                }
-                            } catch (e2) {
-                                console.error('All download methods failed:', e2);
-                                alert('Download failed. Please try saving the HTML file and opening it directly in a browser.');
-                            }
-                        }
-
-                        // Cleanup
-                        setTimeout(() => {
-                            if (link.parentNode) {
-                                document.body.removeChild(link);
-                            }
-                        }, 1000);
-
-                        // Restore button
-                        if (videoBtn) {
-                            videoBtn.innerHTML = originalHTML;
-                            videoBtn.disabled = false;
-                        }
-                    } else {
-                        console.error('GIF creation error:', obj.error);
-                        alert('Failed to create GIF: ' + obj.error);
-                        if (videoBtn) {
-                            videoBtn.innerHTML = originalHTML;
-                            videoBtn.disabled = false;
-                        }
-                    }
-                });
-
-            } catch (error) {
-                console.error('GIF creation error:', error);
-                alert('Failed to create GIF: ' + error.message);
-                if (videoBtn) {
-                    videoBtn.innerHTML = originalHTML;
-                    videoBtn.disabled = false;
+                renderer.render(scene, camera);
+                const exportCanvas = getExportCanvasWithOptionalBlur(renderer.domElement);
+                const dataUrl = exportCanvas.toDataURL('image/png');
+                return { dataUrl, width: exportCanvas.width, height: exportCanvas.height };
+            } finally {
+                scene.background = originalBackground;
+                renderer.setClearColor(originalClearColor, originalClearAlpha);
+                if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
+                    renderer.setSize(originalWidth, originalHeight, false);
+                    canvas.style.width = originalStyleWidth;
+                    canvas.style.height = originalStyleHeight;
                 }
+                renderer.render(scene, camera);
             }
         }
+
+        function exportPNG(options = {}) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const opts = normalizeExportOptions(options, 'png');
+                    const filename = buildExportFilename('png', opts.filename);
+                    const capture = capturePNGDataUrl(opts);
+                    if (opts.download) downloadDataUrl(capture.dataUrl, filename);
+                    const result = { ok: true, type: 'png', filename, width: capture.width, height: capture.height };
+                    if (opts.returnDataUrl) result.dataUrl = capture.dataUrl;
+                    resolve(result);
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+
+
+        function exportGIF(options = {}) {
+            return new Promise((resolve, reject) => {
+                try {
+                    if (!molecularData || molecularData.length <= 1) {
+                        throw makeCommandError('missing_animation_frames', 'No animation frames available for GIF export', 'gif');
+                    }
+                    if (typeof gifshot === 'undefined') {
+                        throw makeCommandError('missing_dependency', 'GIF export library is not loaded', 'gif');
+                    }
+                    ensureCameraReadyForExport();
+                    const opts = normalizeExportOptions(options, 'gif');
+                    const fps = Number(opts.fps || settings.animationSpeed || 30);
+                    const interval = Number.isFinite(Number(opts.delay)) && Number(opts.delay) > 0
+                        ? Number(opts.delay) / 1000
+                        : 1 / Math.max(fps, 1);
+                    const totalFrames = molecularData.length;
+                    const frameCount = Number.isFinite(Number(opts.frames)) && Number(opts.frames) > 0
+                        ? Math.min(totalFrames, Math.max(1, Math.floor(Number(opts.frames))))
+                        : totalFrames;
+                    const canvas = renderer.domElement;
+                    const originalWidth = canvas.width;
+                    const originalHeight = canvas.height;
+                    const originalStyleWidth = canvas.style.width;
+                    const originalStyleHeight = canvas.style.height;
+                    const targetWidth = opts.width || Math.max(1, Math.round(originalWidth * opts.scale));
+                    const targetHeight = opts.height || Math.max(1, Math.round(originalHeight * opts.scale));
+                    const originalFrame = animationState.currentFrame;
+                    const cameraState = captureCameraState();
+                    const images = [];
+
+                    cameraViewLock = true;
+                    try {
+                        if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
+                            renderer.setSize(targetWidth, targetHeight, false);
+                        }
+                        for (let i = 0; i < frameCount; i++) {
+                            animationState.currentFrame = Math.min(totalFrames - 1, Math.floor(i * totalFrames / frameCount));
+                            renderMolecule();
+                            restoreCameraState(cameraState);
+                            renderer.render(scene, camera);
+                            images.push(getExportCanvasWithOptionalBlur(renderer.domElement).toDataURL('image/png'));
+                        }
+                    } finally {
+                        animationState.currentFrame = originalFrame;
+                        renderMolecule();
+                        restoreCameraState(cameraState);
+                        cameraViewLock = false;
+                        if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
+                            renderer.setSize(originalWidth, originalHeight, false);
+                            canvas.style.width = originalStyleWidth;
+                            canvas.style.height = originalStyleHeight;
+                        }
+                        renderer.render(scene, camera);
+                    }
+
+                    gifshot.createGIF({
+                        images,
+                        gifWidth: targetWidth,
+                        gifHeight: targetHeight,
+                        interval,
+                        numFrames: images.length,
+                        frameDuration: 1,
+                        sampleInterval: opts.sampleInterval || 10,
+                        numWorkers: 2
+                    }, function (obj) {
+                        if (obj.error) {
+                            reject(makeCommandError('export_failed', String(obj.error), 'gif'));
+                            return;
+                        }
+                        const filename = buildExportFilename('gif', opts.filename);
+                        if (opts.download) downloadDataUrl(obj.image, filename);
+                        const result = { ok: true, type: 'gif', filename, width: targetWidth, height: targetHeight };
+                        if (opts.returnDataUrl) result.dataUrl = obj.image;
+                        resolve(result);
+                    });
+                } catch (error) {
+                    cameraViewLock = false;
+                    reject(error);
+                }
+            });
+        }
+
+        function saveAsPNG() {
+            const directOptions = arguments.length > 0 ? arguments[0] : null;
+            if (directOptions) return exportPNG(directOptions);
+            if (!renderer || !scene || !camera) {
+                alert('Renderer not ready');
+                return Promise.reject(makeCommandError('renderer_not_ready', 'Renderer not ready', 'png'));
+            }
+            return new Promise((resolve, reject) => {
+                showExportDialog('png', function (opts) {
+                    exportPNG(opts).then(resolve).catch(error => {
+                        alert('Failed to save PNG: ' + error.message);
+                        reject(error);
+                    });
+                });
+            });
+        }
+
+        // Programmatic compatibility marker: function saveAsPNG(options)
+        function saveAsGIF() {
+            const directOptions = arguments.length > 0 ? arguments[0] : null;
+            if (directOptions) return exportGIF(directOptions);
+            if (!molecularData || molecularData.length <= 1) {
+                alert('No animation frames available for GIF');
+                return Promise.reject(makeCommandError('missing_animation_frames', 'No animation frames available for GIF export', 'gif'));
+            }
+            if (!renderer || !scene || !camera) {
+                alert('Renderer not ready');
+                return Promise.reject(makeCommandError('renderer_not_ready', 'Renderer not ready', 'gif'));
+            }
+            if (typeof gifshot === 'undefined') {
+                alert('GIF library not loaded');
+                return Promise.reject(makeCommandError('missing_dependency', 'GIF export library is not loaded', 'gif'));
+            }
+            return new Promise((resolve, reject) => {
+                showExportDialog('gif', function (opts) {
+                    const videoBtn = document.getElementById('video-btn');
+                    const originalHTML = videoBtn ? videoBtn.innerHTML : '';
+                    if (videoBtn) {
+                        videoBtn.innerHTML = '<span style="font-size: 10px;">Processing...</span>';
+                        videoBtn.disabled = true;
+                    }
+                    exportGIF(opts).then(resolve).catch(error => {
+                        alert('Failed to create GIF: ' + error.message);
+                        reject(error);
+                    }).finally(() => {
+                        if (videoBtn) {
+                            videoBtn.innerHTML = originalHTML;
+                            videoBtn.disabled = false;
+                        }
+                    });
+                });
+            });
+        }
+
+        // Programmatic compatibility marker: function saveAsGIF(options)
 
         function setupButtonGroup(groupName, buttonIds) {
             buttonIds.forEach(id => {
@@ -9800,12 +10948,8 @@ function createHydrogenBond(p1, p2) {
         function toggleSidebar() {
             sidebarOpen = !sidebarOpen;
             const sidebar = document.getElementById('sidebar');
-            if (sidebarOpen) {
-                sidebar.style.width = '320px';
-                sidebar.classList.remove('collapsed');
-            } else {
-                sidebar.style.width = '0';
-                sidebar.classList.add('collapsed');
+            if (sidebar) {
+                sidebar.classList.toggle('collapsed', !sidebarOpen);
             }
 
             setTimeout(() => {
@@ -10278,6 +11422,7 @@ function createHydrogenBond(p1, p2) {
             const msg = event.data;
             if (!msg || !msg.type) return;
 
+
             switch (msg.type) {
                 case 'setData':
                     if (msg.data) {
@@ -10292,12 +11437,45 @@ function createHydrogenBond(p1, p2) {
                         }
                     }
                     break;
+                case 'getSettings':
+                    if (event.source) {
+                        event.source.postMessage({ type: 'currentSettings', settings: Object.assign({}, settings) }, '*');
+                    }
+                    break;
+                case 'setView':
+                    try {
+                        const viewSpec = msg.view || msg.viewSpec || {};
+                        const result = applyViewSpec(viewSpec, { strict: true, updateSettings: true });
+                        postCommandResult(event, msg.requestId, { type: 'viewResult', view: result.view });
+                    } catch (error) {
+                        postCommandError(event, msg.requestId, error, 'view');
+                    }
+                    break;
+                case 'resetView':
+                    try {
+                        const result = resetView();
+                        postCommandResult(event, msg.requestId, { type: 'viewResult', view: result.view });
+                    } catch (error) {
+                        postCommandError(event, msg.requestId, error, 'view');
+                    }
+                    break;
+                case 'exportImage':
+                    {
+                        const format = String(msg.format || (msg.options && msg.options.format) || 'png').toLowerCase();
+                        const options = msg.options || {};
+                        const exportPromise = format === 'gif' ? exportGIF(options) : format === 'png' ? exportPNG(options) : Promise.reject(makeCommandError('unsupported_export', `Unsupported export format: ${format}`, format));
+                        exportPromise
+                            .then(result => postCommandResult(event, msg.requestId, Object.assign({ type: 'exportResult' }, result)))
+                            .catch(error => postCommandError(event, msg.requestId, error, 'export'));
+                    }
+                    break;
                 case 'ready':
                     if (event.source) {
                         event.source.postMessage({ type: 'ready', viewer: 'molecular' }, '*');
                     }
                     break;
             }
+
         });
 
         // Notify parent that viewer is loaded
@@ -10310,7 +11488,7 @@ function createHydrogenBond(p1, p2) {
     (function() {
         var MAX_RETRIES = 100;  // 5 seconds max (100 * 50ms)
         var retryCount = 0;
-        var pythonSettings = {"bondThreshold": 1.2, "hBondThreshold": 2.5, "bondThickness": 0.1, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "glossy", "showCell": true, "showBond": true, "showHBond": false, "showShadow": false, "showShading": true, "showEnergyPlot": false, "showForces": false, "colorBy": "Charge", "showConstraint": false, "colorScheme": "Jmol", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Perspective", "rotationMode": "TrackBall", "selectionMode": "Lasso", "performanceMode": "auto"};
+        var pythonSettings = {"bondThreshold": 1.2, "hBondThreshold": 2.5, "bondThickness": 0.09, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "glossy", "showCell": true, "showBond": true, "hideHydrogens": false, "showBlur": false, "blurStrength": 1.5, "showHBond": false, "showShadow": false, "showShading": true, "showEnergyPlot": false, "showForces": false, "colorBy": "Charge", "showConstraint": false, "colorScheme": "Jmol", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Perspective", "viewPreset": null, "viewDirection": null, "viewEuler": null, "viewUp": null, "viewFit": 1.0, "rotationMode": "TrackBall", "selectionMode": "Lasso", "performanceMode": "auto"};
 
         function initData() {
             function trySetData() {
@@ -10321,14 +11499,14 @@ function createHydrogenBond(p1, p2) {
                         window.settings = {};
                     }
                     Object.assign(settings, pythonSettings);
-                    // Sync UI elements to reflect the applied Python settings
-                    if (typeof updateFromSettings === 'function') {
-                        updateFromSettings();
-                    }
                     if (typeof setMolecularData === 'function') {
                         setMolecularData([{"positions": [[1.168181, -0.400382, 0.0], [0.0, 0.559462, 0.0], [-1.190083, -0.227669, 0.0], [-1.946623, 0.381525, 0.0], [0.042557, 1.207508, 0.886933], [0.042557, 1.207508, -0.886933], [2.115891, 0.1448, 0.0], [1.128599, -1.037234, 0.885881], [1.128599, -1.037234, -0.885881]], "symbols": ["C", "C", "O", "H", "H", "H", "H", "H", "H"], "charges": [-0.18, 0.06, 0.06, 0.06, 0.15, 0.04, 0.04, -0.65, 0.42]}]);
                     } else {
                         console.error('setMolecularData function not found!');
+                    }
+                    // Sync UI elements after data-dependent options are available.
+                    if (typeof updateFromSettings === 'function') {
+                        updateFromSettings();
                     }
                 } else if (retryCount < MAX_RETRIES) {
                     setTimeout(trySetData, 50);

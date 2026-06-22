@@ -2298,6 +2298,7 @@ function createAtomStyleBubble(pos, symbol, atomScale) {
 function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const info = atomInfo[symbol] || atomInfo['default'];
     const scaledRadius = info.radius * atomScale;
+    const resolvedColor = normalizeColorHexValue(color) ?? 0x808080;
 
     // Remove 3D sphere, use canvas-drawn sprite only
     const canvas = document.createElement('canvas');
@@ -2318,13 +2319,13 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     // Draw circular background (sphere role) - slightly smaller than border
     context.beginPath();
     context.arc(centerX, centerY, circleRadius - 3, 0, 2 * Math.PI, false);
-    context.fillStyle = `#${color.toString(16).padStart(6, '0')}`; // Convert color to hex
+    context.fillStyle = `#${resolvedColor.toString(16).padStart(6, '0')}`;
     context.fill();
 
     // Highlight effect with slightly brighter color
     context.beginPath();
     context.arc(centerX, centerY, circleRadius - 7, 0, 2 * Math.PI, false);
-    const lighterColor = new THREE.Color(color).multiplyScalar(1.1);
+    const lighterColor = new THREE.Color(resolvedColor).multiplyScalar(1.1);
     context.fillStyle = `#${lighterColor.getHexString()}`;
     context.fill();
 
@@ -2344,8 +2345,8 @@ function createAtomStyleGrey(pos, symbol, atomScale, color) {
     const spriteMaterial = new THREE.SpriteMaterial({
         map: texture,
         transparent: true,
-        depthTest: true,     // Enable depth test
-        depthWrite: false,   // Disable depth write for transparent object
+        depthTest: true,
+        depthWrite: true,
         alphaTest: 0.5
     });
 
