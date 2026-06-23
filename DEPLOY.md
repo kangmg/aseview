@@ -22,7 +22,7 @@ For a normal release, keep these versions identical:
 - `pyproject.toml` `[project].version`
 - `aseview/static/js/aseview.js` exported/viewer version, if present
 - `vscode-extension/package.json` `version`
-- `vscode-extension/package-lock.json` root version
+- `vscode-extension/package-lock.json` root version (auto-updated by `npm version`)
 
 If the shared tag is `vX.Y.Z`, all of the above should normally be `X.Y.Z`.
 
@@ -37,6 +37,12 @@ If the shared tag is `vX.Y.Z`, all of the above should normally be `X.Y.Z`.
 
 2. Choose the next version.
 
+   Inspect existing tags first so you never reuse one:
+
+   ```bash
+   git tag --sort=-creatordate | head
+   ```
+
    Never reuse a version that already exists on PyPI, VS Code marketplaces, or GitHub tags. Do not move a tag after PyPI has published from it.
 
 3. Update Python package version.
@@ -45,7 +51,7 @@ If the shared tag is `vX.Y.Z`, all of the above should normally be `X.Y.Z`.
 
    - `pyproject.toml`
    - `aseview/static/js/aseview.js`, if its version constant exists
-   - `uv.lock`, by running a `uv` command after editing
+   - `uv.lock`, by running `uv lock` after editing `pyproject.toml`
 
 4. Update VS Code extension version.
 
@@ -55,7 +61,24 @@ If the shared tag is `vX.Y.Z`, all of the above should normally be `X.Y.Z`.
    cd ..
    ```
 
-5. Verify locally.
+   `npm version` updates both `package.json` and the `package-lock.json` root version; no manual lock edit is needed.
+
+5. Regenerate committed artifacts if templates or styles changed.
+
+   `docs/assets/viewers/*.html` are generated and committed, so stale copies
+   ship in the release if you skip this. After any change to
+   `aseview/templates/`, `aseview/themes/`, or `aseview/static/js/styles.js`,
+   regenerate and commit them before tagging:
+
+   ```bash
+   python docs/generate_examples.py
+   ```
+
+   The VS Code `media/` copies and bundle are re-synced automatically by the
+   `Sync VS Code Bundle` workflow on push to `main`. To do it locally, run
+   `cd vscode-extension && npm run bundle-viewer`.
+
+6. Verify locally.
 
    ```bash
    uv run --extra dev pytest
@@ -66,7 +89,7 @@ If the shared tag is `vX.Y.Z`, all of the above should normally be `X.Y.Z`.
    cd ..
    ```
 
-6. Commit first, then tag.
+7. Commit first, then tag.
 
    ```bash
    git status --short
@@ -77,16 +100,25 @@ If the shared tag is `vX.Y.Z`, all of the above should normally be `X.Y.Z`.
    git push origin vX.Y.Z
    ```
 
-7. Verify GitHub Actions.
+8. Verify the release.
 
    The pushed tag should trigger:
 
    - `Publish to PyPI`: builds and publishes `aseview` to PyPI via trusted publisher/OIDC
    - `Publish VS Code Extension`: builds `aseview-vscode-X.Y.Z.vsix` and `aseview-latest.vsix`, then attaches them to the GitHub Release for `vX.Y.Z`
 
-8. Publish VS Code marketplaces only when requested.
+   Confirm the runs and release assets instead of assuming success:
 
-   The tag flow creates the VSIX assets, but Marketplace/Open VSX publishing is manual. Run the `Publish VS Code Extension` workflow with:
+   ```bash
+   gh run list --limit 6
+   gh run watch <run-id> --exit-status      # nonzero exit if the run fails
+   gh release view vX.Y.Z --json assets     # both .vsix assets attached, isDraft false
+   pip index versions aseview               # PyPI now lists X.Y.Z
+   ```
+
+9. Publish VS Code marketplaces only when requested.
+
+   The tag flow creates the VSIX assets but does **not** publish to a marketplace. Marketplace/Open VSX publishing is manual. Run the `Publish VS Code Extension` workflow with:
 
    - `target`: `marketplace`, `openvsx`, or `both`
    - `release_tag`: `vX.Y.Z` if the GitHub Release asset also needs to be created or refreshed
@@ -96,7 +128,9 @@ If the shared tag is `vX.Y.Z`, all of the above should normally be `X.Y.Z`.
    - `VSCE_PAT` for Visual Studio Marketplace
    - `OVSX_PAT` for Open VSX
 
-## Avoiding the Known Failure
+## Troubleshooting
+
+### VSIX artifact not found
 
 Failure:
 
@@ -116,13 +150,13 @@ Prevention:
 - Confirm the generated VSIX filename uses the intended version.
 - The workflow now uses the actual packaged VSIX filename, but agents should still keep the extension version aligned with the tag to avoid surprising release assets.
 
-If the tag workflow already failed:
+### If the tag workflow already failed
 
 - Do not move or delete the tag after PyPI has published.
 - Fix the workflow/package version on `main`.
 - Run `Publish VS Code Extension` manually with `release_tag: vX.Y.Z`.
 
-If a manual run creates the `aseview-vsix` Actions artifact but the GitHub Release is still missing:
+### If a manual run creates the artifact but the Release is missing
 
 - Check the `attach-release-asset` job. If it is `skipped`, the manual run did not receive a non-empty `release_tag`.
 - Start a new `Run workflow` execution from `main`; do not use "Re-run jobs".
