@@ -15,6 +15,8 @@ OverlayViewer(data, index_list=None, **kwargs)
 | `data` | `Atoms`, `List[Atoms]`, `Dict`, `str` | One or more molecular structures | Required |
 | `index_list` | `None`, `list[int]`, `list[list[int]]` | Atom selection — see table below | `None` |
 | `theme` | `str` | Visual theme (`"dark"`, `"spring"`, `"glass"`, `"darkgreen"`, `"simple"`, …). `None` uses the global default. | `None` |
+| `all_visible` | `bool` | Show every overlay structure initially instead of only the first three | `False` |
+| `visible_indices` | `list[int]`, `None` | Structure indices to show initially. Cannot be combined with `all_visible=True`. | `None` |
 
 #### index_list Modes
 
@@ -80,6 +82,8 @@ The mode is inferred automatically from the type of `index_list`:
 | `showBond` | `bool` | Show bonds | `True` |
 | `showShadow` | `bool` | Enable shadows | `False` |
 | `centerMolecules` | `bool` | Center each molecule at origin before overlay | `False` |
+| `allVisible` | `bool` | JavaScript/camelCase alias for showing every overlay structure initially | `False` |
+| `visibleIndices` | `list[int]`, `None` | JavaScript/camelCase alias for initially visible structure indices | `None` |
 
 #### View Settings
 
@@ -201,6 +205,23 @@ viewer = OverlayViewer([mol1, mol2, mol3], index_list=[0, 1, 2])
 viewer = OverlayViewer(
     [mol1, mol2, mol3],
     index_list=[[0, 1, 2], [0, 1, 3], [1, 2, 3]]
+)
+viewer.show()
+```
+
+### Initial Structure Visibility
+
+```python
+# Long overlays still default to the first three visible structures.
+viewer = OverlayViewer(trajectory)
+
+# Show every structure immediately.
+viewer = OverlayViewer(trajectory, all_visible=True)
+
+# Or show only selected structures initially, such as first and last frames.
+viewer = OverlayViewer(
+    trajectory,
+    visible_indices=[0, len(trajectory) - 1],
 )
 viewer.show()
 ```

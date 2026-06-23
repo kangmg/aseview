@@ -150,6 +150,36 @@ class TestOverlayViewer:
         assert len(viewer.data[0]["symbols"]) == 2
         assert len(viewer.data[1]["symbols"]) == 2
 
+    def test_all_visible_setting_propagates_to_html(self, h2o):
+        structures = [h2o.copy() for _ in range(5)]
+        viewer = OverlayViewer(structures, all_visible=True)
+        html = viewer.get_html()
+
+        assert '"allVisible": true' in html
+        assert '"visibleIndices": null' in html
+
+    def test_visible_indices_setting_propagates_to_html(self, h2o):
+        structures = [h2o.copy() for _ in range(5)]
+        viewer = OverlayViewer(structures, visible_indices=[0, 2, 4])
+        html = viewer.get_html()
+
+        assert viewer.settings["visibleIndices"] == [0, 2, 4]
+        assert '"allVisible": false' in html
+        assert '"visibleIndices": [0, 2, 4]' in html
+
+    def test_visible_indices_reject_invalid_index(self, h2o):
+        structures = [h2o.copy() for _ in range(2)]
+        with pytest.raises(ValueError, match="visible_indices"):
+            OverlayViewer(structures, visible_indices=[0, 2])
+
+    def test_visibility_modes_are_mutually_exclusive(self, h2o):
+        with pytest.raises(ValueError, match="all_visible"):
+            OverlayViewer(
+                [h2o.copy() for _ in range(2)],
+                all_visible=True,
+                visible_indices=[0],
+            )
+
 
 # ── FragSelector ─────────────────────────────────────────────
 

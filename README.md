@@ -166,6 +166,15 @@ viewer = OverlayViewer(
 viewer.show()
 ```
 
+For long overlays, only the first three structures are visible by default. Use
+`all_visible=True` to start with every structure visible, or
+`visible_indices=[...]` to choose the initially visible structures:
+
+```python
+viewer = OverlayViewer(trajectory, all_visible=True)
+viewer = OverlayViewer(trajectory, visible_indices=[0, len(trajectory) - 1])
+```
+
 ### Normal Mode Visualization
 
 #### From ASE Vibrations

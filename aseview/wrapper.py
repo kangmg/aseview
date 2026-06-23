@@ -7,6 +7,7 @@ import copy
 import json
 import os
 import re
+from numbers import Integral
 from typing import Dict, Any, List, Optional, Union
 from ase import Atoms
 import numpy as np
@@ -36,6 +37,72 @@ _CAMERA_SETTING_DEFAULTS: Dict[str, Any] = {
     "viewUp": None,
     "viewFit": 1.0,
 }
+
+
+def _pop_alias(
+    kwargs: Dict[str, Any],
+    snake_name: str,
+    camel_name: str,
+    default: Any,
+) -> Any:
+    if snake_name in kwargs and camel_name in kwargs:
+        raise ValueError(f"Use either {snake_name} or {camel_name}, not both")
+    if snake_name in kwargs:
+        return kwargs.pop(snake_name)
+    if camel_name in kwargs:
+        return kwargs.pop(camel_name)
+    return default
+
+
+def _normalize_overlay_visibility_settings(
+    kwargs: Dict[str, Any],
+    structure_count: int,
+) -> Dict[str, Any]:
+    all_visible = _pop_alias(kwargs, "all_visible", "allVisible", False)
+    visible_indices = _pop_alias(
+        kwargs,
+        "visible_indices",
+        "visibleIndices",
+        None,
+    )
+
+    if not isinstance(all_visible, bool):
+        raise ValueError("all_visible must be a boolean")
+    if all_visible and visible_indices is not None:
+        raise ValueError("all_visible cannot be combined with visible_indices")
+
+    if visible_indices is None:
+        normalized_indices = None
+    else:
+        if isinstance(visible_indices, (str, bytes)):
+            raise ValueError(
+                "visible_indices must be a sequence of integer indices"
+            )
+        try:
+            raw_indices = list(visible_indices)
+        except TypeError as exc:
+            raise ValueError(
+                "visible_indices must be a sequence of integer indices"
+            ) from exc
+
+        normalized_indices = []
+        for index in raw_indices:
+            if not isinstance(index, Integral) or isinstance(index, bool):
+                raise ValueError(
+                    "visible_indices must contain only integer indices"
+                )
+            normalized_index = int(index)
+            if normalized_index < 0 or normalized_index >= structure_count:
+                raise ValueError(
+                    "visible_indices entries must refer to existing "
+                    "overlay structures"
+                )
+            normalized_indices.append(normalized_index)
+
+    return {
+        "allVisible": all_visible,
+        "visibleIndices": normalized_indices,
+    }
 
 
 def _theme_bg(theme: str, viewer: str = None) -> str:
@@ -1097,6 +1164,9 @@ class OverlayViewer(BaseViewer):
                                   e.g. [0, 1, 2]
                 - list[list]    → "indices" : apply different indices per structure
                                   e.g. [[0, 1], [2, 3], [0, 2]]
+            all_visible: When True, every overlay structure is visible initially.
+            visible_indices: Structure indices to show initially; cannot be
+                combined with all_visible=True.
             **kwargs: Additional settings for visualization
         """
         self._theme = theme
@@ -1109,6 +1179,11 @@ class OverlayViewer(BaseViewer):
         # Apply atom index filtering
         if index_list is not None:
             self.data = self._apply_index_list(self.data, index_list)
+
+        visibility_settings = _normalize_overlay_visibility_settings(
+            kwargs,
+            len(self.data),
+        )
 
         self.settings = {
             "bondThreshold": 1.2,  # Scale factor for covalent radii sum
@@ -1126,6 +1201,7 @@ class OverlayViewer(BaseViewer):
             **_CAMERA_SETTING_DEFAULTS,
             "rotationMode": "TrackBall",
             "colorBy": "Atom",
+            **visibility_settings,
             "performanceMode": "auto",  # "auto", "high", or "normal"
             **kwargs,
         }

@@ -633,6 +633,8 @@ Vibration playback parameters (set via `setVibrationData`):
 | `colorBy` | string | `'Atom'` | `'Atom'`, `'Molecule'`, or `'Colormap'` |
 | `colormap` | string | `'viridis'` | Colormap name (when `colorBy: 'Colormap'`) |
 | `showShading` | boolean | `false` | Shading (default differs from other viewers) |
+| `allVisible` | boolean | `false` | Show every overlay structure initially |
+| `visibleIndices` | number[] \| null | `null` | Structure indices to show initially |
 
 **Available colormaps:** `viridis`, `plasma`, `coolwarm`, `jet`, `rainbow`, `grayscale`
 

@@ -104,6 +104,29 @@ viewer.show()
 
 ---
 
+## Initial Structure Visibility
+
+For readability, overlays with many structures start with only the first three
+structures visible. The molecule panel still lists every structure and lets you
+toggle each one interactively.
+
+```python
+# Show all trajectory frames immediately
+viewer = OverlayViewer(trajectory, all_visible=True)
+viewer.show()
+```
+
+```python
+# Show only first and last frames initially
+viewer = OverlayViewer(
+    trajectory,
+    visible_indices=[0, len(trajectory) - 1],
+)
+viewer.show()
+```
+
+---
+
 ## Interactive Controls
 
 | Control | Description |

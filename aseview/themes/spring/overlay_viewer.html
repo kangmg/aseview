@@ -1028,6 +1028,8 @@
             colormap: 'viridis',
             colorScheme: 'Jmol',
             elementColorOverrides: {},
+            allVisible: false,
+            visibleIndices: null,
             viewPreset: null,
             viewDirection: null,
             viewEuler: null,
@@ -2996,6 +2998,17 @@
             copyStructureToClipboard(true);
         }
 
+        function getInitialMoleculeVisibility(index) {
+            const visibleIndices = settings.visibleIndices;
+            if (Array.isArray(visibleIndices)) {
+                return visibleIndices.includes(index);
+            }
+            if (settings.allVisible === true) {
+                return true;
+            }
+            return index < 3;
+        }
+
         function setMolecularData(data) {
             molecularData = Array.isArray(data) ? data : [data];
             cameraNeedsFit = true;
@@ -3015,7 +3028,7 @@
             moleculeSettings = molecularData.map((mol, index) => ({
                 color: parseInt(defaultColors[index % defaultColors.length].replace('#', '0x')),
                 opacity: index < 2 ? 0.8 : 0.5,  // First two molecules more opaque
-                visible: index < 3  // First three visible by default
+                visible: getInitialMoleculeVisibility(index)
             }));
 
             // Update molecule UI
