@@ -744,7 +744,7 @@
         setTheme,
         getTheme,
         DEFAULT_OPTIONS: Object.assign({}, DEFAULT_VIEWER_OPTIONS),
-        version: '0.0.11',
+        version: '0.0.12',
         CDN_BASE,
     };
 
