@@ -684,7 +684,7 @@
             showCell: true,
             cellColor: '#808080',
             showAxis: true,
-            viewMode: 'Perspective',
+            viewMode: 'Orthographic',
         }, _readInjectedJSON('__frag_settings__', {}));
 
         function isHydrogenSymbol(symbol) {
@@ -2422,7 +2422,7 @@
         }
 
         function isOrthographicView3D() {
-            return String(fragSettings.viewMode || 'Perspective').toLowerCase() === 'orthographic';
+            return String(fragSettings.viewMode || 'Orthographic').toLowerCase() === 'orthographic';
         }
 
         function createCamera3D(width, height) {

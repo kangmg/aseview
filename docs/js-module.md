@@ -589,7 +589,7 @@ The CLI still does not provide `--save-png` or `--save-gif`.
 | `radiusContrastMode` | string | `'log'` | `'linear'` or `'log'` radius mapping |
 | `animationSpeed` | int | `30` | Frames per second |
 | `forceScale` | float | `0.5` | Force vector scale |
-| `viewMode` | string | `'Perspective'` | `'Perspective'` or `'Orthographic'` |
+| `viewMode` | string | `'Orthographic'` | `'Orthographic'` or `'Perspective'` |
 | `viewPreset` | string \| null | `null` | Initial named camera view (`'top-c'`, `'side-a'`, `'front'`, etc.) |
 | `viewDirection` | number[] \| null | `null` | Explicit target-to-camera direction vector |
 | `viewEuler` | number[] \| null | `null` | XYZ Euler degrees applied to `[0, 0, 1]` |

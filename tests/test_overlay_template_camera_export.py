@@ -16,7 +16,7 @@ def test_overlay_template_camera_export_contract(template_path):
     content = template_path.read_text(encoding="utf-8")
 
     baseline_snippets = [
-        "viewMode: 'Perspective'",
+        "viewMode: 'Orthographic'",
         "function saveAsPNG(",
         "function fitCameraToMolecule(group)",
     ]

@@ -3557,7 +3557,7 @@ function createHydrogenBond(p1, p2) {
 
     <script>
         const molecularData = [{"positions": [[0.38220346595449417, 1.266160145510261, 0.013153795066703111], [0.034815465954493696, 0.08892514551026132, 0.0008707950667030673], [0.9431754659544938, -0.939400854489739, -0.04379020493329655], [-1.4138175340455064, -0.3495288544897388, 0.004975795066703093], [0.6656094659544936, -1.8851128544897389, 0.17506179506670305], [-2.039571534045506, 0.5240581455102609, -0.17035720493329665], [-1.6031845340455062, -1.100133854489739, -0.7665662049332966], [-1.674455534045506, -0.7838708544897388, 0.9749337950667032], [1.910790465954494, -0.6924378544897385, 0.11698579506670326]], "symbols": ["O", "C", "N", "C", "H", "H", "H", "H", "H"], "cell": [[9.950362, 0.0, 0.0], [0.0, 9.151273, 0.0], [0.0, 0.0, 7.7415]], "pbc": [false, false, false], "cell_offset": [-5.039571534045506, -4.885112854489739, -3.766566204933297]}];
-        const settings = {"style": "cinematic", "fps": 30.0, "hideHydrogens": false, "centerByCOM": true, "bondThreshold": 1.25, "showBond": true, "bondThickness": 0.09, "atomSize": 0.4, "showCell": true, "viewMode": "Perspective", "colorScheme": "Jmol", "backgroundColor": "#000000", "highPerformance": true};
+        const settings = {"style": "cinematic", "fps": 30.0, "hideHydrogens": false, "centerByCOM": true, "bondThreshold": 1.25, "showBond": true, "bondThickness": 0.09, "atomSize": 0.4, "showCell": true, "viewMode": "Orthographic", "colorScheme": "Jmol", "backgroundColor": "#000000", "highPerformance": true};
 
         const styleKey = String(settings.style || "cinematic").toLowerCase();
         const fps = Number(settings.fps) > 0 ? Number(settings.fps) : 30;

@@ -4068,14 +4068,14 @@ function createHydrogenBond(p1, p2) {
                                 <span>View Mode</span>
                             </div>
                             <div class="button-group">
-                                <button class="btn" id="orthographic-btn">
+                                <button class="btn active" id="orthographic-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
                                     </svg>
                                     Orthographic
                                 </button>
-                                <button class="btn active" id="perspective-btn">
+                                <button class="btn" id="perspective-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -4281,12 +4281,14 @@ function createHydrogenBond(p1, p2) {
             showEnergyPlot: false,
             showForces: false,
             showAxis: true,
-            viewMode: 'Perspective',
+            viewMode: 'Orthographic',
             rotationMode: 'TrackBall',
             colorBy: 'Atom',
             colormap: 'viridis',
             colorScheme: 'Jmol',
             elementColorOverrides: {},
+            allVisible: false,
+            visibleIndices: null,
             viewPreset: null,
             viewDirection: null,
             viewEuler: null,
@@ -6255,6 +6257,17 @@ function createHydrogenBond(p1, p2) {
             copyStructureToClipboard(true);
         }
 
+        function getInitialMoleculeVisibility(index) {
+            const visibleIndices = settings.visibleIndices;
+            if (Array.isArray(visibleIndices)) {
+                return visibleIndices.includes(index);
+            }
+            if (settings.allVisible === true) {
+                return true;
+            }
+            return index < 3;
+        }
+
         function setMolecularData(data) {
             molecularData = Array.isArray(data) ? data : [data];
             cameraNeedsFit = true;
@@ -6274,7 +6287,7 @@ function createHydrogenBond(p1, p2) {
             moleculeSettings = molecularData.map((mol, index) => ({
                 color: parseInt(defaultColors[index % defaultColors.length].replace('#', '0x')),
                 opacity: index < 2 ? 0.8 : 0.5,  // First two molecules more opaque
-                visible: index < 3  // First three visible by default
+                visible: getInitialMoleculeVisibility(index)
             }));
 
             // Update molecule UI
@@ -7368,7 +7381,7 @@ function createHydrogenBond(p1, p2) {
     (function() {
         var MAX_RETRIES = 100;
         var retryCount = 0;
-        var pythonSettings = {"bondThreshold": 1.2, "bondThickness": 0.09, "atomSize": 0.4, "backgroundColor": "#1f2937", "style": "cartoon", "showCell": true, "showBond": true, "hideHydrogens": false, "showBlur": false, "blurStrength": 1.5, "showShadow": false, "viewMode": "Perspective", "viewPreset": null, "viewDirection": null, "viewEuler": null, "viewUp": null, "viewFit": 1.0, "rotationMode": "TrackBall", "colorBy": "Colormap", "performanceMode": "auto", "colormap": "viridis"};
+        var pythonSettings = {"bondThreshold": 1.2, "bondThickness": 0.09, "atomSize": 0.4, "backgroundColor": "#1f2937", "style": "cartoon", "showCell": true, "showBond": true, "hideHydrogens": false, "showBlur": false, "blurStrength": 1.5, "showShadow": false, "viewMode": "Orthographic", "viewPreset": null, "viewDirection": null, "viewEuler": null, "viewUp": null, "viewFit": 1.0, "rotationMode": "TrackBall", "colorBy": "Colormap", "allVisible": false, "visibleIndices": null, "performanceMode": "auto", "colormap": "viridis"};
 
         function initData() {
             function trySetData() {

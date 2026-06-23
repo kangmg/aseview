@@ -32,7 +32,7 @@ def test_existing_normal_export_fit_and_projection_baseline(normal_template):
     assert "function saveAsGIF()" in content
     assert "function fitCameraToMolecule(group)" in content
     assert "new THREE.Vector3(distance, distance, distance)" in content
-    assert "viewMode: 'Perspective'" in content
+    assert "viewMode: 'Orthographic'" in content
 
 
 def test_normal_templates_expose_camera_and_export_command_contract(normal_template):

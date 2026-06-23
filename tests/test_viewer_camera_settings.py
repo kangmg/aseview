@@ -32,7 +32,7 @@ def test_camera_settings_defaults_are_serializable(viewer_cls, h2o):
     for key, expected in CAMERA_DEFAULTS.items():
         assert viewer.settings[key] == expected
 
-    assert viewer.settings["viewMode"] == "Perspective"
+    assert viewer.settings["viewMode"] == "Orthographic"
     json.dumps(viewer.settings)
 
 

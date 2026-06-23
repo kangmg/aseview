@@ -4107,7 +4107,7 @@ function createHydrogenBond(p1, p2) {
 
     <!-- Data injection via JSON script tags (safe for CDN use without server-side rendering) -->
     <script type="application/json" id="__frag_mol_data__">[{"positions": [[0.0, 0.0, 0.119262], [0.0, 0.763239, -0.477047], [0.0, -0.763239, -0.477047], [5.0, 0.0, 0.119262], [5.0, 0.763239, -0.477047], [5.0, -0.763239, -0.477047]], "symbols": ["O", "H", "H", "O", "H", "H"]}]</script>
-    <script type="application/json" id="__frag_settings__">{"bondThreshold": 1.2, "atomSize": 0.4, "style": "cartoon", "showBond": true, "hideHydrogens": false, "showBlur": false, "blurStrength": 1.5, "showShading": true, "backgroundColor": "#1f2937", "viewMode": "Perspective"}</script>
+    <script type="application/json" id="__frag_settings__">{"bondThreshold": 1.2, "atomSize": 0.4, "style": "cartoon", "showBond": true, "hideHydrogens": false, "showBlur": false, "blurStrength": 1.5, "showShading": true, "backgroundColor": "#1f2937", "viewMode": "Orthographic"}</script>
 
     <script>
         // ─────────────────────────────────────────────────────────────────────
@@ -4139,7 +4139,7 @@ function createHydrogenBond(p1, p2) {
             showCell: true,
             cellColor: '#808080',
             showAxis: true,
-            viewMode: 'Perspective',
+            viewMode: 'Orthographic',
             showShading: true,
             colorScheme: 'Jmol',
         }, _readInjectedJSON('__frag_settings__', {}));
@@ -5879,7 +5879,7 @@ function createHydrogenBond(p1, p2) {
         }
 
         function isOrthographicView3D() {
-            return String(fragSettings.viewMode || 'Perspective').toLowerCase() === 'orthographic';
+            return String(fragSettings.viewMode || 'Orthographic').toLowerCase() === 'orthographic';
         }
 
         function createCamera3D(width, height) {

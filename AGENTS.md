@@ -124,8 +124,8 @@ uv run --with build python -m build --sdist --wheel --outdir /private/tmp/asevie
   template/style changes.
 - Full browser and VS Code end-to-end behavior is not covered by the Python test
   suite; template edits deserve manual visual checks when UI behavior matters.
-- Viewer projection defaults to `Perspective`; `Orthographic` remains available
-  as an explicit selectable mode.
+- Viewer projection defaults to `Orthographic` (scientific-visualization
+  convention); `Perspective` remains available as an explicit selectable mode.
 - Local ignored artifacts may be present (`.venv/`, `.claude/worktrees/`,
   `site/`, `dist/`, `build/`, `vscode-extension/node_modules/`). Exclude them
   from structure scans unless the task is explicitly about generated output.

@@ -64,7 +64,7 @@ NormalViewer(atoms, vibrations=None, mode_vectors=None, frequencies=None, n_fram
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `viewMode` | `str` | Camera projection: `"Perspective"` or `"Orthographic"` | `"Perspective"` |
+| `viewMode` | `str` | Camera projection: `"Orthographic"` or `"Perspective"` | `"Orthographic"` |
 | `viewPreset` | `str`, `None` | Initial named camera direction (`"top-c"`, `"side-a"`, `"front"`, etc.) | `None` |
 | `viewDirection` | `list[float]`, `None` | Explicit target-to-camera direction vector | `None` |
 | `viewEuler` | `list[float]`, `None` | `[rx, ry, rz]` degrees in XYZ order, applied to `[0, 0, 1]` | `None` |

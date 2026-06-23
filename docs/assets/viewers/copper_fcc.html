@@ -7120,14 +7120,14 @@ function createHydrogenBond(p1, p2) {
                                 <span>View Mode</span>
                             </div>
                             <div class="button-group">
-                                <button class="btn" id="orthographic-btn">
+                                <button class="btn active" id="orthographic-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
                                     </svg>
                                     Orthographic
                                 </button>
-                                <button class="btn active" id="perspective-btn">
+                                <button class="btn" id="perspective-btn">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -7405,7 +7405,7 @@ function createHydrogenBond(p1, p2) {
             normalizeCharges: false,
             showChargeLabels: false,
             chargeColormap: 'coolwarm',
-            viewMode: 'Perspective',
+            viewMode: 'Orthographic',
             rotationMode: 'TrackBall',
             viewPreset: null,
             viewDirection: null,
@@ -10808,6 +10808,10 @@ function createHydrogenBond(p1, p2) {
                     const originalHeight = canvas.height;
                     const originalStyleWidth = canvas.style.width;
                     const originalStyleHeight = canvas.style.height;
+                    const originalBackground = scene.background;
+                    const originalClearColor = new THREE.Color();
+                    renderer.getClearColor(originalClearColor);
+                    const originalClearAlpha = typeof renderer.getClearAlpha === 'function' ? renderer.getClearAlpha() : 1;
                     const targetWidth = opts.width || Math.max(1, Math.round(originalWidth * opts.scale));
                     const targetHeight = opts.height || Math.max(1, Math.round(originalHeight * opts.scale));
                     const originalFrame = animationState.currentFrame;
@@ -10818,6 +10822,16 @@ function createHydrogenBond(p1, p2) {
                     try {
                         if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
                             renderer.setSize(targetWidth, targetHeight, false);
+                        }
+                        const transparent = opts.transparent !== undefined ? !!opts.transparent : true;
+                        if (transparent) {
+                            scene.background = null;
+                            renderer.setClearColor(0x000000, 0);
+                        } else {
+                            const bgColor = opts.backgroundColor || settings.backgroundColor || '#111827';
+                            const color = new THREE.Color(bgColor);
+                            scene.background = color;
+                            renderer.setClearColor(color, 1);
                         }
                         for (let i = 0; i < frameCount; i++) {
                             animationState.currentFrame = Math.min(totalFrames - 1, Math.floor(i * totalFrames / frameCount));
@@ -10831,6 +10845,8 @@ function createHydrogenBond(p1, p2) {
                         renderMolecule();
                         restoreCameraState(cameraState);
                         cameraViewLock = false;
+                        scene.background = originalBackground;
+                        renderer.setClearColor(originalClearColor, originalClearAlpha);
                         if (targetWidth !== originalWidth || targetHeight !== originalHeight) {
                             renderer.setSize(originalWidth, originalHeight, false);
                             canvas.style.width = originalStyleWidth;
@@ -11488,7 +11504,7 @@ function createHydrogenBond(p1, p2) {
     (function() {
         var MAX_RETRIES = 100;  // 5 seconds max (100 * 50ms)
         var retryCount = 0;
-        var pythonSettings = {"bondThreshold": 1.2, "hBondThreshold": 2.5, "bondThickness": 0.09, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "metallic", "showCell": true, "showBond": true, "hideHydrogens": false, "showBlur": false, "blurStrength": 1.5, "showHBond": false, "showShadow": false, "showShading": true, "showEnergyPlot": false, "showForces": false, "colorBy": "Element", "showConstraint": false, "colorScheme": "Jmol", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Perspective", "viewPreset": null, "viewDirection": null, "viewEuler": null, "viewUp": null, "viewFit": 1.0, "rotationMode": "TrackBall", "selectionMode": "Lasso", "performanceMode": "auto"};
+        var pythonSettings = {"bondThreshold": 1.2, "hBondThreshold": 2.5, "bondThickness": 0.09, "atomSize": 0.4, "animationSpeed": 30, "forceScale": 1.0, "backgroundColor": "#1f2937", "style": "metallic", "showCell": true, "showBond": true, "hideHydrogens": false, "showBlur": false, "blurStrength": 1.5, "showHBond": false, "showShadow": false, "showShading": true, "showEnergyPlot": false, "showForces": false, "colorBy": "Element", "showConstraint": false, "colorScheme": "Jmol", "normalizeCharges": false, "chargeColormap": "coolwarm", "viewMode": "Orthographic", "viewPreset": null, "viewDirection": null, "viewEuler": null, "viewUp": null, "viewFit": 1.0, "rotationMode": "TrackBall", "selectionMode": "Lasso", "performanceMode": "auto"};
 
         function initData() {
             function trySetData() {
